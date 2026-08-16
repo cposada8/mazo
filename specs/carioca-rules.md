@@ -23,11 +23,16 @@ and `escalera` are different things and both translate to "run".
 | **Contrato** | What must be laid down in a given ronda. | `Contrato` |
 | **mano** | The cards a player holds. Never used for a ronda. | `hand` |
 | **rango** | A card's rank: A, 2…10, J, Q, K. Never called *valor* — that is reserved for points. | `rank` |
+| **grupo** | A trío or an escala **on the table**. By definition a grupo has been laid down. | `Grupo` |
+| **propuesta** | A combination assembled in hand, not yet laid down. Becomes a grupo when accepted. | `Propuesta` |
+| **la mesa** | Every grupo laid down by every player. | `mesa` |
 | **trío** | Three or more cards of the same rango. | `trio` |
 | **escala** | Four or more consecutive cards of the same suit. | `escala` |
 | **escalera** | All thirteen ranks, A through K. | `escalera` |
 | **comodín** | Joker. | `comodin` |
 | **bajarse** | To lay down the contract for the ronda. | `layDown` |
+| **mazo** | The face-down draw pile. Called `stock` in code to avoid colliding with the app's name. | `stock` |
+| **descarte** | The face-up discard pile. Only its top card is ever in play. | `discard` |
 
 "Mano" is reserved for the cards in a player's hand. The unit of play is always
 a **ronda**.
@@ -63,7 +68,7 @@ A contract is a requirement to lay down a combination, expressed as a count of
 groups:
 
 ```ts
-type Contract = {
+type Contrato = {
   id: string
   trios: number
   escalas: number
@@ -127,6 +132,99 @@ A **trío** is **three or more cards of the same rango**. Suit is irrelevant.
 Three is the minimum, not the fixed size: `7 7 7`, `7 7 7 7` and `7 7 7 7 7` are
 each a single valid trío.
 
+### Comodines
+
+A comodín substitutes for any card. How many are allowed in one grupo depends on
+**when** the grupo is being formed.
+
+#### At lay-down: one per grupo
+
+When bajándose, a grupo may contain **at most one comodín**.
+
+| Grupo | Valid at lay-down |
+| --- | --- |
+| `7 7 comodín` | yes — counts as a trío |
+| `7 comodín comodín` | no — two comodines |
+| `comodín 4♠ 5♠ 6♠` | yes |
+
+#### After lay-down: more, but never adjacent in an escala
+
+Once a grupo is on the table, further comodines may be added to it, subject to
+one restriction:
+
+> An escala may never contain **two consecutive comodines**.
+
+| Escala | Valid after lay-down |
+| --- | --- |
+| `comodín 3♥ 4♥ 5♥ comodín 7♥` | yes — the comodines stand for 2♥ and 6♥, not adjacent |
+| `2♥ 3♥ 4♥ comodín comodín 7♥` | no — the comodines stand for 5♥ and 6♥, adjacent |
+
+The adjacency rule applies **only to escalas**, since only an escala has an
+order. A **trío has no limit**: `7 7 comodín comodín comodín` is valid once the
+grupo is on the table.
+
+Note the invariant this preserves: because lay-down allows only one comodín, a
+trío always keeps at least two real cards of its rango, however many comodines
+are piled on later.
+
+#### A comodín belongs to its grupo forever
+
+Once a comodín is part of a grupo on the mesa, it **can never move to another
+grupo**. It can only be repositioned *within* the grupo it lives in.
+
+Repositioning is not free: to move a comodín, a player must **supply the card it
+was standing for**. The comodín is not taken into anyone's hand — it stays on the
+table and is reassigned to a different position in the same grupo.
+
+Any player **who has already bajado** may do this on their turn, on any grupo,
+including grupos they did not lay down.
+
+Worked example. The mesa holds the escala `2♦ comodín(3♦) 4♦ 5♦`. The player in
+turn holds `3♦` and `7♦`:
+
+1. Play the `3♦` into the position the comodín was filling.
+2. The freed comodín stays in this grupo and is reassigned to `6♦`.
+3. Play the `7♦`.
+
+Result: `2♦ 3♦ 4♦ 5♦ comodín(6♦) 7♦` — a six-card escala. The player unloaded two
+cards on someone else's grupo, and the comodín never left it.
+
+This is why comodines are bound to a concrete card: without that binding there is
+nothing to "supply" and nothing to reposition.
+
+#### What this forces on the engine
+
+Two design consequences, both load-bearing:
+
+1. **Validation is phase-dependent.** `7 7 comodín comodín` is illegal while
+   laying down and may be legal afterwards. A grupo validator cannot be a pure
+   function of the cards; it takes the phase as an argument.
+2. **Each comodín must know what it represents.** Adjacency is only decidable if
+   every comodín in an escala is bound to a concrete rango and suit. A comodín on
+   the table is not a wildcard floating in a set — it occupies a specific
+   position.
+
+Point 2 also determines what "adding a comodín to an escala" means as a move: the
+player is not dropping a joker onto a pile, they are naming the card it stands
+for. The UI has to ask for that, or infer it and let the player confirm.
+
+### Touching the mesa
+
+One rule governs every interaction with cards already on the table:
+
+> **A player who has not bajado cannot touch the mesa.** Not to add a card, not
+> to reposition a comodín, not at all.
+
+Having bajado, a player may add cards to any grupo and reposition comodines
+within any grupo. The one further restriction concerns other players' grupos:
+
+- Adding to **another player's** grupo requires a **later turn** than the one in
+  which the player bajó. Laying down and unloading onto opponents never happen in
+  the same turn.
+
+So the turn a player bajase is spent on that alone; the unloading starts the turn
+after.
+
 ### The deck
 
 Two standard 52-card decks, each contributing its two jokers:
@@ -166,11 +264,39 @@ to be a poor game.
 
 A turn is always the same two steps:
 
-1. **Draw** one card — the hand goes to 13.
+1. **Draw** one card — the hand goes to 13. The player chooses freely between
+   the top of the **stock** (face down, unknown) and the top of the **descarte**
+   (face up — the previous player's discard, visible to everyone before the
+   choice is made). There is no condition attached to taking the discard.
 2. **Discard** one card — the hand returns to 12.
 
 Whatever else happens in a turn (laying down, adding to melds) happens between
 those two steps.
+
+Only the **top** card of the descarte is available. The pile underneath is out of
+play.
+
+#### When the stock runs out
+
+If the stock empties while the ronda is still going, the descarte is **shuffled
+back into a new stock** and play continues. The current top card stays face up as
+the descarte, so the pile is never empty and the next player always has the same
+two choices.
+
+The ronda ends only when someone goes out — never because cards ran out.
+
+This has a consequence for determinism: a ronda may need to shuffle more than
+once, so the engine carries a seeded random **stream**, not a single shuffle.
+Replaying a seed has to reproduce every reshuffle, not just the deal.
+
+#### Starting a ronda
+
+After dealing, one card is turned face up from the stock to start the descarte.
+
+This means the first turn is **not a special case**: the first player faces the
+same choice as everyone else — take the face-up card, or draw from the stock.
+Turning the card is an initialization step, not a rule the turn logic has to know
+about.
 
 #### Why 12 matters
 
@@ -231,10 +357,9 @@ but no attempt is made to model them yet.
 
 ### Everything else
 
-
-- Where a card may be drawn from: stock only, or also the discard pile.
-- Which contracts are enabled by default.
-- Jokers: point value, how many per meld, whether a laid joker can be swapped.
-- Laying down: adding to opponents' melds, drawing from the discard pile.
-- Scoring: card values, and whether going out earns a bonus.
+- Comodines: point value, and whether a laid comodín can be swapped out by the
+  card it stands for.
+- Whether a player may add to **their own** grupos on the turn they bajaron.
+- Scoring: the point value of each card, and whether going out earns a bonus.
 - Win condition.
+- Which contracts are enabled by default.
