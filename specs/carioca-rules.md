@@ -44,8 +44,9 @@ partida. They are never changed mid-game, and never per ronda.
 
 ```ts
 type PartidaConfig = {
-  contratos: Contrato[]   // which contracts are enabled, in order
-  comodines: boolean      // play with jokers or without
+  contratos: Contrato[]      // which contracts are enabled, in order
+  comodines: boolean         // play with jokers or without
+  bonusGanadorRonda: number  // points subtracted from the ronda winner; 0 = none
 }
 ```
 
@@ -55,6 +56,11 @@ Settled so far:
 | --- | --- | --- |
 | Enabled contracts | Any non-empty subset of the catalog, in standard order | to confirm |
 | Jokers | On / off | On |
+| Ronda-winner bonus | Any number ≥ 0, suggested 0 / 10 / 25 / 50 | 0 |
+
+The bonus is **one number, not a switch plus a number**: `0` means the winner
+simply scores nothing, any other value is subtracted from their total. Two fields
+could contradict each other; one cannot.
 
 Every table in this document describes the game **as configured**. Rules that
 mention comodines simply do not apply when they are switched off.
@@ -215,15 +221,16 @@ One rule governs every interaction with cards already on the table:
 > **A player who has not bajado cannot touch the mesa.** Not to add a card, not
 > to reposition a comodín, not at all.
 
-Having bajado, a player may add cards to any grupo and reposition comodines
-within any grupo. The one further restriction concerns other players' grupos:
+Having bajado, what a player may do depends on whose grupo it is:
 
-- Adding to **another player's** grupo requires a **later turn** than the one in
-  which the player bajó. Laying down and unloading onto opponents never happen in
-  the same turn.
+| Target | When |
+| --- | --- |
+| **Their own** grupos | Immediately, including the same turn they bajaron |
+| **Another player's** grupos | Only from the **next** turn onward |
 
-So the turn a player bajase is spent on that alone; the unloading starts the turn
-after.
+So a player who lays down `7 7 7` and `Q Q Q` with a fourth `7` left over can
+attach it to their own trío in that same turn — but has to wait a turn before
+unloading anything onto an opponent.
 
 ### The deck
 
@@ -319,6 +326,42 @@ card, which is the discard — **bajarse and going out are the same move** in th
 rondas. And an escalera needs all 13, which is why the escalera contracts cannot
 follow the normal draw-lay-discard flow at all.
 
+### Scoring
+
+When a ronda ends, every player counts the cards **left in their hand**. Cards on
+the mesa do not count. Points are penalties: low is good.
+
+| Card | Points |
+| --- | --- |
+| 2–10 | Face value |
+| J, Q, K | 10 |
+| A | 20 |
+| Comodín | 50 |
+
+The comodín is worth more than twice any real card, which makes holding one at
+the end of a ronda the single most expensive mistake available.
+
+#### The player who goes out
+
+By default the player who goes out scores **0** for that ronda.
+
+Optionally — `bonusGanadorRonda` in the partida config — they instead score
+**minus X**, rewarding closing the ronda over merely dumping cards. There is no
+canonical value for X in the game itself; the suggested scale is derived from the
+game's own numbers:
+
+| X | Reasoning |
+| --- | --- |
+| **10** — suggested default | The value of a face card. A player who nearly went out typically holds 10–20 points, so −10 roughly doubles the reward for closing without making it the only viable strategy. |
+| 25 | About one bad hand. Chasing the close becomes almost always correct. |
+| 50 | The value of a comodín. Over seven rondas that is a 350-point swing — it would decide partidas on its own. |
+
+#### Winning the partida
+
+Scores accumulate across every ronda played. When the last enabled contract is
+finished, **the lowest cumulative total wins**. There is no elimination and no
+score ceiling that ends a partida early.
+
 ### The player groups, the engine validates
 
 With six sevens in hand, `7 7 7 7 7 7` may be laid down as **one** trío of six or
@@ -357,9 +400,5 @@ but no attempt is made to model them yet.
 
 ### Everything else
 
-- Comodines: point value, and whether a laid comodín can be swapped out by the
-  card it stands for.
-- Whether a player may add to **their own** grupos on the turn they bajaron.
-- Scoring: the point value of each card, and whether going out earns a bonus.
-- Win condition.
+- Tie-breaking, if two players finish with the same total.
 - Which contracts are enabled by default.
