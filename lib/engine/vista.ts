@@ -15,6 +15,7 @@
 import { type Card } from './cards'
 import { type Contrato } from './contratos'
 import { type Grupo } from './grupos'
+import type { Marcador, PartidaConfig, PartidaState } from './partida'
 import {
   type Move,
   type MoveErrorCode,
@@ -71,6 +72,45 @@ export function vistaDeAsiento(
     numeroDeTurno: state.numeroDeTurno,
     fase: state.fase,
     ganador: state.ganador,
+  }
+}
+
+/**
+ * A whole partida as one seat may see it: the ronda in play reduced to that
+ * seat's view, and everything above the ronda — the scoreboard, the totals,
+ * which contract we are on — which was always public.
+ *
+ * This is the payload the server sends each player (Phase 34). It is
+ * `PartidaState` with exactly one field replaced, so the client can render
+ * the table and the marcador from it and nothing else.
+ */
+export type VistaDePartida = {
+  readonly asiento: number
+  readonly config: PartidaConfig
+  readonly players: number
+  readonly seed: string
+  readonly indiceContrato: number
+  /** Null once every contract has been played. */
+  readonly ronda: VistaDeAsiento | null
+  readonly historial: readonly Marcador[]
+  readonly totales: readonly number[]
+  readonly ganadores: readonly number[] | null
+}
+
+export function vistaDePartida(
+  state: PartidaState,
+  asiento: number,
+): VistaDePartida {
+  return {
+    asiento,
+    config: state.config,
+    players: state.players,
+    seed: state.seed,
+    indiceContrato: state.indiceContrato,
+    ronda: state.ronda ? vistaDeAsiento(state.ronda, asiento) : null,
+    historial: state.historial,
+    totales: state.totales,
+    ganadores: state.ganadores,
   }
 }
 

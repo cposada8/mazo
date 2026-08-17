@@ -122,7 +122,8 @@ export function Juego({
     )
   }
 
-  if (!ronda) {
+  // The view is derived from the ronda, so they are absent together.
+  if (!ronda || !juego.vista) {
     return (
       <FinDePartida
         partida={partida}
@@ -150,7 +151,7 @@ export function Juego({
         )}
       >
         <Mesa
-          state={ronda}
+          state={juego.vista}
           asiento={TU_ASIENTO}
           nombres={nombresEnMesa}
           reloj={juego.reloj}

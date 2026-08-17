@@ -23,6 +23,7 @@ import {
   isComodin,
   puntosDeMano,
   startPartida,
+  vistaDeAsiento,
 } from '@/lib/engine'
 import { type Relato, type Viaje, relatar } from '@/lib/relato'
 
@@ -506,9 +507,21 @@ export function usePartida(options: {
     return trios === ronda.contrato.trios && escalas === ronda.contrato.escalas
   }, [ronda, propuestasVigentes])
 
+  /**
+   * What your seat may see, which is what the table draws from (Phase 34).
+   * Built here from the state this browser happens to hold; a remote partida
+   * receives the identical shape off the wire, so the table cannot tell —
+   * and cannot be handed a card it has no right to.
+   */
+  const vista = useMemo(
+    () => (ronda ? vistaDeAsiento(ronda, TU_ASIENTO) : null),
+    [ronda],
+  )
+
   return {
     partida,
     ronda,
+    vista,
     resumen,
     /** For the draining ring: how long a bot turn lasts, and its start line. */
     reloj: { segundos: segundosBot, clave: claveDeTurno },

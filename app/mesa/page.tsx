@@ -185,7 +185,10 @@ export default function MesaPage() {
         // The table is landscape by design, so here it gets a landscape box
         // rather than the page's column. This page is a viewer, not a game.
         <div className="aspect-[16/10] min-h-[19rem] w-full overflow-hidden rounded-lg border">
-          <Mesa state={ronda} asiento={Math.min(asiento, jugadores - 1)} />
+          <Mesa
+            state={vistaDeAsiento(ronda, Math.min(asiento, jugadores - 1))}
+            asiento={Math.min(asiento, jugadores - 1)}
+          />
         </div>
       ) : (
         <p className="text-muted-foreground text-sm">No hay ronda que mostrar.</p>

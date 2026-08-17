@@ -1,5 +1,5 @@
 /**
- * The table, drawn from a RondaState.
+ * The table, drawn from one seat's view of the ronda.
  *
  * Everything here draws a state and never changes one. Interaction is optional
  * and arrives entirely through callbacks: pass `onRobar`, `onCarta` and
@@ -30,8 +30,8 @@ import { asientosRivales } from '@/lib/asientos'
 import {
   type Escala,
   type Grupo,
-  type JugadorState,
-  type RondaState,
+  type VistaDeAsiento,
+  type VistaJugador,
   escalaRankAt,
   isComodin,
 } from '@/lib/engine'
@@ -126,7 +126,7 @@ export function Asiento({
   reloj,
   seat,
 }: {
-  jugador: JugadorState
+  jugador: VistaJugador
   nombre: string
   esSuTurno: boolean
   /** Percent of the seat band. `y` anchors the seat's top edge. */
@@ -145,9 +145,12 @@ export function Asiento({
     >
       {/* The fan: sized by font so the backs and their overlap scale together. */}
       <div className="flex items-end justify-center text-[clamp(0.7rem,5cqh,1.1rem)]">
-        {jugador.hand.map((card) => (
+        {/* Backs, so a card count is something you see rather than read. The
+            fan is drawn from the number alone: an opponent's cards are not
+            ours to hold, and since Phase 34 they never arrive. */}
+        {Array.from({ length: jugador.cartas }, (_, i) => (
           <CartaBocaAbajo
-            key={card.id}
+            key={i}
             className="-ml-[0.55em] h-[1em] w-[0.72em] rounded-[2px] border-0 shadow-none ring-1 ring-black/60 first:ml-0"
           />
         ))}
@@ -202,7 +205,7 @@ export function Asiento({
         {nombre}
         <span className="text-stone-400">
           {' '}
-          · {jugador.hand.length}
+          · {jugador.cartas}
           {jugador.bajadoEnTurno !== null && ' · bajado'}
         </span>
       </span>
@@ -223,13 +226,13 @@ export function Pilas({
   onRobar,
   onVerDescarte,
 }: {
-  state: RondaState
+  state: VistaDeAsiento
   /** When given, both piles become buttons for drawing. */
   onRobar?: (de: 'stock' | 'descarte') => void
   /** When given, the descarte wears a tappable chip that opens the pile. */
   onVerDescarte?: () => void
 }) {
-  const arriba = state.discard.at(-1)
+  const arriba = state.descarte.at(-1)
   const activo = Boolean(onRobar)
   const estiloPila = activo ? 'ring-2 ring-stone-100/80 ring-offset-2 ring-offset-stone-950' : ''
   const chip =
@@ -245,7 +248,7 @@ export function Pilas({
         className="relative cursor-default enabled:cursor-pointer"
       >
         <CartaBocaAbajo size="sm" className={estiloPila} />
-        <span className={chip}>{state.stock.length}</span>
+        <span className={chip}>{state.stock}</span>
       </button>
 
       {/* The chip is a sibling, not a child: tapping the card draws, tapping
@@ -263,7 +266,7 @@ export function Pilas({
             <div className="aspect-[8/11] h-[var(--carta-sm,3.5rem)] rounded-md border border-dashed border-stone-500/40" />
           )}
         </button>
-        {onVerDescarte && state.discard.length > 0 && (
+        {onVerDescarte && state.descarte.length > 0 && (
           <button
             type="button"
             onClick={onVerDescarte}
@@ -271,7 +274,7 @@ export function Pilas({
             title="Ver todas las cartas del descarte"
             className={cn(chip, 'hover:bg-stone-700')}
           >
-            {state.discard.length}
+            {state.descarte.length}
           </button>
         )}
       </div>
@@ -525,7 +528,7 @@ export function Mesa({
   seleccionadas,
   resaltada,
 }: {
-  state: RondaState
+  state: VistaDeAsiento
   /** The seat whose hand is shown face up. */
   asiento: number
   nombres?: readonly string[]
@@ -554,7 +557,6 @@ export function Mesa({
   onVerHistorial?: () => void
 } & MesaInteractiva) {
   const nombreDe = (seat: number) => nombres?.[seat] ?? nombrePorDefecto(seat)
-  const tu = state.jugadores[asiento]
   const esTuTurno = state.turno === asiento && state.ganador === null
 
   const rivales = asientosRivales(state.jugadores.length, asiento)
@@ -661,7 +663,7 @@ export function Mesa({
           <Mano
             cabecera={sobreLaMano}
             secciones={
-              secciones ?? [{ id: 'sueltas', cards: [...tu.hand], bloqueada: false }]
+              secciones ?? [{ id: 'sueltas', cards: [...state.mano], bloqueada: false }]
             }
             puntos={puntos}
             seleccionadas={seleccionadas}
