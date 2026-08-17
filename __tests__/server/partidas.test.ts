@@ -155,3 +155,130 @@ describe('who may see a hand', () => {
     expect(await servidor.vistaParaSecreto(partida.id, 'secreto-equivocado')).toBeNull()
   })
 })
+
+describe('the lobby is the host’s', () => {
+  it('adds and removes bots, and renumbers so no seat index is skipped', async () => {
+    const partida = await crear()
+    await servidor.unirse({ codigo: partida.codigo, secreto: 's-invitada', alias: 'lisa' })
+
+    const conBot = await servidor.agregarBot({
+      codigo: partida.codigo,
+      secreto: SECRETO_HOST,
+    })
+    expect(conBot.ok && conBot.partida.asientos).toHaveLength(6)
+
+    // Remove the first bot: everyone after it slides down one, so the seats
+    // stay 0…n−1 — the engine deals by index, and a gap is a seat nobody sits in.
+    const sinBot = await servidor.quitarAsiento({
+      codigo: partida.codigo,
+      secreto: SECRETO_HOST,
+      indice: 1,
+    })
+    expect(sinBot.ok).toBe(true)
+    if (!sinBot.ok) return
+    expect(sinBot.partida.asientos.map((a) => a.indice)).toEqual([0, 1, 2, 3, 4])
+    expect(sinBot.partida.asientos.find((a) => a.alias === 'lisa')?.indice).toBe(3)
+  })
+
+  it('refuses a non-host, and refuses removing a person', async () => {
+    const partida = await crear()
+    await servidor.unirse({ codigo: partida.codigo, secreto: 's-otra', alias: 'dofi' })
+
+    expect(
+      await servidor.agregarBot({ codigo: partida.codigo, secreto: 's-otra' }),
+    ).toEqual({ ok: false, code: 'NO_ERES_EL_HOST' })
+
+    const humana = await servidor.quitarAsiento({
+      codigo: partida.codigo,
+      secreto: SECRETO_HOST,
+      indice: 4,
+    })
+    expect(humana).toEqual({ ok: false, code: 'NO_SE_PUEDE_QUITAR' })
+  })
+
+  it('never shrinks the table below two', async () => {
+    const partida = await crear()
+    for (const indice of [1, 1]) {
+      await servidor.quitarAsiento({ codigo: partida.codigo, secreto: SECRETO_HOST, indice })
+    }
+    const ultimo = await servidor.quitarAsiento({
+      codigo: partida.codigo,
+      secreto: SECRETO_HOST,
+      indice: 1,
+    })
+    expect(ultimo).toEqual({ ok: false, code: 'MESA_MUY_CHICA' })
+  })
+
+  it('keeps the settings the host chose, and deals them', async () => {
+    const partida = await crear()
+    const dosContratos = {
+      ...CONFIG_POR_DEFECTO,
+      contratos: CONFIG_POR_DEFECTO.contratos.slice(0, 2),
+      comodines: false,
+    }
+
+    await servidor.actualizarAjustes({
+      codigo: partida.codigo,
+      secreto: SECRETO_HOST,
+      config: dosContratos,
+      segundosPorTurno: 90,
+      verDescarte: false,
+    })
+
+    const repartida = await servidor.empezar({
+      codigo: partida.codigo,
+      secreto: SECRETO_HOST,
+      seed: 'del-lobby',
+    })
+    expect(repartida.ok).toBe(true)
+    if (!repartida.ok) return
+
+    const { partida: viva } = repartida
+    expect(viva.fase).toBe('jugando')
+    expect(viva.segundosPorTurno).toBe(90)
+    expect(viva.verDescarte).toBe(false)
+    expect(viva.estado?.config.contratos).toHaveLength(2)
+    expect(viva.estado?.seed).toBe('del-lobby')
+    // Four seats dealt, because four were sitting when it was dealt.
+    expect(viva.estado?.ronda?.jugadores).toHaveLength(4)
+  })
+
+  it('the lobby is shut once it has been dealt', async () => {
+    const partida = await crear()
+    await servidor.empezar({ codigo: partida.codigo, secreto: SECRETO_HOST, seed: 'x' })
+
+    expect(
+      await servidor.agregarBot({ codigo: partida.codigo, secreto: SECRETO_HOST }),
+    ).toEqual({ ok: false, code: 'YA_EMPEZO' })
+  })
+
+  it('renaming touches your own seat and nobody else’s', async () => {
+    const partida = await crear()
+    await servidor.unirse({ codigo: partida.codigo, secreto: 's-kim', alias: 'kimberlytriny' })
+
+    const renombrada = await servidor.renombrarAsiento({
+      codigo: partida.codigo,
+      secreto: 's-kim',
+      alias: 'kim',
+    })
+    expect(renombrada.ok).toBe(true)
+    if (!renombrada.ok) return
+    expect(renombrada.partida.asientos[4].alias).toBe('kim')
+    expect(renombrada.partida.asientos[0].alias).toBe('milo')
+  })
+
+  it('two people cannot wear the same alias at one table', async () => {
+    const partida = await crear()
+    const segunda = await servidor.unirse({
+      codigo: partida.codigo,
+      secreto: 's-milo-2',
+      alias: 'milo',
+    })
+    expect(segunda.ok).toBe(true)
+
+    const cargada = await servidor.cargarPorCodigo(partida.codigo)
+    const aliases = cargada!.asientos.map((a) => a.alias)
+    expect(new Set(aliases).size).toBe(aliases.length)
+    expect(aliases).toContain('milo 2')
+  })
+})

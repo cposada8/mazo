@@ -3,6 +3,7 @@ import { join } from "node:path";
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import { ProveedorDeConsultas } from "@/components/consultas";
 import { ProveedorDeIdentidad } from "@/components/identidad";
 import { ProveedorDeTema, SelectorDeTema } from "@/components/tema";
 import { parsearAlias } from "@/lib/alias";
@@ -59,12 +60,14 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     >
       <body className="min-h-full flex flex-col">
         <ProveedorDeTema>
-          <ProveedorDeIdentidad aliases={leerAliases()}>
-            <div className="mx-auto flex w-full max-w-3xl justify-end px-4 pt-3">
-              <SelectorDeTema />
-            </div>
-            {children}
-          </ProveedorDeIdentidad>
+          <ProveedorDeConsultas>
+            <ProveedorDeIdentidad aliases={leerAliases()}>
+              <div className="mx-auto flex w-full max-w-3xl justify-end px-4 pt-3">
+                <SelectorDeTema />
+              </div>
+              {children}
+            </ProveedorDeIdentidad>
+          </ProveedorDeConsultas>
         </ProveedorDeTema>
       </body>
     </html>

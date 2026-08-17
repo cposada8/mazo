@@ -1064,7 +1064,7 @@ knowing: Prisma 7 moved the connection URL out of the schema into
 still needs a Turso database and its two env vars — provision when Phase
 33's lobby first deploys. 428 tests.
 
-### Phase 33 — One door
+### Phase 33 — One door ✅
 The home screen becomes the whole way in, and there is nothing behind it but
 partidas: **create one** — you become the host, a **short code** is dealt,
 and the table starts with **three bots already seated**, a table of four by
@@ -1090,6 +1090,30 @@ server for anything.
 code and three bots and the host prunes them; three devices sit in the same
 lobby under their own aliases and reclaim their seats after a reload; and a
 host alone with bots presses start and plays a full partida.
+
+**Done.** `components/puerta.tsx` on the home page, `/partida/[codigo]` for
+the lobby and the table, three route handlers, and `lib/lobby.ts` holding
+the wire types both sides share so they cannot drift. Verified in a browser:
+create → code `W2W6P` with three bots → Repartir → a full ronda played, bots
+bajándose, aliases on the seats.
+
+Four things worth keeping:
+
+- **Sitting down needs no button.** Arriving with a code *is* asking for a
+  seat, so the lobby joins you on the first poll that says you have none.
+- **Removing a bot renumbers the table.** The engine deals by seat index, so
+  a hole at index 1 would be a seat nobody sits in. Tested explicitly.
+- **The old setup screen was absorbed, not copied** — contracts, comodines,
+  clocks, and the two memory aids from Phase 24, which moved into the
+  partida row so they survive `/jugar` retiring in Phase 34.
+- **Reload already resumes a dealt partida**, ahead of schedule: the state
+  is on the server and the deal is deterministic from its seed, so the
+  local table rebuilds precisely what was stored. That is Phase 34's
+  groundwork arriving for free.
+
+One deliberate stop: starting with more than one human is refused with a
+note, because the transport is Phases 34–35. The button is there; the
+server behind it is next.
 
 ### Phase 34 — The partida lives on the server
 The thin slice that proves the architecture with the least new truth: **one

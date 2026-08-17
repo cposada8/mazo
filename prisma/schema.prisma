@@ -29,6 +29,10 @@ model Partida {
   segundosPorTurno Int @default(45)
   /// Seconds a bot thinks per turn.
   segundosBot      Int @default(2)
+  /// Memory aids (Phase 24), a table rule rather than a personal comfort:
+  /// may the descarte be browsed, and may the ronda's story be reread.
+  verDescarte  Boolean @default(true)
+  verHistorial Boolean @default(true)
   creadaEn      DateTime @default(now())
   actualizadaEn DateTime @updatedAt
   asientos      Asiento[]

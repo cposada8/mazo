@@ -1,6 +1,6 @@
 # Project status — pick up here
 
-Last updated after Phase 32.
+Last updated after Phase 33.
 
 Read this first, then `mission.md` for the why, `carioca-rules.md` for the game,
 `tech-stack.md` for the stack, and `roadmap.md` for what comes next. This file is
@@ -59,8 +59,8 @@ empty seats), and the better bots moved behind it as Milestone 4.
 | 30 | The seat's view | ✅ |
 | 31 | A ronda that always ends: tablas | ✅ |
 | 32 | Who you are: identity, alias from a file, persistence | ✅ |
-| 33 | One door: create (host, 3 bots default) or join by code | ← **next** |
-| 34 | The partida lives on the server | not started |
+| 33 | One door: create (host, 3 bots default) or join by code | ✅ |
+| 34 | The partida lives on the server | ← **next** |
 | 35 | Several people at one table | not started |
 | 36 | The player's clock | not started |
 | 37 | Absences: reconnection, the empty chair | not started |
@@ -227,8 +227,17 @@ solo table. Partidas rest in SQLite through Prisma 7 + libSQL
 null, never a hand. **Production needs a Turso database and its env vars
 (`DATABASE_URL`, `DATABASE_AUTH_TOKEN`) before the lobby deploys.**
 
-**Phase 33 is next — one door:** create a partida (host, short code,
-three bots) or join by code; the lobby, polled with TanStack Query.
+**Phase 33 is done: one door.** The home page is the way in — create a
+partida (you host; a short code is dealt; three bots sit down) or join by
+code. `/partida/[codigo]` is the lobby and then the table; three route
+handlers under `/api/partidas` serve it, and `lib/lobby.ts` holds the wire
+types both sides share. The old `/jugar` setup screen was absorbed into the
+host's lobby. A bots-only table plays locally from the server's deal, per
+the two-homes rule, and reloading the URL already resumes it.
+
+**Phase 34 is next — the partida lives on the server:** moves submitted as
+requests, `apply()` refereeing server-side, each client receiving only its
+Phase 30 view, bots advanced lazily, and `/jugar` retiring at parity.
 
 ## Open questions, deliberately unanswered
 

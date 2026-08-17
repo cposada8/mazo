@@ -45,6 +45,7 @@ export function Juego({
   verHistorial,
   cartasOscuras: cartasOscurasInicial,
   galeriaDeComodines,
+  nombresDeAsientos,
   onSalir,
 }: {
   jugadores: number
@@ -61,6 +62,12 @@ export function Juego({
   cartasOscuras: boolean
   /** Images the comodines can wear, dealt fresh each ronda. May be empty. */
   galeriaDeComodines: readonly string[]
+  /**
+   * Who is in each seat, by index — the lobby's aliases (Phase 33). Without
+   * it the table falls back to «Jugador n», which is what a partida with no
+   * lobby behind it still gets.
+   */
+  nombresDeAsientos?: readonly string[]
   onSalir: () => void
 }) {
   const config = useMemo(
@@ -73,6 +80,10 @@ export function Juego({
   const [cartasOscuras, setCartasOscuras] = useState(cartasOscurasInicial)
   const juego = usePartida({ jugadores, seed, config, segundosBot })
   const { identidad } = useIdentidad()
+  const nombresEnMesa = useMemo(
+    () => nombres(jugadores, identidad?.alias, nombresDeAsientos),
+    [jugadores, identidad?.alias, nombresDeAsientos],
+  )
   const [verMenu, setVerMenu] = useState(false)
   const [verPila, setVerPila] = useState(false)
   const [verHistoria, setVerHistoria] = useState(false)
@@ -103,7 +114,7 @@ export function Juego({
       <FinDeRonda
         partida={partida}
         resumen={resumen}
-        nombres={nombres(jugadores, identidad?.alias)}
+        nombres={nombresEnMesa}
         seAcabo={juego.seAcabo}
         onSiguiente={juego.siguiente}
         onSalir={onSalir}
@@ -115,7 +126,7 @@ export function Juego({
     return (
       <FinDePartida
         partida={partida}
-        nombres={nombres(jugadores, identidad?.alias)}
+        nombres={nombresEnMesa}
         seed={seed}
         onOtra={onSalir}
       />
@@ -141,11 +152,11 @@ export function Juego({
         <Mesa
           state={ronda}
           asiento={TU_ASIENTO}
-          nombres={nombres(jugadores, identidad?.alias)}
+          nombres={nombresEnMesa}
           reloj={juego.reloj}
           relatoLinea={
             juego.relato
-              ? contarRelato(juego.relato, nombres(jugadores, identidad?.alias), TU_ASIENTO)
+              ? contarRelato(juego.relato, nombresEnMesa, TU_ASIENTO)
               : undefined
           }
           viaje={juego.viaje}
@@ -166,6 +177,7 @@ export function Juego({
                   esperando={esperando}
                   fase={ronda.fase}
                   turno={ronda.turno}
+                  nombres={nombresEnMesa}
                   yaBajado={juego.yaBajado}
                   mesaAbierta={juego.mesaAbierta}
                 />
@@ -200,7 +212,7 @@ export function Juego({
           <MenuDePartida
             partida={partida}
             contrato={ronda.contrato.nombre}
-            nombres={nombres(jugadores, identidad?.alias)}
+            nombres={nombresEnMesa}
             seed={seed}
             segundosBot={segundosBot}
             onSegundosBot={setSegundosBot}
@@ -221,7 +233,7 @@ export function Juego({
         {verHistoria && (
           <HistorialDeRonda
             historia={juego.historia}
-            nombres={nombres(jugadores, identidad?.alias)}
+            nombres={nombresEnMesa}
             onCerrar={() => setVerHistoria(false)}
           />
         )}
@@ -501,6 +513,7 @@ function Instruccion({
   esperando,
   fase,
   turno,
+  nombres,
   yaBajado,
   mesaAbierta,
 }: {
@@ -508,13 +521,15 @@ function Instruccion({
   esperando: boolean
   fase: 'draw' | 'act'
   turno: number
+  nombres: readonly string[]
   yaBajado: boolean
   mesaAbierta: boolean
 }) {
   if (!esTuTurno) {
+    const quien = nombres[turno] ?? nombrePorDefecto(turno)
     return (
       <span className="text-muted-foreground">
-        {esperando ? `Juega ${nombrePorDefecto(turno)}…` : 'Esperando…'}
+        {esperando ? `Juega ${quien}…` : 'Esperando…'}
       </span>
     )
   }
@@ -800,10 +815,20 @@ function FinDePartida({
   )
 }
 
-/** Seat 0 is you, greeted by your alias once the identity has loaded. */
-const nombres = (jugadores: number, tu?: string | null): string[] =>
+/**
+ * Who to call each seat. The lobby's aliases when there is a lobby; your own
+ * alias for your seat, which the lobby also knows but which survives a table
+ * dealt without one.
+ */
+const nombres = (
+  jugadores: number,
+  tu?: string | null,
+  deAsientos?: readonly string[],
+): string[] =>
   Array.from({ length: jugadores }, (_, seat) =>
-    seat === TU_ASIENTO ? (tu ?? 'Tú') : nombrePorDefecto(seat),
+    seat === TU_ASIENTO
+      ? (tu ?? deAsientos?.[seat] ?? 'Tú')
+      : (deAsientos?.[seat] ?? nombrePorDefecto(seat)),
   )
 
 function cartasDe(propuesta: Propuesta, hand: readonly Card[]): Card[] {
