@@ -21,11 +21,13 @@ implement the game from it without asking a question.
 **Done.** Contracts 1–8 are fully specified. The escalera contracts (9+) are
 deferred by decision, not by omission.
 
-### Phase 1 — Project skeleton
+### Phase 1 — Project skeleton ✅
 Scaffold Next.js 16 + TypeScript + Tailwind v4 + shadcn + Vitest. One page that
 says the game's name. Deploy it to Vercel.
 **Done when:** the deployed URL opens on a phone, and `npm test` runs green with
 one trivial test.
+
+**Done.** Live at **https://mazo-six.vercel.app**. Build and tests green.
 
 ### Phase 2 — Cards and the mazo
 Card representation with per-instance ids (there are two of every card), the
