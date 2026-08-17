@@ -34,8 +34,13 @@ export type Ajustes = {
 /** Remembered across partidas: which deck you like holding rarely changes. */
 const CLAVE_BARAJA = 'mazo:cartas-oscuras'
 
+/** Remember the deck across partidas — from setup and from mid-game ajustes. */
+export function recordarBaraja(oscuras: boolean) {
+  localStorage.setItem(CLAVE_BARAJA, oscuras ? 'si' : 'no')
+}
+
 /** Whole-turn thinking times on offer. Two is the pace of a real table. */
-const SEGUNDOS = [1, 2, 3, 5] as const
+export const SEGUNDOS = [1, 2, 3, 5] as const
 
 /**
  * Everything chosen before the first card is dealt.
@@ -71,7 +76,7 @@ export function Inicio({
   )
 
   const escogerBaraja = (oscuras: boolean) => {
-    localStorage.setItem(CLAVE_BARAJA, oscuras ? 'si' : 'no')
+    recordarBaraja(oscuras)
     setCartasOscuras(oscuras)
   }
   const [encendidos, setEncendidos] = useState<readonly string[]>(
@@ -396,7 +401,7 @@ export function Inicio({
 }
 
 /** One deck on offer, with a miniature of the card face it stands for. */
-function BotonDeBaraja({
+export function BotonDeBaraja({
   nombre,
   activo,
   onClick,

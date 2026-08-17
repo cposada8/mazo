@@ -29,6 +29,7 @@ import {
   type PartidaState,
   type Propuesta,
 } from '@/lib/engine'
+import { BotonDeBaraja, SEGUNDOS, recordarBaraja } from './inicio'
 import { TU_ASIENTO, usePartida } from './usePartida'
 
 export function Juego({
@@ -36,10 +37,10 @@ export function Juego({
   seed,
   contratos,
   comodines,
-  segundosBot,
+  segundosBot: segundosBotInicial,
   verDescarte,
   verHistorial,
-  cartasOscuras,
+  cartasOscuras: cartasOscurasInicial,
   onSalir,
 }: {
   jugadores: number
@@ -60,10 +61,19 @@ export function Juego({
     () => ({ ...CONFIG_POR_DEFECTO, contratos, comodines }),
     [contratos, comodines],
   )
+  // Pacing and paint, not rules (Phase 28): both can be changed mid-partida
+  // from the menu, so the setup screen only says where they start.
+  const [segundosBot, setSegundosBot] = useState(segundosBotInicial)
+  const [cartasOscuras, setCartasOscuras] = useState(cartasOscurasInicial)
   const juego = usePartida({ jugadores, seed, config, segundosBot })
   const [verMenu, setVerMenu] = useState(false)
   const [verPila, setVerPila] = useState(false)
   const [verHistoria, setVerHistoria] = useState(false)
+
+  const escogerBaraja = (oscuras: boolean) => {
+    recordarBaraja(oscuras)
+    setCartasOscuras(oscuras)
+  }
 
   const { partida, ronda, esTuTurno, esperando, aviso, resumen } = juego
 
@@ -172,6 +182,10 @@ export function Juego({
             contrato={ronda.contrato.nombre}
             nombres={nombres(jugadores)}
             seed={seed}
+            segundosBot={segundosBot}
+            onSegundosBot={setSegundosBot}
+            cartasOscuras={cartasOscuras}
+            onCartasOscuras={escogerBaraja}
             onCerrar={() => setVerMenu(false)}
             onSalir={onSalir}
           />
@@ -198,14 +212,23 @@ export function Juego({
 
 /**
  * Everything about the partida that is not the next move: the contract being
- * played, the marcador, the seed, leaving, and the screen itself. It opens
- * over the table and holds nothing that is needed mid-turn.
+ * played, the marcador, the ajustes, the seed, leaving, and the screen
+ * itself. It opens over the table and holds nothing that is needed mid-turn.
+ *
+ * The ajustes here are pacing and paint — the bots' thinking time and the
+ * card finish — and take effect on the very next turn. What *is* a rule —
+ * comodines, the contract list, the seed — is visible but not editable: a
+ * partida's identity does not change mid-game.
  */
 function MenuDePartida({
   partida,
   contrato,
   nombres,
   seed,
+  segundosBot,
+  onSegundosBot,
+  cartasOscuras,
+  onCartasOscuras,
   onCerrar,
   onSalir,
 }: {
@@ -213,6 +236,10 @@ function MenuDePartida({
   contrato: string
   nombres: readonly string[]
   seed: string
+  segundosBot: number
+  onSegundosBot: (segundos: number) => void
+  cartasOscuras: boolean
+  onCartasOscuras: (oscuras: boolean) => void
   onCerrar: () => void
   onSalir: () => void
 }) {
@@ -222,9 +249,53 @@ function MenuDePartida({
     <div className="absolute inset-0 z-30 flex items-center justify-center bg-black/50 p-4">
       <div className="bg-background max-h-full w-full max-w-md overflow-y-auto rounded-lg border p-4">
         <p className="text-muted-foreground mb-2 text-xs tracking-wide uppercase">
-          {contrato}
+          {contrato} ·{' '}
+          {partida.config.comodines ? 'con comodines' : 'sin comodines'}
         </p>
         <Marcador partida={partida} nombres={nombres} />
+
+        <div className="mt-4 flex flex-col gap-2">
+          <p className="text-muted-foreground text-xs tracking-wide uppercase">
+            Cuánto piensa un bot
+          </p>
+          <div className="grid grid-cols-4 gap-2">
+            {SEGUNDOS.map((s) => (
+              <button
+                key={s}
+                type="button"
+                onClick={() => onSegundosBot(s)}
+                aria-pressed={segundosBot === s}
+                className={`rounded-md border py-2 text-sm tabular-nums transition-colors ${
+                  segundosBot === s
+                    ? 'bg-foreground text-background border-transparent'
+                    : 'bg-card hover:bg-accent'
+                }`}
+              >
+                {s} s
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="mt-3 flex flex-col gap-2">
+          <p className="text-muted-foreground text-xs tracking-wide uppercase">
+            La baraja
+          </p>
+          <div className="grid grid-cols-2 gap-2">
+            <BotonDeBaraja
+              nombre="Claras"
+              activo={!cartasOscuras}
+              onClick={() => onCartasOscuras(false)}
+              carta="border-stone-300 bg-stone-50 text-stone-900"
+            />
+            <BotonDeBaraja
+              nombre="Oscuras"
+              activo={cartasOscuras}
+              onClick={() => onCartasOscuras(true)}
+              carta="border-stone-600 bg-stone-900 text-stone-50"
+            />
+          </div>
+        </div>
 
         <div className="mt-3 flex items-center justify-between gap-3">
           <span className="text-muted-foreground font-mono text-xs">{seed}</span>

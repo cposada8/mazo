@@ -303,6 +303,28 @@ describe('the bots', () => {
     })
     expect(result.current.ronda!.fase).toBe('draw')
   })
+
+  it('adopt a new thinking time mid-partida, on the turn in progress', async () => {
+    const { result, rerender } = renderHook(
+      ({ segundosBot }) =>
+        usePartida({ jugadores: 2, seed: 'ritmo', config: soloDosTrios, segundosBot }),
+      { initialProps: { segundosBot: 600 } },
+    )
+
+    act(() => result.current.robar('stock'))
+    act(() => result.current.alternarCarta(result.current.disponibles[0].id))
+    act(() => result.current.descartar())
+    expect(result.current.esTuTurno).toBe(false)
+
+    // At 600 seconds the bot's first move would land in minutes. Dropping the
+    // time reschedules the turn already in progress — the change is
+    // immediate, not saved up for the next partida.
+    rerender({ segundosBot: 0.05 })
+
+    await waitFor(() => expect(result.current.esTuTurno).toBe(true), {
+      timeout: 5000,
+    })
+  })
 })
 
 describe('the end of a ronda', () => {

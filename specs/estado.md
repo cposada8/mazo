@@ -1,6 +1,6 @@
 # Project status — pick up here
 
-Last updated after Phase 25, and the roadmap update that added Phases 26–28.
+Last updated after Phase 28.
 
 Read this first, then `mission.md` for the why, `carioca-rules.md` for the game,
 `tech-stack.md` for the stack, and `roadmap.md` for what comes next. This file is
@@ -14,7 +14,7 @@ doc is worse than none.
 
 ## Where things stand
 
-Phases 0–25 are done. **Carioca is playable, and looks like a card table.**
+Phases 0–28 are done. **Carioca is playable, and looks like a card table.**
 Open `/jugar` on a phone — held either way — and play a full partida against
 bots: draw, lay down, unload onto anyone's grupos, discard, and see the
 scoreboard at the end.
@@ -53,8 +53,9 @@ table.
 | 25 | Cards with corners | ✅ |
 | 26 | Going out by ligando | ✅ |
 | 27 | Sin comodines, and the flipped defaults | ✅ |
-| 28 | Ajustes from inside the partida | ← **next** |
-| 29–31 | Bot framework and personalities | not started |
+| 28 | Ajustes from inside the partida | ✅ |
+| 29 | Bot framework | ← **next** |
+| 30–31 | Bot personalities, rough edges | not started |
 | 32–35 | Online: persistence, rooms, server play, real-time | not started |
 
 **The table now holds up on a real phone, held either way.** The lanes built
@@ -73,11 +74,12 @@ somebody goes out the game pauses on a who-won screen and deals the next
 reparto only on «Siguiente reparto». The pause lives in `usePartida`; the
 engine still closes and deals in one move.
 
-**What goes next came from the owner's latest games** (Phases 26–28): a hand
-emptied by ligar must win instead of freezing the game, the setup screen
-gains a sin-comodines option and flips its defaults — cartas oscuras, no
-fullscreen — and the bots' thinking time and the card finish become
-changeable from inside the partida.
+**The second list from the table is done** (Phases 26–28): an empty hand now
+wins however it was emptied — a ligada that empties the hand closes the ronda
+instead of freezing the game — the setup screen offers sin comodines and
+defaults to cartas oscuras with fullscreen off, and the bots' thinking time
+and the card finish are editable from the in-game menu, effective on the very
+next turn.
 
 - **Repo:** https://github.com/cposada8/mazo
 - **Live:** https://mazo-six.vercel.app — `/mesa` steps through a bot partida,
@@ -86,7 +88,7 @@ changeable from inside the partida.
   public, no login.
 - **Deploys:** work goes to `dev`, which builds by itself. Production changes
   only by merging `dev` into `main`. Nothing else deploys `main`.
-- **Tests:** 383, all green (the run takes ~17s, mostly the soak). `npm run test:run`, `npx tsc --noEmit`, `npm run lint`.
+- **Tests:** 390, all green (the run takes ~17s, mostly the soak). `npm run test:run`, `npx tsc --noEmit`, `npm run lint`.
 
 ## What exists
 
@@ -166,22 +168,6 @@ across rondas — an arrangement, a selection, a hint — will keep matching aft
 the cards are gone and has to be dropped when the ronda changes.
 
 ## What comes next
-
-**Phase 26 — going out by ligando.** Found at the table, and it froze the
-game: every card ligada, the hand empty, and no discard left to end the turn —
-going out was defined as botar the last card, so the state had no exit. The
-rule, settled with the owner: **an empty hand wins, however it was emptied.**
-Into `carioca-rules.md` first, then `apply()` closes the ronda after a ligada
-that empties the hand, with the freeze the owner hit as the test.
-
-**Phase 27 — sin comodines, and the flipped defaults.** The setup screen
-offers playing without comodines — on by default, and the engine has had the
-toggle since Phase 2 — and a fresh browser now gets cartas oscuras and no
-fullscreen. Both defaults stay remembered per browser once changed.
-
-**Phase 28 — ajustes from inside the partida.** The bots' thinking time and
-claras/oscuras become editable from the in-game menu, effective the very next
-turn. What is a rule — comodines, contracts, seed — stays read-only there.
 
 **Phase 29 — the bot framework.** The step that makes difficulty levels
 possible, and the one online play needs anyway.

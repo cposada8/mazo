@@ -819,7 +819,7 @@ grupo of any state. The comodines choice is deliberately **not** remembered
 from the standard game. The two flipped defaults only rewrote what an empty
 localStorage means — anyone who already chose keeps their choice.
 
-### Phase 28 — Ajustes from inside the partida
+### Phase 28 — Ajustes from inside the partida ✅
 The bots' thinking time and the card finish are chosen on the setup screen
 and then locked for the whole partida — but neither is a rule. One is pacing,
 the other is paint, and wanting them different is something you discover
@@ -835,6 +835,17 @@ editable, because a partida's identity does not change mid-game.
 **Done when:** the thinking time and the card finish can both be changed
 without leaving the table, the change shows on the next turn, and nothing
 that affects legality can be touched from the same panel.
+
+**Done.** The thinking time and the baraja moved from partida props to state
+inside `Juego`, so the setup screen only says where they start; the menu
+overlay edits them with the same controls setup uses (exported, not
+duplicated). Better than promised on immediacy: the bot scheduler already
+depended on `segundosBot`, so a change replans the turn *in progress* — a
+test drops a 600-second bot to 0.05 mid-turn and watches it finish. A baraja
+change also writes the browser preference, so the next partida deals the
+finish you switched to. The rules stay untouchable; the menu now also names
+the partida's comodines setting alongside the contract, since a rule you
+cannot edit should still be visible.
 
 ---
 

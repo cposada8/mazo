@@ -21,7 +21,7 @@ export default function Jugar() {
 
   return (
     <Juego
-      key={`${ajustes.jugadores}-${ajustes.seed}-${ajustes.contratos.length}-${ajustes.comodines}-${ajustes.segundosBot}`}
+      key={`${ajustes.jugadores}-${ajustes.seed}-${ajustes.contratos.length}-${ajustes.comodines}`}
       jugadores={ajustes.jugadores}
       seed={ajustes.seed}
       contratos={ajustes.contratos}
