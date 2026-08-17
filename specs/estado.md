@@ -14,9 +14,10 @@ doc is worse than none.
 
 ## Where things stand
 
-Phases 0–29 are done. **Carioca is playable, and looks like a card table.**
-Open `/jugar` on a phone — held either way — and play a full partida against
-bots: draw, lay down, unload onto anyone's grupos, discard, and see the
+Phases 0–33 are done. **Carioca is playable, and it is entered through one
+door.** Open the site on a phone, get dealt an alias, create a partida —
+you host, a short code is dealt, three bots sit down — and play a full
+partida: draw, lay down, unload onto anyone's grupos, discard, and see the
 scoreboard at the end.
 
 Milestones 1 and 2 are both complete. What is missing is other people — and
@@ -103,7 +104,11 @@ no code changes. `lib/caras.ts`, `components/caras.tsx`.
   public, no login.
 - **Deploys:** work goes to `dev`, which builds by itself. Production changes
   only by merging `dev` into `main`. Nothing else deploys `main`.
-- **Tests:** 400, all green (the run takes ~17s, mostly the soak). `npm run test:run`, `npx tsc --noEmit`, `npm run lint`.
+- **Tests:** 435, all green (the run takes ~17s, mostly the soak). `npm run test:run`, `npx tsc --noEmit`, `npm run lint`.
+- **Database:** SQLite via Prisma 7 + libSQL. Dev is `prisma/dev.db`
+  (`npx prisma db push` after a schema change). **Production still needs a
+  Turso database and `DATABASE_URL` + `DATABASE_AUTH_TOKEN` on Vercel** —
+  without them the door cannot create a partida.
 
 ## What exists
 
@@ -132,13 +137,26 @@ components/mesa.tsx  The table, landscape or portrait: seats on the rim, the
                      felt, the piles, everyone's grupos in the middle, your
                      hand along the bottom. Optional callbacks turn it from a
                      game you watch into one you play.
+lib/engine/vista.ts  What one seat may see. Bots and the server both take it.
 lib/asientos.ts      Where each seat goes around the table. Pure geometry.
 lib/relato.ts        A move told in words, public information only — the
                      `mazo` variant cannot carry a card by construction.
 lib/semilla.ts       Short readable seeds, random by default.
 lib/pantalla.ts      The Fullscreen API, wrapped small.
 app/manifest.ts      Standalone install, for the screen space.
-app/jugar/           The playable game: inicio.tsx, juego.tsx, usePartida.ts.
+app/jugar/           The table itself: juego.tsx, usePartida.ts. inicio.tsx is
+                     the pre-door setup screen, retiring in Phase 34.
+app/partida/[codigo]/  The lobby, then the table. One URL, one partida.
+app/api/partidas/    Create, read, and act on a partida.
+lib/lobby.ts         The wire between door and server: types both sides share.
+lib/codigo.ts        The short invite code, and what a typed one means.
+lib/alias.ts         Parsing the alias file.
+components/puerta.tsx     The door: create a partida, or join by code.
+components/identidad.tsx  Your secreto and alias, dealt on first visit.
+components/consultas.tsx  TanStack Query, for polling the lobby.
+lib/server/          Server-only. db.ts is the connection; partidas.ts is
+                     partidas at rest and every lobby operation.
+prisma/schema.prisma Partida and Asiento. State is the engine's own JSON.
 components/tema.tsx  Light / dark / follow the phone.
 lib/mano.ts          Arranging your hand: order, sorting, pinned bloques,
                      latched sort. A comfort, never a rule.
@@ -146,7 +164,9 @@ app/pruebas/         The page that makes the engine visible.
 __tests__/           Tests, including engine/helpers.ts for scripted rondas.
 ```
 
-Nothing is persisted and there is no database yet. Everything runs in memory.
+Partidas are persisted (Phase 32); the table itself still plays in the
+browser, from the state the server dealt. Phase 34 moves the refereeing
+server-side.
 
 ## The five decisions that shape the code
 
