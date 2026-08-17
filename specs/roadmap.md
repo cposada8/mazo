@@ -603,7 +603,7 @@ restarting is remounting, and no JavaScript runs per frame. Options offered:
 1 / 2 / 3 / 5 seconds, two by default. Your own badge does not drain;
 nothing hurries a human yet, as specified.
 
-### Phase 22 — What just happened
+### Phase 22 — What just happened ✅
 The game changes state in silence and expects you to have been looking. Two
 ways of showing a move that has already been made:
 
@@ -622,6 +622,25 @@ privileges, which is precisely what a bot is about to be handed.
 **Done when:** you can look away, look back, and know what happened from the
 line — and nothing in it could ever tell you a card you are not entitled to
 know.
+
+**Done.** The discipline is structural, as intended: `lib/relato.ts` turns a
+move plus the state it was played into a `Relato`, and the `mazo` variant
+*cannot carry a card* — the type has no field for one. Tests assert the line
+for a stock draw contains no suit symbol, and that descarte draws and
+discards name exactly the card everyone saw. The log narrates more than the
+two required lines — bajadas, cards added to grupos, freed comodines — all
+public by the same rule. The line lives in an info strip along the felt's
+bottom edge, sharing it with the contract name; the pile counts moved onto
+the piles as chips to pay for the strip's height.
+
+The travelling card is presentation only: by the time it renders, the engine
+has already moved the card, and the animation measures the live layout
+(`data-pila` → `data-destino`) so it survives portrait, landscape and any
+future rearrangement. A descarte card travels face up; a stock draw travels
+face down — the animation obeys the same rule as the line. One addition
+beyond the letter of the phase (Claude's call): your own moves read in
+second person — "Tomaste J♥ del descarte" — because "Tú tomó" is nobody's
+Spanish.
 
 ---
 

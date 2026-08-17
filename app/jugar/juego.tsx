@@ -19,6 +19,7 @@ import {
   hayPantallaCompleta,
   usePantallaCompleta,
 } from '@/lib/pantalla'
+import { contarRelato } from '@/lib/relato'
 import {
   CONFIG_POR_DEFECTO,
   type Card,
@@ -91,6 +92,12 @@ export function Juego({
           asiento={TU_ASIENTO}
           nombres={nombres(jugadores)}
           reloj={juego.reloj}
+          relatoLinea={
+            juego.relato
+              ? contarRelato(juego.relato, nombres(jugadores), TU_ASIENTO)
+              : undefined
+          }
+          viaje={juego.viaje}
           secciones={juego.secciones}
           puntos={juego.puntos}
           onSoltar={juego.soltar}

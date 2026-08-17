@@ -24,6 +24,7 @@ import {
   puntosDeMano,
   startPartida,
 } from '@/lib/engine'
+import { type Relato, type Viaje, relatar } from '@/lib/relato'
 
 /** How long a bot's whole turn takes if the setup screen said nothing. */
 const SEGUNDOS_DEL_BOT = 2
@@ -58,6 +59,11 @@ export function usePartida(options: {
    * ends it.
    */
   const [resumen, setResumen] = useState<Marcador | null>(null)
+  /** The last public thing that happened, for the line under the piles. */
+  const [relato, setRelato] = useState<Relato | null>(null)
+  /** The card currently travelling across the table, if any. */
+  const [viaje, setViaje] = useState<Viaje | null>(null)
+  const proximoViaje = useRef(1)
 
   /**
    * A new reparto starts with nothing arranged and nothing pinned.
@@ -76,6 +82,10 @@ export function usePartida(options: {
     setBloques([])
     setSeleccion([])
     setPropuestas([])
+    // The log belongs to the ronda it narrated; the summary screen tells the
+    // ending better than a stale line could.
+    setRelato(null)
+    setViaje(null)
   }
 
   const ronda = partida.ronda
@@ -196,19 +206,46 @@ export function usePartida(options: {
     [disponibles, seleccion],
   )
 
-  const jugar = useCallback((move: Move) => {
-    setPartida((actual) => {
-      const result = aplicarEnPartida(actual, move)
-      if (!result.ok) {
-        setAviso(mensajeDeError(result.code, result.detail))
-        return actual
-      }
-      setAviso(null)
-      const cerrada = rondaCerrada(actual, result.state)
-      if (cerrada) setResumen(cerrada)
-      return result.state
-    })
+  /**
+   * The public record of a move that just landed: the line under the piles,
+   * and — for a draw — the card that travels across the table. Called from
+   * inside the state updaters, right where the state-before is at hand.
+   */
+  const anotar = useCallback((antes: PartidaState, move: Move) => {
+    const ronda = antes.ronda
+    if (!ronda) return
+
+    const cuento = relatar(move, ronda)
+    if (cuento) setRelato(cuento)
+
+    if (move.type === 'robar') {
+      setViaje({
+        clave: proximoViaje.current++,
+        de: move.de,
+        seat: ronda.turno,
+        // Only the descarte card was face up; a stock draw travels face down.
+        carta: move.de === 'descarte' ? (ronda.discard.at(-1) ?? null) : null,
+      })
+    }
   }, [])
+
+  const jugar = useCallback(
+    (move: Move) => {
+      setPartida((actual) => {
+        const result = aplicarEnPartida(actual, move)
+        if (!result.ok) {
+          setAviso(mensajeDeError(result.code, result.detail))
+          return actual
+        }
+        setAviso(null)
+        anotar(actual, move)
+        const cerrada = rondaCerrada(actual, result.state)
+        if (cerrada) setResumen(cerrada)
+        return result.state
+      })
+    },
+    [anotar],
+  )
 
   /**
    * Move on to the next reparto. The cards were dealt when the ronda closed —
@@ -262,6 +299,7 @@ export function usePartida(options: {
         setPartida((antes) => {
           const result = aplicarEnPartida(antes, move)
           if (!result.ok) return antes
+          anotar(antes, move)
           const cerrada = rondaCerrada(antes, result.state)
           if (cerrada) setResumen(cerrada)
           return result.state
@@ -270,7 +308,7 @@ export function usePartida(options: {
     )
 
     return () => ids.forEach(clearTimeout)
-  }, [claveDeTurno, resumen, segundosBot])
+  }, [claveDeTurno, resumen, segundosBot, anotar])
 
   // --------------------------------------------------------------- actions
 
@@ -348,6 +386,7 @@ export function usePartida(options: {
           if (result.ok) {
             setAviso(null)
             setSeleccion([])
+            anotar(actual, move)
             return result.state
           }
         }
@@ -359,7 +398,7 @@ export function usePartida(options: {
         return actual
       })
     },
-    [esTuTurno, ronda?.fase, seleccionadas],
+    [esTuTurno, ronda?.fase, seleccionadas, anotar],
   )
 
   const descartar = useCallback(() => {
@@ -386,6 +425,10 @@ export function usePartida(options: {
     resumen,
     /** For the draining ring: how long a bot turn lasts, and its start line. */
     reloj: { segundos: segundosBot, clave: claveDeTurno },
+    /** The last public thing that happened. */
+    relato,
+    /** The card travelling across the table right now, if any. */
+    viaje,
     /** True once the last contract has been played and scored. */
     seAcabo: partida.ronda === null,
     siguiente,

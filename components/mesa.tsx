@@ -22,6 +22,9 @@
  * but that is bookkeeping, not seating.
  */
 
+'use client'
+
+import { useLayoutEffect, useRef } from 'react'
 import { Carta, CartaBocaAbajo } from '@/components/carta'
 import { asientosRivales } from '@/lib/asientos'
 import {
@@ -33,6 +36,7 @@ import {
   isComodin,
 } from '@/lib/engine'
 import type { Seccion } from '@/lib/mano'
+import type { Viaje } from '@/lib/relato'
 import { cn } from '@/lib/utils'
 
 const SIMBOLO_DE_PALO = {
@@ -120,6 +124,7 @@ export function Asiento({
   x,
   y,
   reloj,
+  seat,
 }: {
   jugador: JugadorState
   nombre: string
@@ -129,9 +134,12 @@ export function Asiento({
   y: number
   /** When given, the turn ring drains instead of merely glowing. */
   reloj?: Reloj
+  /** Engine seat number; marks this element as a travel destination. */
+  seat?: number
 }) {
   return (
     <div
+      data-destino={seat}
       className="absolute flex max-w-[26cqw] -translate-x-1/2 flex-col items-center gap-[0.6cqh]"
       style={{ left: `${x}%`, top: `${y}%` }}
     >
@@ -205,7 +213,11 @@ export function Asiento({
 const inicial = (nombre: string): string =>
   [...nombre.trim()][0]?.toUpperCase() ?? '?'
 
-/** The two piles. The stock shows its count; the descarte shows its top card. */
+/**
+ * The two piles. The stock wears its count as a small chip — a line of text
+ * under each pile was exactly the height the relato line needed — and the
+ * descarte shows its top card, which is its own announcement.
+ */
 export function Pilas({
   state,
   onRobar,
@@ -219,33 +231,32 @@ export function Pilas({
   const estiloPila = activo ? 'ring-2 ring-stone-100/80 ring-offset-2 ring-offset-stone-950' : ''
 
   return (
-    <div className="flex shrink-0 items-start gap-2">
+    <div className="flex shrink-0 items-end gap-2">
       <button
         type="button"
+        data-pila="stock"
         disabled={!activo}
         onClick={() => onRobar?.('stock')}
-        className="flex cursor-default flex-col items-center gap-0.5 enabled:cursor-pointer"
+        className="relative cursor-default enabled:cursor-pointer"
       >
         <CartaBocaAbajo size="sm" className={estiloPila} />
-        <span className="text-[var(--texto-mesa,0.75rem)] text-stone-400">
+        <span className="absolute -top-1 -right-1 z-10 rounded-full bg-stone-800 px-1 text-[calc(var(--texto-mesa,0.75rem)*0.9)] text-stone-300 tabular-nums ring-1 ring-stone-600/60">
           {state.stock.length}
         </span>
       </button>
 
       <button
         type="button"
+        data-pila="descarte"
         disabled={!activo || !arriba}
         onClick={() => onRobar?.('descarte')}
-        className="flex cursor-default flex-col items-center gap-0.5 enabled:cursor-pointer"
+        className="cursor-default enabled:cursor-pointer"
       >
         {arriba ? (
           <Carta card={arriba} size="sm" className={estiloPila} />
         ) : (
           <div className="aspect-[8/11] h-[var(--carta-sm,3.5rem)] rounded-md border border-dashed border-stone-500/40" />
         )}
-        <span className="text-[var(--texto-mesa,0.75rem)] text-stone-400">
-          {state.discard.length}
-        </span>
       </button>
     </div>
   )
@@ -378,6 +389,63 @@ export function Mano({
   )
 }
 
+/**
+ * A card sliding from a pile to the hand that took it — slowly enough to
+ * follow (Phase 22). Pure presentation: by the time this renders, the engine
+ * has already moved the card; this is the table catching the eye up.
+ *
+ * Positions are measured from the live layout (`data-pila`, `data-destino`)
+ * rather than passed in, so the animation survives any rearrangement of the
+ * table. Keyed by `viaje.clave` in the parent: each journey is a fresh
+ * element, so mounting is starting.
+ */
+function CartaViajera({ viaje }: { viaje: Viaje }) {
+  const ref = useRef<HTMLDivElement>(null)
+
+  useLayoutEffect(() => {
+    const el = ref.current
+    const cancha = el?.closest('.cancha')
+    if (!el || !cancha) return
+
+    const desde = cancha.querySelector(`[data-pila="${viaje.de}"]`)
+    const hasta = cancha.querySelector(`[data-destino="${viaje.seat}"]`)
+    if (!desde || !hasta) return
+
+    const caja = cancha.getBoundingClientRect()
+    const a = desde.getBoundingClientRect()
+    const b = hasta.getBoundingClientRect()
+    const propia = el.getBoundingClientRect()
+
+    el.style.transform = `translate(${a.x + a.width / 2 - propia.width / 2 - caja.x}px, ${a.y - caja.y}px)`
+    el.style.opacity = '1'
+
+    // Two frames: one to paint the start, one to begin the trip.
+    const marco = requestAnimationFrame(() =>
+      requestAnimationFrame(() => {
+        el.style.transition =
+          'transform 500ms ease-in-out, opacity 220ms ease-in 380ms'
+        el.style.transform = `translate(${b.x + b.width / 2 - propia.width / 2 - caja.x}px, ${b.y + b.height / 2 - propia.height / 2 - caja.y}px)`
+        el.style.opacity = '0'
+      }),
+    )
+    return () => cancelAnimationFrame(marco)
+  }, [viaje])
+
+  return (
+    <div
+      ref={ref}
+      aria-hidden
+      className="pointer-events-none absolute top-0 left-0 z-30 opacity-0"
+    >
+      {viaje.carta ? (
+        <Carta card={viaje.carta} size="sm" />
+      ) : (
+        <CartaBocaAbajo size="sm" />
+      )}
+    </div>
+  )
+}
+
 export type MesaInteractiva = {
   onRobar?: (de: 'stock' | 'descarte') => void
   onCarta?: (cardId: string) => void
@@ -390,6 +458,8 @@ export function Mesa({
   asiento,
   nombres,
   reloj,
+  relatoLinea,
+  viaje,
   secciones,
   puntos,
   onSoltar,
@@ -418,6 +488,10 @@ export function Mesa({
   acciones?: React.ReactNode
   /** What to do, what went wrong, what is set aside — right above the hand. */
   sobreLaMano?: React.ReactNode
+  /** The last public move in words, for the line under the piles. */
+  relatoLinea?: string
+  /** A drawn card in flight. Rendered once per `clave`. */
+  viaje?: Viaje | null
 } & MesaInteractiva) {
   const nombreDe = (seat: number) => nombres?.[seat] ?? nombrePorDefecto(seat)
   const tu = state.jugadores[asiento]
@@ -431,32 +505,25 @@ export function Mesa({
   )
 
   return (
-    <div className="cancha flex h-full w-full flex-col overflow-hidden bg-stone-950">
+    <div className="cancha relative flex h-full w-full flex-col overflow-hidden bg-stone-950">
       {/*
         The table: felt behind, then two lanes on top of it — seats, then the
-        mesa. The room around the felt is dark in both themes: a card table is
-        a lit thing in a dim room, and it is the surround, not the felt, that
-        does the decorating.
+        mesa — and an info strip along the felt's bottom edge. The room around
+        the felt is dark in both themes: a card table is a lit thing in a dim
+        room, and it is the surround, not the felt, that does the decorating.
       */}
       <div className="relative flex min-h-0 flex-1 flex-col">
         <div
           aria-hidden
           className="ovalo absolute inset-x-[2%] top-[6%] bottom-[3%] rounded-[50%] border border-red-800/80 bg-stone-900 shadow-[inset_0_0_80px_rgba(0,0,0,0.55)]"
         />
-        {/* The contract, printed on the felt the way a table has its house
-            name on it: always there, never in the way. */}
-        <span
-          aria-hidden
-          className="absolute bottom-[4%] left-1/2 -translate-x-1/2 text-[var(--texto-mesa,0.75rem)] font-semibold tracking-[0.3em] whitespace-nowrap text-stone-100/15 uppercase"
-        >
-          {state.contrato.nombre}
-        </span>
 
         {/* Seat lane: the opponents' strip, and nothing else may enter it. */}
         <div className="relative z-10 h-[var(--banda-asientos,42%)] shrink-0">
           {rivales.map(({ seat, x, y }) => (
             <Asiento
               key={seat}
+              seat={seat}
               jugador={state.jugadores[seat]}
               nombre={nombreDe(seat)}
               esSuTurno={state.turno === seat && state.ganador === null}
@@ -489,10 +556,35 @@ export function Mesa({
             )}
           </div>
         </div>
+
+        {/*
+          The info strip: what just happened on the left — in words, and only
+          words everybody is entitled to — and the contract on the right, the
+          way a table has its house name printed on the felt.
+        */}
+        <div className="relative z-10 flex shrink-0 items-center justify-between gap-3 px-[7cqw] pb-[0.5cqh]">
+          <span
+            aria-live="polite"
+            className="min-w-0 truncate text-[var(--texto-mesa,0.75rem)] text-stone-300"
+          >
+            {relatoLinea}
+          </span>
+          <span
+            aria-hidden
+            className="shrink-0 text-[var(--texto-mesa,0.75rem)] font-semibold tracking-[0.2em] whitespace-nowrap text-stone-100/25 uppercase"
+          >
+            {state.contrato.nombre}
+          </span>
+        </div>
       </div>
 
+      {viaje && <CartaViajera key={viaje.clave} viaje={viaje} />}
+
       {/* Your side of the table. */}
-      <div className="bg-background/95 flex shrink-0 items-end gap-3 border-t px-3 pt-0.5 pb-1 backdrop-blur">
+      <div
+        data-destino={asiento}
+        className="bg-background/95 flex shrink-0 items-end gap-3 border-t px-3 pt-0.5 pb-1 backdrop-blur"
+      >
         <div className="flex min-w-0 flex-1 flex-col">
           <Mano
             cabecera={sobreLaMano}
