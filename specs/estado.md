@@ -41,8 +41,16 @@ table.
 | 14 | Setting up a partida, seeing the score | ✅ |
 | 15 | Reading your own hand | ✅ |
 | 16 | Dev before prod: a branch and its own URL | ✅ |
-| 17 | The table: seats around it, grupos in the middle | ← **next** |
-| 18–24 | Bot framework and personalities, then online | not started |
+| 17 | The table: seats around it, grupos in the middle | ✅ |
+| 18 | Bot framework, with a restricted view | ← **next** |
+| 19–24 | Bot personalities, then online | not started |
+
+**The game is played sideways now.** Phase 17 turned the screen into a table:
+seats on the rim of a felt oval in turn order, the turn drawn as a ring on the
+player rather than announced elsewhere, everyone's grupos communal in the
+middle, your hand along the bottom and the actions in the thumb's corner.
+Arriving in portrait gets a screen asking you to turn the phone. The setup
+screen, the scoreboard and the end of a ronda are still read upright.
 
 Off the roadmap, after Phase 15: **a ronda no longer slips past you.** When
 somebody goes out, the game stops on a screen that says who won, with the
@@ -64,7 +72,7 @@ rather than the correct one.
   public, no login.
 - **Deploys:** work goes to `dev`, which builds by itself. Production changes
   only by merging `dev` into `main`. Nothing else deploys `main`.
-- **Tests:** 352, all green (the soak takes ~15s). `npm run test:run`, `npx tsc --noEmit`, `npm run lint`.
+- **Tests:** 360, all green (the soak takes ~15s). `npm run test:run`, `npx tsc --noEmit`, `npm run lint`.
 
 ## What exists
 
@@ -87,8 +95,11 @@ lib/bots/             Clients of the engine. Nothing in the engine imports these
   codicioso.ts       El Codicioso: the baseline bot.
   mesa.ts            Runs a whole partida with bots in the seats.
 components/carta.tsx The visual card.
-components/mesa.tsx  The table: opponents, grupos, piles, your hand. Optional
-                     callbacks turn it from a game you watch into one you play.
+components/mesa.tsx  The table, landscape: seats on the rim, the felt, the
+                     piles, everyone's grupos in the middle, your hand along
+                     the bottom. Optional callbacks turn it from a game you
+                     watch into one you play.
+lib/asientos.ts      Where each seat goes around the table. Pure geometry.
 app/jugar/           The playable game: page.tsx and usePartida.ts.
 components/tema.tsx  Light / dark / follow the phone.
 lib/mano.ts          Arranging your hand: order, sorting, pinned bloques.
@@ -134,13 +145,6 @@ across rondas — an arrangement, a selection, a hint — will keep matching aft
 the cards are gone and has to be dropped when the ronda changes.
 
 ## What comes next
-
-**Phase 17 — the table.** The game looks like a form: one column, opponents as
-lines of text, grupos as a list. It should look like a table with seats around
-it, names in position, and the grupos in the middle where they belong once they
-are communal. **Landscape**, decided — the content is thirteen cards wide.
-`roadmap.md` has the three reference tables and what is worth taking from each.
-First feature built on `dev`.
 
 **Phase 18 — the bot framework.** The step that makes difficulty levels
 possible, and the one online play needs anyway.

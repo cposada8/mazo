@@ -318,7 +318,7 @@ Two things learned that are not obvious:
   to a friend, so it is now off. The repo is public and the game holds nobody's
   data; there is nothing on a preview that is not already on GitHub.
 
-### Phase 17 — The table
+### Phase 17 — The table ✅
 The game is playable and looks like a form. Everything is stacked in one
 column — opponents as lines of text, grupos as another list, the piles as two
 buttons, the hand at the bottom — and nothing about it says *cards on a table*.
@@ -408,6 +408,33 @@ when checked on 2026-08-17.
 **Done when:** someone who has not seen the project recognises a card table in
 the first second, follows whose turn it is without being told, and the same
 screen works for two players and for six on a phone held sideways.
+
+**Done.** `components/mesa.tsx` rebuilt, and seating extracted to
+`lib/asientos.ts` — where a seat goes is geometry, so it is a pure function
+with its own tests rather than percentages buried in JSX. The component only
+places what that module decides.
+
+Three things came out differently than written above:
+
+- **The oval is drawn after all.** The note taken from cardgames.io said the
+  arrangement alone reads as a table and no oval is needed — true in portrait,
+  where an ellipse eats the room. Lying down there is room, and Plato was
+  right: a felt oval on a dark ground reads as a table instantly, and the dark
+  surround is what makes the felt look lit rather than merely green.
+- **The game takes the whole viewport**, over the site's own header. A phone
+  lying down is 390 pixels tall; `100dvh` underneath a 42-pixel header put the
+  hand off the bottom of the screen. The cost is that the theme switcher is
+  covered during a game, which is a fair trade for a hand you can see.
+- **The middle scrolls sideways**, and that is the weakest part of this phase.
+  It was flagged in advance as the hard part — poker's middle holds five cards
+  and ours holds the whole mesa — and a horizontally scrolling row is the
+  honest minimum, not a solution. Six players deep into a partida, the grupos
+  run off the right edge and have to be scrolled to. Worth revisiting in Phase
+  20.
+
+Left deliberately undone: animations, real avatars, and any decoration of the
+room beyond a dark ground. Those are Phase 20, and none of them is what made
+the old screen unreadable.
 
 ---
 
