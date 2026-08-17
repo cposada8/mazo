@@ -39,3 +39,7 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Database (Phase 32): local SQLite in dev; Turso in production
+.env
+prisma/dev.db*

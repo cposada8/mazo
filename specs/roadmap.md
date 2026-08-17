@@ -1022,7 +1022,7 @@ finish; ~27 partidas per thousand see a ronda en tablas. 419 tests.
 Also in this phase, asked for with the rule: the setup screen at `/jugar`
 gained a **Volver al inicio** link — there was genuinely no way back.
 
-### Phase 32 — Who you are, and where it is kept
+### Phase 32 — Who you are, and where it is kept ✅
 Two halves of one fact: the app must know who you are without an account,
 and must not forget anything.
 
@@ -1049,6 +1049,20 @@ alias instead of a generic label.
 is named without being asked and keeps its name across reloads; changing the
 alias sticks; the current solo table shows it; and presenting the wrong
 secret can neither claim an occupied seat nor see its hand.
+
+**Done.** Identity is `components/identidad.tsx` — a secreto
+(`crypto.randomUUID`) and an alias from the file, dealt on first visit,
+held in localStorage behind `useSyncExternalStore`, editable on the home
+page and the setup screen, and greeting seat 0 at the solo table.
+Persistence is Prisma 7 + libSQL (`lib/server/{db,partidas}.ts`): a
+partida row holds the engine's own JSON (decision 5 doing its job), seats
+are rows claimed by secreto, and `vistaParaSecreto` answers the wrong
+secreto with null — indistinguishable from a partida that does not exist.
+Tests run against a real SQLite file, schema pushed fresh each run. Worth
+knowing: Prisma 7 moved the connection URL out of the schema into
+`prisma.config.ts`, and the CLI no longer auto-loads `.env`. Production
+still needs a Turso database and its two env vars — provision when Phase
+33's lobby first deploys. 428 tests.
 
 ### Phase 33 — One door
 The home screen becomes the whole way in, and there is nothing behind it but

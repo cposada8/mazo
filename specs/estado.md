@@ -1,6 +1,6 @@
 # Project status — pick up here
 
-Last updated after Phase 31.
+Last updated after Phase 32.
 
 Read this first, then `mission.md` for the why, `carioca-rules.md` for the game,
 `tech-stack.md` for the stack, and `roadmap.md` for what comes next. This file is
@@ -58,8 +58,8 @@ empty seats), and the better bots moved behind it as Milestone 4.
 | 29 | The comodines get a face | ✅ |
 | 30 | The seat's view | ✅ |
 | 31 | A ronda that always ends: tablas | ✅ |
-| 32 | Who you are: identity, alias from a file, persistence | ← **next** |
-| 33 | One door: create (host, 3 bots default) or join by code | not started |
+| 32 | Who you are: identity, alias from a file, persistence | ✅ |
+| 33 | One door: create (host, 3 bots default) or join by code | ← **next** |
 | 34 | The partida lives on the server | not started |
 | 35 | Several people at one table | not started |
 | 36 | The player's clock | not started |
@@ -219,9 +219,16 @@ card ligadoes immediately). The owner also asked for two things recorded
 in Phase 37: a deliberate **Abandonar** option, and — already shipped —
 the Volver al inicio link on the setup screen.
 
-**Phase 32 is next — who you are, and where it is kept.** Prisma + Turso,
-and the per-browser identity with its alias from
-`public/candidatos/alias.txt`.
+**Phase 32 is done: identity and persistence.** Every browser is dealt a
+secreto and an alias from `public/candidatos/alias.txt` on first visit
+(`components/identidad.tsx`), editable in place, greeting seat 0 at the
+solo table. Partidas rest in SQLite through Prisma 7 + libSQL
+(`lib/server/`), seats are claimed by secreto, and the wrong secreto gets
+null, never a hand. **Production needs a Turso database and its env vars
+(`DATABASE_URL`, `DATABASE_AUTH_TOKEN`) before the lobby deploys.**
+
+**Phase 33 is next — one door:** create a partida (host, short code,
+three bots) or join by code; the lobby, polled with TanStack Query.
 
 ## Open questions, deliberately unanswered
 

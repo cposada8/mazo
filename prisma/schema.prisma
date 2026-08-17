@@ -1,0 +1,56 @@
+// Persistence without accounts (Phase 32).
+//
+// A partida is a row and its state is the JSON the engine already is —
+// decision 5 (the rng rides as one number) makes the whole RondaState
+// serializable, so the engine neither knows nor cares where a state slept.
+//
+// SQLite everywhere: a local file in dev, Turso (libSQL) in production,
+// through the driver adapter in lib/server/db.ts.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model Partida {
+  id        String   @id @default(cuid())
+  /// The short invite code (Phase 33). Unique among live partidas.
+  codigo    String   @unique
+  /// 'lobby' | 'jugando' | 'terminada'
+  fase      String   @default("lobby")
+  /// JSON PartidaConfig — contracts, comodines, bonus, opener.
+  config    String
+  /// JSON PartidaState once dealt; null while the lobby is still filling.
+  estado    String?
+  /// Seconds per human turn (Phase 36). The host's to change in the lobby.
+  segundosPorTurno Int @default(45)
+  /// Seconds a bot thinks per turn.
+  segundosBot      Int @default(2)
+  creadaEn      DateTime @default(now())
+  actualizadaEn DateTime @updatedAt
+  asientos      Asiento[]
+}
+
+model Asiento {
+  id        String  @id @default(cuid())
+  partidaId String
+  partida   Partida @relation(fields: [partidaId], references: [id], onDelete: Cascade)
+  /// Seat index at the table, 0-based.
+  indice    Int
+  alias     String
+  /// The per-browser secret that owns this seat. Null for a bot.
+  secreto   String?
+  esBot     Boolean @default(false)
+  /// True for the seat that created the partida and runs its lobby.
+  esHost    Boolean @default(false)
+  /// Retired on purpose (Abandonar, Phase 37): plays no more turns.
+  retirado  Boolean @default(false)
+  /// Last time this seat's browser was heard from (presence, Phase 37).
+  ultimaSenal DateTime?
+
+  @@unique([partidaId, indice])
+  @@index([secreto])
+}
