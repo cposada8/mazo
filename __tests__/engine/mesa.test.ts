@@ -254,8 +254,21 @@ describe('touching the mesa', () => {
     )
   })
 
-  it('opens your own grupos on the very turn you bajaste', () => {
+  it('keeps your own grupos shut on the very turn you bajaste', () => {
     const state = mesa({ bajadoEnTurno: 3, numeroDeTurno: 3 })
+    expectFail(
+      apply(state, {
+        type: 'agregar',
+        seat: 0,
+        grupoIndex: 0,
+        cardIds: [nuevePropio.id],
+      }),
+      'MESA_BLOQUEADA_MISMO_TURNO',
+    )
+  })
+
+  it('opens your own grupos from the next turn on', () => {
+    const state = mesa({ bajadoEnTurno: 3, numeroDeTurno: 5 })
     const after = unwrap(
       apply(state, {
         type: 'agregar',
@@ -266,6 +279,77 @@ describe('touching the mesa', () => {
     )
     expect(after.jugadores[0].grupos[0].cards).toHaveLength(4)
     expect(ids(after.jugadores[0].hand)).not.toContain(nuevePropio.id)
+  })
+
+  /**
+   * The bug that closed the same turn for good.
+   *
+   * Bajarse with `K ★(A) 2 3` — legal, one comodín — and then, that same turn,
+   * play a second comodín as the `4` and the `5` behind it. Lay-down validation
+   * would never have accepted the resulting escala, and the mesa was the way
+   * around it.
+   */
+  it('does not let a second comodín in through your own grupo on the lay-down turn', () => {
+    const sietes = [n('7', 'spades'), n('7', 'hearts'), n('7', 'clubs')]
+    const escala = [n('K', 'spades'), c(), n('2', 'spades'), n('3', 'spades')]
+    const segundoComodin = c()
+    const cinco = n('5', 'spades')
+    const sobra = n('9', 'hearts')
+
+    const bajado = unwrap(
+      apply(
+        makeRonda({
+          contrato: contratoPorId('c2')!, // un trío y una escala
+          jugadores: [
+            { hand: [...sietes, ...escala, segundoComodin, cinco, sobra] },
+            { hand: [n('4', 'hearts')] },
+          ],
+          fase: 'act',
+        }),
+        {
+          type: 'bajarse',
+          propuestas: [
+            { kind: 'trio', rank: '7', cardIds: ids(sietes) },
+            { kind: 'escala', suit: 'spades', start: 'K', cardIds: ids(escala) },
+          ],
+        },
+      ),
+    )
+
+    expectFail(
+      apply(bajado, {
+        type: 'agregar',
+        seat: 0,
+        grupoIndex: 1,
+        cardIds: [segundoComodin.id],
+        end: 'tail',
+      }),
+      'MESA_BLOQUEADA_MISMO_TURNO',
+    )
+
+    // Not forbidden forever, only on the turn it lands: a turn later the same
+    // comodín is a legal `4`, since it is not adjacent to the one standing for
+    // the ace.
+    const masTarde = { ...bajado, numeroDeTurno: bajado.numeroDeTurno + 2 }
+    const conCuatro = unwrap(
+      apply(masTarde, {
+        type: 'agregar',
+        seat: 0,
+        grupoIndex: 1,
+        cardIds: [segundoComodin.id],
+        end: 'tail',
+      }),
+    )
+    const conCinco = unwrap(
+      apply(conCuatro, {
+        type: 'agregar',
+        seat: 0,
+        grupoIndex: 1,
+        cardIds: [cinco.id],
+        end: 'tail',
+      }),
+    )
+    expect(describeGrupo(conCinco.jugadores[0].grupos[1])).toBe('K ★ 2 3 ★ 5')
   })
 
   it("keeps another player's grupos shut on that same turn", () => {

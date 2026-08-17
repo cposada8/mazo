@@ -368,8 +368,8 @@ describe('a ronda played to the end', () => {
     })
 
     const end = play(state, [
-      // Turn 1 — seat 0 lays down and unloads onto its own grupos immediately,
-      // which is allowed on the very turn it bajó.
+      // Turn 1 — seat 0 lays the contract down. The spare seventh and queen
+      // stay in hand: the mesa is shut on the turn you bajarte.
       { type: 'robar', de: 'stock' },
       {
         type: 'bajarse',
@@ -378,16 +378,16 @@ describe('a ronda played to the end', () => {
           { kind: 'trio', rank: 'Q', cardIds: ids(reinas) },
         ],
       },
-      { type: 'agregar', seat: 0, grupoIndex: 0, cardIds: [septimo.id] },
-      { type: 'agregar', seat: 0, grupoIndex: 1, cardIds: [reinaExtra.id] },
       { type: 'descartar', cardId: primera.id },
 
       // Turn 2 — seat 1 draws and discards.
       { type: 'robar', de: 'stock' },
       { type: 'descartar', cardId: rival[0].id },
 
-      // Turn 3 — seat 0 unloads the last seven and goes out.
+      // Turn 3 — the mesa is open now. Seat 0 unloads everything and goes out.
       { type: 'robar', de: 'stock' },
+      { type: 'agregar', seat: 0, grupoIndex: 0, cardIds: [septimo.id] },
+      { type: 'agregar', seat: 0, grupoIndex: 1, cardIds: [reinaExtra.id] },
       { type: 'agregar', seat: 0, grupoIndex: 0, cardIds: [septimoTardio.id] },
       { type: 'descartar', cardId: ultima.id },
     ])

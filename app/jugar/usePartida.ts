@@ -85,6 +85,16 @@ export function usePartida(options: {
   const esperando = enJuego && !esTuTurno
 
   /**
+   * Whether you may put cards on the mesa at all right now. Bajado, and not on
+   * the turn you bajaste — on that turn nothing is open, your own grupos
+   * included.
+   */
+  const mesaAbierta =
+    ronda !== null &&
+    ronda.jugadores[TU_ASIENTO].bajadoEnTurno !== null &&
+    ronda.jugadores[TU_ASIENTO].bajadoEnTurno < ronda.numeroDeTurno
+
+  /**
    * Grupos set aside are only meaningful while every one of their cards is
    * still in hand. Deriving that here means a ronda ending, or a card leaving
    * some other way, cannot leave a stale grupo sitting on screen.
@@ -374,6 +384,7 @@ export function usePartida(options: {
     propuestas: propuestasVigentes,
     contratoCompleto,
     yaBajado: ronda ? ronda.jugadores[TU_ASIENTO].bajadoEnTurno !== null : false,
+    mesaAbierta,
     alternarCarta,
     limpiarSeleccion,
     robar,
@@ -444,7 +455,7 @@ function mensajeDeError(code: string, detail: string): string {
     case 'NO_SE_HA_BAJADO':
       return 'No puedes tocar la mesa hasta que te bajes.'
     case 'MESA_BLOQUEADA_MISMO_TURNO':
-      return 'A los grupos de los demás solo desde el turno siguiente.'
+      return 'En el turno que te bajas no puedes poner nada en la mesa, ni en tus propios grupos.'
     case 'YA_SE_BAJO':
       return 'Ya te bajaste en esta ronda.'
     default:

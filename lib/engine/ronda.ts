@@ -277,7 +277,7 @@ function agregar(
   state: RondaState,
   move: Extract<Move, { type: 'agregar' }>,
 ): MoveResult {
-  const gate = checkMesaAccess(state, move.seat)
+  const gate = checkMesaAccess(state)
   if (gate) return gate
 
   const target = state.jugadores[move.seat]?.grupos[move.grupoIndex]
@@ -313,7 +313,7 @@ function moverComodin(
   state: RondaState,
   move: Extract<Move, { type: 'moverComodin' }>,
 ): MoveResult {
-  const gate = checkMesaAccess(state, move.seat)
+  const gate = checkMesaAccess(state)
   if (gate) return gate
 
   const target = state.jugadores[move.seat]?.grupos[move.grupoIndex]
@@ -354,10 +354,15 @@ function moverComodin(
 }
 
 /**
- * The mesa is untouchable before bajarse. Own grupos open up immediately;
- * everyone else's only from the next turn onward.
+ * The mesa is untouchable before bajarse, and still untouchable on the turn it
+ * happens — one's own grupos included. Everything opens from the next turn on.
+ *
+ * The same-turn lock is what keeps "one comodín per grupo at lay-down" from
+ * being a formality: bajarse with `K comodín(A) 2 3` and then, that same turn,
+ * play a second comodín as the `4`, and the grupo ends up in a shape lay-down
+ * validation would have refused. A grupo has to be finished when it lands.
  */
-function checkMesaAccess(state: RondaState, seat: number): MoveResult | null {
+function checkMesaAccess(state: RondaState): MoveResult | null {
   if (state.fase !== 'act') {
     return fail('FASE_EQUIVOCADA', 'draw a card before touching the mesa')
   }
@@ -367,10 +372,10 @@ function checkMesaAccess(state: RondaState, seat: number): MoveResult | null {
     return fail('NO_SE_HA_BAJADO', 'the mesa cannot be touched before laying down')
   }
 
-  if (seat !== state.turno && jugador.bajadoEnTurno >= state.numeroDeTurno) {
+  if (jugador.bajadoEnTurno >= state.numeroDeTurno) {
     return fail(
       'MESA_BLOQUEADA_MISMO_TURNO',
-      "another player's grupos are open only from the turn after bajarse",
+      'the mesa is open only from the turn after bajarse, own grupos included',
     )
   }
 

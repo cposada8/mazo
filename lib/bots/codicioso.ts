@@ -82,7 +82,8 @@ function decidirRobo(state: RondaState): Move {
 function buscarDescarga(state: RondaState): Move | null {
   const jugador = state.jugadores[state.turno]
 
-  // Own grupos first: they are open on the lay-down turn, opponents' are not.
+  // Own grupos first, simply as a preference: on the turn it bajó the engine
+  // refuses every one of these, and the bot falls through to a discard.
   const asientos = [
     state.turno,
     ...state.jugadores.map((_, seat) => seat).filter((seat) => seat !== state.turno),

@@ -195,8 +195,9 @@ Repositioning is not free: to move a comodín, a player must **supply the card i
 was standing for**. The comodín is not taken into anyone's hand — it stays on the
 table and is reassigned to a different position in the same grupo.
 
-Any player **who has already bajado** may do this on their turn, on any grupo,
-including grupos they did not lay down.
+Any player **who bajó on an earlier turn** may do this, on any grupo, including
+grupos they did not lay down. Not on the turn they bajaron: see
+[Touching the mesa](#touching-the-mesa).
 
 Worked example. The mesa holds the escala `2♦ comodín(3♦) 4♦ 5♦`. The player in
 turn holds `3♦` and `7♦`:
@@ -234,16 +235,24 @@ One rule governs every interaction with cards already on the table:
 > **A player who has not bajado cannot touch the mesa.** Not to add a card, not
 > to reposition a comodín, not at all.
 
-Having bajado, what a player may do depends on whose grupo it is:
+And a second rule, about *when*:
 
-| Target | When |
-| --- | --- |
-| **Their own** grupos | Immediately, including the same turn they bajaron |
-| **Another player's** grupos | Only from the **next** turn onward |
+> **The turn you bajarse, the mesa stays closed** — your own grupos included.
+> Everything on the table, yours and everyone else's, opens from the **next**
+> turn onward.
 
-So a player who lays down `7 7 7` and `Q Q Q` with a fourth `7` left over can
-attach it to their own trío in that same turn — but has to wait a turn before
-unloading anything onto an opponent.
+So a player who lays down `7 7 7` and `Q Q Q` with a fourth `7` left over keeps
+it in hand until their next turn. What they *can* do is lay the contract down
+with bigger grupos in the first place: `7 7 7 7` counts as the trío, and so does
+`3 3 3 3 3`. The size of a grupo is free at lay-down; what is not free is going
+back to the mesa afterwards.
+
+Why the same turn is closed even for your own grupos: it was the way around the
+one-comodín-per-grupo limit. Bajarse with the escala `K comodín(A) 2 3`, then in
+that same turn play a second comodín as the `4` and a real `5` behind it, and the
+grupo ends the turn with two comodines that lay-down validation would have
+refused outright. The restriction on comodines only means something if the grupo
+is finished when it lands on the table.
 
 ### The deck
 

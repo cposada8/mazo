@@ -125,6 +125,8 @@ export function Juego({
                 esperando={esperando}
                 fase={ronda.fase}
                 turno={ronda.turno}
+                yaBajado={juego.yaBajado}
+                mesaAbierta={juego.mesaAbierta}
               />
             )}
           </p>
@@ -146,11 +148,15 @@ function Instruccion({
   esperando,
   fase,
   turno,
+  yaBajado,
+  mesaAbierta,
 }: {
   esTuTurno: boolean
   esperando: boolean
   fase: 'draw' | 'act'
   turno: number
+  yaBajado: boolean
+  mesaAbierta: boolean
 }) {
   if (!esTuTurno) {
     return (
@@ -160,11 +166,13 @@ function Instruccion({
     )
   }
 
-  return fase === 'draw' ? (
-    <>Toca el mazo o el descarte para robar.</>
-  ) : (
-    <>Arma grupos, pon cartas en la mesa, y bota una para terminar.</>
-  )
+  if (fase === 'draw') return <>Toca el mazo o el descarte para robar.</>
+
+  // What you may actually do depends on the mesa, and saying otherwise sends
+  // people tapping at grupos the engine is going to refuse.
+  if (!yaBajado) return <>Arma tus grupos para bajarte, o bota una carta.</>
+  if (!mesaAbierta) return <>Ya te bajaste. Bota una carta para terminar el turno.</>
+  return <>Pon cartas en la mesa y bota una para terminar.</>
 }
 
 /**
