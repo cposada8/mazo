@@ -433,10 +433,62 @@ Three things came out differently than written above:
   20.
 
 Left deliberately undone: animations, real avatars, and any decoration of the
-room beyond a dark ground. Those are Phase 23, and none of them is what made
+room beyond a dark ground. Those are Phase 25, and none of them is what made
 the old screen unreadable.
 
-### Phase 18 — The right way round, and a table worth looking at
+### Phase 18 — Room to play
+Measured on the owner's phone, Chrome on Android, held sideways: the CSS
+viewport is about **615 × 287**. The browser's own URL bar takes a fifth of the
+screen before the game gets any, and of what is left the hand band takes half —
+because the arranging controls wrap into three rows and push everything down.
+The table ends up in a strip barely two hundred pixels tall, where a seat's
+"12 cartas" is printed on top of a grupo's "TRÍO DE 2".
+
+Nothing here is a new feature. It is the difference between a layout that was
+designed against a number and one that survives the phone it runs on.
+
+- **Take the screen back.** A web app manifest with `display: standalone`, so
+  the game can be added to the home screen and run without browser chrome at
+  all, and the Fullscreen API offered when a partida starts. `100dvh` already
+  copes with the URL bar collapsing on scroll; the rest of that space is only
+  given to an app that asks for it.
+- **Nothing fixed that could be fluid.** Card sizes, seat plates, type and gaps
+  all derive from the height actually available rather than from `h-20` and
+  `size-8`. One scale, computed from the container, and everything sized in
+  terms of it. A table that is comfortable at 400 pixels tall and merely small
+  at 250 beats one that is right at 390 and broken either side of it.
+- **Lanes that cannot collide.** Seats own a band, the mesa owns another, the
+  hand owns a third, and no band may borrow from its neighbour. Today the seats
+  are placed by percentage and the grupos by flex, and neither knows the other
+  exists — which is why they overlap the moment the screen gets short. The
+  arranging controls stop wrapping too: at small sizes they become icons.
+
+**Done when:** the phone from that screenshot shows the same partida with no
+overlap, no dead band, no browser bar — and the hand is the biggest thing on
+the screen, because it is the thing being read.
+
+### Phase 19 — Standing up
+The table works held upright, and nobody is told to turn their phone.
+
+Portrait is how a phone is picked up and how it is held one-handed on a sofa.
+Phase 17 chose landscape because the content is wide, and that is still true
+lying down — but "rotate before you may play" is a toll charged at the door,
+and the owner said so the first time he played it on a real phone.
+
+- **Same components, two arrangements.** Upright: seats across the top, the
+  mesa in the middle scrolling, the hand along the bottom. The drawn oval gives
+  way to the arrangement when there is no room for it — cardgames.io's lesson
+  from Phase 17 was a portrait lesson, and this is where it was right.
+- Thirteen cards do not fit across 390 pixels, so the hand scrolls sideways.
+  That already works and is already how it behaves when a hand grows.
+- The rotate-your-phone screen from Phase 17 is deleted, not improved.
+- Rotating mid-partida rearranges the table and changes nothing else.
+
+**Done when:** a whole ronda can be played without turning the phone, and
+turning it in the middle of one loses neither the selection nor the pinned
+bloques.
+
+### Phase 20 — The right way round, and a table worth looking at
 Two corrections to what Phase 17 built.
 
 **It turns the wrong way.** Carioca goes anticlockwise: play passes to the
@@ -457,7 +509,7 @@ has to still read against the new ground; and both themes keep working.
 **Done when:** the player who goes after you is sitting on your right, and the
 table looks like something somebody chose.
 
-### Phase 19 — The clock
+### Phase 21 — The clock
 A turn takes time, and the time is something you can watch.
 
 - **Bots think for a set number of seconds**, chosen on the setup screen, **two
@@ -476,7 +528,7 @@ A turn takes time, and the time is something you can watch.
 **Done when:** a bot's turn takes as long as the setup screen says it does, and
 how much of it is left can be seen without reading a number.
 
-### Phase 20 — What just happened
+### Phase 22 — What just happened
 The game changes state in silence and expects you to have been looking. Two
 ways of showing a move that has already been made:
 
@@ -488,7 +540,7 @@ ways of showing a move that has already been made:
 One rule shapes the line: **it may only say what everybody can see.** A card
 taken off the descarte was face up, so it is named. A card off the mazo is
 secret, and the line says only that somebody drew — never which card. That is
-the same discipline Phase 21 makes structural, and writing the log against it
+the same discipline Phase 23 makes structural, and writing the log against it
 first is a rehearsal: a public log is a view of the ronda with one seat's
 privileges, which is precisely what a bot is about to be handed.
 
@@ -500,21 +552,21 @@ know.
 
 ## Milestone 3 — Bots worth playing
 
-### Phase 21 — Bot framework
+### Phase 23 — Bot framework
 Extract the strategy interface: a bot receives the legal state it can see and
 returns a move. Add hand-evaluation helpers shared by all bots.
 **Done when:** a new bot can be added in one file with no engine changes.
 
-### Phase 22 — Bot personalities
+### Phase 24 — Bot personalities
 At least three bots that differ observably: e.g. one that hoards for the perfect
 meld, one that lays down at the first opportunity, one that watches discards and
 plays around opponents. Give them names and short descriptions in the UI.
 **Done when:** a head-to-head tournament shows different win rates and visibly
 different play. **This is Milestone 3.**
 
-### Phase 23 — Rough edges
+### Phase 25 — Rough edges
 A hint for new players, an in-game rules summary, and an end-of-game screen.
-Card animations were pulled forward into Phase 20; what is left here is the
+Card animations were pulled forward into Phase 22; what is left here is the
 mesa that runs off the right edge when six players are deep into a partida —
 Phase 17 left it scrolling sideways, which is the honest minimum and not an
 answer.
@@ -525,26 +577,26 @@ asking for help, and a full mesa can be read without scrolling to find it.
 
 ## Milestone 4 — Playable together
 
-### Phase 24 — Persistence without accounts
+### Phase 26 — Persistence without accounts
 Prisma schema, finished partidas saved, and a guest identity that survives a
 page reload without anyone signing up. How a seat is claimed and protected is an
 open design question — see `tech-stack.md`.
 **Done when:** a player reloads mid-partida and is still themselves, and nobody
 can claim a seat that is not theirs.
 
-### Phase 25 — Rooms
+### Phase 27 — Rooms
 Create a room, get an invite code, join as a guest with a nickname, see who is in
 the lobby, start when everyone is ready. No gameplay yet.
 **Done when:** three devices sit in the same lobby.
 
-### Phase 26 — Server-authoritative play
+### Phase 28 — Server-authoritative play
 The game state lives on the server. Each player receives only their own hand and
 public information. Moves are submitted and validated server-side. Updates by
 polling.
 **Done when:** three people in three places finish a game from one invite code,
 and no client ever receives another player's cards. **This is Milestone 4.**
 
-### Phase 27 — Real-time transport
+### Phase 29 — Real-time transport
 Replace polling with a push transport behind the same interface. Handle
 disconnects and reconnects, and let a bot take over an abandoned seat.
 **Done when:** a player closes the tab mid-game, returns, and the game is intact.
@@ -556,6 +608,7 @@ disconnects and reconnects, and let a bot take over an abandoned seat.
 Not scheduled, and not to be started before Milestone 4:
 
 - A second game on the same platform — the real test of the engine's separation.
-- PWA install and offline bot play.
+- Offline bot play. Installing to the home screen was pulled forward into
+  Phase 18, for the screen space rather than for the install.
 - Replays from seed and move list.
 - Private leaderboards among friends.

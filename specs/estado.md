@@ -42,10 +42,12 @@ table.
 | 15 | Reading your own hand | ✅ |
 | 16 | Dev before prod: a branch and its own URL | ✅ |
 | 17 | The table: seats around it, grupos in the middle | ✅ |
-| 18 | Turning the right way, and a table worth looking at | ← **next** |
-| 19 | The clock: bots think for a set time, visibly | not started |
-| 20 | What just happened: the card travels, and a line says so | not started |
-| 21–27 | Bot framework and personalities, then online | not started |
+| 18 | Room to play: fullscreen, and sizes that fit the phone | ← **next** |
+| 19 | Standing up: the table works upright too | not started |
+| 20 | Turning the right way, and a table worth looking at | not started |
+| 21 | The clock: bots think for a set time, visibly | not started |
+| 22 | What just happened: the card travels, and a line says so | not started |
+| 23–29 | Bot framework and personalities, then online | not started |
 
 **The game is played sideways now.** Phase 17 turned the screen into a table:
 seats on the rim of a felt oval in turn order, the turn drawn as a ring on the
@@ -53,6 +55,12 @@ player rather than announced elsewhere, everyone's grupos communal in the
 middle, your hand along the bottom and the actions in the thumb's corner.
 Arriving in portrait gets a screen asking you to turn the phone. The setup
 screen, the scoreboard and the end of a ronda are still read upright.
+
+**And on a real phone it does not fit.** Played on an actual Android in Chrome
+rather than a 390-pixel browser window, the URL bar takes a fifth of the screen
+and the table is squeezed into a strip where the seats print over the grupos.
+Phases 18 and 19 are that: room to play, and then no longer having to turn the
+phone at all.
 
 Off the roadmap, after Phase 15: **a ronda no longer slips past you.** When
 somebody goes out, the game stops on a screen that says who won, with the
@@ -148,30 +156,42 @@ the cards are gone and has to be dropped when the ronda changes.
 
 ## What comes next
 
-**Phase 18 — the right way round, and a table worth looking at.** Play passes
+**Phase 18 — room to play.** Measured on a real phone lying down, the CSS
+viewport is about 615 × 287: the browser's URL bar takes a fifth before the
+game gets any, the arranging controls wrap into three rows and eat half of what
+is left, and a seat's card count ends up printed on top of a grupo. Three
+answers — a manifest and the Fullscreen API so the browser chrome goes away,
+every size derived from the height actually available instead of `h-20`, and
+bands that cannot borrow space from each other.
+
+**Phase 19 — standing up.** The table works upright, and the
+turn-your-phone screen is deleted rather than improved. Same components, two
+arrangements; rotating mid-partida rearranges and loses nothing.
+
+**Phase 20 — the right way round, and a table worth looking at.** Play passes
 to the player on your **right** in Carioca, and the seating puts them on your
 left. Only `lib/asientos.ts` is wrong; the engine has no opinion about
 geometry. The direction was never written down, which is why nobody caught it,
 so it goes into `carioca-rules.md` first. And the green felt is the default
 nobody chose: black with a thin red line, elegant rather than casino.
 
-**Phase 19 — the clock.** Bots think for a number of seconds chosen on the
+**Phase 21 — the clock.** Bots think for a number of seconds chosen on the
 setup screen, two by default, timed over the **whole turn** rather than each
 move. The ring on the ficha drains as it goes. No clock for the human yet.
 
-**Phase 20 — what just happened.** The drawn card animates to the hand that
+**Phase 22 — what just happened.** The drawn card animates to the hand that
 took it, and a line under the piles says what was done. It may only ever name a
 card everybody saw: from the descarte, yes; from the mazo, never.
 
-**Phase 21 — the bot framework.** The step that makes difficulty levels
+**Phase 23 — the bot framework.** The step that makes difficulty levels
 possible, and the one online play needs anyway.
 
 Right now a bot receives the whole `RondaState` and is merely well-behaved about
-not reading other hands. Phase 21 makes that structural: a **view** of what one
+not reading other hands. Phase 23 makes that structural: a **view** of what one
 seat can legitimately see — its own hand, the grupos on the mesa, the descarte,
 how many cards everyone holds. A bot takes the view and returns a `Move`.
 
-That same function is what the server will need in Phase 26 to send each player
+That same function is what the server will need in Phase 28 to send each player
 only their own cards, so it is worth getting right rather than fast.
 
 It also unlocks what bots with memory need: once the input is explicitly "what
@@ -187,14 +207,14 @@ property of the bot rather than a licence to peek.
   partida with a code and a nickname, so the system still needs to know which
   seat is whose, survive a reload, and stop someone claiming another player's
   seat and seeing their hand. Likely a per-seat secret in the browser. Settle it
-  before Phase 24.
+  before Phase 26.
 - **Real-time transport.** Vercel functions cannot hold WebSockets. Polling with
   TanStack Query is the likely first implementation, behind an interface so it
-  can be swapped for Pusher or Supabase Realtime. Decide in Phase 26, not before.
+  can be swapped for Pusher or Supabase Realtime. Decide in Phase 28, not before.
 - **A ronda nobody can win.** Carioca has no stalemate rule, and the soak
   measures the consequence: ~1.3% of bot partidas never end. Harmless in a test,
   a hung game online. Options are written up in `carioca-rules.md`; decide before
-  Phase 26.
+  Phase 28.
 
 ## How this project is run
 
