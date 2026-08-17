@@ -725,6 +725,13 @@ scrolling, and the comodín still shows what it stands for while overlapped.
 stands for underneath) — bottom-corner labels vanish under the next card in a
 tight fan, corners do not.
 
+One follow-up from the first game played with the latch on: **the drawn card
+is marked** — a blue ring and a nudge up out of the fan — until your discard
+ends the turn. The latch files a drawn card into place, which is its job, and
+also exactly how you lose track of what you just drew; the mark gives that
+back. Found by hand-diffing, not by peeking at the stock, so a reshuffle
+cannot mislabel it, and a bot's draws never mark anything.
+
 ---
 
 ## Milestone 3 — Bots worth playing

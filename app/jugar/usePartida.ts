@@ -66,6 +66,13 @@ export function usePartida(options: {
   /** The card currently travelling across the table, if any. */
   const [viaje, setViaje] = useState<Viaje | null>(null)
   const proximoViaje = useRef(1)
+  /**
+   * The card you drew this turn, so the hand can mark it. With a sort
+   * latched, a drawn card files itself into place — which is the point of
+   * the latch, and also how you lose track of what you just drew. The mark
+   * lasts until the turn ends with your discard.
+   */
+  const [recienRobada, setRecienRobada] = useState<string | null>(null)
 
   /**
    * A new reparto starts with nothing arranged and nothing pinned.
@@ -89,6 +96,7 @@ export function usePartida(options: {
     setRelato(null)
     setHistoria([])
     setViaje(null)
+    setRecienRobada(null)
   }
 
   const ronda = partida.ronda
@@ -238,42 +246,61 @@ export function usePartida(options: {
 
   /**
    * The public record of a move that just landed: the line under the piles,
-   * and — for a draw — the card that travels across the table. Called from
-   * inside the state updaters, right where the state-before is at hand.
+   * for a draw the card that travels across the table, and for *your* draw
+   * the mark on the card that arrived. Called from inside the state updaters,
+   * right where both sides of the move are at hand.
    */
-  const anotar = useCallback((antes: PartidaState, move: Move) => {
-    const ronda = antes.ronda
-    if (!ronda) return
+  const anotar = useCallback(
+    (antes: PartidaState, move: Move, despues: PartidaState) => {
+      const ronda = antes.ronda
+      if (!ronda) return
 
-    const cuento = relatar(move, ronda)
-    if (cuento) {
-      setRelato(cuento)
-      setHistoria((antes) => [...antes, cuento])
-    }
+      const cuento = relatar(move, ronda)
+      if (cuento) {
+        setRelato(cuento)
+        setHistoria((antes) => [...antes, cuento])
+      }
 
-    if (move.type === 'robar') {
-      setViaje({
-        clave: proximoViaje.current++,
-        desde: { pila: move.de },
-        hasta: { seat: ronda.turno },
-        // Only the descarte card was face up; a stock draw travels face down.
-        carta: move.de === 'descarte' ? (ronda.discard.at(-1) ?? null) : null,
-      })
-    }
+      if (move.type === 'robar') {
+        setViaje({
+          clave: proximoViaje.current++,
+          desde: { pila: move.de },
+          hasta: { seat: ronda.turno },
+          // Only the descarte card was face up; a stock draw travels face down.
+          carta: move.de === 'descarte' ? (ronda.discard.at(-1) ?? null) : null,
+        })
 
-    if (move.type === 'descartar') {
-      const carta = ronda.jugadores[ronda.turno].hand.find(
-        (card) => card.id === move.cardId,
-      )
-      setViaje({
-        clave: proximoViaje.current++,
-        desde: { seat: ronda.turno },
-        hasta: { pila: 'descarte' },
-        // A discard lands face up: everybody sees it, so the trip shows it.
-        carta: carta ?? null,
-      })
-    }
-  }, [])
+        // Your own draw gets marked in the hand. Found by diffing the hands
+        // rather than peeking at the stock, so a reshuffle cannot confuse it.
+        if (ronda.turno === TU_ASIENTO && despues.ronda) {
+          const habia = new Set(
+            ronda.jugadores[TU_ASIENTO].hand.map((card) => card.id),
+          )
+          const nueva = despues.ronda.jugadores[TU_ASIENTO].hand.find(
+            (card) => !habia.has(card.id),
+          )
+          setRecienRobada(nueva?.id ?? null)
+        }
+      }
+
+      if (move.type === 'descartar') {
+        const carta = ronda.jugadores[ronda.turno].hand.find(
+          (card) => card.id === move.cardId,
+        )
+        setViaje({
+          clave: proximoViaje.current++,
+          desde: { seat: ronda.turno },
+          hasta: { pila: 'descarte' },
+          // A discard lands face up: everybody sees it, so the trip shows it.
+          carta: carta ?? null,
+        })
+
+        // Your discard ends your turn, and the mark belongs to the turn.
+        if (ronda.turno === TU_ASIENTO) setRecienRobada(null)
+      }
+    },
+    [],
+  )
 
   const jugar = useCallback(
     (move: Move) => {
@@ -284,7 +311,7 @@ export function usePartida(options: {
           return actual
         }
         setAviso(null)
-        anotar(actual, move)
+        anotar(actual, move, result.state)
         const cerrada = rondaCerrada(actual, result.state)
         if (cerrada) setResumen(cerrada)
         return result.state
@@ -345,7 +372,7 @@ export function usePartida(options: {
         setPartida((antes) => {
           const result = aplicarEnPartida(antes, move)
           if (!result.ok) return antes
-          anotar(antes, move)
+          anotar(antes, move, result.state)
           const cerrada = rondaCerrada(antes, result.state)
           if (cerrada) setResumen(cerrada)
           return result.state
@@ -432,7 +459,7 @@ export function usePartida(options: {
           if (result.ok) {
             setAviso(null)
             setSeleccion([])
-            anotar(actual, move)
+            anotar(actual, move, result.state)
             return result.state
           }
         }
@@ -479,6 +506,8 @@ export function usePartida(options: {
     viaje,
     /** Which sort is latched, if any. */
     acomodoActivo,
+    /** The card you drew this turn, marked until your discard ends it. */
+    recienRobada,
     /** True once the last contract has been played and scored. */
     seAcabo: partida.ronda === null,
     siguiente,

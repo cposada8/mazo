@@ -130,6 +130,7 @@ export function Juego({
             </div>
           }
           seleccionadas={new Set(juego.seleccion)}
+          resaltada={juego.recienRobada ?? undefined}
           onCarta={esTuTurno ? juego.alternarCarta : undefined}
           onRobar={esTuTurno && ronda.fase === 'draw' ? juego.robar : undefined}
           onGrupo={esTuTurno && ronda.fase === 'act' ? juego.agregarA : undefined}

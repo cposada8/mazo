@@ -236,6 +236,42 @@ describe('a latched sort', () => {
   })
 })
 
+describe('the drawn card is marked', () => {
+  it('marks exactly the card that arrived, even under a latched sort', () => {
+    const { result } = montar()
+    act(() => result.current.acomodarMano('numeros'))
+
+    const habia = new Set(result.current.mano.map((card) => card.id))
+    act(() => result.current.robar('stock'))
+
+    const nueva = result.current.mano.find((card) => !habia.has(card.id))!
+    expect(result.current.recienRobada).toBe(nueva.id)
+  })
+
+  it('unmarks when the discard ends the turn', () => {
+    const { result } = montar()
+    act(() => result.current.robar('descarte'))
+    expect(result.current.recienRobada).not.toBeNull()
+
+    act(() => result.current.alternarCarta(result.current.disponibles[0].id))
+    act(() => result.current.descartar())
+    expect(result.current.recienRobada).toBeNull()
+  })
+
+  it('never marks a bot draw', async () => {
+    const { result } = montar()
+    act(() => result.current.robar('stock'))
+    act(() => result.current.alternarCarta(result.current.disponibles[0].id))
+    act(() => result.current.descartar())
+
+    await waitFor(() => expect(result.current.esTuTurno).toBe(true), {
+      timeout: 5000,
+    })
+    // The bot drew during its turn; your mark stayed clear.
+    expect(result.current.recienRobada).toBeNull()
+  })
+})
+
 describe('the public story', () => {
   it('accumulates relatos as moves land', () => {
     const { result } = montar()

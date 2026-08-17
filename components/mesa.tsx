@@ -290,6 +290,7 @@ export function Mano({
   secciones,
   puntos,
   seleccionadas,
+  resaltada,
   onCarta,
   onSoltar,
   acciones,
@@ -301,6 +302,12 @@ export function Mano({
   /** What the hand would cost if the ronda ended now. */
   puntos?: number
   seleccionadas?: ReadonlySet<string>
+  /**
+   * The card just drawn, kept visibly marked: with a sort latched it files
+   * itself into place, and a card that sorts itself in is a card you lose
+   * track of the moment it lands.
+   */
+  resaltada?: string
   onCarta?: (cardId: string) => void
   /** Unpin a bloque, by its position among the pinned ones. */
   onSoltar?: (indice: number) => void
@@ -366,11 +373,18 @@ export function Mano({
               <div className="flex w-max pl-[calc(var(--carta-md,5rem)*0.34)]">
                 {seccion.cards.map((card) => {
                   const elegida = seleccionadas?.has(card.id) ?? false
+                  const nueva = resaltada === card.id
                   const carta = (
                     <Carta
                       card={card}
                       className={cn(
                         'transition-transform',
+                        // The mark on the just-drawn card: a blue ring and a
+                        // nudge upward, so it stands out of the fan even
+                        // after a latched sort files it into place. Selection
+                        // wins when both apply — its lift is higher.
+                        nueva &&
+                          'ring-offset-background -translate-y-1 ring-2 ring-sky-400 ring-offset-1',
                         elegida &&
                           'ring-foreground ring-offset-background -translate-y-2 ring-2 ring-offset-2',
                       )}
@@ -507,6 +521,7 @@ export function Mesa({
   onCarta,
   onGrupo,
   seleccionadas,
+  resaltada,
 }: {
   state: RondaState
   /** The seat whose hand is shown face up. */
@@ -514,6 +529,8 @@ export function Mesa({
   nombres?: readonly string[]
   /** When given, the ring of the seat in play drains over the turn's time. */
   reloj?: Reloj
+  /** The card just drawn into your hand, kept visibly marked. */
+  resaltada?: string
   /** Your hand laid out. Defaults to the dealt order, unpinned. */
   secciones?: readonly Seccion[]
   /** What your hand would cost right now. */
@@ -646,6 +663,7 @@ export function Mesa({
             }
             puntos={puntos}
             seleccionadas={seleccionadas}
+            resaltada={resaltada}
             onCarta={onCarta}
             onSoltar={onSoltar}
             acciones={accionesDeMano}
