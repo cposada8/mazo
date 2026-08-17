@@ -52,6 +52,19 @@ export type Escala = {
 
 export type Grupo = Trio | Escala
 
+/**
+ * A grupo as the player proposes it, before it exists: cards are named by id
+ * because they are still in a hand. Becomes a Grupo once accepted.
+ */
+export type Propuesta =
+  | { readonly kind: 'trio'; readonly rank: Rank; readonly cardIds: readonly string[] }
+  | {
+      readonly kind: 'escala'
+      readonly suit: Suit
+      readonly start: Rank
+      readonly cardIds: readonly string[]
+    }
+
 export type GrupoErrorCode =
   | 'TOO_SHORT'
   | 'TOO_LONG'

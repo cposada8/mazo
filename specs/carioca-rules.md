@@ -428,5 +428,19 @@ likely bypasses the normal lay-down-then-discard flow. It does not fit the
 type must not be designed in a way that makes escaleras impossible to add later,
 but no attempt is made to model them yet.
 
-Nothing else is open. Any rule discovered to be missing during implementation is
-settled here first, then coded.
+### Discarding the card just taken from the descarte
+
+Found while building the ronda state machine, and not covered above: may a
+player take the top of the descarte and then discard that same card in the same
+turn?
+
+Taking it back out costs nothing, so allowing it lets a player pass a turn with
+no consequence and hand the same card back to the table — a stall with no cost.
+Most rummy variants forbid it for exactly that reason.
+
+**Currently allowed**, because the rules as written do not forbid it. Left as
+written rather than invented; if the answer is no, it is a one-line rule in
+`ronda.ts`.
+
+Everything else is settled. Any rule discovered to be missing during
+implementation is written here first, then coded.

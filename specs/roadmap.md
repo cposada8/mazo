@@ -51,7 +51,7 @@ two consecutive in an escala.
 an escala knows the rank it starts on, so slot `i` stands for
 `rankAfter(start, i)` and nothing can drift out of sync.
 
-### Phase 4 — Banco de pruebas
+### Phase 4 — Banco de pruebas ✅
 A `/pruebas` page that makes the finished engine visible. Deal a ronda from a
 seed the visitor types and render every hand, the stock and the descarte; retype
 the seed and get the identical deal. A second section runs the grupo validator
@@ -64,19 +64,30 @@ phone.
 **Done when:** someone with no access to the terminal can confirm the deal is
 deterministic and see the comodín rules being enforced.
 
-### Phase 5 — One ronda, start to finish
+**Done.** Live at **https://mazo-six.vercel.app/pruebas**.
+
+### Phase 5 — One ronda, start to finish ✅
 Turn order, draw from stock or descarte, lay down a contrato, discard, detect
 going out, and reshuffle the descarte when the stock empties. Illegal moves are
 rejected by the engine, not by the caller.
 **Done when:** a test plays a scripted ronda to completion and the final state is
 correct.
 
-### Phase 6 — The mesa
+**Done.** `lib/engine/ronda.ts`. Every move goes through `apply`, which returns
+a new state or refuses with a code — the engine is the referee, and state is
+never mutated. The random stream rides along as one number so a ronda can be
+stored and reloaded and still reshuffle deterministically.
+
+### Phase 6 — The mesa ✅
 Adding cards to grupos and repositioning comodines within a grupo, under the
 rules that gate them: the mesa is untouchable before bajarse, own grupos are
 open on the lay-down turn, opponents' only from the next turn.
 **Done when:** a test reproduces the worked example — `2♦ comodín(3♦) 4♦ 5♦`
 becoming `2♦ 3♦ 4♦ 5♦ comodín(6♦) 7♦` — and rejects every gated case.
+
+**Done.** `lib/engine/mesa.ts`, 153 tests overall. Reshaping a grupo lives apart
+from deciding who may reshape it, so the worked example can be tested without a
+ronda around it.
 
 ### Phase 7 — Full partida and scoring
 The configured contract list played in order, per-ronda scoring, the optional

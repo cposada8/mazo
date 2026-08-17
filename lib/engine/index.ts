@@ -7,6 +7,9 @@
  */
 
 export * from './cards'
+export * from './contratos'
 export * from './deck'
 export * from './grupos'
+export * from './mesa'
 export * from './random'
+export * from './ronda'

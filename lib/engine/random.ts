@@ -11,6 +11,14 @@ export type Rng = {
   next(): number
   /** Next integer in [0, max). */
   nextInt(max: number): number
+  /**
+   * The generator's whole state, as one number.
+   *
+   * Passing it back to `createRng` resumes the stream exactly where it left
+   * off. That is what lets a ronda be stored, reloaded, and keep reshuffling
+   * deterministically without replaying every draw since the deal.
+   */
+  state(): number
 }
 
 /** FNV-1a, to turn a human-readable seed into a 32-bit number. */
@@ -45,6 +53,7 @@ export function createRng(seed: string | number): Rng {
       }
       return Math.floor(next() * max)
     },
+    state: () => state,
   }
 }
 
