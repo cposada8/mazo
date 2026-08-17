@@ -10,6 +10,19 @@ const SUIT_SYMBOL: Record<Suit, string> = {
 
 const RED_SUITS: ReadonlySet<Suit> = new Set<Suit>(['hearts', 'diamonds'])
 
+/** `sm` for cards on the mesa, `md` for the ones in your own hand. */
+export type TamanoDeCarta = 'sm' | 'md'
+
+const TAMANOS: Record<TamanoDeCarta, string> = {
+  sm: 'h-14 w-10 p-1 text-xs',
+  md: 'h-20 w-14 p-1.5 text-sm',
+}
+
+const SIMBOLO: Record<TamanoDeCarta, string> = {
+  sm: 'text-sm',
+  md: 'text-xl',
+}
+
 type CartaProps = {
   card: Card
   /**
@@ -18,12 +31,12 @@ type CartaProps = {
    * than implied.
    */
   represents?: Rank
+  size?: TamanoDeCarta
   className?: string
 }
 
-export function Carta({ card, represents, className }: CartaProps) {
-  const base =
-    'flex h-20 w-14 shrink-0 flex-col justify-between rounded-md border p-1.5 text-sm leading-none shadow-sm select-none'
+export function Carta({ card, represents, size = 'md', className }: CartaProps) {
+  const base = `flex ${TAMANOS[size]} shrink-0 flex-col justify-between rounded-md border leading-none shadow-sm select-none`
 
   if (isComodin(card)) {
     return (
@@ -36,7 +49,7 @@ export function Carta({ card, represents, className }: CartaProps) {
         title={represents ? `Comodín valiendo ${represents}` : 'Comodín'}
       >
         <span className="font-semibold">★</span>
-        <span className="self-center text-lg">☺</span>
+        <span className={cn('self-center', SIMBOLO[size])}>☺</span>
         <span className="self-end text-[10px] font-medium tabular-nums">
           {represents ?? ''}
         </span>
@@ -58,7 +71,7 @@ export function Carta({ card, represents, className }: CartaProps) {
       title={`${card.rank}${symbol}`}
     >
       <span className="font-semibold tabular-nums">{card.rank}</span>
-      <span className="self-center text-xl">{symbol}</span>
+      <span className={cn('self-center', SIMBOLO[size])}>{symbol}</span>
       <span className="rotate-180 self-end font-semibold tabular-nums">
         {card.rank}
       </span>
@@ -66,12 +79,19 @@ export function Carta({ card, represents, className }: CartaProps) {
   )
 }
 
-/** Face-down card, for the stock. */
-export function CartaBocaAbajo({ className }: { className?: string }) {
+/** Face-down card, for the stock and for other players' hands. */
+export function CartaBocaAbajo({
+  size = 'md',
+  className,
+}: {
+  size?: TamanoDeCarta
+  className?: string
+}) {
   return (
     <div
       className={cn(
-        'h-20 w-14 shrink-0 rounded-md border bg-linear-to-br from-slate-600 to-slate-800 shadow-sm',
+        TAMANOS[size],
+        'shrink-0 rounded-md border bg-linear-to-br from-slate-600 to-slate-800 shadow-sm',
         className,
       )}
       aria-label="Carta boca abajo"

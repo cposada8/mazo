@@ -142,12 +142,16 @@ suit within three ranks" as useful made `4♦` and `7♦` protect each other for
 without ever forming an escala, and **no** partida with an escala contract ever
 finished. Scoring by the length of the actual consecutive run fixed it.
 
-### Phase 10 — The table
+### Phase 10 — The table ✅
 Mobile-first UI: your hand, the stock and discard piles, melds on the table,
 whose turn it is. Read-only at first — it renders a game state, it does not
 mutate one.
 **Done when:** a finished game state from Phase 7 renders correctly on a phone
 screen.
+
+**Done.** `components/mesa.tsx` and `/mesa`, which steps through a whole bot
+partida move by move. Comodines on the mesa render the rango they stand for, so
+the positional binding is visible on screen and not just in the code.
 
 ### Phase 11 — Play it
 Wire interaction: draw, select cards, lay down, discard. Local game against the

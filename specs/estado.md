@@ -1,6 +1,6 @@
 # Project status — pick up here
 
-Last updated after Phase 9.
+Last updated after Phase 10.
 
 Read this first, then `mission.md` for the why, `carioca-rules.md` for the game,
 `tech-stack.md` for the stack, and `roadmap.md` for what comes next. This file is
@@ -14,10 +14,10 @@ doc is worse than none.
 
 ## Where things stand
 
-Phases 0–8 are done. **Milestone 1 is complete: the engine is right.** It plays
-a whole partida — every contract, scored, with a winner — and a ronda can now be
-dealt from cards you dictate. Nothing is playable by a human yet; that is
-Milestone 2.
+Phases 0–10 are done. **Milestone 1 is complete: the engine is right.** Bots now
+play whole partidas against each other, and `/mesa` draws one move by move on a
+phone. A person still cannot play: the table renders a state, it does not change
+one. That is Phase 11, and it finishes Milestone 2.
 
 | Phase | | |
 | --- | --- | --- |
@@ -31,11 +31,13 @@ Milestone 2.
 | 7 | Full partida and scoring | ✅ |
 | 8 | Escenarios: dictated deals | ✅ |
 | 9 | El Codicioso, the baseline bot | ✅ |
-| 10 | The table on screen | ← **next** |
-| 11–18 | Playing it, then online | not started |
+| 10 | The table on screen | ✅ |
+| 11 | Playing it against bots | ← **next** |
+| 12–18 | Better bots, then online | not started |
 
 - **Repo:** https://github.com/cposada8/mazo
-- **Live:** https://mazo-six.vercel.app — and https://mazo-six.vercel.app/pruebas
+- **Live:** https://mazo-six.vercel.app — `/mesa` steps through a bot partida,
+  `/pruebas` shows deals and grupo validation.
 - **Deploys:** every push to `main` goes to production automatically.
 - **Tests:** 265, all green (the soak takes ~15s). `npm run test:run`, `npx tsc --noEmit`, `npm run lint`.
 
@@ -60,6 +62,7 @@ lib/bots/             Clients of the engine. Nothing in the engine imports these
   codicioso.ts       El Codicioso: the baseline bot.
   mesa.ts            Runs a whole partida with bots in the seats.
 components/carta.tsx The visual card.
+components/mesa.tsx  The table: opponents, grupos, piles, your hand.
 app/pruebas/         The page that makes the engine visible.
 __tests__/engine/    Tests, including helpers.ts for scripted rondas.
 ```
@@ -97,19 +100,22 @@ draw comes from the partida seed, so nothing about a partida is unreproducible.
 
 ## What comes next
 
-**Phase 10 — the table on screen.** A mobile-first view that *renders* a
-`RondaState`: your hand, the stock and the descarte, every grupo on the mesa,
-whose turn it is. Read-only — it draws a state, it does not change one. The
-`Carta` component from Phase 4 is the starting point.
+**Phase 11 — play it.** The first time a person can play Carioca here. It needs:
 
-Then Phase 11 wires the interaction and drops El Codicioso into the other seats:
-the first time Carioca can actually be played by a person, on a phone.
+- Interaction on top of the components in `components/mesa.tsx`, which already
+  draw everything: tap a pile to draw, select cards to lay down or add, tap one
+  to discard.
+- El Codicioso in the other seats, moving after you do.
+- Client state in Zustand; the engine stays the referee, so every tap becomes a
+  `Move` handed to `aplicarEnPartida` and refusals surface as "you cannot do
+  that" rather than as a broken board.
+- **Done when** a person plays a full partida against bots on the deployed site.
+  That is Milestone 2.
 
-Two things worth using while building it:
-
-- **Scenarios** give you any table state you want to look at, without playing to
-  it: name the hands, name the grupos, render.
-- **`jugarPartida`** from `lib/bots` produces real finished states to render.
+Worth knowing while building it: `buscarAgrupacion` from `lib/bots` is what the
+"can I bajarme?" hint should call — it already finds a grouping the engine will
+accept. And scenarios give you any board state to work against without playing
+to it.
 
 ## Open questions, deliberately unanswered
 
