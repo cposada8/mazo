@@ -73,20 +73,16 @@ A milestone is only real when it is playable, not when it compiles.
 
 ## Open questions
 
-Carioca is played with regional and family variations. These must be settled in
-Phase 0 before the engine is written:
+**Resolved.** The rules were settled in Phase 0 and live in
+[`carioca-rules.md`](./carioca-rules.md), which is the authority on how the game
+works. One item is deferred on purpose: the *escalera* contracts (9 and beyond).
 
-- **Contract sequence.** How many hands, and which combination of trios and runs
-  in each. The commonly cited Chilean sequence is six hands, but the exact list
-  is not assumed here.
-- **Run length and wrap-around.** How many cards make an *escala*, and whether the
-  ace may act as both low and high.
-- **Deck composition.** Number of decks and jokers relative to player count.
-- **Jokers.** Point value, whether a meld may hold more than one, and whether a
-  laid-down joker can be swapped out by the card it represents.
-- **Laying down.** Whether a player may add to opponents' melds, and whether the
-  discard pile may be drawn from freely or only under conditions.
-- **Scoring.** Point value of aces and face cards, and whether going out awards a
-  bonus.
-- **Win condition.** Lowest cumulative score after the final hand, assumed but to
-  be confirmed.
+Three of those answers turned out to shape the whole design, and are worth
+knowing before reading any code:
+
+- **Contracts are configuration.** Players choose which contracts to play, so the
+  engine takes a list rather than knowing a fixed sequence.
+- **The player groups, the engine validates.** Six sevens can be one trío or two,
+  and that choice belongs to the player. The engine never re-groups a hand.
+- **The mesa is contested.** Any player who has bajado can extend anyone's grupos
+  and reposition their comodines, so table state is shared, not owned.

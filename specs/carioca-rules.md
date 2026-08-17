@@ -1,10 +1,10 @@
 # Carioca — Rules
 
-Status: **in progress.** This document is built up one settled question at a
-time. Phase 0 of the roadmap is complete only when nothing here is marked
-pending.
+Status: **complete for contracts 1–8.** Everything needed to implement the first
+version of the engine is settled below.
 
-Nothing marked *pending* may be implemented.
+The escalera contracts (9 and beyond) are the one open item, and they are
+deferred on purpose — see *Pending*. Nothing marked *pending* may be implemented.
 
 ---
 
@@ -54,7 +54,7 @@ Settled so far:
 
 | Setting | Options | Default |
 | --- | --- | --- |
-| Enabled contracts | Any non-empty subset of the catalog, in standard order | to confirm |
+| Enabled contracts | Each contract toggled independently, always in standard order | 1–7 on, rest off |
 | Jokers | On / off | On |
 | Ronda-winner bonus | Any number ≥ 0, suggested 0 / 10 / 25 / 50 | 0 |
 
@@ -94,6 +94,17 @@ Consequences of this decision:
   provided they fit the same shape — see *pending* below, because they may not.
 
 **Constraint:** at least one contract must be enabled.
+
+#### How the choice is presented
+
+Not as presets or difficulty levels. The player sees **the full catalog as a
+list, one row per contract, each individually switchable on or off** — a checkbox
+is the obvious control, but the concept is what matters: every contract is
+independently toggleable, and the list is always shown in full.
+
+Defaults: **contracts 1–7 on, everything below them off.** Contract 8 and the
+escalera contracts exist in the list, unchecked, so a player can add them
+deliberately.
 
 ### The standard catalog
 
@@ -362,6 +373,25 @@ Scores accumulate across every ronda played. When the last enabled contract is
 finished, **the lowest cumulative total wins**. There is no elimination and no
 score ceiling that ends a partida early.
 
+A tie is a **shared win**: everyone on the lowest total wins, with no tie-breaker
+and no play-off ronda. The engine therefore reports the result as a *list* of
+winners, never a single player.
+
+#### Worked example
+
+Three players, contract 1 (*dos tríos*), `bonusGanadorRonda: 0`. Ana goes out; the
+others count what is left in hand:
+
+| Player | Cards held | Points |
+| --- | --- | --- |
+| Ana | — (went out) | **0** |
+| Beto | `K♠` `9♥` `comodín` | 10 + 9 + 50 = **69** |
+| Caro | `A♦` `4♣` `4♠` `J♥` | 20 + 4 + 4 + 10 = **38** |
+
+With `bonusGanadorRonda: 10`, Ana would score **−10** instead of 0 and the other
+two would be unchanged. Totals carry into the next ronda; after all seven, the
+lowest total wins.
+
 ### The player groups, the engine validates
 
 With six sevens in hand, `7 7 7 7 7 7` may be laid down as **one** trío of six or
@@ -398,7 +428,5 @@ likely bypasses the normal lay-down-then-discard flow. It does not fit the
 type must not be designed in a way that makes escaleras impossible to add later,
 but no attempt is made to model them yet.
 
-### Everything else
-
-- Tie-breaking, if two players finish with the same total.
-- Which contracts are enabled by default.
+Nothing else is open. Any rule discovered to be missing during implementation is
+settled here first, then coded.
