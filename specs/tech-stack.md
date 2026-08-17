@@ -46,25 +46,24 @@ rule ever needs to break, the design is wrong.
 
 ## Deferred
 
-**Real-time transport.** Vercel's serverless functions cannot hold open
-WebSocket connections, so online play needs a managed transport. The decision is
-deliberately postponed to the online phase, when the shape of the state updates
-is known. Current leaning, in order:
+**Real-time transport.** This section was written when Vercel's serverless
+functions could not hold open WebSocket connections. That premise has expired —
+Vercel Functions support WebSockets on Fluid Compute — but the conclusion
+stands: **polling with TanStack Query is the first implementation**, because it
+needs no new service at all and a second of latency is invisible in a
+turn-based game. The transport sits behind an interface so it can be swapped.
+If polling ever feels bad at a real table, the options in order:
 
-1. **Pusher Channels** — smallest amount of new concept; a free tier that covers
-   a handful of simultaneous games.
-2. **Supabase Realtime** — more capable, but pulls in a second database.
-3. **Polling with TanStack Query** — no new service at all, and a legitimate
-   starting point for a turn-based game where a second of latency is invisible.
-
-Polling is the likely first implementation precisely because it needs no new
-vendor; the transport sits behind an interface so it can be swapped.
+1. **Vercel WebSockets** — first-party, no new vendor.
+2. **Pusher Channels** — managed, a free tier that covers a handful of
+   simultaneous games.
+3. **Supabase Realtime** — more capable, but pulls in a second database.
 
 **Guest identity.** With no accounts, the system still has to know which player
 at a table is which, survive a page reload, and stop someone from claiming
 another player's seat and seeing their hand. The likely shape is a per-seat
-secret stored in the browser, but the design is open and is discussed before the
-online phases.
+secret stored in the browser; the design is settled here as part of Phase 32,
+before any persistence code is written.
 
 **Animations.** Card movement will need something better than CSS transitions.
 Evaluate when the table UI exists, not before.

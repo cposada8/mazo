@@ -433,7 +433,7 @@ Three things came out differently than written above:
   20.
 
 Left deliberately undone: animations, real avatars, and any decoration of the
-room beyond a dark ground. Those are Phase 32, and none of them is what made
+room beyond a dark ground. Those are Phase 40, and none of them is what made
 the old screen unreadable.
 
 ### Phase 18 — Room to play ✅
@@ -521,7 +521,7 @@ arrangement — seats across the top, mesa in the middle, hand along the
 bottom — so this phase is a container query on `.cancha`, not a second
 layout. Below 1:1 aspect the oval hides and the grupos wrap into rows
 (portrait's spare dimension is height, so the mesa trades its sideways
-scroll for wrapping — which incidentally previews the fix Phase 32 wants
+scroll for wrapping — which incidentally previews the fix Phase 40 wants
 for the six-player overflow). The rotate-your-phone screen is deleted, the
 manifest orientation loosened to `any`, and rotation mid-turn was verified
 to preserve selection and bloques — nothing unmounts, so nothing is lost.
@@ -902,21 +902,285 @@ photo — which is also the fallback for an empty folder.
 
 ---
 
-## Milestone 3 — Bots worth playing
+## Online moves to the front
 
-### Phase 30 — Bot framework
-Extract the strategy interface: a bot receives the legal state it can see and
-returns a move. Add hand-evaluation helpers shared by all bots.
-**Done when:** a new bot can be added in one file with no engine changes.
+Decided after Phase 29: multiplayer stops waiting. What is wanted is concrete —
+start a partida, have one or several people join it with a short code, fill the
+empty seats with bots — and everything else pending moves behind it. El
+Codicioso is the only bot online needs for now, so the better bots (the old
+Milestone 3) are displaced, not cancelled.
 
-### Phase 31 — Bot personalities
-At least three bots that differ observably: e.g. one that hoards for the perfect
-meld, one that lays down at the first opportunity, one that watches discards and
-plays around opponents. Give them names and short descriptions in the UI.
-**Done when:** a head-to-head tournament shows different win rates and visibly
-different play. **This is Milestone 3.**
+Sharpened while planning it: **there is no solo mode.** Playing against bots
+and playing against people are the same game entered through the same door.
+Arriving at the app deals you an alias (Phase 32). The home screen offers
+exactly two things — create a partida, or join one with its code (Phase 33).
+Creating one makes you the host of a table that already has **three bots
+sitting at it** — a table of four by default — and hosting is choosing: keep
+the bots, remove them, invite people, mix. The old setup screen's options
+become the host's lobby.
 
-### Phase 32 — Rough edges
+One door does not mean one home: **where a partida lives is decided by who
+is sitting at it.** A table of bots and nobody else keeps living in the
+browser, the way the whole game does today — no connection needed to play,
+and losing the signal mid-partida loses nothing. A table with another human
+in it lives on the server, the only place two phones can trust. Same UI,
+same engine, same seat's view; the two homes sit behind one interface
+(Phase 34), and the drift risk a second implementation usually brings is
+contained by how little each backing owns — transport, storage, and where
+the bots think. The rest is shared, or it is a bug. The one honest
+trade-off: nobody can join a partida that lives in your phone, so a
+bots-only local table has no live code — the code is for inviting, and
+inviting is what server tables are for.
+
+The old plan survives this better than it might look. The four online phases
+(old 33–36) keep their shape and their order; what changes is what stands in
+front of them, and what was learned since they were written:
+
+- **The seat's view comes first.** The old bot-framework phase already said
+  that its view — what one seat can legitimately see — "is what the server
+  will need in Phase 35 to send each player only their own cards". That half
+  is pulled forward; the hand-evaluation helpers and the personalities wait.
+- **The ronda nobody can win gets its rule now.** ~1.3% of bot partidas stall
+  with no winner. Harmless in a soak, a hung room online — and it was already
+  marked "decide before server play".
+- **The bots move to the server.** Today `usePartida` runs `movesDelTurno` in
+  the browser and spreads the moves with `setTimeout`. Online, a bot is the
+  server's tenant. The functions themselves relocate for free — `lib/bots`
+  imports nothing but the engine — but the pacing needs a server answer,
+  because a serverless function has no clock between requests.
+- **Every human turn gets a clock**, asked for with the reprioritization: a
+  player who walks away loses one turn, not the whole table. Phase 21 built
+  the draining ring and said so at the time — "what it leaves behind is the
+  mechanism a real timer would need later".
+- **One premise expired.** `tech-stack.md` said Vercel functions cannot hold
+  WebSockets; since Fluid Compute they can. Polling first is still the plan —
+  no new vendor, and a second of latency is invisible in a turn-based game —
+  but the transport phase inherits a first-party option it did not have.
+
+---
+
+## Milestone 3 — Playable together
+
+### Phase 30 — The seat's view
+What one seat can legitimately see, as a type: its own hand, everyone's
+grupos, the descarte (browsable since Phase 24, public by definition), the
+piles' sizes, everyone's card counts, whose turn it is, the fase, the
+contract, who has bajado. And **no field that could carry another player's
+hand** — the same construction that keeps `Relato`'s `mazo` variant from ever
+naming a hidden card. Phase 22 called that discipline structural and named
+this phase as the place it becomes so.
+
+The bot interface narrows to take the view — `decidir(vista)` instead of
+`decidir(state)` — and El Codicioso is ported. It already behaves as if this
+were true ("it looks only at its own seat and the public piles"), so the port
+is moving field accesses, not rethinking the bot. The runner keeps the full
+state; only *deciding* is restricted.
+
+This is the server's payload. Phase 34 sends each player exactly this view,
+so it is worth getting right rather than fast.
+
+**Done when:** the Phase 9 soak passes unchanged with the bot deciding from
+the view alone, and a test proves that building any seat's view of any state
+yields no card of any other hand.
+
+### Phase 31 — A ronda that always ends
+The soak has measured it since Phase 9: ~1.3% of partidas reach a state
+nobody can win, because Carioca has no stalemate rule. Online, that is a room
+nobody can leave. The options are already written up in `carioca-rules.md`;
+settle one with the owner, write it into the rules first — the Phase 20
+lesson — then into the engine.
+
+**Done when:** the 1,000-partida soak finishes 1,000 — zero stalls — and the
+rule reads in `carioca-rules.md` like it was always there.
+
+### Phase 32 — Who you are, and where it is kept
+Two halves of one fact: the app must know who you are without an account,
+and must not forget anything.
+
+**Persistence:** Prisma + libSQL, per `tech-stack.md`: a local SQLite file in
+dev, Turso in production. A partida is a row; its state is the JSON the
+engine already is — decision 5, the rng riding as one number, was made for
+this day, and `apply()` neither knows nor cares where a state slept.
+
+**Identity,** settled in `tech-stack.md` before any code, closing its open
+question: **no accounts, ever.** On first arriving at the app — the app, not
+any particular room — you are dealt a per-browser secret and an **alias**,
+drawn at random from `public/candidatos/alias.txt`: one name per line,
+curated the same way as the comodín gallery (Phase 29's lesson) — add or
+delete lines, push, and the deploy serves the new list. Both survive reload.
+The alias is yours to change wherever it is shown; the secret is what claims
+a seat, and is shown to nobody. An alias already taken at a table is not
+dealt twice there.
+
+And it lands in the current game immediately — this is the first visible
+piece of the unified game: the table you already play greets you by your
+alias instead of a generic label.
+
+**Done when:** a partida survives the server process dying; a fresh browser
+is named without being asked and keeps its name across reloads; changing the
+alias sticks; the current solo table shows it; and presenting the wrong
+secret can neither claim an occupied seat nor see its hand.
+
+### Phase 33 — One door
+The home screen becomes the whole way in, and there is nothing behind it but
+partidas: **create one** — you become the host, a **short code** is dealt,
+and the table starts with **three bots already seated**, a table of four by
+default — or **join one**, code in hand. Hosting is choosing: prune the
+bots, add them back, wait for friends, or press start right away — which is
+all that "playing alone" means now. The host configures the partida with
+everything the old setup screen offered (contracts, comodines, seed,
+thinking time) plus the **turn clock** Phase 36 will enforce: seconds per
+human turn, **45 by default**. Those options move here; the old setup screen
+is absorbed, not duplicated.
+
+The lobby shows who is sitting where, everyone by their Phase 32 alias.
+TanStack Query enters here to poll it — per `tech-stack.md`, "only once
+online play needs polling", and now it does. Starting a table whose only
+human is the host launches the game that already exists — the local one —
+which under the two-homes rule is not a stopgap but the permanent routing
+for a bots-only table; a start with other humans seated waits for Phases
+34–35. And since the code exists for inviting, a table that never needed
+one — all bots, no signal — can be created and played without asking the
+server for anything.
+
+**Done when:** the app is entered only through the door; creating deals a
+code and three bots and the host prunes them; three devices sit in the same
+lobby under their own aliases and reclaim their seats after a reload; and a
+host alone with bots presses start and plays a full partida.
+
+### Phase 34 — The partida lives on the server
+The thin slice that proves the architecture with the least new truth: **one
+human plays against server-side bots** from a room code. A bots-only table
+normally lives in the browser under the two-homes rule — this phase is the
+server learning to hold the same partida, proven with the fewest humans
+that can prove it.
+
+Moves go up as requests; `apply()` referees on the server exactly as it
+referees in the browser today; what comes down is the Phase 30 view plus the
+public move log, and the client narrates and animates from that log with
+everything Phase 22 built — the log was written against the same information
+rule the view enforces, so nothing about it changes.
+
+Your own moves must not wait for the wire: the client holds the same engine,
+so it applies the move it just sent **optimistically** and the server's
+answer can only agree — same pure function, same state. What the network
+delays is seeing *others* move, which is what polling is for.
+
+The bots think on the server, where there is no clock between requests: a
+bot's turn is advanced **lazily** — computed when its thinking time has
+passed and the next request arrives — with timestamps attached so the client
+can pace the replay the way Phase 21 paced the original.
+
+The local game does not retire — it is **formalized**: the controller talks
+to a partida through one interface with two backings, `local` and `remota`,
+and the door routes by who is seated — only bots, local; another human,
+remota. The local backing also learns to persist (localStorage), so the
+reload a server partida survives by construction, a bots-only one now
+survives too — with the network off.
+
+**Done when:** a full partida against server bots is played from a room
+code with no visible lag on the player's own moves, and a reload resumes it
+mid-turn; a bots-only partida started at the door plays to the end in
+airplane mode and survives its own reload; and a test on the wire format
+proves no payload ever contains a card of another hand.
+
+### Phase 35 — Several people at one table
+The seats fill with people. Each device polls, receives its own view, and
+plays its own turns; everyone watches the same partida move. The who-won
+pause stays per-client — the next ronda is already dealt, and holding it on
+screen is presentation, as it always was.
+
+**Done when:** three people in three places finish a partida from one invite
+code, and no client ever received another player's cards. **This is
+Milestone 3.**
+
+### Phase 36 — The player's clock
+Phase 21 timed the bots and promised the rest: "the mechanism a real timer
+would need later, when the other seats are people who can walk away from
+their phone." Later is now.
+
+- **Every human turn has a clock**, set in the lobby by the host, 45 seconds
+  by default.
+- **The ficha's ring drains**, exactly the Phase 21 animation — the countdown
+  is drawn on the player, and it starts from the server's timestamp so every
+  device agrees on how much is left.
+- **On expiry the turn plays itself out minimally:** draw from the stock if
+  no card was drawn, then discard a random card, and the turn passes. The
+  randomness comes from the partida's own stream, so a replayed partida
+  replays its timeouts.
+- **The server enforces it, lazily,** like bot turns: the deadline is stored
+  with the turn and the first request after it applies the forced moves — an
+  opponent's poll is what makes a timeout land, so nobody has to keep their
+  tab open for the game to advance.
+
+**Done when:** a player who does nothing loses exactly one turn — drew,
+discarded at random, passed — the relato says so in words, the ring on their
+ficha drained in time with it, and the host's lobby setting is the time it
+actually took.
+
+### Phase 37 — Absences
+Reconnection, and the seat whose player is gone. The design leans entirely
+on choices already made: a seat belongs to a **per-browser secret** (Phase
+32), not to a connection — and with polling there is no connection to lose.
+Every request stands alone and says who it is from, so coming back is not a
+resurrection of anything; it is just arriving again. Closed tab, dead
+battery, lost signal: one path serves all three.
+
+- **The way back is the door.** Opening the app while seated at a live
+  partida shows it before anything else — *Vuelve a la mesa* — because the
+  server can answer "where is this secret sitting?". The room's URL works
+  too: reopening the tab, or tapping the invite link a second time, lands
+  you at your own seat with the full current view rebuilt from scratch. The
+  state is small; nothing incremental is needed.
+- **Presence is a timestamp, not a session.** Every poll refreshes the
+  seat's last-seen, and a seat gone quiet wears it on its ficha, so the
+  table sees who is absent without anyone asking.
+- **The table never waits**, because Phase 36 already forces the move when
+  the clock runs out. What this phase adds is mercy: a seat that keeps
+  timing out is handed to a bot — better turns than forced random
+  discards — and handed back the moment its owner reappears, starting with
+  their next turn.
+
+If Phase 38 ever swaps polling for a push transport, this is the contract
+it must keep: a dropped socket rejoins by secret and receives the whole
+view again.
+
+**Done when:** killing the page mid-turn and reopening the app puts the
+player back at their seat within one poll, hand and turn intact; the other
+players saw the seat go quiet and saw a bot pick it up after repeated
+timeouts; and the returning owner is playing their own turns again.
+
+### Phase 38 — Real-time transport
+Only if polling feels bad at a real table. The transport sits behind an
+interface precisely so this phase can be a swap and not a rewrite. The
+options moved since `tech-stack.md` was written: Vercel Functions now hold
+WebSockets on Fluid Compute, so the order to try is keep-polling, first-party
+WebSockets, then Pusher. Decide here, not before.
+
+**Done when:** either polling is measured at a real table and declared good
+enough — closing this phase as a decision — or a push transport sits behind
+the same interface with every done-when from Phases 35–37 still true.
+
+---
+
+## Milestone 4 — Bots worth playing
+
+Displaced by the reprioritization, not diminished: online play with one
+dull bot comes before solo play with three interesting ones.
+
+### Phase 39 — Bot personalities
+At least three bots that differ observably: e.g. one that hoards for the
+perfect meld, one that lays down at the first opportunity, one that watches
+discards and plays around opponents — which the Phase 30 view makes honest,
+since "what this seat has seen" is now an input rather than a licence to
+peek. The rest of the old framework phase lands here too: hand-evaluation
+helpers shared by all bots, and a new bot addable in one file with no engine
+changes. Names and short descriptions in the UI, choosable wherever the host
+seats a bot — which, one door being one door, is the lobby.
+**Done when:** a head-to-head tournament shows different win rates and
+visibly different play. **This is Milestone 4.**
+
+### Phase 40 — Rough edges
 A hint for new players, an in-game rules summary, and an end-of-game screen.
 Card animations were pulled forward into Phase 22; what is left here is the
 mesa that runs off the right edge when six players are deep into a partida —
@@ -927,40 +1191,14 @@ asking for help, and a full mesa can be read without scrolling to find it.
 
 ---
 
-## Milestone 4 — Playable together
-
-### Phase 33 — Persistence without accounts
-Prisma schema, finished partidas saved, and a guest identity that survives a
-page reload without anyone signing up. How a seat is claimed and protected is an
-open design question — see `tech-stack.md`.
-**Done when:** a player reloads mid-partida and is still themselves, and nobody
-can claim a seat that is not theirs.
-
-### Phase 34 — Rooms
-Create a room, get an invite code, join as a guest with a nickname, see who is in
-the lobby, start when everyone is ready. No gameplay yet.
-**Done when:** three devices sit in the same lobby.
-
-### Phase 35 — Server-authoritative play
-The game state lives on the server. Each player receives only their own hand and
-public information. Moves are submitted and validated server-side. Updates by
-polling.
-**Done when:** three people in three places finish a game from one invite code,
-and no client ever receives another player's cards. **This is Milestone 4.**
-
-### Phase 36 — Real-time transport
-Replace polling with a push transport behind the same interface. Handle
-disconnects and reconnects, and let a bot take over an abandoned seat.
-**Done when:** a player closes the tab mid-game, returns, and the game is intact.
-
----
-
 ## After
 
-Not scheduled, and not to be started before Milestone 4:
+Not scheduled, and not to be started before Milestone 3 — online play:
 
 - A second game on the same platform — the real test of the engine's separation.
-- Offline bot play. Installing to the home screen was pulled forward into
-  Phase 18, for the screen space rather than for the install.
+- Opening the app with no network at all. *Playing* bots offline is Phase
+  34's two-homes rule; what remains is a service worker so the app itself
+  loads without a connection. Installing to the home screen was pulled
+  forward into Phase 18, for the screen space rather than for the install.
 - Replays from seed and move list.
 - Private leaderboards among friends.

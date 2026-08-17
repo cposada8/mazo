@@ -14,14 +14,15 @@ doc is worse than none.
 
 ## Where things stand
 
-Phases 0–28 are done. **Carioca is playable, and looks like a card table.**
+Phases 0–29 are done. **Carioca is playable, and looks like a card table.**
 Open `/jugar` on a phone — held either way — and play a full partida against
 bots: draw, lay down, unload onto anyone's grupos, discard, and see the
 scoreboard at the end.
 
-Milestones 1 and 2 are both complete. What is missing is other people —
-Milestone 3 makes the bots worth playing, Milestone 4 puts friends at the
-table.
+Milestones 1 and 2 are both complete. What is missing is other people — and
+after Phase 29 the roadmap was reordered for exactly that: **Milestone 3 is
+now online play** (a partida started, joined with a short code, bots in the
+empty seats), and the better bots moved behind it as Milestone 4.
 
 | Phase | | |
 | --- | --- | --- |
@@ -55,9 +56,16 @@ table.
 | 27 | Sin comodines, and the flipped defaults | ✅ |
 | 28 | Ajustes from inside the partida | ✅ |
 | 29 | The comodines get a face | ✅ |
-| 30 | Bot framework | ← **next** |
-| 31–32 | Bot personalities, rough edges | not started |
-| 33–36 | Online: persistence, rooms, server play, real-time | not started |
+| 30 | The seat's view | ← **next** |
+| 31 | A ronda that always ends | not started |
+| 32 | Who you are: identity, alias from a file, persistence | not started |
+| 33 | One door: create (host, 3 bots default) or join by code | not started |
+| 34 | The partida lives on the server | not started |
+| 35 | Several people at one table | not started |
+| 36 | The player's clock | not started |
+| 37 | Absences: reconnection, the empty chair | not started |
+| 38 | Real-time transport, if polling isn't enough | not started |
+| 39–40 | Bot personalities, rough edges | displaced behind online |
 
 **The table now holds up on a real phone, held either way.** The lanes built
 in Phase 18 survive a 615 × 287 viewport and double as the portrait
@@ -176,20 +184,33 @@ the cards are gone and has to be dropped when the ronda changes.
 
 ## What comes next
 
-**Phase 30 — the bot framework.** The step that makes difficulty levels
-possible, and the one online play needs anyway.
+**Online play, reprioritized — and there is no solo mode.** The roadmap's
+Milestone 3 is now "Playable together": Phases 30–38 unify the game behind
+**one door** — arriving at the app deals you an alias (from
+`public/candidatos/alias.txt`, curated like the comodín gallery); the home
+screen offers create-a-partida (you host a table that starts with three
+bots) or join-by-code; playing alone is just hosting without pruning the
+bots. Every human turn gets a host-configured clock (45 s by default, the
+ficha's ring draining like a bot's). Where a partida lives is decided by
+who is at it: a bots-only table stays in the browser — playable with no
+connection at all — while a table with more than one human lives on the
+server, both behind one interface (Phase 34); a dropped player returns to
+their seat by secret, with a bot covering for them meanwhile (Phase 37). Bot
+personalities and the rough edges moved behind all of it. The full argument
+and each phase's done-when are in `roadmap.md` under "Online moves to the
+front".
 
-Right now a bot receives the whole `RondaState` and is merely well-behaved about
-not reading other hands. Phase 30 makes that structural: a **view** of what one
-seat can legitimately see — its own hand, the grupos on the mesa, the descarte,
-how many cards everyone holds. A bot takes the view and returns a `Move`.
+**Phase 30 — the seat's view** is first. Right now a bot receives the whole
+`RondaState` and is merely well-behaved about not reading other hands. Phase
+30 makes that structural: a **view** of what one seat can legitimately see —
+its own hand, the grupos on the mesa, the descarte, how many cards everyone
+holds. A bot takes the view and returns a `Move`.
 
-That same function is what the server will need in Phase 35 to send each player
-only their own cards, so it is worth getting right rather than fast.
-
-It also unlocks what bots with memory need: once the input is explicitly "what
-this seat has seen", remembering discards and reading opponents becomes a
-property of the bot rather than a licence to peek.
+That same view is what the server sends each player in Phase 34, so it is
+worth getting right rather than fast. It also unlocks what bots with memory
+need: once the input is explicitly "what this seat has seen", remembering
+discards and reading opponents becomes a property of the bot rather than a
+licence to peek.
 
 ## Open questions, deliberately unanswered
 
@@ -199,15 +220,17 @@ property of the bot rather than a licence to peek.
 - **Guest identity.** There is no login and there will not be one. Players join a
   partida with a code and a nickname, so the system still needs to know which
   seat is whose, survive a reload, and stop someone claiming another player's
-  seat and seeing their hand. Likely a per-seat secret in the browser. Settle it
-  before Phase 33.
-- **Real-time transport.** Vercel functions cannot hold WebSockets. Polling with
-  TanStack Query is the likely first implementation, behind an interface so it
-  can be swapped for Pusher or Supabase Realtime. Decide in Phase 35, not before.
+  seat and seeing their hand. Likely a per-seat secret in the browser. Settled
+  in `tech-stack.md` as part of Phase 32, before any code.
+- **Real-time transport.** Polling with TanStack Query is the first
+  implementation (Phase 34), behind an interface so it can be swapped. The old
+  premise that Vercel functions cannot hold WebSockets has expired — Fluid
+  Compute supports them — so Phase 38's options are keep-polling, first-party
+  WebSockets, then Pusher. Decide there, not before.
 - **A ronda nobody can win.** Carioca has no stalemate rule, and the soak
   measures the consequence: ~1.3% of bot partidas never end. Harmless in a test,
-  a hung game online. Options are written up in `carioca-rules.md`; decide before
-  Phase 35.
+  a hung game online. Options are written up in `carioca-rules.md`; deciding it
+  is now its own phase — Phase 31, before anything goes online.
 
 ## How this project is run
 
