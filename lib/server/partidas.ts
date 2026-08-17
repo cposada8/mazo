@@ -63,7 +63,9 @@ function publicar(fila: FilaPartida): PartidaGuardada {
     codigo: fila.codigo,
     fase: fila.fase as FaseDePartida,
     config: JSON.parse(fila.config) as PartidaConfig,
-    estado: fila.estado ? (JSON.parse(fila.estado) as PartidaState) : null,
+    // The seed, never the state: everybody at the table reads this shape.
+    seed: fila.estado ? (JSON.parse(fila.estado) as PartidaState).seed : null,
+    repartida: fila.estado !== null,
     segundosPorTurno: fila.segundosPorTurno,
     segundosBot: fila.segundosBot,
     verDescarte: fila.verDescarte,
@@ -140,6 +142,18 @@ export async function cargarPorCodigo(codigo: string): Promise<PartidaGuardada |
     include: INCLUIR_ASIENTOS,
   })
   return fila ? publicar(fila) : null
+}
+
+/**
+ * The whole state, for the server only. Nothing that answers a request may
+ * return this — it holds every hand.
+ */
+export async function estadoDe(codigo: string): Promise<PartidaState | null> {
+  const fila = await prisma.partida.findUnique({
+    where: { codigo: limpiarCodigo(codigo) },
+    select: { estado: true },
+  })
+  return fila?.estado ? (JSON.parse(fila.estado) as PartidaState) : null
 }
 
 export async function cargarPorId(id: string): Promise<PartidaGuardada | null> {

@@ -77,7 +77,7 @@ describe('reading the table', () => {
     expect(typeof vista.ronda?.stock).toBe('number')
 
     const serializada = JSON.stringify(mesa.mesa)
-    const completa = partida.estado!.ronda!
+    const completa = (await partidas.estadoDe(partida.codigo))!.ronda!
     for (const jugador of completa.jugadores.slice(1)) {
       for (const card of jugador.hand) {
         expect(serializada).not.toContain(`"${card.id}"`)
@@ -258,10 +258,9 @@ describe('a whole partida, refereed on the server', () => {
     }
 
     const fin = await partidas.cargarPorCodigo(partida.codigo)
+    const estado = await partidas.estadoDe(partida.codigo)
     expect(fin?.fase).toBe('terminada')
-    expect(fin?.estado?.ganadores).not.toBeNull()
-    expect(fin?.estado?.historial).toHaveLength(
-      CONFIG_POR_DEFECTO.contratos.length,
-    )
+    expect(estado?.ganadores).not.toBeNull()
+    expect(estado?.historial).toHaveLength(CONFIG_POR_DEFECTO.contratos.length)
   }, 60_000)
 })

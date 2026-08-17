@@ -10,7 +10,7 @@
  * "which seat is yours".
  */
 
-import type { PartidaConfig, PartidaState } from '@/lib/engine'
+import type { PartidaConfig } from '@/lib/engine'
 
 export type FaseDePartida = 'lobby' | 'jugando' | 'terminada'
 
@@ -27,8 +27,14 @@ export type PartidaGuardada = {
   readonly codigo: string
   readonly fase: FaseDePartida
   readonly config: PartidaConfig
-  /** Null while the lobby is still filling. */
-  readonly estado: PartidaState | null
+  /**
+   * The seed the partida was dealt from, once it has been. Never the state:
+   * the lobby is read by everybody at the table, so it may carry nothing that
+   * a seat is not entitled to — and a whole PartidaState holds every hand.
+   * The table's own endpoint sends each player their view instead.
+   */
+  readonly seed: string | null
+  readonly repartida: boolean
   readonly segundosPorTurno: number
   readonly segundosBot: number
   /** Memory aids (Phase 24): browse the descarte, reread the ronda's story. */

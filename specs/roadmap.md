@@ -1183,7 +1183,7 @@ deal and replaying one should start over. Verified in a browser: a
 five-seat table with two people and three bots, each seeing only their own
 hand, played from one code.
 
-### Phase 35 — Several people at one table
+### Phase 35 — Several people at one table ✅
 The seats fill with people. Each device polls, receives its own view, and
 plays its own turns; everyone watches the same partida move. The who-won
 pause stays per-client — the next ronda is already dealt, and holding it on
@@ -1192,6 +1192,21 @@ screen is presentation, as it always was.
 **Done when:** three people in three places finish a partida from one invite
 code, and no client ever received another player's cards. **This is
 Milestone 3.**
+
+**Done.** Phase 34's machinery is seat-count-blind, so most of this phase
+was proving the promise rather than building for it: `varios.test.ts` sits
+three people and a bot at one code, plays the partida to its last contract,
+and checks **on every read by every player** that no card of anyone else's
+hand appears anywhere in what they received.
+
+It also found the leak that mattered. The **lobby** endpoint is read by
+everybody at the table, and once dealt it was returning the partida's whole
+`estado` — every hand in it. The public shape now carries the seed and a
+`repartida` flag and nothing else; the full state has its own server-only
+reader, and a test lists every card in play and asserts none of them appears
+in what the lobby sends. It is the same discipline as the seat's view, one
+endpoint further out — and a reminder that the rule has to be applied to
+every payload, not just the one designed around it.
 
 ### Phase 36 — The player's clock
 Phase 21 timed the bots and promised the rest: "the mechanism a real timer

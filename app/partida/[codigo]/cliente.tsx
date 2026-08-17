@@ -31,7 +31,7 @@ export function PartidaCliente({
 }) {
   const [repartida, setRepartida] = useState<VistaDeLobby | null>(null)
 
-  if (!repartida?.partida.estado) {
+  if (!repartida?.partida.repartida) {
     return <Lobby codigo={codigo} onEmpezar={setRepartida} />
   }
 
@@ -61,14 +61,13 @@ function MesaLocal({
 }) {
   const router = useRouter()
   const { partida } = vista
-  const estado = partida.estado!
 
   return (
     <Juego
-      key={estado.seed}
+      key={partida.seed!}
       id={partida.codigo}
       jugadores={partida.asientos.length}
-      seed={estado.seed}
+      seed={partida.seed!}
       contratos={partida.config.contratos}
       comodines={partida.config.comodines}
       segundosBot={partida.segundosBot}

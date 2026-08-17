@@ -1,6 +1,6 @@
 # Project status — pick up here
 
-Last updated after Phase 34.
+Last updated after Phase 35.
 
 Read this first, then `mission.md` for the why, `carioca-rules.md` for the game,
 `tech-stack.md` for the stack, and `roadmap.md` for what comes next. This file is
@@ -62,8 +62,8 @@ empty seats), and the better bots moved behind it as Milestone 4.
 | 32 | Who you are: identity, alias from a file, persistence | ✅ |
 | 33 | One door: create (host, 3 bots default) or join by code | ✅ |
 | 34 | The partida lives on the server | ✅ |
-| 35 | Several people at one table | ← **next** |
-| 36 | The player's clock | not started |
+| 35 | Several people at one table | ✅ — **Milestone 3** |
+| 36 | The player's clock | ← **next** |
 | 37 | Absences: reconnection, the empty chair | not started |
 | 38 | Real-time transport, if polling isn't enough | not started |
 | 39–40 | Bot personalities, rough edges | displaced behind online |
@@ -265,9 +265,17 @@ also keeps the partida in localStorage under its código) and remote
 `aplicarEnVista`; only a stock draw waits, because that card is genuinely
 unknowable. `/jugar` is retired: the door is the only way in.
 
-**Phase 35 is next — several people at one table.** The mechanism is
-already there and verified with two humans; what is left is playing it at
-three, and the rough edges that only show with people in every seat.
+**Phase 35 is done — and with it Milestone 3.** Three people and a bot
+finish a partida from one code, with every read by every player checked
+for cards that are not theirs. The phase found one real leak: the lobby
+endpoint, read by everybody, was returning the whole `estado` once dealt.
+It now carries the seed and a `repartida` flag; the full state has a
+server-only reader.
+
+**Phase 36 is next — the player's clock:** every human turn on the host's
+timer (45 s by default), the ficha's ring draining from the server's
+timestamp, and an expired turn playing itself out — draw from the stock,
+discard at random, pass.
 
 ## Open questions, deliberately unanswered
 

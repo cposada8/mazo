@@ -19,7 +19,7 @@
  */
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { useCallback, useMemo, useRef, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import { mensajeDeError } from '@/app/jugar/usePartida'
 import { useMesa } from '@/app/jugar/useMesa'
 import { type Move, type VistaDePartida, aplicarEnVista } from '@/lib/engine'
@@ -55,10 +55,12 @@ export function useMesaRemota(options: { codigo: string; secreto: string }) {
    * the one everybody else is looking at.
    */
   const [optimista, setOptimista] = useState<VistaDePartida | null>(null)
-  const esperandoRespuesta = useRef(false)
 
   const consulta = useQuery({
     queryKey: clave,
+    // No identity yet means no seat to ask about; the provider deals one on
+    // the first client frame, and the query starts then.
+    enabled: secreto.length > 0,
     refetchInterval: MS_ENTRE_CONSULTAS,
     // A backgrounded tab must keep asking: polling is everybody's clock, so a
     // table that stops asking is a table where the bots stop thinking.
@@ -85,7 +87,6 @@ export function useMesaRemota(options: { codigo: string; secreto: string }) {
       return (await respuesta.json()) as Respuesta
     },
     onSettled: (respuesta) => {
-      esperandoRespuesta.current = false
       setOptimista(null)
       if (!respuesta) return
       if (respuesta.ok) {
@@ -120,7 +121,6 @@ export function useMesaRemota(options: { codigo: string; secreto: string }) {
           return
         }
       }
-      esperandoRespuesta.current = true
       mutacion.mutate(move)
     },
     [servidor, mutacion],

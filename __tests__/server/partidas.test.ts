@@ -130,7 +130,8 @@ describe('the state survives outside the process', () => {
 
     const cargada = await servidor.cargarPorId(partida.id)
     expect(cargada?.fase).toBe('jugando')
-    expect(cargada?.estado).toEqual(estado)
+    expect(cargada?.seed).toBe(estado.seed)
+    expect(await servidor.estadoDe(partida.codigo)).toEqual(estado)
   })
 })
 
@@ -237,10 +238,11 @@ describe('the lobby is the host’s', () => {
     expect(viva.fase).toBe('jugando')
     expect(viva.segundosPorTurno).toBe(90)
     expect(viva.verDescarte).toBe(false)
-    expect(viva.estado?.config.contratos).toHaveLength(2)
-    expect(viva.estado?.seed).toBe('del-lobby')
+    expect(viva.seed).toBe('del-lobby')
+    const estado = await servidor.estadoDe(partida.codigo)
+    expect(estado?.config.contratos).toHaveLength(2)
     // Four seats dealt, because four were sitting when it was dealt.
-    expect(viva.estado?.ronda?.jugadores).toHaveLength(4)
+    expect(estado?.ronda?.jugadores).toHaveLength(4)
   })
 
   it('the lobby is shut once it has been dealt', async () => {
