@@ -162,15 +162,15 @@ Phase 9 bots.
 **Done.** `/jugar`, 294 tests. Interaction is optional props on the Phase 10
 components, so the same code renders a game you watch and a game you play.
 
-Two deviations, both deliberate:
+One deliberate deviation: **no Zustand.** One page with one state object does
+not need a store. The controller is `app/jugar/usePartida.ts`; reach for a store
+when a second screen needs the same state.
 
-- **No Zustand.** One page with one state object does not need a store. The
-  controller is `app/jugar/usePartida.ts`; reach for a store when a second
-  screen needs the same state.
-- **No comodín repositioning yet.** Drawing, laying down, adding to any grupo
-  and discarding are all wired; moving a comodín within an escala is not. The
-  engine supports it — the interface does not, and it needs a way to say *which*
-  card pays for it. Deferred to Phase 16, the polish phase.
+Comodín repositioning was deferred at first and then wired in after a real game
+turned it up: with `5♥ ** 7♥ 8♥` on the mesa and the `6♥` in hand, tapping the
+grupo was refused. Tapping now tries every sensible reading in order — extend
+the tail, extend the head, then free the comodín — and lets the engine settle
+which is legal, so the player never has to name the move.
 
 The player still groups: you select the cards and `armarGrupo` only works out
 whether they read as a trío or an escala, and where a comodín has to sit. It

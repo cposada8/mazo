@@ -402,6 +402,75 @@ describe('moving a comodin through a ronda', () => {
   })
 })
 
+describe('the 5 ** 7 8 case', () => {
+  /**
+   * Reported from a real game: an opponent had 5♥ comodín 7♥ 8♥ on the mesa,
+   * the player held the 6♥ that the comodín was standing for, and tapping the
+   * grupo was refused.
+   *
+   * The move is legal — it is a comodín reposition, not an extension — so this
+   * pins down that the engine accepts it and that plain `agregar` does not,
+   * which is the whole reason the interface has to try both.
+   */
+  const escenario = () => {
+    const comodin = c()
+    const seis = n('6', 'hearts')
+
+    return {
+      comodin,
+      seis,
+      state: makeRonda({
+        jugadores: [
+          { hand: [seis, n('2', 'spades'), n('9', 'clubs')], bajadoEnTurno: 1 },
+          {
+            hand: [],
+            bajadoEnTurno: 1,
+            grupos: [
+              {
+                kind: 'escala',
+                suit: 'hearts',
+                start: '5',
+                cards: [n('5', 'hearts'), comodin, n('7', 'hearts'), n('8', 'hearts')],
+              },
+            ],
+          },
+        ],
+        numeroDeTurno: 3,
+        fase: 'act',
+      }),
+    }
+  }
+
+  it('refuses it as a plain add — the 6 does not go on either end', () => {
+    const { state, seis } = escenario()
+
+    for (const end of ['tail', 'head'] as const) {
+      expectFail(
+        apply(state, { type: 'agregar', seat: 1, grupoIndex: 0, cardIds: [seis.id], end }),
+        'EDICION_INVALIDA',
+      )
+    }
+  })
+
+  it('accepts it as a comodín reposition', () => {
+    const { state, seis, comodin } = escenario()
+
+    const after = unwrap(
+      apply(state, {
+        type: 'moverComodin',
+        seat: 1,
+        grupoIndex: 0,
+        cardId: seis.id,
+        to: 'tail',
+      }),
+    )
+
+    expect(describeGrupo(after.jugadores[1].grupos[0])).toBe('5 6 7 8 ★')
+    expect(ids(after.jugadores[0].hand)).not.toContain(seis.id)
+    expect(ids(after.jugadores[1].grupos[0].cards)).toContain(comodin.id)
+  })
+})
+
 describe('immutability', () => {
   it('never changes the state it was given', () => {
     const carta = n('2', 'hearts')

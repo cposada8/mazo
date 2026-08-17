@@ -45,7 +45,7 @@ table.
 - **Live:** https://mazo-six.vercel.app — `/mesa` steps through a bot partida,
   `/pruebas` shows deals and grupo validation.
 - **Deploys:** every push to `main` goes to production automatically.
-- **Tests:** 310, all green (the soak takes ~15s). `npm run test:run`, `npx tsc --noEmit`, `npm run lint`.
+- **Tests:** 327, all green (the soak takes ~15s). `npm run test:run`, `npx tsc --noEmit`, `npm run lint`.
 
 ## What exists
 

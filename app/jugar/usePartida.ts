@@ -10,6 +10,7 @@ import {
   type PartidaState,
   type Propuesta,
   aplicarEnPartida,
+  isComodin,
   startPartida,
 } from '@/lib/engine'
 
@@ -186,7 +187,17 @@ export function usePartida(options: {
     setSeleccion([])
   }, [ronda, propuestasVigentes, jugar])
 
-  /** Add the selected cards to a grupo already on the mesa. */
+  /**
+   * Put the selected cards on a grupo already on the mesa.
+   *
+   * There is more than one way a card can join a grupo, and the player should
+   * not have to say which: tapping means "this belongs here". So the sensible
+   * moves are tried in order and the engine picks the one that is legal.
+   *
+   * Extending comes first because it changes least. Substituting a comodín is
+   * tried after — that is the `5 ** 7 8` case, where the 6 that the comodín
+   * stands for fits nowhere on either end and belongs in its place.
+   */
   const agregarA = useCallback(
     (seat: number, grupoIndex: number) => {
       if (!esTuTurno || ronda?.fase !== 'act') return
@@ -195,12 +206,10 @@ export function usePartida(options: {
         return
       }
 
-      const cardIds = seleccionadas.map((card) => card.id)
-      const cola: Move = { type: 'agregar', seat, grupoIndex, cardIds, end: 'tail' }
-      const cabeza: Move = { type: 'agregar', seat, grupoIndex, cardIds, end: 'head' }
+      const candidatos = jugadasParaGrupo(seleccionadas, seat, grupoIndex)
 
       setPartida((actual) => {
-        for (const move of [cola, cabeza]) {
+        for (const move of candidatos) {
           const result = aplicarEnPartida(actual, move)
           if (result.ok) {
             setAviso(null)
@@ -208,7 +217,11 @@ export function usePartida(options: {
             return result.state
           }
         }
-        setAviso('Esas cartas no caben en ese grupo.')
+        setAviso(
+          seleccionadas.length > 1
+            ? 'Esas cartas no caben en ese grupo. Prueba de a una.'
+            : 'Esa carta no cabe en ese grupo.',
+        )
         return actual
       })
     },
@@ -258,6 +271,38 @@ export function usePartida(options: {
     descartar,
     reiniciar,
   }
+}
+
+/**
+ * Every move that tapping a grupo could sensibly mean, in the order to try them.
+ *
+ * Extending comes first because it changes the least. Substituting a comodín
+ * comes after: that is the `5 ** 7 8` case, where the 6 the comodín stands for
+ * fits on neither end and belongs in its place. Freeing a comodín is paid for
+ * with one real card, so it is only offered for a single non-comodín selection.
+ */
+export function jugadasParaGrupo(
+  seleccionadas: readonly Card[],
+  seat: number,
+  grupoIndex: number,
+): Move[] {
+  if (seleccionadas.length === 0) return []
+
+  const cardIds = seleccionadas.map((card) => card.id)
+  const candidatos: Move[] = [
+    { type: 'agregar', seat, grupoIndex, cardIds, end: 'tail' },
+    { type: 'agregar', seat, grupoIndex, cardIds, end: 'head' },
+  ]
+
+  const unica = seleccionadas.length === 1 ? seleccionadas[0] : null
+  if (unica && !isComodin(unica)) {
+    candidatos.push(
+      { type: 'moverComodin', seat, grupoIndex, cardId: unica.id, to: 'tail' },
+      { type: 'moverComodin', seat, grupoIndex, cardId: unica.id, to: 'head' },
+    )
+  }
+
+  return candidatos
 }
 
 /** Engine codes are for programs. These are for the person playing. */
