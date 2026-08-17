@@ -71,8 +71,19 @@ export default function Home() {
         </nav>
       </section>
 
-      <footer className="text-muted-foreground mt-auto text-sm">
-        En construcción. Falta jugar con amigos.
+      <footer className="text-muted-foreground mt-auto flex flex-col gap-1 text-sm">
+        <p>En construcción. Falta jugar con amigos.</p>
+        <p>
+          Por{" "}
+          <a
+            href="https://github.com/cposada8"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-foreground hover:text-muted-foreground font-medium underline underline-offset-2 transition-colors"
+          >
+            Esteban Posada
+          </a>
+        </p>
       </footer>
     </main>
   );
