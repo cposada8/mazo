@@ -49,11 +49,18 @@ scoreboard and the ronda just played picked out, and deals the next one only
 when you press «Siguiente reparto». The engine still closes and deals in the
 same move — the pause lives in `usePartida`, and no bot plays while it is up.
 
+And a bug it turned up: **a new reparto arrived with cards already pinned.**
+The bloques from the last hand were still there, and because card ids repeat
+between deals they matched cards they were never made from. The arrangement
+belongs to the ronda it was made in, so `usePartida` now drops it whenever the
+ronda changes — not inside «Siguiente reparto», which was the convenient place
+rather than the correct one.
+
 - **Repo:** https://github.com/cposada8/mazo
 - **Live:** https://mazo-six.vercel.app — `/mesa` steps through a bot partida,
   `/pruebas` shows deals and grupo validation.
 - **Deploys:** every push to `main` goes to production automatically.
-- **Tests:** 351, all green (the soak takes ~15s). `npm run test:run`, `npx tsc --noEmit`, `npm run lint`.
+- **Tests:** 352, all green (the soak takes ~15s). `npm run test:run`, `npx tsc --noEmit`, `npm run lint`.
 
 ## What exists
 
@@ -116,6 +123,11 @@ them by accident.
 One more worth knowing: **the winner of a ronda opens the next one.** The first
 ronda's opener is chosen by whoever set up the partida, or drawn — and even the
 draw comes from the partida seed, so nothing about a partida is unreproducible.
+
+And a trap: **a card id names a card in the deck, not a card in this ronda.**
+`7-s#0` is the same string in every deal. Anything that remembers cards by id
+across rondas — an arrangement, a selection, a hint — will keep matching after
+the cards are gone and has to be dropped when the ronda changes.
 
 ## What comes next
 
