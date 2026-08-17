@@ -70,7 +70,9 @@ export function Juego({
         state={ronda}
         asiento={TU_ASIENTO}
         nombres={nombres(jugadores)}
-        mano={juego.disponibles}
+        secciones={juego.secciones}
+        puntos={juego.puntos}
+        onSoltar={juego.soltar}
         accionesDeMano={<AccionesDeMano juego={juego} />}
         seleccionadas={new Set(juego.seleccion)}
         onCarta={esTuTurno ? juego.alternarCarta : undefined}
@@ -177,6 +179,17 @@ function AccionesDeMano({ juego }: { juego: ReturnType<typeof usePartida> }) {
             →
           </button>
         </div>
+      )}
+
+      {haySeleccion && (
+        <button
+          type="button"
+          onClick={juego.fijarSeleccion}
+          className="bg-card hover:bg-accent rounded-md border px-2.5 py-1 text-xs"
+          title="Deja estas cartas fijas: acomodar no las va a mover"
+        >
+          🔒 Fijar
+        </button>
       )}
 
       <button

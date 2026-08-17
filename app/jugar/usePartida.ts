@@ -2,7 +2,16 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { armarGrupo, codicioso } from '@/lib/bots'
-import { type Acomodo, acomodar, aplicarOrden, moverSeleccion } from '@/lib/mano'
+import {
+  type Acomodo,
+  type Bloque,
+  acomodar,
+  aplanar,
+  bloquear,
+  distribuir,
+  moverSeleccion,
+  soltarBloque,
+} from '@/lib/mano'
 import {
   type Card,
   type Move,
@@ -11,6 +20,7 @@ import {
   type Propuesta,
   aplicarEnPartida,
   isComodin,
+  puntosDeMano,
   startPartida,
 } from '@/lib/engine'
 
@@ -32,8 +42,10 @@ export function usePartida(options: {
   const [seleccion, setSeleccion] = useState<readonly string[]>([])
   const [propuestas, setPropuestas] = useState<readonly Propuesta[]>([])
   const [aviso, setAviso] = useState<string | null>(null)
-  /** How you have arranged your hand. Cards you have not touched keep dealing order. */
+  /** How you have arranged the loose cards. Untouched ones keep dealing order. */
   const [orden, setOrden] = useState<readonly string[]>([])
+  /** Cards you have pinned together so sorting leaves them alone. */
+  const [bloques, setBloques] = useState<readonly Bloque[]>([])
 
   const ronda = partida.ronda
   const enJuego = ronda !== null && ronda.ganador === null
@@ -53,21 +65,66 @@ export function usePartida(options: {
     return propuestas.filter((p) => p.cardIds.every((id) => enMano.has(id)))
   }, [ronda, propuestas])
 
-  /** Your hand as you have arranged it. */
-  const mano = useMemo<Card[]>(() => {
+  /** Your hand laid out: pinned bloques first, then the loose cards. */
+  const secciones = useMemo(() => {
     if (!ronda) return []
-    return aplicarOrden(ronda.jugadores[TU_ASIENTO].hand, orden)
-  }, [ronda, orden])
+    return distribuir(ronda.jugadores[TU_ASIENTO].hand, orden, bloques)
+  }, [ronda, orden, bloques])
+
+  const mano = useMemo<Card[]>(() => aplanar(secciones), [secciones])
+
+  /** What the hand would cost if the ronda ended now. Low is good. */
+  const puntos = useMemo(() => puntosDeMano(mano), [mano])
+
+  /** The layout minus whatever is set aside for a bajada, empty runs dropped. */
+  const seccionesDisponibles = useMemo(() => {
+    const apartadas = new Set(propuestasVigentes.flatMap((p) => p.cardIds))
+    if (apartadas.size === 0) return secciones
+
+    return secciones
+      .map((seccion) => ({
+        ...seccion,
+        cards: seccion.cards.filter((card) => !apartadas.has(card.id)),
+      }))
+      .filter((seccion) => seccion.cards.length > 0)
+  }, [secciones, propuestasVigentes])
 
   /** Cards still in hand and not already set aside for a grupo, in your order. */
-  const disponibles = useMemo<Card[]>(() => {
-    const apartadas = new Set(propuestasVigentes.flatMap((p) => p.cardIds))
-    return mano.filter((card) => !apartadas.has(card.id))
-  }, [mano, propuestasVigentes])
+  const disponibles = useMemo<Card[]>(
+    () => aplanar(seccionesDisponibles),
+    [seccionesDisponibles],
+  )
 
+  /**
+   * Sort only what is loose. Pinned bloques are exactly the cards you have said
+   * you want left alone, so an arrangement button that scattered them would be
+   * doing the opposite of what it says.
+   */
   const acomodarMano = useCallback(
-    (como: Acomodo) => setOrden(acomodar(mano, como).map((card) => card.id)),
-    [mano],
+    (como: Acomodo) => {
+      const sueltas = secciones.find((seccion) => !seccion.bloqueada)?.cards ?? []
+      setOrden(acomodar(sueltas, como).map((card) => card.id))
+    },
+    [secciones],
+  )
+
+  const fijarSeleccion = useCallback(() => {
+    if (seleccion.length === 0) {
+      setAviso('Escoge las cartas que quieres dejar fijas.')
+      return
+    }
+    // Pin them in the order they are sitting in, not the order they were tapped.
+    const enOrden = mano
+      .filter((card) => seleccion.includes(card.id))
+      .map((card) => card.id)
+    setBloques((actual) => bloquear(actual, enOrden))
+    setSeleccion([])
+    setAviso(null)
+  }, [mano, seleccion])
+
+  const soltar = useCallback(
+    (indice: number) => setBloques((actual) => soltarBloque(actual, indice)),
+    [],
   )
 
   /**
@@ -79,11 +136,17 @@ export function usePartida(options: {
    * did nothing to it.
    */
   const moverCartas = useCallback(
-    (hacia: 'izquierda' | 'derecha') =>
-      setOrden(() =>
-        moverSeleccion(mano.map((card) => card.id), seleccion, hacia),
-      ),
-    [mano, seleccion],
+    (hacia: 'izquierda' | 'derecha') => {
+      const sueltas = secciones.find((seccion) => !seccion.bloqueada)?.cards ?? []
+      setOrden(
+        moverSeleccion(
+          sueltas.map((card) => card.id),
+          seleccion,
+          hacia,
+        ),
+      )
+    },
+    [secciones, seleccion],
   )
 
   const seleccionadas = useMemo(
@@ -247,9 +310,13 @@ export function usePartida(options: {
     seleccion,
     seleccionadas,
     mano,
+    secciones: seccionesDisponibles,
+    puntos,
     disponibles,
     acomodarMano,
     moverCartas,
+    fijarSeleccion,
+    soltar,
     propuestas: propuestasVigentes,
     contratoCompleto,
     yaBajado: ronda ? ronda.jugadores[TU_ASIENTO].bajadoEnTurno !== null : false,

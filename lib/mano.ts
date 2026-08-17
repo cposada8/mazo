@@ -20,6 +20,23 @@ import {
 export type Acomodo = 'pintas' | 'numeros'
 
 /**
+ * A run of cards you have pinned together.
+ *
+ * Purely a way of holding your cards: a bloque commits to nothing, is not a
+ * grupo, and does not have to be a legal anything. Its whole job is to survive
+ * sorting — pin a trío and it stays a trío on screen no matter how many times
+ * you rearrange the rest.
+ */
+export type Bloque = readonly string[]
+
+export type Seccion = {
+  /** Stable across renders, so React can keep the cards in place. */
+  readonly id: string
+  readonly cards: Card[]
+  readonly bloqueada: boolean
+}
+
+/**
  * Apply a remembered order to a hand.
  *
  * Cards the order does not know about — the one just drawn, the ones dealt in a
@@ -105,6 +122,76 @@ function porNumeros(hand: readonly Card[]): Card[] {
 
 export function acomodar(hand: readonly Card[], como: Acomodo): Card[] {
   return como === 'pintas' ? porPintas(hand) : porNumeros(hand)
+}
+
+/**
+ * Lay a hand out as pinned bloques first, then everything loose.
+ *
+ * Bloques keep their contents and their internal order; cards that have left
+ * the hand fall out of them, and a bloque emptied that way disappears rather
+ * than lingering as an empty frame.
+ */
+export function distribuir(
+  hand: readonly Card[],
+  orden: readonly string[],
+  bloques: readonly Bloque[],
+): Seccion[] {
+  const porId = new Map(hand.map((card) => [card.id, card]))
+  const yaUsadas = new Set<string>()
+
+  const secciones: Seccion[] = []
+
+  for (const [indice, bloque] of bloques.entries()) {
+    const cards: Card[] = []
+    for (const id of bloque) {
+      const card = porId.get(id)
+      if (!card || yaUsadas.has(id)) continue
+      yaUsadas.add(id)
+      cards.push(card)
+    }
+    if (cards.length > 0) {
+      secciones.push({ id: `bloque-${indice}-${cards[0].id}`, cards, bloqueada: true })
+    }
+  }
+
+  const sueltas = aplicarOrden(
+    hand.filter((card) => !yaUsadas.has(card.id)),
+    orden,
+  )
+  if (sueltas.length > 0) {
+    secciones.push({ id: 'sueltas', cards: sueltas, bloqueada: false })
+  }
+
+  return secciones
+}
+
+/** Every card in a layout, left to right — what the hand looks like. */
+export function aplanar(secciones: readonly Seccion[]): Card[] {
+  return secciones.flatMap((seccion) => seccion.cards)
+}
+
+/**
+ * Pin a set of cards together, taking them out of any bloque they were in.
+ *
+ * A bloque of one is allowed: sometimes a single card is the thing you want
+ * kept where you put it.
+ */
+export function bloquear(
+  bloques: readonly Bloque[],
+  cardIds: readonly string[],
+): Bloque[] {
+  if (cardIds.length === 0) return bloques.map((bloque) => [...bloque])
+
+  const nuevas = new Set(cardIds)
+  const limpios = bloques
+    .map((bloque) => bloque.filter((id) => !nuevas.has(id)))
+    .filter((bloque) => bloque.length > 0)
+
+  return [...limpios, [...cardIds]]
+}
+
+export function soltarBloque(bloques: readonly Bloque[], indice: number): Bloque[] {
+  return bloques.filter((_, i) => i !== indice).map((bloque) => [...bloque])
 }
 
 /**

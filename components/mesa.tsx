@@ -12,7 +12,6 @@
 
 import { Carta, CartaBocaAbajo } from '@/components/carta'
 import {
-  type Card,
   type Escala,
   type Grupo,
   type JugadorState,
@@ -20,6 +19,7 @@ import {
   escalaRankAt,
   isComodin,
 } from '@/lib/engine'
+import type { Seccion } from '@/lib/mano'
 import { cn } from '@/lib/utils'
 
 const SIMBOLO_DE_PALO = {
@@ -194,61 +194,104 @@ export function Pilas({
  * readable, and the order is the whole point of being able to arrange them.
  */
 export function Mano({
-  cards,
+  secciones,
+  puntos,
   seleccionadas,
   onCarta,
+  onSoltar,
   acciones,
 }: {
-  cards: readonly Card[]
+  /** Pinned bloques first, then the loose cards. */
+  secciones: readonly Seccion[]
+  /** What the hand would cost if the ronda ended now. */
+  puntos?: number
   seleccionadas?: ReadonlySet<string>
   onCarta?: (cardId: string) => void
+  /** Unpin a bloque, by its position among the pinned ones. */
+  onSoltar?: (indice: number) => void
   /** Sorting and moving controls, rendered beside the heading. */
   acciones?: React.ReactNode
 }) {
+  const total = secciones.reduce((suma, seccion) => suma + seccion.cards.length, 0)
+
+  // Which pinned bloque each section is, counted among the pinned ones only —
+  // that is the index `onSoltar` expects.
+  const posicionFijada = new Map(
+    secciones
+      .filter((seccion) => seccion.bloqueada)
+      .map((seccion, indice) => [seccion.id, indice]),
+  )
+
   return (
     <div className="flex flex-col gap-2">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h2 className="text-sm font-medium">
           Tu mano{' '}
-          <span className="text-muted-foreground font-normal">
-            · {cards.length}
-          </span>
+          <span className="text-muted-foreground font-normal">· {total}</span>
+          {puntos !== undefined && (
+            <span
+              className="text-muted-foreground font-normal"
+              title="Lo que costaría esta mano si la ronda terminara ahora"
+            >
+              {' '}
+              · {puntos} pts
+            </span>
+          )}
         </h2>
         {acciones}
       </div>
 
-      <div className="-mx-4 overflow-x-auto px-4 pt-3 pb-2">
-        <div className="flex w-max pl-3">
-          {cards.map((card) => {
-            const elegida = seleccionadas?.has(card.id) ?? false
-            const carta = (
-              <Carta
-                card={card}
-                className={cn(
-                  'transition-transform',
-                  elegida &&
-                    'ring-foreground ring-offset-background -translate-y-3 ring-2 ring-offset-2',
-                )}
-              />
-            )
+      <div className="-mx-4 flex items-start gap-3 overflow-x-auto px-4 pt-3 pb-2">
+        {secciones.map((seccion) => {
+          const indice = posicionFijada.get(seccion.id) ?? -1
 
-            return onCarta ? (
-              <button
-                key={card.id}
-                type="button"
-                onClick={() => onCarta(card.id)}
-                aria-pressed={elegida}
-                className={cn('-ml-3 shrink-0', elegida && 'z-10')}
-              >
-                {carta}
-              </button>
-            ) : (
-              <div key={card.id} className="-ml-3 shrink-0">
-                {carta}
+          return (
+            <div key={seccion.id} className="flex shrink-0 flex-col gap-1">
+              <div className="flex w-max pl-3">
+                {seccion.cards.map((card) => {
+                  const elegida = seleccionadas?.has(card.id) ?? false
+                  const carta = (
+                    <Carta
+                      card={card}
+                      className={cn(
+                        'transition-transform',
+                        elegida &&
+                          'ring-foreground ring-offset-background -translate-y-3 ring-2 ring-offset-2',
+                      )}
+                    />
+                  )
+
+                  return onCarta ? (
+                    <button
+                      key={card.id}
+                      type="button"
+                      onClick={() => onCarta(card.id)}
+                      aria-pressed={elegida}
+                      className={cn('-ml-3 shrink-0', elegida && 'z-10')}
+                    >
+                      {carta}
+                    </button>
+                  ) : (
+                    <div key={card.id} className="-ml-3 shrink-0">
+                      {carta}
+                    </div>
+                  )
+                })}
               </div>
-            )
-          })}
-        </div>
+
+              {seccion.bloqueada && (
+                <button
+                  type="button"
+                  onClick={onSoltar ? () => onSoltar(indice) : undefined}
+                  disabled={!onSoltar}
+                  className="text-muted-foreground enabled:hover:text-foreground ml-3 text-[10px] tracking-wide uppercase"
+                >
+                  🔒 fijo{onSoltar && ' · soltar'}
+                </button>
+              )}
+            </div>
+          )
+        })}
       </div>
     </div>
   )
@@ -265,7 +308,9 @@ export function Mesa({
   state,
   asiento,
   nombres,
-  mano,
+  secciones,
+  puntos,
+  onSoltar,
   accionesDeMano,
   onRobar,
   onCarta,
@@ -276,8 +321,11 @@ export function Mesa({
   /** The seat whose hand is shown face up. */
   asiento: number
   nombres?: readonly string[]
-  /** Your hand in the order you arranged it. Defaults to the dealt order. */
-  mano?: readonly Card[]
+  /** Your hand laid out. Defaults to the dealt order, unpinned. */
+  secciones?: readonly Seccion[]
+  /** What your hand would cost right now. */
+  puntos?: number
+  onSoltar?: (indice: number) => void
   /** Sorting and moving controls for your hand. */
   accionesDeMano?: React.ReactNode
 } & MesaInteractiva) {
@@ -334,9 +382,13 @@ export function Mesa({
       )}
 
       <Mano
-        cards={mano ?? tu.hand}
+        secciones={
+          secciones ?? [{ id: 'sueltas', cards: [...tu.hand], bloqueada: false }]
+        }
+        puntos={puntos}
         seleccionadas={seleccionadas}
         onCarta={onCarta}
+        onSoltar={onSoltar}
         acciones={accionesDeMano}
       />
     </div>

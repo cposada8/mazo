@@ -1,6 +1,14 @@
 import { describe, expect, it } from 'vitest'
 import { type Card, crearEscenario, describeCard } from '@/lib/engine'
-import { acomodar, aplicarOrden, moverSeleccion } from '@/lib/mano'
+import {
+  acomodar,
+  aplanar,
+  aplicarOrden,
+  bloquear,
+  distribuir,
+  moverSeleccion,
+  soltarBloque,
+} from '@/lib/mano'
 
 const mano = (cartas: string[]): Card[] =>
   crearEscenario({ manos: [cartas, []], seed: 'mano' }).jugadores[0].hand.slice(
@@ -181,5 +189,92 @@ describe('moverSeleccion', () => {
     const antes = [...orden]
     moverSeleccion(orden, ['b'], 'derecha')
     expect(orden).toEqual(antes)
+  })
+})
+
+describe('bloques — cards you pin so sorting leaves them alone', () => {
+  const hand = mano(['7♠', '2♦', '7♥', 'K♣', '7♣', '4♦'])
+  const sietes = [hand[0].id, hand[2].id, hand[4].id]
+
+  const cartasDe = (secciones: ReturnType<typeof distribuir>) =>
+    secciones.map((seccion) => ({
+      bloqueada: seccion.bloqueada,
+      cards: escrita(seccion.cards),
+    }))
+
+  it('lays pinned cards out first, then the loose ones', () => {
+    expect(cartasDe(distribuir(hand, [], [sietes]))).toEqual([
+      { bloqueada: true, cards: ['7♠', '7♥', '7♣'] },
+      { bloqueada: false, cards: ['2♦', 'K♣', '4♦'] },
+    ])
+  })
+
+  it('leaves a hand with nothing pinned as one loose run', () => {
+    expect(cartasDe(distribuir(hand, [], []))).toEqual([
+      { bloqueada: false, cards: escrita(hand) },
+    ])
+  })
+
+  it('keeps a pinned trío together when the rest is sorted by pinta', () => {
+    const secciones = distribuir(hand, [], [sietes])
+    const sueltas = secciones.find((s) => !s.bloqueada)!.cards
+    const orden = acomodar(sueltas, 'pintas').map((card) => card.id)
+
+    expect(cartasDe(distribuir(hand, orden, [sietes]))).toEqual([
+      { bloqueada: true, cards: ['7♠', '7♥', '7♣'] },
+      { bloqueada: false, cards: ['2♦', '4♦', 'K♣'] },
+    ])
+  })
+
+  it('drops a card that has left the hand, and the bloque with it', () => {
+    const jugadas = hand.filter((card) => !sietes.includes(card.id))
+    expect(distribuir(jugadas, [], [sietes]).every((s) => !s.bloqueada)).toBe(true)
+  })
+
+  it('keeps the part of a bloque that is still in hand', () => {
+    const sinUno = hand.filter((card) => card.id !== hand[2].id)
+    const secciones = distribuir(sinUno, [], [sietes])
+    expect(escrita(secciones[0].cards)).toEqual(['7♠', '7♣'])
+  })
+
+  it('never shows a card twice, even if two bloques claim it', () => {
+    const secciones = distribuir(hand, [], [sietes, [hand[0].id, hand[1].id]])
+    const todas = aplanar(secciones).map((card) => card.id)
+    expect(new Set(todas).size).toBe(todas.length)
+    expect(todas).toHaveLength(hand.length)
+  })
+})
+
+describe('bloquear and soltarBloque', () => {
+  it('pins a set of cards', () => {
+    expect(bloquear([], ['a', 'b'])).toEqual([['a', 'b']])
+  })
+
+  it('takes the cards out of any bloque they were in', () => {
+    // Pinning 'b' with 'c' must not leave 'b' in the first bloque as well.
+    expect(bloquear([['a', 'b']], ['b', 'c'])).toEqual([['a'], ['b', 'c']])
+  })
+
+  it('drops a bloque left empty by the move', () => {
+    expect(bloquear([['a']], ['a', 'b'])).toEqual([['a', 'b']])
+  })
+
+  it('allows a bloque of one', () => {
+    expect(bloquear([], ['solo'])).toEqual([['solo']])
+  })
+
+  it('does nothing with an empty selection', () => {
+    expect(bloquear([['a']], [])).toEqual([['a']])
+  })
+
+  it('unpins by position', () => {
+    expect(soltarBloque([['a'], ['b'], ['c']], 1)).toEqual([['a'], ['c']])
+  })
+
+  it('never mutates what it was given', () => {
+    const bloques = [['a', 'b']]
+    bloquear(bloques, ['b'])
+    soltarBloque(bloques, 0)
+    expect(bloques).toEqual([['a', 'b']])
   })
 })

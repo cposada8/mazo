@@ -242,23 +242,41 @@ individually switchable, 1–7 on by default — and had simply never been built
 The setup screen is where it belongs, and the engine already took the list as
 configuration, so it needed no engine change at all.
 
+### Phase 15 — Reading your own hand ✅
+Two things that make a hand thinkable rather than merely visible: knowing what it
+would cost you right now, and being able to pin cards so that tidying up does
+not undo the thinking you already did.
+
+A **bloque** is a run of cards you pin together. Sorting only ever rearranges
+what is loose, so a trío you pinned stays a trío on screen however many times
+you press *Por pintas*. It commits to nothing and is not a grupo — it does not
+even have to be legal. Pinned cards are played exactly like any other, and a
+bloque quietly loses cards as they leave your hand, disappearing when the last
+one goes.
+**Done when:** the hand shows its point total at all times, and a pinned trío
+survives sorting the rest of the hand by suit.
+
+**Done.** `lib/mano.ts` and the hand row. Two separate ideas share the screen
+and must not be confused: a **propuesta** is a grupo you are about to lay down
+this turn, while a **bloque** is just how you like to hold your cards.
+
 ---
 
 ## Milestone 3 — Bots worth playing
 
-### Phase 15 — Bot framework
+### Phase 16 — Bot framework
 Extract the strategy interface: a bot receives the legal state it can see and
 returns a move. Add hand-evaluation helpers shared by all bots.
 **Done when:** a new bot can be added in one file with no engine changes.
 
-### Phase 16 — Bot personalities
+### Phase 17 — Bot personalities
 At least three bots that differ observably: e.g. one that hoards for the perfect
 meld, one that lays down at the first opportunity, one that watches discards and
 plays around opponents. Give them names and short descriptions in the UI.
 **Done when:** a head-to-head tournament shows different win rates and visibly
 different play. **This is Milestone 3.**
 
-### Phase 17 — Rough edges
+### Phase 18 — Rough edges
 Card animations, a hint for new players, an in-game rules summary, and an
 end-of-game screen.
 **Done when:** someone who has never played Carioca finishes a bot game without
@@ -268,26 +286,26 @@ asking for help.
 
 ## Milestone 4 — Playable together
 
-### Phase 18 — Persistence without accounts
+### Phase 19 — Persistence without accounts
 Prisma schema, finished partidas saved, and a guest identity that survives a
 page reload without anyone signing up. How a seat is claimed and protected is an
 open design question — see `tech-stack.md`.
 **Done when:** a player reloads mid-partida and is still themselves, and nobody
 can claim a seat that is not theirs.
 
-### Phase 19 — Rooms
+### Phase 20 — Rooms
 Create a room, get an invite code, join as a guest with a nickname, see who is in
 the lobby, start when everyone is ready. No gameplay yet.
 **Done when:** three devices sit in the same lobby.
 
-### Phase 20 — Server-authoritative play
+### Phase 21 — Server-authoritative play
 The game state lives on the server. Each player receives only their own hand and
 public information. Moves are submitted and validated server-side. Updates by
 polling.
 **Done when:** three people in three places finish a game from one invite code,
 and no client ever receives another player's cards. **This is Milestone 4.**
 
-### Phase 21 — Real-time transport
+### Phase 22 — Real-time transport
 Replace polling with a push transport behind the same interface. Handle
 disconnects and reconnects, and let a bot take over an abandoned seat.
 **Done when:** a player closes the tab mid-game, returns, and the game is intact.
