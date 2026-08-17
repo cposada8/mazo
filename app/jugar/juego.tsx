@@ -31,6 +31,7 @@ import {
 } from '@/lib/engine'
 import { carasDeRonda } from '@/lib/caras'
 import { CarasDeComodinProvider } from '@/components/caras'
+import { useIdentidad } from '@/components/identidad'
 import { BotonDeBaraja, SEGUNDOS, recordarBaraja } from './inicio'
 import { TU_ASIENTO, usePartida } from './usePartida'
 
@@ -71,6 +72,7 @@ export function Juego({
   const [segundosBot, setSegundosBot] = useState(segundosBotInicial)
   const [cartasOscuras, setCartasOscuras] = useState(cartasOscurasInicial)
   const juego = usePartida({ jugadores, seed, config, segundosBot })
+  const { identidad } = useIdentidad()
   const [verMenu, setVerMenu] = useState(false)
   const [verPila, setVerPila] = useState(false)
   const [verHistoria, setVerHistoria] = useState(false)
@@ -101,7 +103,7 @@ export function Juego({
       <FinDeRonda
         partida={partida}
         resumen={resumen}
-        nombres={nombres(jugadores)}
+        nombres={nombres(jugadores, identidad?.alias)}
         seAcabo={juego.seAcabo}
         onSiguiente={juego.siguiente}
         onSalir={onSalir}
@@ -113,7 +115,7 @@ export function Juego({
     return (
       <FinDePartida
         partida={partida}
-        nombres={nombres(jugadores)}
+        nombres={nombres(jugadores, identidad?.alias)}
         seed={seed}
         onOtra={onSalir}
       />
@@ -139,11 +141,11 @@ export function Juego({
         <Mesa
           state={ronda}
           asiento={TU_ASIENTO}
-          nombres={nombres(jugadores)}
+          nombres={nombres(jugadores, identidad?.alias)}
           reloj={juego.reloj}
           relatoLinea={
             juego.relato
-              ? contarRelato(juego.relato, nombres(jugadores), TU_ASIENTO)
+              ? contarRelato(juego.relato, nombres(jugadores, identidad?.alias), TU_ASIENTO)
               : undefined
           }
           viaje={juego.viaje}
@@ -198,7 +200,7 @@ export function Juego({
           <MenuDePartida
             partida={partida}
             contrato={ronda.contrato.nombre}
-            nombres={nombres(jugadores)}
+            nombres={nombres(jugadores, identidad?.alias)}
             seed={seed}
             segundosBot={segundosBot}
             onSegundosBot={setSegundosBot}
@@ -219,7 +221,7 @@ export function Juego({
         {verHistoria && (
           <HistorialDeRonda
             historia={juego.historia}
-            nombres={nombres(jugadores)}
+            nombres={nombres(jugadores, identidad?.alias)}
             onCerrar={() => setVerHistoria(false)}
           />
         )}
@@ -798,9 +800,10 @@ function FinDePartida({
   )
 }
 
-const nombres = (jugadores: number): string[] =>
+/** Seat 0 is you, greeted by your alias once the identity has loaded. */
+const nombres = (jugadores: number, tu?: string | null): string[] =>
   Array.from({ length: jugadores }, (_, seat) =>
-    seat === TU_ASIENTO ? 'Tú' : nombrePorDefecto(seat),
+    seat === TU_ASIENTO ? (tu ?? 'Tú') : nombrePorDefecto(seat),
   )
 
 function cartasDe(propuesta: Propuesta, hand: readonly Card[]): Card[] {

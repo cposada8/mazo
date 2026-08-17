@@ -1,3 +1,5 @@
+import { AliasEditable } from "@/components/identidad";
+
 const CONTRATOS = [
   { n: 1, nombre: "Dos tríos" },
   { n: 2, nombre: "Un trío y una escala" },
@@ -17,6 +19,7 @@ export default function Home() {
           Juegos de cartas. Empezando por{" "}
           <span className="text-foreground font-medium">Carioca</span>.
         </p>
+        <AliasEditable />
       </header>
 
       <section className="flex flex-col gap-4">

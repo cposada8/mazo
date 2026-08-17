@@ -1,7 +1,29 @@
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import { ProveedorDeIdentidad } from "@/components/identidad";
 import { ProveedorDeTema, SelectorDeTema } from "@/components/tema";
+import { parsearAlias } from "@/lib/alias";
+
+/**
+ * The alias list is the file (Phase 32), read here so every page shares one
+ * identity. Curating it is editing `public/candidatos/alias.txt` and pushing —
+ * the same workflow as the comodín gallery.
+ */
+function leerAliases(): string[] {
+  try {
+    return parsearAlias(
+      readFileSync(
+        join(process.cwd(), "public", "candidatos", "alias.txt"),
+        "utf8",
+      ),
+    );
+  } catch {
+    return [];
+  }
+}
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -37,10 +59,12 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     >
       <body className="min-h-full flex flex-col">
         <ProveedorDeTema>
-          <div className="mx-auto flex w-full max-w-3xl justify-end px-4 pt-3">
-            <SelectorDeTema />
-          </div>
-          {children}
+          <ProveedorDeIdentidad aliases={leerAliases()}>
+            <div className="mx-auto flex w-full max-w-3xl justify-end px-4 pt-3">
+              <SelectorDeTema />
+            </div>
+            {children}
+          </ProveedorDeIdentidad>
         </ProveedorDeTema>
       </body>
     </html>

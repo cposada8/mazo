@@ -3,6 +3,7 @@
 import { ChevronLeft } from 'lucide-react'
 import Link from 'next/link'
 import { useState, useSyncExternalStore } from 'react'
+import { AliasEditable } from '@/components/identidad'
 import {
   CATALOGO,
   CONTRATOS_POR_DEFECTO,
@@ -152,6 +153,7 @@ export function Inicio({
           Contra El Codicioso, que se baja apenas puede y no perdona un descarte
           útil.
         </p>
+        <AliasEditable />
       </header>
 
       <section className="flex flex-col gap-3">
