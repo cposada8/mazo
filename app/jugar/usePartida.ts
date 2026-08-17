@@ -302,6 +302,22 @@ export function usePartida(options: {
     [],
   )
 
+  /**
+   * Everything that follows an accepted move: the public record, and the
+   * pause on a ronda the move closed. One place on purpose — a ligada onto
+   * the mesa ends a ronda as surely as a discard does (Phase 26), and the
+   * first version of `agregarA` recorded the move without checking, so
+   * going out by ligando dealt straight past the who-won screen.
+   */
+  const asentar = useCallback(
+    (antes: PartidaState, move: Move, despues: PartidaState) => {
+      anotar(antes, move, despues)
+      const cerrada = rondaCerrada(antes, despues)
+      if (cerrada) setResumen(cerrada)
+    },
+    [anotar],
+  )
+
   const jugar = useCallback(
     (move: Move) => {
       setPartida((actual) => {
@@ -311,13 +327,11 @@ export function usePartida(options: {
           return actual
         }
         setAviso(null)
-        anotar(actual, move, result.state)
-        const cerrada = rondaCerrada(actual, result.state)
-        if (cerrada) setResumen(cerrada)
+        asentar(actual, move, result.state)
         return result.state
       })
     },
-    [anotar],
+    [asentar],
   )
 
   /**
@@ -372,16 +386,14 @@ export function usePartida(options: {
         setPartida((antes) => {
           const result = aplicarEnPartida(antes, move)
           if (!result.ok) return antes
-          anotar(antes, move, result.state)
-          const cerrada = rondaCerrada(antes, result.state)
-          if (cerrada) setResumen(cerrada)
+          asentar(antes, move, result.state)
           return result.state
         })
       }, tiempos[i]),
     )
 
     return () => ids.forEach(clearTimeout)
-  }, [claveDeTurno, resumen, segundosBot, anotar])
+  }, [claveDeTurno, resumen, segundosBot, asentar])
 
   // --------------------------------------------------------------- actions
 
@@ -459,7 +471,7 @@ export function usePartida(options: {
           if (result.ok) {
             setAviso(null)
             setSeleccion([])
-            anotar(actual, move, result.state)
+            asentar(actual, move, result.state)
             return result.state
           }
         }
@@ -471,7 +483,7 @@ export function usePartida(options: {
         return actual
       })
     },
-    [esTuTurno, ronda?.fase, seleccionadas, anotar],
+    [esTuTurno, ronda?.fase, seleccionadas, asentar],
   )
 
   const descartar = useCallback(() => {

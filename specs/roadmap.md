@@ -792,6 +792,13 @@ was always "the seat with the empty hand". The relato carries a `cierra`
 flag on the moves that can now end a ronda, and the bots were already safe:
 El Codicioso has never ligado its last card, by its own guard.
 
+One follow-up from the first game played against it: the engine closed the
+ronda but the *controller* dealt straight past the who-won screen — of the
+three places `usePartida` applied a move, the ligada path recorded it
+without checking whether it had ended anything. All three now share one
+`asentar` helper, so no path can move past a finished ronda unseen; the
+regression test stubs the deal and plays the exact ligada.
+
 ### Phase 27 — Sin comodines, and the defaults the owner keeps correcting ✅
 Two setup-screen matters, both cheap and both about the first minute.
 
