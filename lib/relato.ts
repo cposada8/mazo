@@ -5,7 +5,7 @@
  * A card taken off the descarte was face up, so it is named. A card off the
  * mazo is secret, and the line says only that somebody drew — the `mazo`
  * relato *cannot carry a card* by construction, which is the point: this is a
- * public view of the ronda, the same discipline Phase 26 makes structural
+ * public view of the ronda, the same discipline Phase 29 makes structural
  * when a bot is handed only the state it is entitled to see.
  *
  * Cards named by the other relatos are public the moment the move lands:

@@ -433,7 +433,7 @@ Three things came out differently than written above:
   20.
 
 Left deliberately undone: animations, real avatars, and any decoration of the
-room beyond a dark ground. Those are Phase 28, and none of them is what made
+room beyond a dark ground. Those are Phase 31, and none of them is what made
 the old screen unreadable.
 
 ### Phase 18 — Room to play ✅
@@ -521,7 +521,7 @@ arrangement — seats across the top, mesa in the middle, hand along the
 bottom — so this phase is a container query on `.cancha`, not a second
 layout. Below 1:1 aspect the oval hides and the grupos wrap into rows
 (portrait's spare dimension is height, so the mesa trades its sideways
-scroll for wrapping — which incidentally previews the fix Phase 28 wants
+scroll for wrapping — which incidentally previews the fix Phase 31 wants
 for the six-player overflow). The rotate-your-phone screen is deleted, the
 manifest orientation loosened to `any`, and rotation mid-turn was verified
 to preserve selection and bloques — nothing unmounts, so nothing is lost.
@@ -615,7 +615,7 @@ ways of showing a move that has already been made:
 One rule shapes the line: **it may only say what everybody can see.** A card
 taken off the descarte was face up, so it is named. A card off the mazo is
 secret, and the line says only that somebody drew — never which card. That is
-the same discipline Phase 26 makes structural, and writing the log against it
+the same discipline Phase 29 makes structural, and writing the log against it
 first is a rehearsal: a public log is a view of the ronda with one seat's
 privileges, which is precisely what a bot is about to be handed.
 
@@ -748,21 +748,91 @@ the table:
 
 ---
 
+## The second list from the table — again ahead of the machinery
+
+Another session on dev, another list: a hole in the rules that froze a game, a
+variant the engine has understood since Phase 2 but the setup screen never
+offers, defaults that fight what the owner actually picks, and two options
+that can only be chosen before the game that asks for them. Same policy as the
+last list: findings from real games outrank new machinery, so these go first
+and Milestones 3 and 4 move down three.
+
+### Phase 26 — Going out by ligando
+Found at the table, and it froze the game: the player unloaded every card in
+hand onto the mesa and the turn could not end. Going out was defined as
+discarding your last card, so a hand emptied by ligar was a state the rules
+never contemplated — the engine did what the spec said, and the spec was
+wrong.
+
+The rule, settled with the owner: **an empty hand wins, however it was
+emptied.** If a ligada leaves the hand empty, the ronda closes right there and
+the player goes out exactly as if they had discarded — 0 points or the bonus —
+with the last card lying on the mesa instead of the descarte. The alternative
+considered, refusing the ligada that would empty the hand, scores identically
+(the card could always be discarded instead) but turns the most satisfying
+play in the game into a refusal that has to be explained.
+
+Rules first, per the Phase 20 lesson: `carioca-rules.md` redefines going out
+as *running out of cards*, whether by botar or by ligar; then `apply()` closes
+the ronda after a ligada that empties the hand, and the relato says so:
+*"Jugador 3 ligó su última carta y cerró la ronda."*
+
+**Done when:** the exact situation from the bug report plays to the end —
+ligando everything wins the ronda on the spot — and a scripted test holds the
+ronda closed, the winner's score right, and the relato telling it.
+
+### Phase 27 — Sin comodines, and the defaults the owner keeps correcting
+Two setup-screen matters, both cheap and both about the first minute.
+
+- **Playing without comodines is a real variant**, and the engine has had the
+  toggle since Phase 2 — `buildDeck` already takes it. The setup screen
+  offers it: **with comodines by default**, and switching it off deals a deck
+  with none in it. A per-partida choice like the contract list, never changed
+  mid-game.
+- **The defaults flip to what the owner actually picks.** Cards deal
+  **oscuras** by default — the near-black faces from Phase 25 — and
+  **fullscreen starts off**. Both stay remembered per browser, so this only
+  decides what a first visit looks like; anyone who has already chosen keeps
+  their choice.
+
+**Done when:** a partida dealt with comodines off contains none anywhere —
+hands, stock, descarte — through every reshuffle; and a fresh browser gets
+dark cards, no fullscreen, and comodines on, without touching a switch.
+
+### Phase 28 — Ajustes from inside the partida
+The bots' thinking time and the card finish are chosen on the setup screen
+and then locked for the whole partida — but neither is a rule. One is pacing,
+the other is paint, and wanting them different is something you discover
+*while playing*, which is exactly when the game refuses to change them.
+
+This is the options screen the game should have had: the Phase 18 menu button
+already opens an overlay with the contract, marcador, seed and salir, and the
+ajustes live there too. Thinking time and claras/oscuras take effect
+immediately — the very next bot turn thinks for the new time. What *is* a
+rule — comodines, the contract list, the seed — is visible there but not
+editable, because a partida's identity does not change mid-game.
+
+**Done when:** the thinking time and the card finish can both be changed
+without leaving the table, the change shows on the next turn, and nothing
+that affects legality can be touched from the same panel.
+
+---
+
 ## Milestone 3 — Bots worth playing
 
-### Phase 26 — Bot framework
+### Phase 29 — Bot framework
 Extract the strategy interface: a bot receives the legal state it can see and
 returns a move. Add hand-evaluation helpers shared by all bots.
 **Done when:** a new bot can be added in one file with no engine changes.
 
-### Phase 27 — Bot personalities
+### Phase 30 — Bot personalities
 At least three bots that differ observably: e.g. one that hoards for the perfect
 meld, one that lays down at the first opportunity, one that watches discards and
 plays around opponents. Give them names and short descriptions in the UI.
 **Done when:** a head-to-head tournament shows different win rates and visibly
 different play. **This is Milestone 3.**
 
-### Phase 28 — Rough edges
+### Phase 31 — Rough edges
 A hint for new players, an in-game rules summary, and an end-of-game screen.
 Card animations were pulled forward into Phase 22; what is left here is the
 mesa that runs off the right edge when six players are deep into a partida —
@@ -775,26 +845,26 @@ asking for help, and a full mesa can be read without scrolling to find it.
 
 ## Milestone 4 — Playable together
 
-### Phase 29 — Persistence without accounts
+### Phase 32 — Persistence without accounts
 Prisma schema, finished partidas saved, and a guest identity that survives a
 page reload without anyone signing up. How a seat is claimed and protected is an
 open design question — see `tech-stack.md`.
 **Done when:** a player reloads mid-partida and is still themselves, and nobody
 can claim a seat that is not theirs.
 
-### Phase 30 — Rooms
+### Phase 33 — Rooms
 Create a room, get an invite code, join as a guest with a nickname, see who is in
 the lobby, start when everyone is ready. No gameplay yet.
 **Done when:** three devices sit in the same lobby.
 
-### Phase 31 — Server-authoritative play
+### Phase 34 — Server-authoritative play
 The game state lives on the server. Each player receives only their own hand and
 public information. Moves are submitted and validated server-side. Updates by
 polling.
 **Done when:** three people in three places finish a game from one invite code,
 and no client ever receives another player's cards. **This is Milestone 4.**
 
-### Phase 32 — Real-time transport
+### Phase 35 — Real-time transport
 Replace polling with a push transport behind the same interface. Handle
 disconnects and reconnects, and let a bot take over an abandoned seat.
 **Done when:** a player closes the tab mid-game, returns, and the game is intact.

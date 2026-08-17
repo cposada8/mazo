@@ -1,6 +1,6 @@
 # Project status — pick up here
 
-Last updated after Phase 15.
+Last updated after Phase 25, and the roadmap update that added Phases 26–28.
 
 Read this first, then `mission.md` for the why, `carioca-rules.md` for the game,
 `tech-stack.md` for the stack, and `roadmap.md` for what comes next. This file is
@@ -14,9 +14,10 @@ doc is worse than none.
 
 ## Where things stand
 
-Phases 0–11 are done. **Carioca is playable.** Open `/jugar` on a phone and play
-a full partida against bots: draw, lay down, unload onto anyone's grupos,
-discard, and see the scoreboard at the end.
+Phases 0–25 are done. **Carioca is playable, and looks like a card table.**
+Open `/jugar` on a phone — held either way — and play a full partida against
+bots: draw, lay down, unload onto anyone's grupos, discard, and see the
+scoreboard at the end.
 
 Milestones 1 and 2 are both complete. What is missing is other people —
 Milestone 3 makes the bots worth playing, Milestone 4 puts friends at the
@@ -42,38 +43,41 @@ table.
 | 15 | Reading your own hand | ✅ |
 | 16 | Dev before prod: a branch and its own URL | ✅ |
 | 17 | The table: seats around it, grupos in the middle | ✅ |
-| 18 | Room to play: fullscreen, and sizes that fit the phone | ← **next** |
-| 19 | Standing up: the table works upright too | not started |
-| 20 | Turning the right way, and a table worth looking at | not started |
-| 21 | The clock: bots think for a set time, visibly | not started |
-| 22 | What just happened: the card travels, and a line says so | not started |
-| 23–29 | Bot framework and personalities, then online | not started |
+| 18 | Room to play: fullscreen, and sizes that fit the phone | ✅ |
+| 19 | Standing up: the table works upright too | ✅ |
+| 20 | Turning the right way, and a table worth looking at | ✅ |
+| 21 | The clock: bots think for a set time, visibly | ✅ |
+| 22 | What just happened: the card travels, and a line says so | ✅ |
+| 23 | The comodín that slides | ✅ |
+| 24 | Watching the table work: descarte, historial, latched sort | ✅ |
+| 25 | Cards with corners | ✅ |
+| 26 | Going out by ligando | ← **next** |
+| 27 | Sin comodines, and the flipped defaults | not started |
+| 28 | Ajustes from inside the partida | not started |
+| 29–31 | Bot framework and personalities | not started |
+| 32–35 | Online: persistence, rooms, server play, real-time | not started |
 
-**The game is played sideways now.** Phase 17 turned the screen into a table:
-seats on the rim of a felt oval in turn order, the turn drawn as a ring on the
-player rather than announced elsewhere, everyone's grupos communal in the
-middle, your hand along the bottom and the actions in the thumb's corner.
-Arriving in portrait gets a screen asking you to turn the phone. The setup
-screen, the scoreboard and the end of a ronda are still read upright.
+**The table now holds up on a real phone, held either way.** The lanes built
+in Phase 18 survive a 615 × 287 viewport and double as the portrait
+arrangement (19). The felt is black with a red rim line and play runs
+anticlockwise, as the rules now say in writing (20). Bots visibly think for a
+set time, the countdown drawn on the ficha (21). Every move is narrated and
+animated under one rule — the line may only say what everybody saw — and the
+descarte and the historial can be browsed from the table (22, 24). Cards are
+corner-indexed so a dealt hand fits without scrolling, and the deck comes in
+two finishes (25). The comodín that slides across an escala's end, found at
+the table, went into the rules and then the engine (23).
 
-**And on a real phone it does not fit.** Played on an actual Android in Chrome
-rather than a 390-pixel browser window, the URL bar takes a fifth of the screen
-and the table is squeezed into a strip where the seats print over the grupos.
-Phases 18 and 19 are that: room to play, and then no longer having to turn the
-phone at all.
+Also there, off the roadmap: **a ronda no longer slips past you** — when
+somebody goes out the game pauses on a who-won screen and deals the next
+reparto only on «Siguiente reparto». The pause lives in `usePartida`; the
+engine still closes and deals in one move.
 
-Off the roadmap, after Phase 15: **a ronda no longer slips past you.** When
-somebody goes out, the game stops on a screen that says who won, with the
-scoreboard and the ronda just played picked out, and deals the next one only
-when you press «Siguiente reparto». The engine still closes and deals in the
-same move — the pause lives in `usePartida`, and no bot plays while it is up.
-
-And a bug it turned up: **a new reparto arrived with cards already pinned.**
-The bloques from the last hand were still there, and because card ids repeat
-between deals they matched cards they were never made from. The arrangement
-belongs to the ronda it was made in, so `usePartida` now drops it whenever the
-ronda changes — not inside «Siguiente reparto», which was the convenient place
-rather than the correct one.
+**What goes next came from the owner's latest games** (Phases 26–28): a hand
+emptied by ligar must win instead of freezing the game, the setup screen
+gains a sin-comodines option and flips its defaults — cartas oscuras, no
+fullscreen — and the bots' thinking time and the card finish become
+changeable from inside the partida.
 
 - **Repo:** https://github.com/cposada8/mazo
 - **Live:** https://mazo-six.vercel.app — `/mesa` steps through a bot partida,
@@ -82,7 +86,7 @@ rather than the correct one.
   public, no login.
 - **Deploys:** work goes to `dev`, which builds by itself. Production changes
   only by merging `dev` into `main`. Nothing else deploys `main`.
-- **Tests:** 360, all green (the soak takes ~15s). `npm run test:run`, `npx tsc --noEmit`, `npm run lint`.
+- **Tests:** 383, all green (the run takes ~17s, mostly the soak). `npm run test:run`, `npx tsc --noEmit`, `npm run lint`.
 
 ## What exists
 
@@ -104,18 +108,25 @@ lib/bots/             Clients of the engine. Nothing in the engine imports these
   agrupar.ts         The grouping search, and how useful a card is.
   codicioso.ts       El Codicioso: the baseline bot.
   mesa.ts            Runs a whole partida with bots in the seats.
-components/carta.tsx The visual card.
-components/mesa.tsx  The table, landscape: seats on the rim, the felt, the
-                     piles, everyone's grupos in the middle, your hand along
-                     the bottom. Optional callbacks turn it from a game you
-                     watch into one you play.
+  turno.ts           A bot's whole turn decided up front, so the clock can
+                     spread its moves over the configured seconds.
+components/carta.tsx The visual card: corner-indexed, two finishes.
+components/mesa.tsx  The table, landscape or portrait: seats on the rim, the
+                     felt, the piles, everyone's grupos in the middle, your
+                     hand along the bottom. Optional callbacks turn it from a
+                     game you watch into one you play.
 lib/asientos.ts      Where each seat goes around the table. Pure geometry.
-app/jugar/           The playable game: page.tsx and usePartida.ts.
+lib/relato.ts        A move told in words, public information only — the
+                     `mazo` variant cannot carry a card by construction.
+lib/semilla.ts       Short readable seeds, random by default.
+lib/pantalla.ts      The Fullscreen API, wrapped small.
+app/manifest.ts      Standalone install, for the screen space.
+app/jugar/           The playable game: inicio.tsx, juego.tsx, usePartida.ts.
 components/tema.tsx  Light / dark / follow the phone.
-lib/mano.ts          Arranging your hand: order, sorting, pinned bloques.
-                     A comfort, never a rule.
+lib/mano.ts          Arranging your hand: order, sorting, pinned bloques,
+                     latched sort. A comfort, never a rule.
 app/pruebas/         The page that makes the engine visible.
-__tests__/engine/    Tests, including helpers.ts for scripted rondas.
+__tests__/           Tests, including engine/helpers.ts for scripted rondas.
 ```
 
 Nothing is persisted and there is no database yet. Everything runs in memory.
@@ -156,42 +167,31 @@ the cards are gone and has to be dropped when the ronda changes.
 
 ## What comes next
 
-**Phase 18 — room to play.** Measured on a real phone lying down, the CSS
-viewport is about 615 × 287: the browser's URL bar takes a fifth before the
-game gets any, the arranging controls wrap into three rows and eat half of what
-is left, and a seat's card count ends up printed on top of a grupo. Three
-answers — a manifest and the Fullscreen API so the browser chrome goes away,
-every size derived from the height actually available instead of `h-20`, and
-bands that cannot borrow space from each other.
+**Phase 26 — going out by ligando.** Found at the table, and it froze the
+game: every card ligada, the hand empty, and no discard left to end the turn —
+going out was defined as botar the last card, so the state had no exit. The
+rule, settled with the owner: **an empty hand wins, however it was emptied.**
+Into `carioca-rules.md` first, then `apply()` closes the ronda after a ligada
+that empties the hand, with the freeze the owner hit as the test.
 
-**Phase 19 — standing up.** The table works upright, and the
-turn-your-phone screen is deleted rather than improved. Same components, two
-arrangements; rotating mid-partida rearranges and loses nothing.
+**Phase 27 — sin comodines, and the flipped defaults.** The setup screen
+offers playing without comodines — on by default, and the engine has had the
+toggle since Phase 2 — and a fresh browser now gets cartas oscuras and no
+fullscreen. Both defaults stay remembered per browser once changed.
 
-**Phase 20 — the right way round, and a table worth looking at.** Play passes
-to the player on your **right** in Carioca, and the seating puts them on your
-left. Only `lib/asientos.ts` is wrong; the engine has no opinion about
-geometry. The direction was never written down, which is why nobody caught it,
-so it goes into `carioca-rules.md` first. And the green felt is the default
-nobody chose: black with a thin red line, elegant rather than casino.
+**Phase 28 — ajustes from inside the partida.** The bots' thinking time and
+claras/oscuras become editable from the in-game menu, effective the very next
+turn. What is a rule — comodines, contracts, seed — stays read-only there.
 
-**Phase 21 — the clock.** Bots think for a number of seconds chosen on the
-setup screen, two by default, timed over the **whole turn** rather than each
-move. The ring on the ficha drains as it goes. No clock for the human yet.
-
-**Phase 22 — what just happened.** The drawn card animates to the hand that
-took it, and a line under the piles says what was done. It may only ever name a
-card everybody saw: from the descarte, yes; from the mazo, never.
-
-**Phase 23 — the bot framework.** The step that makes difficulty levels
+**Phase 29 — the bot framework.** The step that makes difficulty levels
 possible, and the one online play needs anyway.
 
 Right now a bot receives the whole `RondaState` and is merely well-behaved about
-not reading other hands. Phase 23 makes that structural: a **view** of what one
+not reading other hands. Phase 29 makes that structural: a **view** of what one
 seat can legitimately see — its own hand, the grupos on the mesa, the descarte,
 how many cards everyone holds. A bot takes the view and returns a `Move`.
 
-That same function is what the server will need in Phase 28 to send each player
+That same function is what the server will need in Phase 34 to send each player
 only their own cards, so it is worth getting right rather than fast.
 
 It also unlocks what bots with memory need: once the input is explicitly "what
@@ -207,14 +207,14 @@ property of the bot rather than a licence to peek.
   partida with a code and a nickname, so the system still needs to know which
   seat is whose, survive a reload, and stop someone claiming another player's
   seat and seeing their hand. Likely a per-seat secret in the browser. Settle it
-  before Phase 26.
+  before Phase 32.
 - **Real-time transport.** Vercel functions cannot hold WebSockets. Polling with
   TanStack Query is the likely first implementation, behind an interface so it
-  can be swapped for Pusher or Supabase Realtime. Decide in Phase 28, not before.
+  can be swapped for Pusher or Supabase Realtime. Decide in Phase 34, not before.
 - **A ronda nobody can win.** Carioca has no stalemate rule, and the soak
   measures the consequence: ~1.3% of bot partidas never end. Harmless in a test,
   a hung game online. Options are written up in `carioca-rules.md`; decide before
-  Phase 28.
+  Phase 34.
 
 ## How this project is run
 
