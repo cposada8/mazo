@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { armarGrupo, codicioso } from '@/lib/bots'
+import { type Acomodo, acomodar, aplicarOrden, mover } from '@/lib/mano'
 import {
   type Card,
   type Move,
@@ -30,6 +31,8 @@ export function usePartida(options: {
   const [seleccion, setSeleccion] = useState<readonly string[]>([])
   const [propuestas, setPropuestas] = useState<readonly Propuesta[]>([])
   const [aviso, setAviso] = useState<string | null>(null)
+  /** How you have arranged your hand. Cards you have not touched keep dealing order. */
+  const [orden, setOrden] = useState<readonly string[]>([])
 
   const reiniciar = useCallback(
     (nuevaSemilla: string, cuantos: number) => {
@@ -37,6 +40,7 @@ export function usePartida(options: {
       setSeleccion([])
       setPropuestas([])
       setAviso(null)
+      setOrden([])
     },
     [config],
   )
@@ -59,12 +63,30 @@ export function usePartida(options: {
     return propuestas.filter((p) => p.cardIds.every((id) => enMano.has(id)))
   }, [ronda, propuestas])
 
-  /** Cards still in hand and not already set aside for a grupo. */
-  const disponibles = useMemo<Card[]>(() => {
+  /** Your hand as you have arranged it. */
+  const mano = useMemo<Card[]>(() => {
     if (!ronda) return []
+    return aplicarOrden(ronda.jugadores[TU_ASIENTO].hand, orden)
+  }, [ronda, orden])
+
+  /** Cards still in hand and not already set aside for a grupo, in your order. */
+  const disponibles = useMemo<Card[]>(() => {
     const apartadas = new Set(propuestasVigentes.flatMap((p) => p.cardIds))
-    return ronda.jugadores[TU_ASIENTO].hand.filter((card) => !apartadas.has(card.id))
-  }, [ronda, propuestasVigentes])
+    return mano.filter((card) => !apartadas.has(card.id))
+  }, [mano, propuestasVigentes])
+
+  const acomodarMano = useCallback(
+    (como: Acomodo) => setOrden(acomodar(mano, como).map((card) => card.id)),
+    [mano],
+  )
+
+  const moverCarta = useCallback(
+    (cardId: string, hacia: 'izquierda' | 'derecha') =>
+      setOrden((actual) =>
+        mover(actual.length > 0 ? actual : mano.map((card) => card.id), cardId, hacia),
+      ),
+    [mano],
+  )
 
   const seleccionadas = useMemo(
     () => disponibles.filter((card) => seleccion.includes(card.id)),
@@ -214,7 +236,10 @@ export function usePartida(options: {
     aviso,
     seleccion,
     seleccionadas,
+    mano,
     disponibles,
+    acomodarMano,
+    moverCarta,
     propuestas: propuestasVigentes,
     contratoCompleto,
     yaBajado: ronda ? ronda.jugadores[TU_ASIENTO].bajadoEnTurno !== null : false,

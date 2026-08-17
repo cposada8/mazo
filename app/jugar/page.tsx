@@ -41,6 +41,8 @@ export default function Jugar() {
         state={ronda}
         asiento={TU_ASIENTO}
         nombres={nombres(jugadores)}
+        mano={juego.disponibles}
+        accionesDeMano={<AccionesDeMano juego={juego} />}
         seleccionadas={new Set(juego.seleccion)}
         onCarta={esTuTurno ? juego.alternarCarta : undefined}
         onRobar={esTuTurno && ronda.fase === 'draw' ? juego.robar : undefined}
@@ -115,6 +117,54 @@ function Instruccion({
     <>Toca el mazo o el descarte para robar.</>
   ) : (
     <>Arma grupos, pon cartas en la mesa, y bota una para terminar.</>
+  )
+}
+
+/**
+ * Arranging your hand. Always available — it changes nothing about the game, so
+ * there is no reason to lock it to your turn.
+ */
+function AccionesDeMano({ juego }: { juego: ReturnType<typeof usePartida> }) {
+  const unaSola = juego.seleccion.length === 1 ? juego.seleccion[0] : null
+
+  return (
+    <div className="flex flex-wrap items-center gap-1.5">
+      {unaSola && (
+        <div className="flex gap-px overflow-hidden rounded-md border">
+          <button
+            type="button"
+            onClick={() => juego.moverCarta(unaSola, 'izquierda')}
+            aria-label="Mover la carta a la izquierda"
+            className="bg-card hover:bg-accent px-2 py-1 text-sm"
+          >
+            ←
+          </button>
+          <button
+            type="button"
+            onClick={() => juego.moverCarta(unaSola, 'derecha')}
+            aria-label="Mover la carta a la derecha"
+            className="bg-card hover:bg-accent px-2 py-1 text-sm"
+          >
+            →
+          </button>
+        </div>
+      )}
+
+      <button
+        type="button"
+        onClick={() => juego.acomodarMano('pintas')}
+        className="bg-card hover:bg-accent rounded-md border px-2.5 py-1 text-xs"
+      >
+        Por pintas
+      </button>
+      <button
+        type="button"
+        onClick={() => juego.acomodarMano('numeros')}
+        className="bg-card hover:bg-accent rounded-md border px-2.5 py-1 text-xs"
+      >
+        Por números
+      </button>
+    </div>
   )
 }
 

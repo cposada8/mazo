@@ -170,7 +170,7 @@ Two deviations, both deliberate:
 - **No comodín repositioning yet.** Drawing, laying down, adding to any grupo
   and discarding are all wired; moving a comodín within an escala is not. The
   engine supports it — the interface does not, and it needs a way to say *which*
-  card pays for it. Deferred to Phase 14, the polish phase.
+  card pays for it. Deferred to Phase 16, the polish phase.
 
 The player still groups: you select the cards and `armarGrupo` only works out
 whether they read as a trío or an escala, and where a comodín has to sit. It
@@ -178,21 +178,49 @@ never picks the cards for you.
 
 ---
 
+## Comfort — asked for mid-build, and worth doing before more machinery
+
+### Phase 12 — Dark mode ✅
+Light, dark, or follow the phone. Chosen by the person, not by the clock.
+**Done when:** the whole site can be held dark, and the choice survives moving
+between pages without a white flash on load.
+
+**Done.** `components/tema.tsx`. The class lands on `<html>` before the page
+paints, which is the only part of this that is not trivial.
+
+### Phase 13 — Arranging your hand ✅
+Thirteen cards in dealt order are hard to read and impossible to think with.
+Sort them **by pinta** — each suit low to high, so an escala lines up — or **by
+número** — cards of the same rango together, biggest group first. Move any card
+one place at a time, and have that arrangement stay put.
+**Done when:** an arrangement survives drawing, discarding and a new ronda, and
+a newly drawn card arrives somewhere you will notice it.
+
+**Done.** `lib/mano.ts` and the controls above the hand. Ordering is a comfort,
+never a rule: the engine neither knows nor cares what order a hand is held in,
+so none of this can affect what is legal.
+
+The hand itself was rebuilt too — one row that scrolls sideways with the cards
+overlapping, instead of a wrapping grid. A grid loses left-to-right order, which
+is precisely what arranging a hand is for.
+
+---
+
 ## Milestone 3 — Bots worth playing
 
-### Phase 12 — Bot framework
+### Phase 14 — Bot framework
 Extract the strategy interface: a bot receives the legal state it can see and
 returns a move. Add hand-evaluation helpers shared by all bots.
 **Done when:** a new bot can be added in one file with no engine changes.
 
-### Phase 13 — Bot personalities
+### Phase 15 — Bot personalities
 At least three bots that differ observably: e.g. one that hoards for the perfect
 meld, one that lays down at the first opportunity, one that watches discards and
 plays around opponents. Give them names and short descriptions in the UI.
 **Done when:** a head-to-head tournament shows different win rates and visibly
 different play. **This is Milestone 3.**
 
-### Phase 14 — Rough edges
+### Phase 16 — Rough edges
 Card animations, a hint for new players, an in-game rules summary, and an
 end-of-game screen.
 **Done when:** someone who has never played Carioca finishes a bot game without
@@ -202,26 +230,26 @@ asking for help.
 
 ## Milestone 4 — Playable together
 
-### Phase 15 — Persistence without accounts
+### Phase 17 — Persistence without accounts
 Prisma schema, finished partidas saved, and a guest identity that survives a
 page reload without anyone signing up. How a seat is claimed and protected is an
 open design question — see `tech-stack.md`.
 **Done when:** a player reloads mid-partida and is still themselves, and nobody
 can claim a seat that is not theirs.
 
-### Phase 16 — Rooms
+### Phase 18 — Rooms
 Create a room, get an invite code, join as a guest with a nickname, see who is in
 the lobby, start when everyone is ready. No gameplay yet.
 **Done when:** three devices sit in the same lobby.
 
-### Phase 17 — Server-authoritative play
+### Phase 19 — Server-authoritative play
 The game state lives on the server. Each player receives only their own hand and
 public information. Moves are submitted and validated server-side. Updates by
 polling.
 **Done when:** three people in three places finish a game from one invite code,
 and no client ever receives another player's cards. **This is Milestone 4.**
 
-### Phase 18 — Real-time transport
+### Phase 20 — Real-time transport
 Replace polling with a push transport behind the same interface. Handle
 disconnects and reconnects, and let a bot take over an abandoned seat.
 **Done when:** a player closes the tab mid-game, returns, and the game is intact.

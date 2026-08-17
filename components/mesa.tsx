@@ -12,6 +12,7 @@
 
 import { Carta, CartaBocaAbajo } from '@/components/carta'
 import {
+  type Card,
   type Escala,
   type Grupo,
   type JugadorState,
@@ -185,50 +186,69 @@ export function Pilas({
   )
 }
 
-/** Your own hand, face up, along the bottom. */
+/**
+ * Your own hand, face up along the bottom.
+ *
+ * One row that scrolls sideways, with the cards overlapping the way they do in
+ * a real hand — a wrapping grid loses the left-to-right order that makes a run
+ * readable, and the order is the whole point of being able to arrange them.
+ */
 export function Mano({
-  jugador,
+  cards,
   seleccionadas,
   onCarta,
+  acciones,
 }: {
-  jugador: JugadorState
+  cards: readonly Card[]
   seleccionadas?: ReadonlySet<string>
   onCarta?: (cardId: string) => void
+  /** Sorting and moving controls, rendered beside the heading. */
+  acciones?: React.ReactNode
 }) {
   return (
     <div className="flex flex-col gap-2">
-      <div className="flex items-baseline justify-between">
-        <h2 className="text-sm font-medium">Tu mano</h2>
-        <span className="text-muted-foreground text-xs">
-          {jugador.hand.length} cartas
-        </span>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <h2 className="text-sm font-medium">
+          Tu mano{' '}
+          <span className="text-muted-foreground font-normal">
+            · {cards.length}
+          </span>
+        </h2>
+        {acciones}
       </div>
-      <div className="flex flex-wrap gap-1">
-        {jugador.hand.map((card) => {
-          const elegida = seleccionadas?.has(card.id) ?? false
-          const carta = (
-            <Carta
-              card={card}
-              className={cn(
-                elegida && 'ring-foreground ring-offset-background -translate-y-2 ring-2 ring-offset-2',
-                onCarta && 'transition-transform',
-              )}
-            />
-          )
 
-          return onCarta ? (
-            <button
-              key={card.id}
-              type="button"
-              onClick={() => onCarta(card.id)}
-              aria-pressed={elegida}
-            >
-              {carta}
-            </button>
-          ) : (
-            <div key={card.id}>{carta}</div>
-          )
-        })}
+      <div className="-mx-4 overflow-x-auto px-4 pt-3 pb-2">
+        <div className="flex w-max pl-3">
+          {cards.map((card) => {
+            const elegida = seleccionadas?.has(card.id) ?? false
+            const carta = (
+              <Carta
+                card={card}
+                className={cn(
+                  'transition-transform',
+                  elegida &&
+                    'ring-foreground ring-offset-background -translate-y-3 ring-2 ring-offset-2',
+                )}
+              />
+            )
+
+            return onCarta ? (
+              <button
+                key={card.id}
+                type="button"
+                onClick={() => onCarta(card.id)}
+                aria-pressed={elegida}
+                className={cn('-ml-3 shrink-0', elegida && 'z-10')}
+              >
+                {carta}
+              </button>
+            ) : (
+              <div key={card.id} className="-ml-3 shrink-0">
+                {carta}
+              </div>
+            )
+          })}
+        </div>
       </div>
     </div>
   )
@@ -245,6 +265,8 @@ export function Mesa({
   state,
   asiento,
   nombres,
+  mano,
+  accionesDeMano,
   onRobar,
   onCarta,
   onGrupo,
@@ -254,6 +276,10 @@ export function Mesa({
   /** The seat whose hand is shown face up. */
   asiento: number
   nombres?: readonly string[]
+  /** Your hand in the order you arranged it. Defaults to the dealt order. */
+  mano?: readonly Card[]
+  /** Sorting and moving controls for your hand. */
+  accionesDeMano?: React.ReactNode
 } & MesaInteractiva) {
   const nombreDe = (seat: number) => nombres?.[seat] ?? nombrePorDefecto(seat)
   const tu = state.jugadores[asiento]
@@ -307,7 +333,12 @@ export function Mesa({
         </section>
       )}
 
-      <Mano jugador={tu} seleccionadas={seleccionadas} onCarta={onCarta} />
+      <Mano
+        cards={mano ?? tu.hand}
+        seleccionadas={seleccionadas}
+        onCarta={onCarta}
+        acciones={accionesDeMano}
+      />
     </div>
   )
 }
