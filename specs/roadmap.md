@@ -191,10 +191,13 @@ paints, which is the only part of this that is not trivial.
 ### Phase 13 — Arranging your hand ✅
 Thirteen cards in dealt order are hard to read and impossible to think with.
 Sort them **by pinta** — each suit low to high, so an escala lines up — or **by
-número** — cards of the same rango together, biggest group first. Move any card
-one place at a time, and have that arrangement stay put.
-**Done when:** an arrangement survives drawing, discarding and a new ronda, and
-a newly drawn card arrives somewhere you will notice it.
+número** — the whole hand low to high with the ace highest, which puts cards of
+the same rango side by side. Move the **selected** cards, however many and
+however scattered: they gather into one block beside the leftmost one and slide
+together from there.
+**Done when:** an arrangement survives drawing, discarding and a new ronda, a
+newly drawn card arrives somewhere you will notice it, and moving a scattered
+selection gathers it rather than shuffling it.
 
 **Done.** `lib/mano.ts` and the controls above the hand. Ordering is a comfort,
 never a rule: the engine neither knows nor cares what order a hand is held in,
@@ -203,6 +206,11 @@ so none of this can affect what is legal.
 The hand itself was rebuilt too — one row that scrolls sideways with the cards
 overlapping, instead of a wrapping grid. A grid loses left-to-right order, which
 is precisely what arranging a hand is for.
+
+Note the ace appears in two places on purpose. Sorting by número treats it as the
+highest card, because that is how a person reads a hand. The engine's ring still
+has it at position zero, because an escala can wrap through it. Neither is wrong;
+they answer different questions.
 
 ---
 

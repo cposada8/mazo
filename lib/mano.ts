@@ -11,6 +11,7 @@ import {
   RANKS,
   SUITS,
   type Card,
+  type Rank,
   type Suit,
   isComodin,
   rankIndex,
@@ -74,51 +75,66 @@ function porPintas(hand: readonly Card[]): Card[] {
 }
 
 /**
- * By rango, keeping cards of the same value together and putting the biggest
- * groups first — so two fives sit side by side and three eights announce
- * themselves.
+ * Where a rango sits when a hand is read low to high.
+ *
+ * Not the ring index. On the ring the ace is position zero, because an escala
+ * can wrap through it; to a person sorting a hand the ace is simply the highest
+ * card, so it goes last.
+ */
+function ordenDeLectura(rank: Rank): number {
+  const indice = rankIndex(rank)
+  return indice === 0 ? RANKS.length : indice
+}
+
+/**
+ * By rango, low to high with the ace highest — so cards of the same value end up
+ * side by side and the whole hand reads in order.
  */
 function porNumeros(hand: readonly Card[]): Card[] {
   const comodines = hand.filter(isComodin)
   const reales = hand.filter((card) => !isComodin(card))
 
-  const grupos = new Map<string, Card[]>()
-  for (const card of reales) {
-    if (isComodin(card)) continue
-    const existentes = grupos.get(card.rank)
-    if (existentes) existentes.push(card)
-    else grupos.set(card.rank, [card])
-  }
-
-  const ordenados = [...grupos.entries()].sort(([rangoA, a], [rangoB, b]) => {
-    const tamano = b.length - a.length
-    if (tamano !== 0) return tamano
-    return (
-      rankIndex(rangoA as (typeof RANKS)[number]) -
-      rankIndex(rangoB as (typeof RANKS)[number])
-    )
+  const ordenadas = [...reales].sort((a, b) => {
+    if (isComodin(a) || isComodin(b)) return 0
+    const rango = ordenDeLectura(a.rank) - ordenDeLectura(b.rank)
+    return rango !== 0 ? rango : SUITS.indexOf(a.suit) - SUITS.indexOf(b.suit)
   })
 
-  return [...ordenados.flatMap(([, cards]) => cards), ...comodines]
+  return [...ordenadas, ...comodines]
 }
 
 export function acomodar(hand: readonly Card[], como: Acomodo): Card[] {
   return como === 'pintas' ? porPintas(hand) : porNumeros(hand)
 }
 
-/** Move one card one place left or right, leaving everything else alone. */
-export function mover(
+/**
+ * Move the selected cards one place left or right, gathering them as they go.
+ *
+ * Cards picked out of scattered positions come together into one block. The
+ * block lands beside where the **leftmost** selected card was, which is what
+ * makes repeated taps feel like sliding a group rather than shuffling a pile:
+ *
+ *     c c [s] c [s] [s]   →  left →   c [s] [s] [s] c c
+ *
+ * Selecting one card is just this with a block of one, so there is no separate
+ * rule for the simple case.
+ */
+export function moverSeleccion(
   orden: readonly string[],
-  cardId: string,
+  seleccionadas: readonly string[],
   hacia: 'izquierda' | 'derecha',
 ): string[] {
-  const actual = orden.indexOf(cardId)
-  if (actual === -1) return [...orden]
+  const elegidas = new Set(seleccionadas)
+  const bloque = orden.filter((id) => elegidas.has(id))
+  if (bloque.length === 0 || bloque.length === orden.length) return [...orden]
 
-  const destino = hacia === 'izquierda' ? actual - 1 : actual + 1
-  if (destino < 0 || destino >= orden.length) return [...orden]
+  const resto = orden.filter((id) => !elegidas.has(id))
+  const ancla = orden.findIndex((id) => elegidas.has(id))
 
-  const resultado = [...orden]
-  ;[resultado[actual], resultado[destino]] = [resultado[destino], resultado[actual]]
-  return resultado
+  const destino = Math.min(
+    Math.max(ancla + (hacia === 'izquierda' ? -1 : 1), 0),
+    resto.length,
+  )
+
+  return [...resto.slice(0, destino), ...bloque, ...resto.slice(destino)]
 }

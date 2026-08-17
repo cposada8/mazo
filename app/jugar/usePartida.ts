@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { armarGrupo, codicioso } from '@/lib/bots'
-import { type Acomodo, acomodar, aplicarOrden, mover } from '@/lib/mano'
+import { type Acomodo, acomodar, aplicarOrden, moverSeleccion } from '@/lib/mano'
 import {
   type Card,
   type Move,
@@ -80,12 +80,17 @@ export function usePartida(options: {
     [mano],
   )
 
-  const moverCarta = useCallback(
-    (cardId: string, hacia: 'izquierda' | 'derecha') =>
+  /** Slide everything currently selected one place, gathering it into a block. */
+  const moverCartas = useCallback(
+    (hacia: 'izquierda' | 'derecha') =>
       setOrden((actual) =>
-        mover(actual.length > 0 ? actual : mano.map((card) => card.id), cardId, hacia),
+        moverSeleccion(
+          actual.length > 0 ? actual : mano.map((card) => card.id),
+          seleccion,
+          hacia,
+        ),
       ),
-    [mano],
+    [mano, seleccion],
   )
 
   const seleccionadas = useMemo(
@@ -239,7 +244,7 @@ export function usePartida(options: {
     mano,
     disponibles,
     acomodarMano,
-    moverCarta,
+    moverCartas,
     propuestas: propuestasVigentes,
     contratoCompleto,
     yaBajado: ronda ? ronda.jugadores[TU_ASIENTO].bajadoEnTurno !== null : false,

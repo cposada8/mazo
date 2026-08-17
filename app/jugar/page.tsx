@@ -125,24 +125,24 @@ function Instruccion({
  * there is no reason to lock it to your turn.
  */
 function AccionesDeMano({ juego }: { juego: ReturnType<typeof usePartida> }) {
-  const unaSola = juego.seleccion.length === 1 ? juego.seleccion[0] : null
+  const haySeleccion = juego.seleccion.length > 0
 
   return (
     <div className="flex flex-wrap items-center gap-1.5">
-      {unaSola && (
+      {haySeleccion && (
         <div className="flex gap-px overflow-hidden rounded-md border">
           <button
             type="button"
-            onClick={() => juego.moverCarta(unaSola, 'izquierda')}
-            aria-label="Mover la carta a la izquierda"
+            onClick={() => juego.moverCartas('izquierda')}
+            aria-label="Mover las cartas seleccionadas a la izquierda"
             className="bg-card hover:bg-accent px-2 py-1 text-sm"
           >
             ←
           </button>
           <button
             type="button"
-            onClick={() => juego.moverCarta(unaSola, 'derecha')}
-            aria-label="Mover la carta a la derecha"
+            onClick={() => juego.moverCartas('derecha')}
+            aria-label="Mover las cartas seleccionadas a la derecha"
             className="bg-card hover:bg-accent px-2 py-1 text-sm"
           >
             →
