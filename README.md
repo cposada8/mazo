@@ -6,8 +6,9 @@ a Chilean rummy variant played over a configurable sequence of contracts.
 Play against bots when nobody is around, or share a code and play with friends
 from their own phones — no account required.
 
-> Status: early. The rules are fully specified and the project skeleton is up.
-> The game engine is next.
+> Status: the rules engine is complete through a full ronda — dealing, grupos,
+> turns, laying down, and the mesa. Scoring is next, and nothing is playable by a
+> human yet. See [`specs/estado.md`](./specs/estado.md).
 
 ## How it is built
 
@@ -29,6 +30,8 @@ engine.
 This project is specced before it is coded. Everything worth knowing is in
 [`specs/`](./specs):
 
+- **[`estado.md`](./specs/estado.md) — start here.** Where the project stands,
+  the decisions that shape the code, and what comes next.
 - [`mission.md`](./specs/mission.md) — what Mazo is, who it is for, and what
   counts as done.
 - [`carioca-rules.md`](./specs/carioca-rules.md) — the complete rules of Carioca

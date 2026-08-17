@@ -294,6 +294,10 @@ those two steps.
 Only the **top** card of the descarte is available. The pile underneath is out of
 play.
 
+A player **may discard the same card they just took** from the descarte. Many
+rummy variants forbid this because it lets a turn pass at no cost; Carioca as
+played here does not, and the permission is deliberate rather than an oversight.
+
 #### When the stock runs out
 
 If the stock empties while the ronda is still going, the descarte is **shuffled
@@ -427,20 +431,6 @@ likely bypasses the normal lay-down-then-discard flow. It does not fit the
 **Deliberately deferred.** Excluded from the first implementation. The `Contrato`
 type must not be designed in a way that makes escaleras impossible to add later,
 but no attempt is made to model them yet.
-
-### Discarding the card just taken from the descarte
-
-Found while building the ronda state machine, and not covered above: may a
-player take the top of the descarte and then discard that same card in the same
-turn?
-
-Taking it back out costs nothing, so allowing it lets a player pass a turn with
-no consequence and hand the same card back to the table — a stall with no cost.
-Most rummy variants forbid it for exactly that reason.
-
-**Currently allowed**, because the rules as written do not forbid it. Left as
-written rather than invented; if the answer is no, it is a one-line rule in
-`ronda.ts`.
 
 Everything else is settled. Any rule discovered to be missing during
 implementation is written here first, then coded.
