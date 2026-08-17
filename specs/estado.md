@@ -1,6 +1,6 @@
 # Project status — pick up here
 
-Last updated after Phase 28.
+Last updated after Phase 29.
 
 Read this first, then `mission.md` for the why, `carioca-rules.md` for the game,
 `tech-stack.md` for the stack, and `roadmap.md` for what comes next. This file is
@@ -54,9 +54,10 @@ table.
 | 26 | Going out by ligando | ✅ |
 | 27 | Sin comodines, and the flipped defaults | ✅ |
 | 28 | Ajustes from inside the partida | ✅ |
-| 29 | Bot framework | ← **next** |
-| 30–31 | Bot personalities, rough edges | not started |
-| 32–35 | Online: persistence, rooms, server play, real-time | not started |
+| 29 | The comodines get a face | ✅ |
+| 30 | Bot framework | ← **next** |
+| 31–32 | Bot personalities, rough edges | not started |
+| 33–36 | Online: persistence, rooms, server play, real-time | not started |
 
 **The table now holds up on a real phone, held either way.** The lanes built
 in Phase 18 survive a 615 × 287 viewport and double as the portrait
@@ -81,6 +82,12 @@ defaults to cartas oscuras with fullscreen off, and the bots' thinking time
 and the card finish are editable from the in-game menu, effective on the very
 next turn.
 
+**And the comodines wear faces** (Phase 29): a gallery in
+`public/candidatos/comodines` is read by the server at build time, and each
+ronda deals a face to each comodín from the partida's seed — rondas differ, a
+replayed seed repeats. Curating the gallery is deleting files and pushing;
+no code changes. `lib/caras.ts`, `components/caras.tsx`.
+
 - **Repo:** https://github.com/cposada8/mazo
 - **Live:** https://mazo-six.vercel.app — `/mesa` steps through a bot partida,
   `/pruebas` shows deals and grupo validation.
@@ -88,7 +95,7 @@ next turn.
   public, no login.
 - **Deploys:** work goes to `dev`, which builds by itself. Production changes
   only by merging `dev` into `main`. Nothing else deploys `main`.
-- **Tests:** 391, all green (the run takes ~17s, mostly the soak). `npm run test:run`, `npx tsc --noEmit`, `npm run lint`.
+- **Tests:** 400, all green (the run takes ~17s, mostly the soak). `npm run test:run`, `npx tsc --noEmit`, `npm run lint`.
 
 ## What exists
 
@@ -169,15 +176,15 @@ the cards are gone and has to be dropped when the ronda changes.
 
 ## What comes next
 
-**Phase 29 — the bot framework.** The step that makes difficulty levels
+**Phase 30 — the bot framework.** The step that makes difficulty levels
 possible, and the one online play needs anyway.
 
 Right now a bot receives the whole `RondaState` and is merely well-behaved about
-not reading other hands. Phase 29 makes that structural: a **view** of what one
+not reading other hands. Phase 30 makes that structural: a **view** of what one
 seat can legitimately see — its own hand, the grupos on the mesa, the descarte,
 how many cards everyone holds. A bot takes the view and returns a `Move`.
 
-That same function is what the server will need in Phase 34 to send each player
+That same function is what the server will need in Phase 35 to send each player
 only their own cards, so it is worth getting right rather than fast.
 
 It also unlocks what bots with memory need: once the input is explicitly "what
@@ -193,14 +200,14 @@ property of the bot rather than a licence to peek.
   partida with a code and a nickname, so the system still needs to know which
   seat is whose, survive a reload, and stop someone claiming another player's
   seat and seeing their hand. Likely a per-seat secret in the browser. Settle it
-  before Phase 32.
+  before Phase 33.
 - **Real-time transport.** Vercel functions cannot hold WebSockets. Polling with
   TanStack Query is the likely first implementation, behind an interface so it
-  can be swapped for Pusher or Supabase Realtime. Decide in Phase 34, not before.
+  can be swapped for Pusher or Supabase Realtime. Decide in Phase 35, not before.
 - **A ronda nobody can win.** Carioca has no stalemate rule, and the soak
   measures the consequence: ~1.3% of bot partidas never end. Harmless in a test,
   a hung game online. Options are written up in `carioca-rules.md`; decide before
-  Phase 34.
+  Phase 35.
 
 ## How this project is run
 

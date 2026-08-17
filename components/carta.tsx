@@ -1,4 +1,8 @@
+'use client'
+
+import Image from 'next/image'
 import { type Card, type Rank, type Suit, isComodin } from '@/lib/engine'
+import { useCaraDeComodin } from '@/components/caras'
 import { cn } from '@/lib/utils'
 
 const SUIT_SYMBOL: Record<Suit, string> = {
@@ -54,6 +58,10 @@ type CartaProps = {
  * preference about the object, chosen on the setup screen, not about the UI.
  */
 export function Carta({ card, represents, size = 'md', className }: CartaProps) {
+  // The face this comodín wears this ronda, when a provider dealt one.
+  // Called before the branch because hooks are; null for every normal card.
+  const cara = useCaraDeComodin(card.id)
+
   // Colours come from variables so the deck can be reskinned by an ancestor
   // class: `.cartas-oscuras` (globals.css) turns the faces near-black with
   // light pips, for the players who prefer the dark deck. The fallbacks are
@@ -65,19 +73,42 @@ export function Carta({ card, represents, size = 'md', className }: CartaProps) 
       <div
         className={cn(
           base,
-          'border-dashed border-[var(--carta-comodin-borde,#a78bfa99)] bg-linear-to-br from-violet-500/15 to-fuchsia-500/15 text-[var(--carta-comodin,#6d28d9)]',
+          'overflow-hidden border-dashed border-[var(--carta-comodin-borde,#a78bfa99)] bg-linear-to-br from-violet-500/15 to-fuchsia-500/15 text-[var(--carta-comodin,#6d28d9)]',
           className,
         )}
         title={represents ? `Comodín valiendo ${represents}` : 'Comodín'}
       >
-        <Esquina arriba="★" abajo={represents} />
-        <span
-          aria-hidden
-          className="absolute inset-0 flex items-center justify-center text-[1.5em]"
-        >
-          ☺
-        </span>
-        <Esquina arriba="★" abajo={represents} rotada />
+        {cara && (
+          // The photo is the whole face; the corners stay on top, on a scrim,
+          // because a fanned comodín is still identified by its left edge.
+          <Image
+            src={cara}
+            alt=""
+            fill
+            sizes="160px"
+            className="object-cover"
+            draggable={false}
+          />
+        )}
+        <Esquina
+          arriba="★"
+          abajo={represents}
+          className={cara ? ESQUINA_SOBRE_FOTO : undefined}
+        />
+        {!cara && (
+          <span
+            aria-hidden
+            className="absolute inset-0 flex items-center justify-center text-[1.5em]"
+          >
+            ☺
+          </span>
+        )}
+        <Esquina
+          arriba="★"
+          abajo={represents}
+          rotada
+          className={cara ? ESQUINA_SOBRE_FOTO : undefined}
+        />
       </div>
     )
   }
@@ -108,6 +139,10 @@ export function Carta({ card, represents, size = 'md', className }: CartaProps) 
   )
 }
 
+/** Corner legibility over a photo: a small scrim, whatever the picture. */
+const ESQUINA_SOBRE_FOTO =
+  'rounded-[0.25em] bg-black/55 px-[0.14em] py-[0.08em] text-white'
+
 /**
  * A corner index: rank on top, pinta right under it, the way a real card is
  * printed. The mirrored copy sits in the far corner so the card reads from
@@ -117,10 +152,12 @@ function Esquina({
   arriba,
   abajo,
   rotada,
+  className,
 }: {
   arriba: string
   abajo?: string
   rotada?: boolean
+  className?: string
 }) {
   return (
     <span
@@ -129,6 +166,7 @@ function Esquina({
         rotada
           ? 'right-[0.2em] bottom-[0.22em] rotate-180'
           : 'top-[0.22em] left-[0.2em]',
+        className,
       )}
     >
       <span>{arriba}</span>

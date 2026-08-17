@@ -433,7 +433,7 @@ Three things came out differently than written above:
   20.
 
 Left deliberately undone: animations, real avatars, and any decoration of the
-room beyond a dark ground. Those are Phase 31, and none of them is what made
+room beyond a dark ground. Those are Phase 32, and none of them is what made
 the old screen unreadable.
 
 ### Phase 18 — Room to play ✅
@@ -521,7 +521,7 @@ arrangement — seats across the top, mesa in the middle, hand along the
 bottom — so this phase is a container query on `.cancha`, not a second
 layout. Below 1:1 aspect the oval hides and the grupos wrap into rows
 (portrait's spare dimension is height, so the mesa trades its sideways
-scroll for wrapping — which incidentally previews the fix Phase 31 wants
+scroll for wrapping — which incidentally previews the fix Phase 32 wants
 for the six-player overflow). The rotate-your-phone screen is deleted, the
 manifest orientation loosened to `any`, and rotation mid-turn was verified
 to preserve selection and bloques — nothing unmounts, so nothing is lost.
@@ -615,7 +615,7 @@ ways of showing a move that has already been made:
 One rule shapes the line: **it may only say what everybody can see.** A card
 taken off the descarte was face up, so it is named. A card off the mazo is
 secret, and the line says only that somebody drew — never which card. That is
-the same discipline Phase 29 makes structural, and writing the log against it
+the same discipline Phase 30 makes structural, and writing the log against it
 first is a rehearsal: a public log is a view of the ronda with one seat's
 privileges, which is precisely what a bot is about to be handed.
 
@@ -856,21 +856,67 @@ cannot edit should still be visible.
 
 ---
 
+## Asked for after the second list shipped
+
+### Phase 29 — The comodines get a face ✅
+The comodín has worn the same drawn ★-and-☺ since the first card was drawn on
+screen. The owner wants it to wear art: a gallery of candidate images —
+Guasones, Hisokas, Parcas — lives in `public/candidatos/comodines`, and each
+**ronda deals faces from it**: every comodín in the deck gets an image for
+that ronda, different rondas deal different ones, and the four comodines
+differ from each other whenever the gallery has four to give.
+
+The shape of the thing:
+
+- **The gallery is the folder.** The server reads the directory at build time
+  and hands the list to the game — no manifest to maintain, so curating is
+  the owner's stated workflow: delete the images that lose, push, done. An
+  empty or missing folder means the drawn design, everywhere, which is also
+  what `/mesa` and `/pruebas` keep showing.
+- **Dealt from the seed, like everything else.** The faces come from the
+  partida's seed and the ronda's index, not from `Math.random()`: replaying a
+  seed replays its comodines, and the choice is made "al iniciar la ronda"
+  exactly as asked — nothing reshuffles mid-ronda.
+- **Paint, not a rule.** The engine does not know the images exist. A comodín
+  still shows ★ in its corner — over a scrim, since a fanned card is
+  identified by its left edge and a photo underneath cannot be allowed to
+  cost that — and the rank it stands for when ligado.
+- **Photos served small.** The candidates are multi-megabyte originals;
+  `next/image` serves each one resized and re-encoded for a card-sized slot,
+  so the originals can stay originals while a phone downloads kilobytes.
+
+**Done when:** two rondas of the same partida show different comodín faces,
+replaying a seed shows the same ones again, the corner ★ and the ligado rank
+stay readable over every candidate, and pruning the folder to fewer images
+needs nothing but deleting files.
+
+**Done.** `lib/caras.ts` deals the faces (the four comodín ids are knowable
+because the deck is deterministic — the same property every test leans on),
+a context in `components/caras.tsx` carries them to every card, and the
+`/jugar` page turned into a thin server component whose only job is the
+`readdir`. The corners sit on a black scrim over the photo, and the centre ☺
+yields to it. Measured through the optimizer: a 180 KB candidate serves at
+~5 KB for a card-sized slot, so the multi-megabyte originals cost the phone
+nothing. `/mesa` and `/pruebas` keep the drawn design — no provider, no
+photo — which is also the fallback for an empty folder.
+
+---
+
 ## Milestone 3 — Bots worth playing
 
-### Phase 29 — Bot framework
+### Phase 30 — Bot framework
 Extract the strategy interface: a bot receives the legal state it can see and
 returns a move. Add hand-evaluation helpers shared by all bots.
 **Done when:** a new bot can be added in one file with no engine changes.
 
-### Phase 30 — Bot personalities
+### Phase 31 — Bot personalities
 At least three bots that differ observably: e.g. one that hoards for the perfect
 meld, one that lays down at the first opportunity, one that watches discards and
 plays around opponents. Give them names and short descriptions in the UI.
 **Done when:** a head-to-head tournament shows different win rates and visibly
 different play. **This is Milestone 3.**
 
-### Phase 31 — Rough edges
+### Phase 32 — Rough edges
 A hint for new players, an in-game rules summary, and an end-of-game screen.
 Card animations were pulled forward into Phase 22; what is left here is the
 mesa that runs off the right edge when six players are deep into a partida —
@@ -883,26 +929,26 @@ asking for help, and a full mesa can be read without scrolling to find it.
 
 ## Milestone 4 — Playable together
 
-### Phase 32 — Persistence without accounts
+### Phase 33 — Persistence without accounts
 Prisma schema, finished partidas saved, and a guest identity that survives a
 page reload without anyone signing up. How a seat is claimed and protected is an
 open design question — see `tech-stack.md`.
 **Done when:** a player reloads mid-partida and is still themselves, and nobody
 can claim a seat that is not theirs.
 
-### Phase 33 — Rooms
+### Phase 34 — Rooms
 Create a room, get an invite code, join as a guest with a nickname, see who is in
 the lobby, start when everyone is ready. No gameplay yet.
 **Done when:** three devices sit in the same lobby.
 
-### Phase 34 — Server-authoritative play
+### Phase 35 — Server-authoritative play
 The game state lives on the server. Each player receives only their own hand and
 public information. Moves are submitted and validated server-side. Updates by
 polling.
 **Done when:** three people in three places finish a game from one invite code,
 and no client ever receives another player's cards. **This is Milestone 4.**
 
-### Phase 35 — Real-time transport
+### Phase 36 — Real-time transport
 Replace polling with a push transport behind the same interface. Handle
 disconnects and reconnects, and let a bot take over an abandoned seat.
 **Done when:** a player closes the tab mid-game, returns, and the game is intact.

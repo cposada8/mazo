@@ -6,7 +6,7 @@ import { makeRonda, n } from '../engine/helpers'
 /**
  * The one rule that shapes the log: it may only say what everybody can see.
  * A stock draw is secret, a descarte draw was face up, a discard lands face
- * up. These tests are the rehearsal for Phase 29's structural discipline.
+ * up. These tests are the rehearsal for Phase 30's structural discipline.
  */
 
 const NOMBRES = ['Ana', 'Beto', 'Carla']

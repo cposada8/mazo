@@ -29,6 +29,8 @@ import {
   type PartidaState,
   type Propuesta,
 } from '@/lib/engine'
+import { carasDeRonda } from '@/lib/caras'
+import { CarasDeComodinProvider } from '@/components/caras'
 import { BotonDeBaraja, SEGUNDOS, recordarBaraja } from './inicio'
 import { TU_ASIENTO, usePartida } from './usePartida'
 
@@ -41,6 +43,7 @@ export function Juego({
   verDescarte,
   verHistorial,
   cartasOscuras: cartasOscurasInicial,
+  galeriaDeComodines,
   onSalir,
 }: {
   jugadores: number
@@ -55,6 +58,8 @@ export function Juego({
   verHistorial: boolean
   /** The dark deck: near-black card faces, chosen on the setup screen. */
   cartasOscuras: boolean
+  /** Images the comodines can wear, dealt fresh each ronda. May be empty. */
+  galeriaDeComodines: readonly string[]
   onSalir: () => void
 }) {
   const config = useMemo(
@@ -76,6 +81,18 @@ export function Juego({
   }
 
   const { partida, ronda, esTuTurno, esperando, aviso, resumen } = juego
+
+  // The faces this ronda's comodines wear — dealt from the seed, like the
+  // cards, so a replayed partida replays its comodines too.
+  const caras = useMemo(
+    () =>
+      carasDeRonda({
+        imagenes: galeriaDeComodines,
+        seed,
+        ronda: partida.indiceContrato,
+      }),
+    [galeriaDeComodines, seed, partida.indiceContrato],
+  )
 
   // The pause comes first: a ronda has ended and nobody has seen it yet, even
   // when the next one is already dealt behind it.
@@ -107,6 +124,7 @@ export function Juego({
     // The table takes the whole viewport, over the site's own chrome: a phone
     // lying down has no room to spare for a header, and 100dvh under one puts
     // the hand off the bottom of the screen.
+    <CarasDeComodinProvider value={caras}>
     <main className="fixed inset-0 z-10 overflow-hidden">
       {/* Safe areas are padded, not ignored: fullscreen and standalone put the
           table under the notch, and a card behind a camera is a card lost. */}
@@ -207,6 +225,7 @@ export function Juego({
         )}
       </div>
     </main>
+    </CarasDeComodinProvider>
   )
 }
 

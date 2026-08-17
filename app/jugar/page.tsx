@@ -1,36 +1,28 @@
-'use client'
-
-import { useState } from 'react'
-import { type Ajustes, Inicio } from './inicio'
-import { Juego } from './juego'
+import { readdirSync } from 'node:fs'
+import { join } from 'node:path'
+import { JugarCliente } from './cliente'
 
 /**
- * Setup first, then the game.
+ * The gallery of comodín faces is whatever sits in
+ * `public/candidatos/comodines` when the site builds. Read here, on the
+ * server, so curating the folder — adding, pruning, renaming — is the whole
+ * workflow: no list to maintain anywhere in the code.
  *
- * Splitting them is what lets a partida be dealt at random: it is created when
- * you press the button, not while the page renders. The game is keyed by its
- * settings, so starting another one simply mounts a fresh game rather than
- * unwinding the old one by hand.
+ * The page is static, so the readdir happens once at build time, which is
+ * also exactly when the images themselves are deployed.
  */
-export default function Jugar() {
-  const [ajustes, setAjustes] = useState<Ajustes | null>(null)
+const CARPETA = join('candidatos', 'comodines')
 
-  if (!ajustes) {
-    return <Inicio onEmpezar={setAjustes} />
+export default function Page() {
+  let galeria: string[] = []
+  try {
+    galeria = readdirSync(join(process.cwd(), 'public', CARPETA))
+      .filter((nombre) => /\.(jpe?g|png|webp|avif)$/i.test(nombre))
+      .sort()
+      .map((nombre) => `/${CARPETA}/${nombre}`)
+  } catch {
+    // No folder, no faces: the comodín keeps its drawn design.
   }
 
-  return (
-    <Juego
-      key={`${ajustes.jugadores}-${ajustes.seed}-${ajustes.contratos.length}-${ajustes.comodines}`}
-      jugadores={ajustes.jugadores}
-      seed={ajustes.seed}
-      contratos={ajustes.contratos}
-      comodines={ajustes.comodines}
-      segundosBot={ajustes.segundosBot}
-      verDescarte={ajustes.verDescarte}
-      verHistorial={ajustes.verHistorial}
-      cartasOscuras={ajustes.cartasOscuras}
-      onSalir={() => setAjustes(null)}
-    />
-  )
+  return <JugarCliente galeriaDeComodines={galeria} />
 }
