@@ -1208,7 +1208,7 @@ in what the lobby sends. It is the same discipline as the seat's view, one
 endpoint further out — and a reminder that the rule has to be applied to
 every payload, not just the one designed around it.
 
-### Phase 36 — The player's clock
+### Phase 36 — The player's clock ✅
 Phase 21 timed the bots and promised the rest: "the mechanism a real timer
 would need later, when the other seats are people who can walk away from
 their phone." Later is now.
@@ -1231,6 +1231,27 @@ their phone." Later is now.
 discarded at random, passed — the relato says so in words, the ring on their
 ficha drained in time with it, and the host's lobby setting is the time it
 actually took.
+
+**Done.** `lib/engine/tiempo.ts` says what a turn nobody played looks like,
+and the server applies it in the same loop that already advanced bots — a
+turn is *due* rather than scheduled, so the only change was giving a human
+seat its own allotment. 464 tests.
+
+Three things worth keeping:
+
+- **Which card goes is a pure function of the state.** It comes from the
+  ronda's own stream, read without consuming it, so a replayed partida
+  replays its timeouts. It is deliberately not the worst card or the best:
+  a timeout should cost what a timeout costs, and a program playing well on
+  your behalf is a different game.
+- **The ring starts where everyone else sees it.** The turn's start is the
+  server's timestamp, and the client starts the CSS animation partway
+  through with a negative delay — so a phone that reloads mid-turn, or
+  joins late, picks the countdown up rather than starting a fresh one.
+- **Your own badge drains now**, which Phase 21 deliberately left still
+  ("nothing hurries a human yet"). Only where the server enforces it: a
+  table alone with bots still hurries nobody, because there is nobody to
+  keep waiting.
 
 ### Phase 37 — Absences, and leaving on purpose
 Reconnection, and the seat whose player is gone. The design leans entirely

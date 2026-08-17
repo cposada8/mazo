@@ -212,6 +212,23 @@
     stroke-dasharray: 109.96;
     animation: reloj-agota linear both;
   }
+  /**
+   * Your own clock (Phase 36): the badge behind «Tu mano» empties left to
+   * right. Same duration and same start line as the ring on a ficha, so the
+   * table shows one countdown however many places it is drawn.
+   */
+  .badge-agota {
+    transform-origin: left;
+    animation: badge-agota linear both;
+  }
+  @keyframes badge-agota {
+    from {
+      transform: scaleX(1);
+    }
+    to {
+      transform: scaleX(0);
+    }
+  }
   @keyframes reloj-agota {
     from {
       stroke-dashoffset: 0;

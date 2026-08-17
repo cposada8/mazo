@@ -69,6 +69,10 @@ export type Transporte = {
   relatos: readonly Relato[]
   /** How long the seat in play has for its turn, for the draining ring. */
   segundosDelTurno: number
+  /** Seconds of that turn already gone, when the clock is the server's. */
+  transcurrido?: number
+  /** Whether the reader's own turn is timed too (server tables only). */
+  relojPropio?: boolean
   aviso: string | null
   limpiarAviso: () => void
   jugar: (move: Move) => void
@@ -280,6 +284,8 @@ export function useMesa(transporte: Transporte) {
     recienRobada,
     reloj: {
       segundos: transporte.segundosDelTurno,
+      transcurrido: transporte.transcurrido,
+      propio: transporte.relojPropio,
       clave:
         ronda && ronda.ganador === null
           ? `${vista?.indiceContrato}:${ronda.numeroDeTurno}:${ronda.turno}`

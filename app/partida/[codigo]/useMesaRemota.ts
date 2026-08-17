@@ -133,6 +133,11 @@ export function useMesaRemota(options: { codigo: string; secreto: string }) {
     segundosDelTurno: esTurnoDeBot(servidor)
       ? (servidor?.segundosBot ?? 2)
       : (servidor?.segundosPorTurno ?? 45),
+    // The turn started when the server says it did, not when this phone
+    // happened to hear about it — so every ring shows the same time left.
+    transcurrido: transcurridoDelTurno(servidor),
+    // The server enforces the human clock, so your own turn drains too.
+    relojPropio: true,
     aviso,
     limpiarAviso: useCallback(() => setAviso(null), []),
     jugar,
@@ -146,6 +151,12 @@ export function useMesaRemota(options: { codigo: string; secreto: string }) {
     verHistorial: servidor?.verHistorial ?? true,
     nombresDeAsientos: servidor?.asientos.map((asiento) => asiento.alias) ?? [],
   }
+}
+
+/** How much of the turn in play is already gone, in seconds. */
+function transcurridoDelTurno(mesa: MesaRemota | null): number {
+  if (!mesa?.turnoDesde) return 0
+  return Math.max(0, (Date.now() - mesa.turnoDesde) / 1000)
 }
 
 function esTurnoDeBot(mesa: MesaRemota | null): boolean {

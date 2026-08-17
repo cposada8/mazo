@@ -52,6 +52,11 @@ export type Relato =
    * (Phase 31). No card is named because no card moved.
    */
   | { readonly tipo: 'tablas'; readonly seat: number }
+  /**
+   * The turn ran out and played itself: drew, threw a card at random, passed
+   * (Phase 36). Public by definition — everybody watched the ring empty.
+   */
+  | { readonly tipo: 'tiempo'; readonly seat: number }
 
 /** One end of a card's trip: a pile, or a player's hand. */
 export type PuntoDeViaje =
@@ -205,5 +210,9 @@ export function contarRelato(
       return esTuyo
         ? 'Quisiste robar y el mazo se agotó por última vez: la ronda queda en tablas'
         : `${quien} quiso robar y el mazo se agotó por última vez: la ronda queda en tablas`
+    case 'tiempo':
+      return esTuyo
+        ? 'Se te acabó el tiempo: robaste y botaste una carta al azar'
+        : `A ${quien} se le acabó el tiempo: robó y botó una carta al azar`
   }
 }

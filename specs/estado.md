@@ -1,6 +1,6 @@
 # Project status — pick up here
 
-Last updated after Phase 35.
+Last updated after Phase 36.
 
 Read this first, then `mission.md` for the why, `carioca-rules.md` for the game,
 `tech-stack.md` for the stack, and `roadmap.md` for what comes next. This file is
@@ -63,8 +63,8 @@ empty seats), and the better bots moved behind it as Milestone 4.
 | 33 | One door: create (host, 3 bots default) or join by code | ✅ |
 | 34 | The partida lives on the server | ✅ |
 | 35 | Several people at one table | ✅ — **Milestone 3** |
-| 36 | The player's clock | ← **next** |
-| 37 | Absences: reconnection, the empty chair | not started |
+| 36 | The player's clock | ✅ |
+| 37 | Absences: reconnection, abandoning, the empty chair | ← **next** |
 | 38 | Real-time transport, if polling isn't enough | not started |
 | 39–40 | Bot personalities, rough edges | displaced behind online |
 
@@ -272,10 +272,17 @@ endpoint, read by everybody, was returning the whole `estado` once dealt.
 It now carries the seed and a `repartida` flag; the full state has a
 server-only reader.
 
-**Phase 36 is next — the player's clock:** every human turn on the host's
-timer (45 s by default), the ficha's ring draining from the server's
-timestamp, and an expired turn playing itself out — draw from the stock,
-discard at random, pass.
+**Phase 36 is done: the player's clock.** Every human turn runs on the
+host's timer (45 s by default), enforced lazily by the same loop that
+advances bots — an opponent's poll is what makes a timeout land. An
+expired turn draws, throws one card at random (from the ronda's own
+stream, so replays repeat it) and passes; the relato says whose time ran
+out. The ring — and your own «Tu mano» badge, still until now — drains
+from the server's timestamp, so every device shows the same time left.
+
+**Phase 37 is next — absences:** reconnection by secreto, presence on the
+ficha, a bot covering a seat that keeps timing out, and the deliberate
+**Abandonar** the owner asked for.
 
 ## Open questions, deliberately unanswered
 

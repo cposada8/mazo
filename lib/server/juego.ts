@@ -6,11 +6,11 @@
  * legal. What changes is who holds the truth: the row does, and each player
  * receives only `vistaDePartida` of it.
  *
- * Bots think here too, and here there is no clock between requests. So a bot
- * turn is **due** rather than scheduled: the turn's start is stored, and any
- * request arriving after the thinking time has elapsed plays whatever has come
- * due. An opponent's poll is what makes a bot move, which is also what will
- * make a human's timeout land in Phase 36.
+ * Bots think here too, and here there is no clock between requests. So a turn
+ * is **due** rather than scheduled: its start is stored, and any request
+ * arriving after the allotted time plays whatever has come due — a bot's
+ * turn, or a person's timeout (Phase 36). An opponent's poll is what makes
+ * both land, so nobody has to keep a tab open for the table to advance.
  */
 
 import { movesDelTurno } from '@/lib/bots'
@@ -19,6 +19,7 @@ import {
   type PartidaState,
   type VistaDePartida,
   aplicarEnPartida,
+  siguienteMovePorTiempo,
   vistaDePartida,
 } from '@/lib/engine'
 import { type Relato, relatar } from '@/lib/relato'
@@ -107,7 +108,7 @@ export async function leerMesa(
   const asiento = await asientoDe(fila.id, secreto)
   if (asiento === null) return { ok: false, code: 'NO_ES_TU_ASIENTO' }
 
-  const avanzada = await avanzarBots(fila, ahora)
+  const avanzada = await avanzar(fila, ahora)
   return { ok: true, mesa: publicar(avanzada.fila, avanzada.estado, asiento) }
 }
 
@@ -130,7 +131,7 @@ export async function jugarEnMesa(
   const asiento = await asientoDe(fila.id, secreto)
   if (asiento === null) return { ok: false, code: 'NO_ES_TU_ASIENTO' }
 
-  const puestaAlDia = await avanzarBots(fila, ahora)
+  const puestaAlDia = await avanzar(fila, ahora)
   let { estado } = puestaAlDia
   const relatos = [...(JSON.parse(puestaAlDia.fila.relatos) as Relato[])]
 
@@ -179,13 +180,14 @@ async function guardar(
 }
 
 /**
- * Play every bot turn whose thinking time has already elapsed.
+ * Play every turn whose time has already run out — a bot that has finished
+ * thinking, or a person who never moved.
  *
  * A loop rather than one turn: three bots in a row and a player who looked
  * away for ten seconds means three turns are due at once, and the table must
  * come back caught up rather than one move at a time.
  */
-async function avanzarBots(
+async function avanzar(
   fila: Fila,
   ahora: number,
 ): Promise<{ fila: Fila; estado: PartidaState }> {
@@ -201,25 +203,44 @@ async function avanzarBots(
   for (let vuelta = 0; vuelta < 64; vuelta++) {
     const ronda = estado.ronda
     if (!ronda || ronda.ganador !== null) break
-    if (!esBot(ronda.turno)) break
-    if (ahora - desde < fila.segundosBot * 1000) break
+
+    const bot = esBot(ronda.turno)
+    const plazo = (bot ? fila.segundosBot : fila.segundosPorTurno) * 1000
+    if (ahora - desde < plazo) break
 
     const contratoAntes = estado.indiceContrato
-    const moves = movesDelTurno(estado)
-    if (moves.length === 0) break
 
-    for (const move of moves) {
-      const antes = estado.ronda
-      if (!antes) break
-      const cuento = relatar(move, antes)
-      const result = aplicarEnPartida(estado, move)
-      if (!result.ok) break
-      estado = result.state
-      if (cuento) relatos.push(cuento)
+    if (bot) {
+      const moves = movesDelTurno(estado)
+      if (moves.length === 0) break
+      for (const move of moves) {
+        const antes = estado.ronda
+        if (!antes) break
+        const cuento = relatar(move, antes)
+        const result = aplicarEnPartida(estado, move)
+        if (!result.ok) break
+        estado = result.state
+        if (cuento) relatos.push(cuento)
+      }
+    } else {
+      // A turn nobody played: draw, throw one at random, pass. The line says
+      // so in words — the ring everybody watched empty is the evidence.
+      relatos.push({ tipo: 'tiempo', seat: ronda.turno })
+      for (let paso = 0; paso < 4; paso++) {
+        const antes = estado.ronda
+        if (!antes || antes.turno !== ronda.turno) break
+        const move = siguienteMovePorTiempo(antes)
+        if (!move) break
+        const cuento = relatar(move, antes)
+        const result = aplicarEnPartida(estado, move)
+        if (!result.ok) break
+        estado = result.state
+        if (cuento) relatos.push(cuento)
+      }
     }
 
     if (estado.indiceContrato !== contratoAntes) relatos = []
-    desde += fila.segundosBot * 1000
+    desde += plazo
     movio = true
   }
 

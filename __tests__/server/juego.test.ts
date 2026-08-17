@@ -264,3 +264,119 @@ describe('a whole partida, refereed on the server', () => {
     expect(estado?.historial).toHaveLength(CONFIG_POR_DEFECTO.contratos.length)
   }, 60_000)
 })
+
+describe('the player’s clock (Phase 36)', () => {
+  /** A table of two people and no bots, so only human clocks are in play. */
+  async function mesaDeDos(seed: string, segundosPorTurno = 45) {
+    const partida = await partidas.crearPartida({
+      secreto: HOST,
+      alias: 'milo',
+      config: CONFIG_POR_DEFECTO,
+      segundosPorTurno,
+      bots: 1,
+    })
+    await partidas.unirse({ codigo: partida.codigo, secreto: 's-dos', alias: 'lisa' })
+    await partidas.quitarAsiento({ codigo: partida.codigo, secreto: HOST, indice: 1 })
+    const empezada = await partidas.empezar({
+      codigo: partida.codigo,
+      secreto: HOST,
+      seed,
+    })
+    if (!empezada.ok) throw new Error(empezada.code)
+    return empezada.partida
+  }
+
+  it('leaves a turn alone while the time is still running', async () => {
+    const partida = await mesaDeDos('reloj-humano')
+    const inicio = Date.now()
+    const primera = await juego.leerMesa(partida.codigo, HOST, inicio)
+    if (!primera.ok) return
+    const turno = primera.mesa.vista.ronda!.turno
+
+    const casi = await juego.leerMesa(partida.codigo, HOST, inicio + 44_000)
+    if (!casi.ok) return
+    expect(casi.mesa.vista.ronda!.turno).toBe(turno)
+    expect(casi.mesa.vista.ronda!.numeroDeTurno).toBe(1)
+  })
+
+  it('plays the turn out when the time runs out: drew, threw, passed', async () => {
+    const partida = await mesaDeDos('vencido')
+    const inicio = Date.now()
+    const antes = await juego.leerMesa(partida.codigo, HOST, inicio)
+    if (!antes.ok) return
+    const turno = antes.mesa.vista.ronda!.turno
+
+    const despues = await juego.leerMesa(partida.codigo, HOST, inicio + 46_000)
+    if (!despues.ok) return
+
+    const ronda = despues.mesa.vista.ronda!
+    expect(ronda.turno).not.toBe(turno)
+    expect(ronda.numeroDeTurno).toBe(2)
+    // Exactly one turn was lost: the hand is the size it was dealt.
+    expect(ronda.jugadores[turno].cartas).toBe(12)
+    // And a card reached the descarte, face up for everyone.
+    expect(ronda.descarte.length).toBeGreaterThan(1)
+
+    const tipos = despues.mesa.relatos.map((r) => r.tipo)
+    expect(tipos).toContain('tiempo')
+    expect(tipos).toContain('bota')
+  })
+
+  it('says whose time ran out, and names no hidden card', async () => {
+    const partida = await mesaDeDos('relato-tiempo')
+    const inicio = Date.now()
+    await juego.leerMesa(partida.codigo, HOST, inicio)
+    const despues = await juego.leerMesa(partida.codigo, HOST, inicio + 46_000)
+    if (!despues.ok) return
+
+    const aviso = despues.mesa.relatos.find((r) => r.tipo === 'tiempo')
+    expect(aviso).toBeDefined()
+    expect(JSON.stringify(aviso)).not.toMatch(/[♠♥♦♣]/)
+  })
+
+  it('catches up several missed turns at once, one per allotment', async () => {
+    const partida = await mesaDeDos('varios-vencidos', 30)
+    const inicio = Date.now()
+    await juego.leerMesa(partida.codigo, HOST, inicio)
+
+    // Nobody touched the table for two and a half minutes: five turns due.
+    const despues = await juego.leerMesa(partida.codigo, HOST, inicio + 150_000)
+    if (!despues.ok) return
+    expect(despues.mesa.vista.ronda!.numeroDeTurno).toBe(6)
+  })
+
+  it('honours the host’s setting, not a default', async () => {
+    const partida = await mesaDeDos('reloj-corto', 30)
+    const inicio = Date.now()
+    await juego.leerMesa(partida.codigo, HOST, inicio)
+
+    // 31 s is past a 30-second clock and short of the 45-second default.
+    const despues = await juego.leerMesa(partida.codigo, HOST, inicio + 31_000)
+    if (!despues.ok) return
+    expect(despues.mesa.vista.ronda!.numeroDeTurno).toBe(2)
+  })
+
+  it('a played turn resets the clock for the next seat', async () => {
+    const partida = await mesaDeDos('reinicia')
+    const inicio = Date.now()
+    const mesa = await juego.leerMesa(partida.codigo, HOST, inicio)
+    if (!mesa.ok) return
+
+    // Whoever is up plays; the other seat then gets its own full 45 s.
+    const turno = mesa.mesa.vista.ronda!.turno
+    const secreto = turno === 0 ? HOST : 's-dos'
+    await juego.jugarEnMesa(partida.codigo, secreto, { type: 'robar', de: 'stock' }, inicio)
+    const suya = await juego.leerMesa(partida.codigo, secreto, inicio)
+    if (!suya.ok) return
+    await juego.jugarEnMesa(
+      partida.codigo,
+      secreto,
+      { type: 'descartar', cardId: suya.mesa.vista.ronda!.mano[0].id },
+      inicio,
+    )
+
+    const enseguida = await juego.leerMesa(partida.codigo, HOST, inicio + 40_000)
+    if (!enseguida.ok) return
+    expect(enseguida.mesa.vista.ronda!.numeroDeTurno).toBe(2)
+  })
+})

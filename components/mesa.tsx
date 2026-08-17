@@ -115,6 +115,18 @@ export type Reloj = {
   readonly segundos: number
   /** Changes when a new turn starts; keys the ring so it restarts. */
   readonly clave: string
+  /**
+   * Seconds already gone when this ring mounts (Phase 36). A server table
+   * knows when the turn started, so a phone that joins late — or reloads
+   * mid-turn — picks the ring up where everyone else sees it rather than
+   * starting a fresh countdown of its own.
+   */
+  readonly transcurrido?: number
+  /**
+   * Whether *your own* turn is on this clock. True where the server enforces
+   * it; false at a table alone with bots, which hurries nobody.
+   */
+  readonly propio?: boolean
 }
 
 export function Asiento({
@@ -182,7 +194,12 @@ export function Asiento({
               strokeWidth="3.5"
               strokeLinecap="round"
               className="reloj-arco stroke-amber-300"
-              style={{ animationDuration: `${reloj.segundos}s` }}
+              style={{
+                animationDuration: `${reloj.segundos}s`,
+                // A negative delay starts the animation partway through,
+                // which is exactly "this turn began a while ago".
+                animationDelay: `-${reloj.transcurrido ?? 0}s`,
+              }}
             />
           </svg>
         )}
@@ -299,6 +316,7 @@ export function Mano({
   acciones,
   cabecera,
   esTuTurno,
+  reloj,
 }: {
   /** Pinned bloques first, then the loose cards. */
   secciones: readonly Seccion[]
@@ -323,6 +341,8 @@ export function Mano({
    */
   cabecera?: React.ReactNode
   esTuTurno?: boolean
+  /** Given one, your own turn is timed too and the badge drains (Phase 36). */
+  reloj?: Reloj
 }) {
   const total = secciones.reduce((suma, seccion) => suma + seccion.cards.length, 0)
 
@@ -341,11 +361,26 @@ export function Mano({
         <h2 className="shrink-0 font-medium">
           <span
             className={cn(
-              'rounded px-1.5 py-0.5',
+              'relative overflow-hidden rounded px-1.5 py-0.5',
               esTuTurno && 'bg-amber-300 text-amber-950',
             )}
           >
-            Tu mano
+            {/* Your own clock, once there is one (Phase 36): the badge
+                empties left to right, the same countdown the ring draws on
+                everybody else. Phase 21 left this deliberately still —
+                nothing hurried a human until other seats were people. */}
+            {esTuTurno && reloj && (
+              <span
+                key={reloj.clave}
+                aria-hidden
+                className="badge-agota absolute inset-0 bg-amber-500/45"
+                style={{
+                  animationDuration: `${reloj.segundos}s`,
+                  animationDelay: `-${reloj.transcurrido ?? 0}s`,
+                }}
+              />
+            )}
+            <span className="relative">Tu mano</span>
           </span>{' '}
           <span className="text-muted-foreground font-normal tabular-nums">
             {total}
@@ -558,6 +593,9 @@ export function Mesa({
 } & MesaInteractiva) {
   const nombreDe = (seat: number) => nombres?.[seat] ?? nombrePorDefecto(seat)
   const esTuTurno = state.turno === asiento && state.ganador === null
+  // Your own badge drains only when your turn is actually timed — a table
+  // alone with bots hurries nobody, as it never has.
+  const relojDeTuTurno = esTuTurno && reloj?.propio ? reloj : undefined
 
   const rivales = asientosRivales(state.jugadores.length, asiento)
 
@@ -672,6 +710,7 @@ export function Mesa({
             onSoltar={onSoltar}
             acciones={accionesDeMano}
             esTuTurno={esTuTurno}
+            reloj={relojDeTuTurno}
           />
         </div>
 
