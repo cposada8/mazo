@@ -6,11 +6,20 @@
  * `onGrupo` and the piles, hand and grupos become tappable; leave them out and
  * the same components render a game you are only watching.
  *
- * Laid out for a phone held in one hand: opponents at the top, the mesa in the
- * middle, the piles, and your own hand along the bottom where your thumb is.
+ * **Landscape.** The content is landscape-shaped — a hand is thirteen cards
+ * wide and the mesa is a row of grupos — so the table fills whatever box it is
+ * given and expects that box to be wider than it is tall. Seats sit on the far
+ * rim in turn order, the felt and the piles are in the middle, and your own
+ * hand runs along the bottom where your thumbs are.
+ *
+ * Once a grupo is laid down it belongs to nobody: it goes to the middle of the
+ * table with everyone else's, not beside the player who put it there. The
+ * engine still knows whose is whose — a move names `seat` and `grupoIndex` —
+ * but that is bookkeeping, not seating.
  */
 
 import { Carta, CartaBocaAbajo } from '@/components/carta'
+import { asientosRivales } from '@/lib/asientos'
 import {
   type Escala,
   type Grupo,
@@ -37,23 +46,22 @@ export function nombrePorDefecto(seat: number): string {
 export function GrupoEnMesa({
   grupo,
   onClick,
-  resaltado,
 }: {
   grupo: Grupo
   onClick?: () => void
-  resaltado?: boolean
 }) {
   const contenido = (
-    <div className="flex flex-col gap-1">
-      <span className="text-muted-foreground text-[10px] font-medium tracking-wide uppercase">
+    <div className="flex flex-col gap-0.5">
+      <span className="text-[9px] font-medium tracking-wide text-emerald-50/70 uppercase">
         {tituloDeGrupo(grupo)}
       </span>
-      <div className="flex flex-wrap gap-1">
+      <div className="flex">
         {grupo.cards.map((card, index) => (
           <Carta
             key={card.id}
             card={card}
-            size="sm"
+            size="xs"
+            className="-ml-1 first:ml-0"
             represents={
               grupo.kind === 'escala' && isComodin(card)
                 ? escalaRankAt(grupo as Escala, index)
@@ -65,16 +73,13 @@ export function GrupoEnMesa({
     </div>
   )
 
-  if (!onClick) return contenido
+  if (!onClick) return <div className="shrink-0 p-1">{contenido}</div>
 
   return (
     <button
       type="button"
       onClick={onClick}
-      className={cn(
-        'rounded-md border border-transparent p-1 text-left transition-colors',
-        resaltado ? 'border-foreground/40 bg-accent' : 'hover:bg-accent/60',
-      )}
+      className="shrink-0 rounded-md border border-transparent p-1 text-left transition-colors hover:border-emerald-100/40 hover:bg-emerald-50/10"
     >
       {contenido}
     </button>
@@ -87,56 +92,66 @@ function tituloDeGrupo(grupo: Grupo): string {
     : `Escala de ${SIMBOLO_DE_PALO[grupo.suit]}`
 }
 
-/** An opponent: what everyone can legitimately see, and nothing more. */
-export function Oponente({
+/**
+ * A player on the far side of the table.
+ *
+ * The turn is drawn *on the player* — a ring around their ficha — rather than
+ * announced somewhere else on the screen, and how many cards they hold is
+ * shown as cards, because a fan of five and a fan of twelve are different at a
+ * glance in a way that "5" and "12" are not.
+ */
+export function Asiento({
   jugador,
   nombre,
   esSuTurno,
-  onGrupo,
+  x,
+  y,
 }: {
   jugador: JugadorState
   nombre: string
   esSuTurno: boolean
-  onGrupo?: (grupoIndex: number) => void
+  x: number
+  y: number
 }) {
   return (
     <div
-      className={cn(
-        'flex flex-col gap-2 rounded-lg border p-3',
-        esSuTurno ? 'border-foreground/40 bg-card' : 'border-transparent',
-      )}
+      className="absolute flex w-24 -translate-x-1/2 -translate-y-1/2 flex-col items-center gap-1"
+      style={{ left: `${x}%`, top: `${y}%` }}
     >
-      <div className="flex items-baseline justify-between gap-2">
-        <span className="text-sm font-medium">
-          {nombre}
-          {esSuTurno && <span className="text-muted-foreground"> · juega</span>}
-        </span>
-        <span className="text-muted-foreground text-xs">
-          {jugador.hand.length} cartas
-          {jugador.bajadoEnTurno !== null && ' · bajado'}
-        </span>
-      </div>
-
-      <div className="flex flex-wrap gap-0.5">
+      {/* Tight enough that thirteen cards still fit the seat's width. */}
+      <div className="flex h-5 items-end justify-center">
         {jugador.hand.map((card) => (
-          <CartaBocaAbajo key={card.id} size="sm" className="h-8 w-6" />
+          <CartaBocaAbajo
+            key={card.id}
+            className="-ml-3 h-5 w-4 rounded-[2px] border-0 shadow-none ring-1 ring-emerald-950/40 first:ml-0"
+          />
         ))}
       </div>
 
-      {jugador.grupos.length > 0 && (
-        <div className="flex flex-wrap gap-3">
-          {jugador.grupos.map((grupo, index) => (
-            <GrupoEnMesa
-              key={index}
-              grupo={grupo}
-              onClick={onGrupo ? () => onGrupo(index) : undefined}
-            />
-          ))}
-        </div>
-      )}
+      <div
+        className={cn(
+          'flex size-8 items-center justify-center rounded-full border text-sm font-semibold transition-shadow',
+          esSuTurno
+            ? 'border-amber-300 bg-amber-300 text-amber-950 ring-4 ring-amber-300/40'
+            : 'border-emerald-100/25 bg-emerald-950/60 text-emerald-50',
+        )}
+      >
+        {inicial(nombre)}
+      </div>
+
+      <span className="max-w-full truncate text-[11px] leading-tight font-medium text-emerald-50">
+        {nombre}
+      </span>
+      <span className="text-[10px] leading-none text-emerald-100/60">
+        {jugador.hand.length} cartas
+        {jugador.bajadoEnTurno !== null && ' · bajado'}
+      </span>
     </div>
   )
 }
+
+const inicial = (nombre: string): string =>
+  [...nombre.trim()][0]?.toUpperCase() ?? '?'
 
 /** The two piles. The stock shows its count; the descarte shows its top card. */
 export function Pilas({
@@ -149,37 +164,33 @@ export function Pilas({
 }) {
   const arriba = state.discard.at(-1)
   const activo = Boolean(onRobar)
-  const estiloPila = activo
-    ? 'rounded-lg ring-2 ring-foreground/30 ring-offset-2 ring-offset-background'
-    : ''
+  const estiloPila = activo ? 'ring-2 ring-amber-300 ring-offset-2 ring-offset-emerald-900' : ''
 
   return (
-    <div className="flex items-end gap-6">
+    <div className="flex shrink-0 items-start gap-2">
       <button
         type="button"
         disabled={!activo}
         onClick={() => onRobar?.('stock')}
-        className="flex cursor-default flex-col items-center gap-1.5 enabled:cursor-pointer"
+        className="flex cursor-default flex-col items-center gap-1 enabled:cursor-pointer"
       >
-        <CartaBocaAbajo className={estiloPila} />
-        <span className="text-muted-foreground text-xs">
-          Mazo · {state.stock.length}
-        </span>
+        <CartaBocaAbajo size="sm" className={estiloPila} />
+        <span className="text-[10px] text-emerald-100/70">{state.stock.length}</span>
       </button>
 
       <button
         type="button"
         disabled={!activo || !arriba}
         onClick={() => onRobar?.('descarte')}
-        className="flex cursor-default flex-col items-center gap-1.5 enabled:cursor-pointer"
+        className="flex cursor-default flex-col items-center gap-1 enabled:cursor-pointer"
       >
         {arriba ? (
-          <Carta card={arriba} className={estiloPila} />
+          <Carta card={arriba} size="sm" className={estiloPila} />
         ) : (
-          <div className="border-muted-foreground/30 h-20 w-14 rounded-md border border-dashed" />
+          <div className="h-14 w-10 rounded-md border border-dashed border-emerald-100/30" />
         )}
-        <span className="text-muted-foreground text-xs">
-          Descarte · {state.discard.length}
+        <span className="text-[10px] text-emerald-100/70">
+          {state.discard.length}
         </span>
       </button>
     </div>
@@ -200,6 +211,8 @@ export function Mano({
   onCarta,
   onSoltar,
   acciones,
+  cabecera,
+  esTuTurno,
 }: {
   /** Pinned bloques first, then the loose cards. */
   secciones: readonly Seccion[]
@@ -211,6 +224,13 @@ export function Mano({
   onSoltar?: (indice: number) => void
   /** Sorting and moving controls, rendered beside the heading. */
   acciones?: React.ReactNode
+  /**
+   * What to do and what is set aside, on the same line as the heading. One
+   * line, not two: on a phone lying down, every row costs a card's worth of
+   * height, and the hand is what has to stay readable.
+   */
+  cabecera?: React.ReactNode
+  esTuTurno?: boolean
 }) {
   const total = secciones.reduce((suma, seccion) => suma + seccion.cards.length, 0)
 
@@ -223,30 +243,37 @@ export function Mano({
   )
 
   return (
-    <div className="flex flex-col gap-2">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <h2 className="text-sm font-medium">
-          Tu mano{' '}
-          <span className="text-muted-foreground font-normal">· {total}</span>
-          {puntos !== undefined && (
-            <span
-              className="text-muted-foreground font-normal"
-              title="Lo que costaría esta mano si la ronda terminara ahora"
-            >
-              {' '}
-              · {puntos} pts
-            </span>
-          )}
+    <div className="flex min-w-0 flex-col">
+      <div className="flex items-center gap-x-3 overflow-x-auto py-0.5 text-xs whitespace-nowrap">
+        {cabecera}
+        <h2 className="shrink-0 text-xs font-medium">
+          <span
+            className={cn(
+              'rounded px-1.5 py-0.5',
+              esTuTurno && 'bg-amber-300 text-amber-950',
+            )}
+          >
+            Tu mano
+          </span>{' '}
+          <span className="text-muted-foreground font-normal tabular-nums">
+            {total}
+            {puntos !== undefined && (
+              <span title="Lo que costaría esta mano si la ronda terminara ahora">
+                {' '}
+                · {puntos} pts
+              </span>
+            )}
+          </span>
         </h2>
         {acciones}
       </div>
 
-      <div className="-mx-4 flex items-start gap-3 overflow-x-auto px-4 pt-3 pb-2">
+      <div className="flex items-start gap-3 overflow-x-auto pt-2">
         {secciones.map((seccion) => {
           const indice = posicionFijada.get(seccion.id) ?? -1
 
           return (
-            <div key={seccion.id} className="flex shrink-0 flex-col gap-1">
+            <div key={seccion.id} className="flex shrink-0 flex-col gap-0.5">
               <div className="flex w-max pl-3">
                 {seccion.cards.map((card) => {
                   const elegida = seleccionadas?.has(card.id) ?? false
@@ -256,7 +283,7 @@ export function Mano({
                       className={cn(
                         'transition-transform',
                         elegida &&
-                          'ring-foreground ring-offset-background -translate-y-3 ring-2 ring-offset-2',
+                          'ring-foreground ring-offset-background -translate-y-2 ring-2 ring-offset-2',
                       )}
                     />
                   )
@@ -284,7 +311,7 @@ export function Mano({
                   type="button"
                   onClick={onSoltar ? () => onSoltar(indice) : undefined}
                   disabled={!onSoltar}
-                  className="text-muted-foreground enabled:hover:text-foreground ml-3 text-[10px] tracking-wide uppercase"
+                  className="text-muted-foreground enabled:hover:text-foreground ml-3 text-[9px] tracking-wide uppercase"
                 >
                   🔒 fijo{onSoltar && ' · soltar'}
                 </button>
@@ -312,6 +339,8 @@ export function Mesa({
   puntos,
   onSoltar,
   accionesDeMano,
+  acciones,
+  sobreLaMano,
   onRobar,
   onCarta,
   onGrupo,
@@ -328,69 +357,97 @@ export function Mesa({
   onSoltar?: (indice: number) => void
   /** Sorting and moving controls for your hand. */
   accionesDeMano?: React.ReactNode
+  /** The turn's actions. They live in the bottom-right corner, under a thumb. */
+  acciones?: React.ReactNode
+  /** What to do, what went wrong, what is set aside — right above the hand. */
+  sobreLaMano?: React.ReactNode
 } & MesaInteractiva) {
   const nombreDe = (seat: number) => nombres?.[seat] ?? nombrePorDefecto(seat)
   const tu = state.jugadores[asiento]
+  const esTuTurno = state.turno === asiento && state.ganador === null
 
-  const otros = state.jugadores
-    .map((jugador, seat) => ({ jugador, seat }))
-    .filter(({ seat }) => seat !== asiento)
+  const rivales = asientosRivales(state.jugadores.length, asiento)
+
+  // Every grupo on the table, from every player. Laid down is laid down.
+  const enMesa = state.jugadores.flatMap((jugador, seat) =>
+    jugador.grupos.map((grupo, grupoIndex) => ({ grupo, seat, grupoIndex })),
+  )
 
   return (
-    <div className="flex flex-col gap-6">
-      <header className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 border-b pb-3">
-        <div className="flex flex-col">
-          <span className="text-muted-foreground text-xs tracking-widest uppercase">
-            Contrato
-          </span>
-          <h1 className="text-lg font-semibold">{state.contrato.nombre}</h1>
-        </div>
-        <span className="text-muted-foreground text-sm">
-          {state.ganador !== null
-            ? `${nombreDe(state.ganador)} se fue`
-            : `Turno ${state.numeroDeTurno} · juega ${nombreDe(state.turno)}`}
-        </span>
-      </header>
+    <div className="flex h-full w-full flex-col overflow-hidden">
+      {/*
+        The table: felt, seats on the rim, piles and grupos inside.
 
-      <section className="flex flex-col gap-2">
-        {otros.map(({ jugador, seat }) => (
-          <Oponente
+        The room around it is dark in both themes. A card table is a lit thing
+        in a dim room — that is what makes the felt read as a surface rather
+        than a green rectangle — and it is the surround, not the felt, that
+        does the decorating.
+      */}
+      <div className="relative min-h-0 flex-1 bg-emerald-950">
+        <div
+          aria-hidden
+          className="absolute inset-x-[3%] top-[20%] bottom-[2%] rounded-[50%] border-4 border-emerald-950/60 bg-emerald-800 shadow-[inset_0_0_60px_rgba(0,0,0,0.35)] dark:bg-emerald-900"
+        />
+        {/* The contract, printed on the felt the way a table has its house
+            name on it: always there, never in the way. */}
+        <span
+          aria-hidden
+          className="absolute bottom-[5%] left-1/2 -translate-x-1/2 text-sm font-semibold tracking-[0.3em] text-emerald-100/20 uppercase"
+        >
+          {state.contrato.nombre}
+        </span>
+
+        {rivales.map(({ seat, x, y }) => (
+          <Asiento
             key={seat}
-            jugador={jugador}
+            jugador={state.jugadores[seat]}
             nombre={nombreDe(seat)}
             esSuTurno={state.turno === seat && state.ganador === null}
-            onGrupo={onGrupo ? (index) => onGrupo(seat, index) : undefined}
+            x={x}
+            y={y}
           />
         ))}
-      </section>
 
-      <Pilas state={state} onRobar={onRobar} />
+        <div className="absolute inset-x-[12%] top-[44%] bottom-[16%] flex items-start gap-4">
+          <Pilas state={state} onRobar={onRobar} />
 
-      {tu.grupos.length > 0 && (
-        <section className="flex flex-col gap-2">
-          <h2 className="text-sm font-medium">Lo que bajaste</h2>
-          <div className="flex flex-wrap gap-3">
-            {tu.grupos.map((grupo, index) => (
-              <GrupoEnMesa
-                key={index}
-                grupo={grupo}
-                onClick={onGrupo ? () => onGrupo(asiento, index) : undefined}
-              />
-            ))}
+          <div className="flex h-full min-w-0 flex-1 items-start gap-1 overflow-x-auto">
+            {enMesa.length === 0 ? (
+              <span className="self-center text-[11px] text-emerald-100/40">
+                Nadie se ha bajado todavía.
+              </span>
+            ) : (
+              enMesa.map(({ grupo, seat, grupoIndex }) => (
+                <GrupoEnMesa
+                  key={`${seat}-${grupoIndex}`}
+                  grupo={grupo}
+                  onClick={onGrupo ? () => onGrupo(seat, grupoIndex) : undefined}
+                />
+              ))
+            )}
           </div>
-        </section>
-      )}
+        </div>
+      </div>
 
-      <Mano
-        secciones={
-          secciones ?? [{ id: 'sueltas', cards: [...tu.hand], bloqueada: false }]
-        }
-        puntos={puntos}
-        seleccionadas={seleccionadas}
-        onCarta={onCarta}
-        onSoltar={onSoltar}
-        acciones={accionesDeMano}
-      />
+      {/* Your side of the table. */}
+      <div className="bg-background/95 flex shrink-0 items-end gap-3 border-t px-3 pt-0.5 pb-1 backdrop-blur">
+        <div className="flex min-w-0 flex-1 flex-col">
+          <Mano
+            cabecera={sobreLaMano}
+            secciones={
+              secciones ?? [{ id: 'sueltas', cards: [...tu.hand], bloqueada: false }]
+            }
+            puntos={puntos}
+            seleccionadas={seleccionadas}
+            onCarta={onCarta}
+            onSoltar={onSoltar}
+            acciones={accionesDeMano}
+            esTuTurno={esTuTurno}
+          />
+        </div>
+
+        {acciones && <div className="shrink-0 pb-1">{acciones}</div>}
+      </div>
     </div>
   )
 }

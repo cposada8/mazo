@@ -61,85 +61,149 @@ export function Juego({
   }
 
   return (
-    <main className="mx-auto flex w-full max-w-md flex-col gap-5 px-4 pt-6 pb-40">
-      <div className="flex items-center justify-between gap-2">
-        <button
-          type="button"
-          onClick={() => setVerMarcador((abierto) => !abierto)}
-          aria-expanded={verMarcador}
-          className="bg-card hover:bg-accent rounded-md border px-3 py-1.5 text-sm"
-        >
-          {verMarcador ? 'Ocultar marcador' : 'Ver marcador'}
-        </button>
-        <span className="text-muted-foreground font-mono text-xs">{seed}</span>
-      </div>
+    // The table takes the whole viewport, over the site's own chrome: a phone
+    // lying down has no room to spare for a header, and 100dvh under one puts
+    // the hand off the bottom of the screen.
+    <main className="fixed inset-0 z-10 overflow-hidden">
+      <GiraElTelefono onSalir={onSalir} />
 
-      {verMarcador && (
-        <Marcador
-          partida={partida}
+      <div className="relative hidden h-full landscape:block">
+        <Mesa
+          state={ronda}
+          asiento={TU_ASIENTO}
           nombres={nombres(jugadores)}
-          className="rounded-lg border p-3"
+          secciones={juego.secciones}
+          puntos={juego.puntos}
+          onSoltar={juego.soltar}
+          accionesDeMano={<AccionesDeMano juego={juego} />}
+          acciones={<Controles juego={juego} />}
+          sobreLaMano={
+            <div className="flex min-h-5 flex-wrap items-center gap-x-3 gap-y-1 text-xs">
+              {aviso ? (
+                <span className="text-red-600 dark:text-red-400">{aviso}</span>
+              ) : (
+                <Instruccion
+                  esTuTurno={esTuTurno}
+                  esperando={esperando}
+                  fase={ronda.fase}
+                  turno={ronda.turno}
+                  yaBajado={juego.yaBajado}
+                  mesaAbierta={juego.mesaAbierta}
+                />
+              )}
+              <Apartadas juego={juego} mano={ronda.jugadores[TU_ASIENTO].hand} />
+            </div>
+          }
+          seleccionadas={new Set(juego.seleccion)}
+          onCarta={esTuTurno ? juego.alternarCarta : undefined}
+          onRobar={esTuTurno && ronda.fase === 'draw' ? juego.robar : undefined}
+          onGrupo={esTuTurno && ronda.fase === 'act' ? juego.agregarA : undefined}
         />
-      )}
 
-      <Mesa
-        state={ronda}
-        asiento={TU_ASIENTO}
-        nombres={nombres(jugadores)}
-        secciones={juego.secciones}
-        puntos={juego.puntos}
-        onSoltar={juego.soltar}
-        accionesDeMano={<AccionesDeMano juego={juego} />}
-        seleccionadas={new Set(juego.seleccion)}
-        onCarta={esTuTurno ? juego.alternarCarta : undefined}
-        onRobar={esTuTurno && ronda.fase === 'draw' ? juego.robar : undefined}
-        onGrupo={esTuTurno && ronda.fase === 'act' ? juego.agregarA : undefined}
-      />
-
-      {juego.propuestas.length > 0 && (
-        <section className="flex flex-col gap-2 rounded-lg border p-3">
-          <h2 className="text-sm font-medium">Vas a bajar</h2>
-          <div className="flex flex-wrap gap-3">
-            {juego.propuestas.map((propuesta, index) => (
-              <PropuestaApartada
-                key={index}
-                propuesta={propuesta}
-                cartas={cartasDe(propuesta, ronda.jugadores[TU_ASIENTO].hand)}
-                onQuitar={() => juego.soltarGrupo(index)}
-              />
-            ))}
-          </div>
-        </section>
-      )}
-
-      <Controles juego={juego} />
-
-      <footer className="bg-background/95 fixed inset-x-0 bottom-0 border-t backdrop-blur">
-        <div className="mx-auto flex w-full max-w-md flex-col gap-2 px-4 py-3">
-          <p className="text-center text-sm">
-            {aviso ? (
-              <span className="text-red-600 dark:text-red-400">{aviso}</span>
-            ) : (
-              <Instruccion
-                esTuTurno={esTuTurno}
-                esperando={esperando}
-                fase={ronda.fase}
-                turno={ronda.turno}
-                yaBajado={juego.yaBajado}
-                mesaAbierta={juego.mesaAbierta}
-              />
-            )}
-          </p>
+        <div className="absolute top-2 left-2 flex items-center gap-1.5">
+          <span className="rounded-md bg-amber-300/90 px-2 py-1 text-[11px] font-semibold text-amber-950">
+            {ronda.contrato.nombre}
+          </span>
+          <button
+            type="button"
+            onClick={() => setVerMarcador((abierto) => !abierto)}
+            aria-expanded={verMarcador}
+            className="rounded-md border border-emerald-100/25 bg-emerald-950/60 px-2 py-1 text-[11px] text-emerald-50"
+          >
+            Marcador
+          </button>
           <button
             type="button"
             onClick={onSalir}
-            className="text-muted-foreground self-center text-xs underline"
+            className="rounded-md border border-emerald-100/25 bg-emerald-950/60 px-2 py-1 text-[11px] text-emerald-50"
           >
-            Empezar otra partida
+            Salir
           </button>
         </div>
-      </footer>
+
+        {verMarcador && (
+          <div className="absolute inset-0 z-20 flex items-center justify-center bg-black/50 p-4">
+            <div className="bg-background max-h-full w-full max-w-md overflow-y-auto rounded-lg border p-4">
+              <Marcador partida={partida} nombres={nombres(jugadores)} />
+              <div className="mt-3 flex items-center justify-between gap-3">
+                <span className="text-muted-foreground font-mono text-xs">
+                  {seed}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setVerMarcador(false)}
+                  className="bg-card hover:bg-accent rounded-md border px-3 py-1.5 text-sm"
+                >
+                  Cerrar
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
     </main>
+  )
+}
+
+/**
+ * The table wants the width, so the phone has to be turned. Said once, kindly,
+ * and with a way out — being stuck on a screen you cannot use is worse than an
+ * ugly table.
+ */
+function GiraElTelefono({ onSalir }: { onSalir: () => void }) {
+  return (
+    <div className="flex h-full flex-col items-center justify-center gap-4 px-8 text-center landscape:hidden">
+      <span aria-hidden className="text-5xl">
+        📱↻
+      </span>
+      <p className="text-lg font-medium text-balance">
+        Gira el teléfono para jugar.
+      </p>
+      <p className="text-muted-foreground text-sm text-balance">
+        La mesa se juega acostada: trece cartas en la mano y los grupos de todos
+        no caben de pie.
+      </p>
+      <button
+        type="button"
+        onClick={onSalir}
+        className="text-muted-foreground text-xs underline"
+      >
+        Empezar otra partida
+      </button>
+    </div>
+  )
+}
+
+/** The grupos set aside for a bajada, small enough to sit above the hand. */
+function Apartadas({
+  juego,
+  mano,
+}: {
+  juego: ReturnType<typeof usePartida>
+  mano: readonly Card[]
+}) {
+  if (juego.propuestas.length === 0) return null
+
+  return (
+    <span className="flex items-center gap-2">
+      <span className="text-muted-foreground text-[10px] tracking-wide uppercase">
+        Vas a bajar
+      </span>
+      {juego.propuestas.map((propuesta, index) => (
+        <button
+          key={index}
+          type="button"
+          onClick={() => juego.soltarGrupo(index)}
+          title="Quitar este grupo"
+          className="hover:bg-accent flex items-center gap-1 rounded border px-1 py-0.5"
+        >
+          {cartasDe(propuesta, mano).map((card) => (
+            <Carta key={card.id} card={card} size="xs" className="-ml-1 first:ml-0" />
+          ))}
+          <span className="text-muted-foreground text-[10px]">✕</span>
+        </button>
+      ))}
+    </span>
   )
 }
 
@@ -234,6 +298,10 @@ function AccionesDeMano({ juego }: { juego: ReturnType<typeof usePartida> }) {
   )
 }
 
+/**
+ * The turn's actions, in the bottom-right corner where the thumb already is,
+ * and in the same order every turn so the corner can be used without reading.
+ */
 function Controles({ juego }: { juego: ReturnType<typeof usePartida> }) {
   const { ronda, esTuTurno } = juego
   if (!ronda || !esTuTurno || ronda.fase !== 'act') return null
@@ -241,11 +309,11 @@ function Controles({ juego }: { juego: ReturnType<typeof usePartida> }) {
   const seleccionadas = juego.seleccionadas.length
 
   return (
-    <div className="flex flex-wrap gap-2">
+    <div className="flex w-28 flex-col gap-1">
       {!juego.yaBajado && (
         <>
           <Boton onClick={juego.apartarGrupo} disabled={seleccionadas < 3}>
-            Armar grupo ({seleccionadas})
+            Armar ({seleccionadas})
           </Boton>
           <Boton
             onClick={juego.bajarse}
@@ -262,7 +330,7 @@ function Controles({ juego }: { juego: ReturnType<typeof usePartida> }) {
       </Boton>
 
       {seleccionadas > 0 && (
-        <Boton onClick={juego.limpiarSeleccion}>Quitar selección</Boton>
+        <Boton onClick={juego.limpiarSeleccion}>Quitar</Boton>
       )}
     </div>
   )
@@ -284,40 +352,12 @@ function Boton({
       type="button"
       onClick={onClick}
       disabled={disabled}
-      className={`rounded-md border px-3 py-2 text-sm transition-colors disabled:opacity-40 ${
+      className={`rounded-md border px-2 py-1.5 text-xs font-medium transition-colors disabled:opacity-40 ${
         principal ? 'bg-foreground text-background border-transparent' : 'bg-card'
       }`}
     >
       {children}
     </button>
-  )
-}
-
-function PropuestaApartada({
-  propuesta,
-  cartas,
-  onQuitar,
-}: {
-  propuesta: Propuesta
-  cartas: Card[]
-  onQuitar: () => void
-}) {
-  return (
-    <div className="flex flex-col gap-1">
-      <button
-        type="button"
-        onClick={onQuitar}
-        className="text-muted-foreground text-left text-[10px] tracking-wide uppercase underline"
-      >
-        {propuesta.kind === 'trio' ? `Trío de ${propuesta.rank}` : 'Escala'} ·
-        quitar
-      </button>
-      <div className="flex flex-wrap gap-1">
-        {cartas.map((card) => (
-          <Carta key={card.id} card={card} size="sm" />
-        ))}
-      </div>
-    </div>
   )
 }
 

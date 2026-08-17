@@ -10,15 +10,20 @@ const SUIT_SYMBOL: Record<Suit, string> = {
 
 const RED_SUITS: ReadonlySet<Suit> = new Set<Suit>(['hearts', 'diamonds'])
 
-/** `sm` for cards on the mesa, `md` for the ones in your own hand. */
-export type TamanoDeCarta = 'sm' | 'md'
+/**
+ * `xs` for the grupos crowding the middle of the table, `sm` for the piles,
+ * `md` for the ones in your own hand.
+ */
+export type TamanoDeCarta = 'xs' | 'sm' | 'md'
 
 const TAMANOS: Record<TamanoDeCarta, string> = {
+  xs: 'h-11 w-8 p-0.5 text-[10px]',
   sm: 'h-14 w-10 p-1 text-xs',
   md: 'h-20 w-14 p-1.5 text-sm',
 }
 
 const SIMBOLO: Record<TamanoDeCarta, string> = {
+  xs: 'text-[11px]',
   sm: 'text-sm',
   md: 'text-xl',
 }
