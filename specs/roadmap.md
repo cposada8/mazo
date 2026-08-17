@@ -89,11 +89,17 @@ becoming `2♦ 3♦ 4♦ 5♦ comodín(6♦) 7♦` — and rejects every gated c
 from deciding who may reshape it, so the worked example can be tested without a
 ronda around it.
 
-### Phase 7 — Full partida and scoring
+### Phase 7 — Full partida and scoring ✅
 The configured contract list played in order, per-ronda scoring, the optional
 ronda-winner bonus, cumulative totals, and a possibly-shared win.
 **Done when:** a test plays a complete partida from a seed and produces a final
 scoreboard. **This is Milestone 1.**
+
+**Done.** `lib/engine/{puntaje,partida}.ts`, 188 tests. `aplicarEnPartida` closes
+a ronda and deals the next contract by itself, so callers never see the seam.
+Who opens a ronda rotates — see the note in `carioca-rules.md`.
+
+**Milestone 1 is complete: the engine is right.**
 
 ---
 

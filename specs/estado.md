@@ -1,6 +1,6 @@
 # Project status — pick up here
 
-Last updated after Phase 6.
+Last updated after Phase 7 — Milestone 1 complete.
 
 Read this first, then `mission.md` for the why, `carioca-rules.md` for the game,
 `tech-stack.md` for the stack, and `roadmap.md` for what comes next. This file is
@@ -14,8 +14,9 @@ doc is worse than none.
 
 ## Where things stand
 
-Phases 0–6 are done. The engine plays a complete ronda; nothing is playable by a
-human yet.
+Phases 0–7 are done. **Milestone 1 is complete: the engine is right.** It plays
+a whole partida — every contract, scored, with a winner. Nothing is playable by
+a human yet; that is Milestone 2.
 
 | Phase | | |
 | --- | --- | --- |
@@ -26,13 +27,14 @@ human yet.
 | 4 | `/pruebas` page | ✅ |
 | 5 | The ronda state machine | ✅ |
 | 6 | The mesa | ✅ |
-| 7 | Full partida and scoring | ← **next** |
-| 8–17 | Bots, UI, online play | not started |
+| 7 | Full partida and scoring | ✅ |
+| 8 | A bot that can finish a game | ← **next** |
+| 9–17 | UI, then online play | not started |
 
 - **Repo:** https://github.com/cposada8/mazo
 - **Live:** https://mazo-six.vercel.app — and https://mazo-six.vercel.app/pruebas
 - **Deploys:** every push to `main` goes to production automatically.
-- **Tests:** 153, all green. `npm run test:run`, `npx tsc --noEmit`, `npm run lint`.
+- **Tests:** 188, all green. `npm run test:run`, `npx tsc --noEmit`, `npm run lint`.
 
 ## What exists
 
@@ -45,6 +47,8 @@ lib/engine/          The whole game. Pure TypeScript.
   mesa.ts            Reshaping grupos already on the table.
   ronda.ts           State, moves, and apply() — the referee.
   contratos.ts       The eight contracts, as data.
+  puntaje.ts         Card values and hand totals.
+  partida.ts         The contracts played in order, scored, to a winner.
 components/carta.tsx The visual card.
 app/pruebas/         The page that makes the engine visible.
 __tests__/engine/    Tests, including helpers.ts for scripted rondas.
@@ -77,21 +81,27 @@ them by accident.
    survives serialization, so a ronda can be stored in a database, reloaded, and
    keep reshuffling deterministically. Replays come free later.
 
+One more worth knowing, decided rather than specified: **the opening seat
+rotates** each ronda, because a fixed opener would advantage seat 0 for a whole
+partida. See the note in `carioca-rules.md`.
+
 ## What comes next
 
-**Phase 7 — full partida and scoring.** The last piece of Milestone 1. It needs:
+**Phase 8 — a bot that can finish a game.** The first piece of Milestone 2, and
+the thing that turns the engine from a library into a game. It needs:
 
-- A `Partida` that plays the enabled `contratos` in order, one ronda each.
-- Scoring at the end of each ronda: cards left in hand, counted as
-  numbers = face value, J/Q/K = 10, A = 20, comodín = 50.
-- The winner of a ronda scores 0, or `−bonusGanadorRonda` if configured.
-- Cumulative totals, lowest wins, and **a list of winners** — a tie is a shared
-  win with no tie-breaker.
-- `PartidaConfig` is `{ contratos, comodines, bonusGanadorRonda }`, defaults:
-  contracts 1–7 on, comodines on, bonus 0.
+- One greedy strategy: a function from the state a seat can see to a legal
+  `Move`. Keep what serves the current contrato, discard what does not.
+- It does not have to play *well*. It has to play *legally*, and finish.
+- Because the player groups and the engine only validates, a bot has to
+  **search** groupings — the same cards satisfy different contracts depending on
+  how they are cut.
+- **Done when** four bots play 1,000 seeded partidas with no crash and no
+  refused move. That soak test is the real deliverable: it is what will find the
+  engine bugs the unit tests missed.
 
-Then Milestone 2 makes it playable: a bot that can finish a game (8), the table
-UI (9), and wiring the interaction (10).
+Then the table UI (9) and wiring the interaction (10) make it playable by a
+person — the first time Carioca can actually be played on a phone.
 
 ## Open questions, deliberately unanswered
 

@@ -106,8 +106,10 @@ export function startRonda(options: {
   players: number
   comodines?: boolean
   seed: string | number
+  /** Seat that plays first. Rotates between rondas so no seat is always first. */
+  empieza?: number
 }): RondaState {
-  const { contrato, players, comodines = true, seed } = options
+  const { contrato, players, comodines = true, seed, empieza = 0 } = options
   const rng = createRng(seed)
   const dealt = deal(buildDeck({ comodines }), players, rng)
 
@@ -120,7 +122,7 @@ export function startRonda(options: {
     })),
     stock: dealt.stock,
     discard: dealt.discard,
-    turno: 0,
+    turno: ((empieza % players) + players) % players,
     numeroDeTurno: 1,
     fase: 'draw',
     rngState: rng.state(),

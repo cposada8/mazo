@@ -315,6 +315,13 @@ Replaying a seed has to reproduce every reshuffle, not just the deal.
 
 After dealing, one card is turned face up from the stock to start the descarte.
 
+**Who plays first rotates.** Seat 0 opens the first ronda, seat 1 the second, and
+so on around the table. This was not stated in the rules as given; it is
+implemented because the alternative — the same seat always opening — hands that
+seat a standing advantage across a whole partida, which no card game intends.
+Flagged here rather than buried in the code, and easy to change: `startRonda`
+takes the opening seat as an argument.
+
 This means the first turn is **not a special case**: the first player faces the
 same choice as everyone else — take the face-up card, or draw from the stock.
 Turning the card is an initialization step, not a rule the turn logic has to know
