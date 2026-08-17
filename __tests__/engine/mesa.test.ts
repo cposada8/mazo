@@ -126,6 +126,70 @@ describe('extendEscala', () => {
       code: 'INVALID_RESULT',
     })
   })
+
+  // The bug from the first real game: Q K A comodín(2) on the mesa, a 10 in
+  // hand. Both readings of an end comodín are the same escala, so the 10 must
+  // land, the comodín passing from 2 to J.
+  describe('sliding an end comodín to the other extreme, for free', () => {
+    const quinaAlta = (): Escala => ({
+      kind: 'escala',
+      suit: 'spades',
+      start: 'Q',
+      cards: [n('Q', 'spades'), n('K', 'spades'), n('A', 'spades'), c()],
+    })
+
+    it('lets a 10 extend Q K A comodín(2) at the head', () => {
+      const result = extendEscala(quinaAlta(), [n('10', 'spades')], 'head')
+      expect(result.ok).toBe(true)
+      if (result.ok) {
+        expect(describeGrupo(result.grupo)).toBe('10 ★ Q K A')
+        expect((result.grupo as Escala).start).toBe('10')
+      }
+    })
+
+    it('mirrors: a 2 extends comodín(10) J Q K at the tail', () => {
+      const conComodinAlFrente: Escala = {
+        kind: 'escala',
+        suit: 'hearts',
+        start: '10',
+        cards: [c(), n('J', 'hearts'), n('Q', 'hearts'), n('K', 'hearts')],
+      }
+      const result = extendEscala(conComodinAlFrente, [n('2', 'hearts')], 'tail')
+      expect(result.ok).toBe(true)
+      if (result.ok) {
+        expect(describeGrupo(result.grupo)).toBe('J Q K ★ 2')
+        expect((result.grupo as Escala).start).toBe('J')
+      }
+    })
+
+    it('prefers the plain extension when it fits', () => {
+      // J extends the head directly; the comodín must stay put as the 2.
+      const result = extendEscala(quinaAlta(), [n('J', 'spades')], 'head')
+      expect(result.ok).toBe(true)
+      if (result.ok) expect(describeGrupo(result.grupo)).toBe('J Q K A ★')
+    })
+
+    it('never slides a comodín into adjacency with another', () => {
+      // comodín(J) Q K A comodín(2): sliding either way stacks the two.
+      const dosExtremos: Escala = {
+        kind: 'escala',
+        suit: 'clubs',
+        start: 'J',
+        cards: [c(), n('Q', 'clubs'), n('K', 'clubs'), n('A', 'clubs'), c()],
+      }
+      expect(extendEscala(dosExtremos, [n('9', 'clubs')], 'head')).toMatchObject({
+        ok: false,
+        code: 'INVALID_RESULT',
+      })
+    })
+
+    it('still refuses a card that fits neither reading', () => {
+      expect(extendEscala(quinaAlta(), [n('5', 'spades')], 'head')).toMatchObject({
+        ok: false,
+        code: 'INVALID_RESULT',
+      })
+    })
+  })
 })
 
 describe('repositionComodin — the worked example from the rules', () => {

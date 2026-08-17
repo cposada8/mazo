@@ -433,7 +433,7 @@ Three things came out differently than written above:
   20.
 
 Left deliberately undone: animations, real avatars, and any decoration of the
-room beyond a dark ground. Those are Phase 25, and none of them is what made
+room beyond a dark ground. Those are Phase 27, and none of them is what made
 the old screen unreadable.
 
 ### Phase 18 — Room to play ✅
@@ -521,7 +521,7 @@ arrangement — seats across the top, mesa in the middle, hand along the
 bottom — so this phase is a container query on `.cancha`, not a second
 layout. Below 1:1 aspect the oval hides and the grupos wrap into rows
 (portrait's spare dimension is height, so the mesa trades its sideways
-scroll for wrapping — which incidentally previews the fix Phase 25 wants
+scroll for wrapping — which incidentally previews the fix Phase 27 wants
 for the six-player overflow). The rotate-your-phone screen is deleted, the
 manifest orientation loosened to `any`, and rotation mid-turn was verified
 to preserve selection and bloques — nothing unmounts, so nothing is lost.
@@ -615,7 +615,7 @@ ways of showing a move that has already been made:
 One rule shapes the line: **it may only say what everybody can see.** A card
 taken off the descarte was face up, so it is named. A card off the mazo is
 secret, and the line says only that somebody drew — never which card. That is
-the same discipline Phase 23 makes structural, and writing the log against it
+the same discipline Phase 25 makes structural, and writing the log against it
 first is a rehearsal: a public log is a view of the ronda with one seat's
 privileges, which is precisely what a bot is about to be handed.
 
@@ -644,21 +644,82 @@ Spanish.
 
 ---
 
+## Asked for after playing on dev — prioritized ahead of the machinery
+
+The owner played the Phase 18–22 build and came back with a list: one rule the
+engine gets wrong, and four ways the table makes you work for what it already
+knows. A real game finding a real bug outranks new machinery, so these go
+first and everything after them moves down two.
+
+### Phase 23 — The comodín that slides ✅
+Found at the table: the mesa held `Q♠ K♠ A♠ comodín(2♠)` and the player held
+the `10♠`. Playing it must work — `Q K A comodín(2)` and `comodín(J) Q K A`
+are the *same escala* read from either end, so the comodín slides across at
+no cost and the 10 lands to make `10♠ comodín(J♠) Q♠ K♠ A♠`. The engine
+refused it, which is a bug in the rules as played.
+
+The rule goes into `carioca-rules.md` first (the Phase 20 lesson: what is not
+written down can be wrong without anyone noticing), then into the engine:
+extending an escala tries the plain reading, and when that fails, the reading
+with the far extreme's comodín slid over. The slide only ever moves the
+outermost card, never crosses another, and the result still validates — a
+comodín cannot slide into adjacency with another comodín.
+
+**Done when:** the exact hand from the bug report plays: tapping the grupo
+with the 10 selected puts it down and rebinds the comodín, and the refusal
+cases (two extreme comodines, a card that fits neither reading) still refuse.
+
+**Done.** `extendEscala` in `lib/engine/mesa.ts` now tries both readings; the
+UI needed no change, because tapping a grupo already tries head and tail and
+lets the engine pick. The bug's exact position is a test, with its mirror
+and both refusal cases.
+
+### Phase 24 — Watching the table work ✅
+Four quality-of-life asks from the same session, all about seeing what the
+game already knows:
+
+- **The discard travels too.** Phase 22 animated taking a card; botar was
+  still a teleport. Same mechanism, opposite direction, always face up —
+  a discard is public by definition.
+- **The descarte can be browsed.** Tap the pile's count chip and see every
+  card in it, top first. Only the top card is *playable* — this changes no
+  rule, it only spares the memory. Switchable on the setup screen, on by
+  default, for tables that want remembering to be part of the game.
+- **The log can be reread.** Tap the line under the piles and the whole
+  ronda's story opens, newest first, every line under Phase 22's rule: only
+  what everybody saw. Same setup switch treatment, on by default.
+- **Sorting can be left pressed.** A sort button now latches: while it is
+  down, the card you draw files itself into place. Releasing it freezes the
+  hand exactly as it lies — nothing moves — and newly drawn cards go back to
+  arriving at the end, where they are easy to notice.
+
+**Done when:** a discard visibly flies to the pile; the descarte and the
+historial open from the table and both switches on the setup screen actually
+remove them; and with a sort held down, a drawn card lands sorted, while
+releasing it moves nothing.
+
+**Done.** The latched sort survives a new reparto on purpose — it is a
+preference, not an arrangement, so the next hand arrives already sorted
+(Claude's call). The historial keeps `Relato` values, not strings, so the
+information rule is enforced by the same type it was written in.
+
+---
+
 ## Milestone 3 — Bots worth playing
 
-### Phase 23 — Bot framework
+### Phase 25 — Bot framework
 Extract the strategy interface: a bot receives the legal state it can see and
 returns a move. Add hand-evaluation helpers shared by all bots.
 **Done when:** a new bot can be added in one file with no engine changes.
 
-### Phase 24 — Bot personalities
+### Phase 26 — Bot personalities
 At least three bots that differ observably: e.g. one that hoards for the perfect
 meld, one that lays down at the first opportunity, one that watches discards and
 plays around opponents. Give them names and short descriptions in the UI.
 **Done when:** a head-to-head tournament shows different win rates and visibly
 different play. **This is Milestone 3.**
 
-### Phase 25 — Rough edges
+### Phase 27 — Rough edges
 A hint for new players, an in-game rules summary, and an end-of-game screen.
 Card animations were pulled forward into Phase 22; what is left here is the
 mesa that runs off the right edge when six players are deep into a partida —
@@ -671,26 +732,26 @@ asking for help, and a full mesa can be read without scrolling to find it.
 
 ## Milestone 4 — Playable together
 
-### Phase 26 — Persistence without accounts
+### Phase 28 — Persistence without accounts
 Prisma schema, finished partidas saved, and a guest identity that survives a
 page reload without anyone signing up. How a seat is claimed and protected is an
 open design question — see `tech-stack.md`.
 **Done when:** a player reloads mid-partida and is still themselves, and nobody
 can claim a seat that is not theirs.
 
-### Phase 27 — Rooms
+### Phase 29 — Rooms
 Create a room, get an invite code, join as a guest with a nickname, see who is in
 the lobby, start when everyone is ready. No gameplay yet.
 **Done when:** three devices sit in the same lobby.
 
-### Phase 28 — Server-authoritative play
+### Phase 30 — Server-authoritative play
 The game state lives on the server. Each player receives only their own hand and
 public information. Moves are submitted and validated server-side. Updates by
 polling.
 **Done when:** three people in three places finish a game from one invite code,
 and no client ever receives another player's cards. **This is Milestone 4.**
 
-### Phase 29 — Real-time transport
+### Phase 31 — Real-time transport
 Replace polling with a push transport behind the same interface. Handle
 disconnects and reconnects, and let a bot take over an abandoned seat.
 **Done when:** a player closes the tab mid-game, returns, and the game is intact.

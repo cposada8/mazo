@@ -50,8 +50,31 @@ export function addToTrio(trio: Trio, cards: readonly Card[]): MesaEdit {
  *
  * Cards must be given in ascending order. Anything else fails validation, which
  * is where order is checked already.
+ *
+ * If the plain extension does not fit, one free rearrangement is tried: a
+ * comodín sitting at the far extreme slides over to this one. An escala with
+ * an end comodín is the same escala read the other way — `Q K A comodín(2)`
+ * and `comodín(J) Q K A` hold identical cards — so the slide costs nothing,
+ * and it is what lets a `10` land on that mesa as `10 comodín(J) Q K A`.
+ * See "A comodín belongs to its grupo forever" in carioca-rules.md.
  */
 export function extendEscala(
+  escala: Escala,
+  cards: readonly Card[],
+  end: 'head' | 'tail',
+): MesaEdit {
+  const directo = extenderTalCual(escala, cards, end)
+  if (directo.ok) return directo
+
+  const deslizada = conComodinDeslizado(escala, end)
+  if (!deslizada) return directo
+
+  const alternativa = extenderTalCual(deslizada, cards, end)
+  // On a double failure the plain reading's error is the honest one.
+  return alternativa.ok ? alternativa : directo
+}
+
+function extenderTalCual(
   escala: Escala,
   cards: readonly Card[],
   end: 'head' | 'tail',
@@ -67,6 +90,34 @@ export function extendEscala(
 
   const check = validateGrupo(grupo, 'mesa')
   return check.ok ? { ok: true, grupo } : invalid(check)
+}
+
+/**
+ * The same escala with the comodín from the far extreme slid to `end`, or
+ * null when there is no comodín there to slide. Only the outermost card ever
+ * moves, so no card is crossed; whether the new adjacency is legal is left to
+ * the validation of whatever gets built on top of this reading.
+ */
+function conComodinDeslizado(escala: Escala, end: 'head' | 'tail'): Escala | null {
+  const { cards } = escala
+
+  if (end === 'head') {
+    const ultimo = cards[cards.length - 1]
+    if (!isComodin(ultimo)) return null
+    return {
+      ...escala,
+      start: rankAfter(escala.start, -1),
+      cards: [ultimo, ...cards.slice(0, -1)],
+    }
+  }
+
+  const primero = cards[0]
+  if (!isComodin(primero)) return null
+  return {
+    ...escala,
+    start: rankAfter(escala.start, 1),
+    cards: [...cards.slice(1), primero],
+  }
 }
 
 /**

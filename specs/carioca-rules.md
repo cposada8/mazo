@@ -212,6 +212,17 @@ cards on someone else's grupo, and the comodín never left it.
 This is why comodines are bound to a concrete card: without that binding there is
 nothing to "supply" and nothing to reposition.
 
+**One repositioning is free: sliding an end comodín to the other end.** An
+escala with a comodín at an extreme is the *same escala* read the other way —
+`Q♠ K♠ A♠ comodín(2♠)` and `comodín(J♠) Q♠ K♠ A♠` hold identical cards and are
+equally valid — so no card has to be supplied to switch between the readings.
+What this matters for is extending: holding `10♠` against that mesa, playing it
+must succeed, the comodín passing from `2♠` to `J♠` to make
+`10♠ comodín(J♠) Q♠ K♠ A♠`. The slide is only ever the outermost card moving
+across, it never crosses another card, and the result must still validate — a
+comodín cannot slide into adjacency with another comodín. (Recorded in Phase
+23, after the first real game where the engine refused exactly this play.)
+
 #### What this forces on the engine
 
 Two design consequences, both load-bearing:
