@@ -261,7 +261,9 @@ export function usePartida(options: {
         setHistoria((antes) => [...antes, cuento])
       }
 
-      if (move.type === 'robar') {
+      // A robar that closed the ronda en tablas moved no card: nothing
+      // travels, and nothing in the hand gets marked as drawn.
+      if (move.type === 'robar' && cuento?.tipo !== 'tablas') {
         setViaje({
           clave: proximoViaje.current++,
           desde: { pila: move.de },

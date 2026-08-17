@@ -133,13 +133,14 @@ describe('when the stock runs out', () => {
     expect(ids(a.stock)).toEqual(ids(b.stock))
   })
 
-  it('gives up only when there is genuinely nothing left', () => {
+  it('closes en tablas when there is genuinely nothing left to draw', () => {
     const state = makeRonda({
       jugadores: [{ hand: [] }, { hand: [] }],
       stock: [],
       discard: [top],
     })
-    expectFail(apply(state, { type: 'robar', de: 'stock' }), 'SIN_CARTAS')
+    const result = unwrap(apply(state, { type: 'robar', de: 'stock' }))
+    expect(result.ganador).toBe('nadie')
   })
 })
 

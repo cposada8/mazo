@@ -150,3 +150,49 @@ describe('it does not peek', () => {
     expect(decision(base).type).toEqual(decision(otro).type)
   })
 })
+
+describe('drawing once bajado', () => {
+  // Bajado on turn 1; it is now turn 3, so the mesa is open.
+  const bajado = (descarte: string) => {
+    const state = crearEscenario({
+      manos: [['9♠', '2♣'], ['A♦', '3♣', '4♥', '6♠']],
+      descarte: [descarte],
+      contrato: DOS_TRIOS,
+      seed: 'bajado',
+    })
+    return {
+      ...state,
+      numeroDeTurno: 3,
+      jugadores: state.jugadores.map((jugador, seat) =>
+        seat === 0
+          ? {
+              ...jugador,
+              bajadoEnTurno: 1,
+              grupos: [
+                {
+                  kind: 'trio' as const,
+                  rank: '7' as const,
+                  cards: [
+                    { id: '7-s#90', kind: 'normal' as const, rank: '7' as const, suit: 'spades' as const },
+                    { id: '7-h#91', kind: 'normal' as const, rank: '7' as const, suit: 'hearts' as const },
+                    { id: '7-c#92', kind: 'normal' as const, rank: '7' as const, suit: 'clubs' as const },
+                  ],
+                },
+              ],
+            }
+          : jugador,
+      ),
+    }
+  }
+
+  it('ignores a "useful" descarte card it cannot ligar — the loop that stalled seed soak-204', () => {
+    // 9♥ pairs the 9♠ in hand, which is contract-utility — but the player is
+    // already bajado, so utility means nothing and it does not ligar anywhere.
+    expect(decidir(bajado('9♥'))).toEqual({ type: 'robar', de: 'stock' })
+  })
+
+  it('takes the descarte card that ligadoes right now', () => {
+    // The fourth 7 lands straight on the trio of 7s.
+    expect(decidir(bajado('7♦'))).toEqual({ type: 'robar', de: 'descarte' })
+  })
+})

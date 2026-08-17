@@ -36,20 +36,28 @@ export type JugadorState = {
 /** A turn is draw, then optionally act, then discard. In that order, always. */
 export type TurnPhase = 'draw' | 'act'
 
+/** The descarte may rebuild the stock this many times per ronda (Phase 31). */
+export const REBARAJADAS_MAX = 2
+
 export type RondaState = {
   readonly contrato: Contrato
   readonly jugadores: readonly JugadorState[]
   readonly stock: readonly Card[]
   /** Face up. The last element is the top card, the only one in play. */
   readonly discard: readonly Card[]
+  /** Times the descarte has rebuilt the stock. Capped at REBARAJADAS_MAX. */
+  readonly rebarajadas: number
   /** Seat to move. */
   readonly turno: number
   /** 1-based, increases with every turn taken by anyone. */
   readonly numeroDeTurno: number
   readonly fase: TurnPhase
   readonly rngState: number
-  /** Seat that went out, once the ronda is over. */
-  readonly ganador: number | null
+  /**
+   * How the ronda ended: the seat that went out, `'nadie'` for a ronda closed
+   * en tablas (Phase 31), or null while it is still being played.
+   */
+  readonly ganador: number | 'nadie' | null
 }
 
 export type Move =
@@ -84,7 +92,6 @@ export type MoveErrorCode =
   | 'CONTRATO_NO_COINCIDE'
   | 'GRUPO_INVALIDO'
   | 'DESCARTE_VACIO'
-  | 'SIN_CARTAS'
   | 'NO_EXISTE_EL_GRUPO'
   | 'NO_ES_UNA_ESCALA'
   | 'COMODIN_NO_SE_PUEDE_MOVER'
@@ -121,6 +128,7 @@ export function startRonda(options: {
     })),
     stock: dealt.stock,
     discard: dealt.discard,
+    rebarajadas: 0,
     turno: ((empieza % players) + players) % players,
     numeroDeTurno: 1,
     fase: 'draw',
@@ -131,7 +139,12 @@ export function startRonda(options: {
 
 export function apply(state: RondaState, move: Move): MoveResult {
   if (state.ganador !== null) {
-    return fail('RONDA_TERMINADA', `seat ${state.ganador} already went out`)
+    return fail(
+      'RONDA_TERMINADA',
+      state.ganador === 'nadie'
+        ? 'the ronda ended en tablas'
+        : `seat ${state.ganador} already went out`,
+    )
   }
 
   const result = applyMove(state, move)
@@ -186,7 +199,11 @@ function robar(state: RondaState, de: 'stock' | 'descarte'): MoveResult {
   const refilled = refillStockIfEmpty(state)
   const top = refilled.stock.at(-1)
   if (!top) {
-    return fail('SIN_CARTAS', 'the stock is empty and the descarte cannot refill it')
+    // The stock cannot be served and cannot be rebuilt — the two rebarajadas
+    // are spent, or there is nothing to rebuild it from. The ronda ends right
+    // here, en tablas: nobody goes out, and scoring falls to the partida
+    // (Phase 31). The draw itself never happens.
+    return { ok: true, state: { ...state, ganador: 'nadie' } }
   }
 
   return {
@@ -201,11 +218,13 @@ function robar(state: RondaState, de: 'stock' | 'descarte'): MoveResult {
 
 /**
  * When the stock runs out the descarte is shuffled back into it, keeping the
- * top card face up so the pile is never empty. A ronda ends because somebody
- * went out, never because the cards ran out.
+ * top card face up so the pile is never empty — at most REBARAJADAS_MAX times
+ * per ronda. The third empty mazo does not refill; it closes the ronda en
+ * tablas (Phase 31), so a ronda nobody can win still ends.
  */
 function refillStockIfEmpty(state: RondaState): RondaState {
   if (state.stock.length > 0 || state.discard.length <= 1) return state
+  if (state.rebarajadas >= REBARAJADAS_MAX) return state
 
   const top = state.discard.at(-1)!
   const rest = state.discard.slice(0, -1)
@@ -215,6 +234,7 @@ function refillStockIfEmpty(state: RondaState): RondaState {
     ...state,
     stock: shuffle(rest, rng),
     discard: [top],
+    rebarajadas: state.rebarajadas + 1,
     rngState: rng.state(),
   }
 }

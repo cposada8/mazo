@@ -49,30 +49,34 @@ describe('four bots, a thousand partidas', () => {
   })
 
   /**
-   * Stalls are measured, not asserted away.
-   *
-   * Carioca has no stalemate rule, so a ronda in which nobody can complete the
-   * contrato genuinely never ends. These bots hit that on a small fraction of
-   * seeds. The threshold is a regression guard: if a change makes the bots
-   * dumber, this is where it shows.
+   * Since Phase 31 there is no such thing as a stall: a ronda whose stock can
+   * no longer be served or rebuilt closes en tablas, so every partida ends.
+   * Before the rule, these bots stalled on ~1.3% of seeds.
    */
   const estancadas = resultados.filter((r) => r.motivo === 'TOPE_DE_TURNOS')
   const terminadas = resultados.filter((r) => r.motivo === 'TERMINADA')
+  const enTablas = resultados.filter((r) =>
+    r.partida.historial.some((marcador) => marcador.ganador === 'nadie'),
+  )
 
-  it('finishes the overwhelming majority of partidas', () => {
-    const tasa = estancadas.length / PARTIDAS
+  it('finishes every single partida — tablas killed the stall', () => {
     console.log(
       `soak: ${terminadas.length}/${PARTIDAS} terminadas, ` +
-        `${estancadas.length} estancadas (${(tasa * 100).toFixed(1)}%)`,
+        `${enTablas.length} con al menos una ronda en tablas`,
     )
-    expect(tasa).toBeLessThan(0.05)
+    expect(estancadas).toHaveLength(0)
+    expect(terminadas).toHaveLength(PARTIDAS)
   })
 
-  it('stalls only for want of a contrato, never mid-ronda nonsense', () => {
-    for (const resultado of estancadas) {
-      // A stalled partida is still a legal one: it is simply unfinished.
-      expect(resultado.partida.ronda).not.toBeNull()
-      expect(resultado.partida.ronda!.ganador).toBeNull()
+  it('a ronda en tablas scores everybody and pays no bonus', () => {
+    expect(enTablas.length).toBeGreaterThan(0)
+    for (const resultado of enTablas) {
+      for (const marcador of resultado.partida.historial) {
+        if (marcador.ganador !== 'nadie') continue
+        for (const puntos of marcador.puntos) {
+          expect(puntos).toBeGreaterThanOrEqual(0)
+        }
+      }
     }
   })
 
@@ -197,7 +201,8 @@ describe('two bots, every contract on', () => {
     expect(resultado.motivo).toBe('TERMINADA')
     // Every ronda's winner is charged −10 instead of 0.
     for (const marcador of resultado.partida.historial) {
-      expect(marcador.puntos[marcador.ganador]).toBe(-10)
+      expect(marcador.ganador).not.toBe('nadie')
+      expect(marcador.puntos[marcador.ganador as number]).toBe(-10)
     }
   })
 })

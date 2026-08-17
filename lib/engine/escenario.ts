@@ -96,6 +96,7 @@ export function crearEscenario(spec: EscenarioSpec): RondaState {
     jugadores: hands.map((hand) => ({ hand, grupos: [], bajadoEnTurno: null })),
     stock,
     discard,
+    rebarajadas: 0,
     turno: ((empieza % players) + players) % players,
     numeroDeTurno: 1,
     fase: 'draw',

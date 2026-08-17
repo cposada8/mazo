@@ -700,6 +700,7 @@ function FinDeRonda({
   onSalir: () => void
 }) {
   const ganaste = resumen.ganador === TU_ASIENTO
+  const tablas = resumen.ganador === 'nadie'
   const tuyos = resumen.puntos[TU_ASIENTO]
 
   return (
@@ -709,12 +710,18 @@ function FinDeRonda({
           {resumen.contrato.nombre}
         </p>
         <h1 className="text-4xl font-semibold tracking-tight">
-          {ganaste ? '¡Ganaste la ronda!' : `Ganó ${nombres[resumen.ganador]}`}
+          {tablas
+            ? 'Tablas: nadie ganó'
+            : ganaste
+              ? '¡Ganaste la ronda!'
+              : `Ganó ${nombres[resumen.ganador as number]}`}
         </h1>
         <p className="text-muted-foreground">
-          {ganaste
-            ? 'Te quedaste sin cartas primero.'
-            : `Te quedaste con ${tuyos} punto${tuyos === 1 ? '' : 's'} en la mano.`}
+          {tablas
+            ? `El mazo se agotó por última vez. Todos suman su mano: la tuya costó ${tuyos} punto${tuyos === 1 ? '' : 's'}.`
+            : ganaste
+              ? 'Te quedaste sin cartas primero.'
+              : `Te quedaste con ${tuyos} punto${tuyos === 1 ? '' : 's'} en la mano.`}
         </p>
       </div>
 

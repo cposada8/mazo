@@ -15,6 +15,7 @@
 import {
   type Card,
   type Move,
+  REBARAJADAS_MAX,
   type RondaState,
   describeCard,
 } from '@/lib/engine'
@@ -46,6 +47,11 @@ export type Relato =
       readonly cierra?: boolean
     }
   | { readonly tipo: 'bota'; readonly seat: number; readonly carta: string }
+  /**
+   * The stock could not be served or rebuilt, and the ronda closed en tablas
+   * (Phase 31). No card is named because no card moved.
+   */
+  | { readonly tipo: 'tablas'; readonly seat: number }
 
 /** One end of a card's trip: a pile, or a player's hand. */
 export type PuntoDeViaje =
@@ -75,7 +81,15 @@ export function relatar(move: Move, antes: RondaState): Relato | null {
 
   switch (move.type) {
     case 'robar': {
-      if (move.de === 'stock') return { tipo: 'mazo', seat }
+      if (move.de === 'stock') {
+        // A stock draw that cannot be served closes the ronda en tablas
+        // (Phase 31): the two rebarajadas are spent, or there is nothing left
+        // to rebuild the stock from. No card moved, so none is named.
+        const agotado =
+          antes.stock.length === 0 &&
+          (antes.rebarajadas >= REBARAJADAS_MAX || antes.discard.length <= 1)
+        return agotado ? { tipo: 'tablas', seat } : { tipo: 'mazo', seat }
+      }
       const arriba = antes.discard.at(-1)
       return arriba
         ? { tipo: 'descarte', seat, carta: describeCard(arriba) }
@@ -187,5 +201,9 @@ export function contarRelato(
       return esTuyo
         ? `Botaste ${relato.carta}`
         : `${quien} botó ${relato.carta}`
+    case 'tablas':
+      return esTuyo
+        ? 'Quisiste robar y el mazo se agotó por última vez: la ronda queda en tablas'
+        : `${quien} quiso robar y el mazo se agotó por última vez: la ronda queda en tablas`
   }
 }

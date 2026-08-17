@@ -43,10 +43,12 @@ export type VistaDeAsiento = {
   readonly stock: number
   /** The whole descarte, top card last: every card in it fell face up. */
   readonly descarte: readonly Card[]
+  /** Everybody watched the descarte rebuild the stock — a public count. */
+  readonly rebarajadas: number
   readonly turno: number
   readonly numeroDeTurno: number
   readonly fase: TurnPhase
-  readonly ganador: number | null
+  readonly ganador: number | 'nadie' | null
 }
 
 export function vistaDeAsiento(
@@ -64,6 +66,7 @@ export function vistaDeAsiento(
     })),
     stock: state.stock.length,
     descarte: state.discard,
+    rebarajadas: state.rebarajadas,
     turno: state.turno,
     numeroDeTurno: state.numeroDeTurno,
     fase: state.fase,
@@ -113,6 +116,7 @@ function rondaImaginada(vista: VistaDeAsiento): RondaState {
     })),
     stock: [],
     discard: vista.descarte,
+    rebarajadas: vista.rebarajadas,
     turno: vista.turno,
     numeroDeTurno: vista.numeroDeTurno,
     fase: vista.fase,

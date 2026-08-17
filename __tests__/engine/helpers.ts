@@ -48,6 +48,7 @@ export function makeRonda(spec: {
   /** Drawn from the end, so the last card here is the next one drawn. */
   stock?: Card[]
   discard?: Card[]
+  rebarajadas?: number
   turno?: number
   numeroDeTurno?: number
   fase?: TurnPhase
@@ -64,6 +65,7 @@ export function makeRonda(spec: {
     jugadores,
     stock: spec.stock ?? [n('2', 'clubs'), n('3', 'clubs')],
     discard: spec.discard ?? [n('9', 'diamonds')],
+    rebarajadas: spec.rebarajadas ?? 0,
     turno: spec.turno ?? 0,
     numeroDeTurno: spec.numeroDeTurno ?? 1,
     fase: spec.fase ?? 'draw',

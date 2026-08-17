@@ -497,30 +497,25 @@ likely bypasses the normal lay-down-then-discard flow. It does not fit the
 type must not be designed in a way that makes escaleras impossible to add later,
 but no attempt is made to model them yet.
 
-### A ronda nobody can win
+### Tablas: the ronda nobody wins — settled in Phase 31
 
-There is no stalemate rule. A ronda ends when a player goes out, and if nobody
-ever completes the contrato it does not end at all.
+The descarte may rebuild the stock **twice** per ronda. When a player must
+draw from the stock and it can no longer be served — the two rebarajadas are
+spent, or there is nothing left to rebuild it from — the ronda ends right
+there, **en tablas**: nobody goes out, everybody scores the cards left in
+their hand, and no bonus is paid. The seat whose draw closed the ronda opens
+the next one.
 
-At a real table this is invisible: people eventually get there, and if a hand
-drags someone proposes calling it. Measured, it is not zero — four bots playing
-1,000 partidas stall on about **1.3%** of them, always on a contract with
-escalas in it, which need four specific consecutive cards rather than three of
-anything.
+Chosen by the owner from the three options that used to sit here (leave it /
+cap the reshuffles / let the table vote to abandon). Two rebarajadas is
+visible at the table in a way a turn count never is: everyone watched the
+descarte get turned over twice, so the third empty mazo surprises nobody.
+Measured before the rule, four bots playing 1,000 partidas stalled on about
+1.3% of them, always on a contract with escalas.
 
-Three ways out, none of them chosen yet:
-
-1. **Leave it.** Better bots stall less, and humans stall less still. The cost is
-   that an online partida can hang with no way to end it.
-2. **End the ronda when the stock has been exhausted N times.** Everyone scores
-   the cards in their hand and nobody wins the ronda. Simple, and it makes the
-   reshuffle count meaningful.
-3. **Let the table agree to abandon a ronda**, the way people actually resolve
-   it. Needs UI and consent, and does not help a solo game against bots.
-
-Deciding this is now its own phase — Phase 31, before anything goes online —
-because a hung partida online is a real product problem rather than a slow
-test.
+Abandoning a partida voluntarily is a different thing — that is a lobby
+feature (a player leaves; the table plays on without them), not a rule of the
+ronda, and lives in the online phases.
 
 Everything else is settled. Any rule discovered to be missing during
 implementation is written here first, then coded.

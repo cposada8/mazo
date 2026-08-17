@@ -1,5 +1,7 @@
 'use client'
 
+import { ChevronLeft } from 'lucide-react'
+import Link from 'next/link'
 import { useState, useSyncExternalStore } from 'react'
 import {
   CATALOGO,
@@ -138,6 +140,13 @@ export function Inicio({
   return (
     <main className="mx-auto flex w-full max-w-md flex-1 flex-col justify-center gap-8 px-6 py-12">
       <header className="flex flex-col gap-2">
+        <Link
+          href="/"
+          className="text-muted-foreground hover:text-foreground -ml-1 flex w-fit items-center gap-1 text-sm"
+        >
+          <ChevronLeft className="size-4" aria-hidden />
+          Volver al inicio
+        </Link>
         <h1 className="text-3xl font-semibold tracking-tight">Jugar Carioca</h1>
         <p className="text-muted-foreground text-balance">
           Contra El Codicioso, que se baja apenas puede y no perdona un descarte

@@ -44,7 +44,8 @@ export type Marcador = {
   readonly contrato: Contrato
   /** Points scored this ronda, by seat. The winner's may be negative. */
   readonly puntos: readonly number[]
-  readonly ganador: number
+  /** The seat that went out, or `'nadie'` for a ronda closed en tablas. */
+  readonly ganador: number | 'nadie'
 }
 
 export type PartidaState = {
@@ -128,7 +129,9 @@ export function aplicarEnPartida(state: PartidaState, move: Move): PartidaResult
  * contract or declare the winners.
  *
  * Whoever went out opens the next ronda — one more reason to close a ronda
- * rather than merely unload cards.
+ * rather than merely unload cards. A ronda closed en tablas has no winner:
+ * everybody scores their hand, nobody takes the bonus, and the seat whose
+ * draw closed it opens the next one (Phase 31).
  */
 export function cerrarRonda(state: PartidaState): PartidaState {
   const ronda = state.ronda
@@ -143,7 +146,9 @@ export function cerrarRonda(state: PartidaState): PartidaState {
   const puntosDelGanador = bonusGanadorRonda === 0 ? 0 : -bonusGanadorRonda
 
   const puntos = ronda.jugadores.map((jugador, seat) =>
-    seat === ganador ? puntosDelGanador : puntosDeMano(jugador.hand),
+    ganador !== 'nadie' && seat === ganador
+      ? puntosDelGanador
+      : puntosDeMano(jugador.hand),
   )
 
   const totales = state.totales.map((total, seat) => total + puntos[seat])
@@ -174,7 +179,7 @@ export function cerrarRonda(state: PartidaState): PartidaState {
       players: state.players,
       comodines: state.config.comodines,
       seed: seedDeRonda(state.seed, indiceContrato),
-      empieza: ganador,
+      empieza: ganador === 'nadie' ? ronda.turno : ganador,
     }),
   }
 }

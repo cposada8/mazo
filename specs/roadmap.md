@@ -995,7 +995,7 @@ disagree, because they are the same function. The view also drops `rngState`
 deliberately: whoever holds the stream can predict the stock, so a view
 never carries it — and a test pins that.
 
-### Phase 31 — A ronda that always ends
+### Phase 31 — A ronda that always ends ✅
 The soak has measured it since Phase 9: ~1.3% of partidas reach a state
 nobody can win, because Carioca has no stalemate rule. Online, that is a room
 nobody can leave. The options are already written up in `carioca-rules.md`;
@@ -1004,6 +1004,23 @@ lesson — then into the engine.
 
 **Done when:** the 1,000-partida soak finishes 1,000 — zero stalls — and the
 rule reads in `carioca-rules.md` like it was always there.
+
+**Done.** The owner chose **tablas**: the descarte may rebuild the stock
+twice, and a stock draw that can no longer be served closes the ronda on the
+spot — nobody out, everybody scores their hand, no bonus, the closing seat
+opens the next reparto. `ganador` widened to `number | 'nadie' | null`, the
+relato narrates the close, and the who-won screen has a tablas face.
+
+The instructive part: the rule alone fixed 12 of the 13 stalls. The
+survivor (seed soak-204) never touched the stock at all — two bajado bots
+were passing each other's "useful to the contract" discards forever, and a
+bajado player has no contract left to be useful *to*. El Codicioso now
+draws blind once bajado unless the face-up card can be **ligada right
+now** (`probarEnMesa` answering, not a reimplementation). 1,000/1,000
+finish; ~27 partidas per thousand see a ronda en tablas. 419 tests.
+
+Also in this phase, asked for with the rule: the setup screen at `/jugar`
+gained a **Volver al inicio** link — there was genuinely no way back.
 
 ### Phase 32 — Who you are, and where it is kept
 Two halves of one fact: the app must know who you are without an account,
@@ -1130,7 +1147,7 @@ discarded at random, passed — the relato says so in words, the ring on their
 ficha drained in time with it, and the host's lobby setting is the time it
 actually took.
 
-### Phase 37 — Absences
+### Phase 37 — Absences, and leaving on purpose
 Reconnection, and the seat whose player is gone. The design leans entirely
 on choices already made: a seat belongs to a **per-browser secret** (Phase
 32), not to a connection — and with polling there is no connection to lose.
@@ -1153,6 +1170,16 @@ battery, lost signal: one path serves all three.
   discards — and handed back the moment its owner reappears, starting with
   their next turn.
 
+And leaving is also something you do **on purpose** (asked for by the owner
+with the Phase 31 decision): an **Abandonar** option, deliberately tucked
+behind the menu so nobody hits it by accident, hands you back to the lobby
+and retires your seat for the rest of the partida. The table plays on
+without you: your score and your historial stay on the marcador exactly as
+they stood, but the retired seat is dealt no more cards, takes no more
+turns, and accrues no more points. Retiring a seat mid-ronda is engine work
+— its hand leaves play and the turn order closes over the gap — and is
+specified in `carioca-rules.md` before it is coded, per the standing rule.
+
 If Phase 38 ever swaps polling for a push transport, this is the contract
 it must keep: a dropped socket rejoins by secret and receives the whole
 view again.
@@ -1160,7 +1187,9 @@ view again.
 **Done when:** killing the page mid-turn and reopening the app puts the
 player back at their seat within one poll, hand and turn intact; the other
 players saw the seat go quiet and saw a bot pick it up after repeated
-timeouts; and the returning owner is playing their own turns again.
+timeouts; the returning owner is playing their own turns again; and a
+player who chooses Abandonar lands in the lobby while the table finishes
+the partida without them, their totals frozen where they left.
 
 ### Phase 38 — Real-time transport
 Only if polling feels bad at a real table. The transport sits behind an

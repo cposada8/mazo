@@ -1,6 +1,6 @@
 # Project status — pick up here
 
-Last updated after Phase 30.
+Last updated after Phase 31.
 
 Read this first, then `mission.md` for the why, `carioca-rules.md` for the game,
 `tech-stack.md` for the stack, and `roadmap.md` for what comes next. This file is
@@ -57,8 +57,8 @@ empty seats), and the better bots moved behind it as Milestone 4.
 | 28 | Ajustes from inside the partida | ✅ |
 | 29 | The comodines get a face | ✅ |
 | 30 | The seat's view | ✅ |
-| 31 | A ronda that always ends | ← **next** |
-| 32 | Who you are: identity, alias from a file, persistence | not started |
+| 31 | A ronda that always ends: tablas | ✅ |
+| 32 | Who you are: identity, alias from a file, persistence | ← **next** |
 | 33 | One door: create (host, 3 bots default) or join by code | not started |
 | 34 | The partida lives on the server | not started |
 | 35 | Several people at one table | not started |
@@ -209,9 +209,19 @@ real `apply` run over an imagined ronda whose invented parts are never read.
 The soak passed untouched: zero refused moves. This view is what the server
 sends each player in Phase 34.
 
-**Phase 31 is next — a ronda that always ends.** The stalemate rule: the
-options are written in `carioca-rules.md`, and one has to be settled with
-the owner before anything goes online.
+**Phase 31 is done: every ronda ends.** The owner chose tablas — two
+rebarajadas per ronda, and a stock draw that cannot be served closes the
+ronda with nobody winning; everyone scores their hand. The soak now
+finishes 1,000/1,000 (12 of the 13 old stalls died to the rule; the 13th
+was a bot loop — bajado bots taking "useful" discards with no contract
+left to build — and El Codicioso now draws blind once bajado unless the
+card ligadoes immediately). The owner also asked for two things recorded
+in Phase 37: a deliberate **Abandonar** option, and — already shipped —
+the Volver al inicio link on the setup screen.
+
+**Phase 32 is next — who you are, and where it is kept.** Prisma + Turso,
+and the per-browser identity with its alias from
+`public/candidatos/alias.txt`.
 
 ## Open questions, deliberately unanswered
 

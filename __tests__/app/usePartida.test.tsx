@@ -367,7 +367,7 @@ describe('the end of a ronda', () => {
     expect(resumen.contrato.id).toBe('c1')
     // The scoreboard says the same thing, because it is the same record.
     expect(result.current.partida.historial.at(-1)).toBe(resumen)
-    expect(result.current.partida.totales[resumen.ganador]).toBe(0)
+    expect(result.current.partida.totales[resumen.ganador as number]).toBe(0)
   })
 
   it('freezes the table while the summary is up', () => {

@@ -64,13 +64,33 @@ function decidirRobo(vista: VistaDeAsiento): Move {
   const arriba = vista.descarte.at(-1)
 
   if (arriba) {
-    const conLaCarta = utilidadDeCarta(arriba, [...vista.mano, arriba], vista.contrato)
-    if (conLaCarta >= MITAD_DEL_CAMINO) return { type: 'robar', de: 'descarte' }
+    if (vista.jugadores[vista.asiento].bajadoEnTurno === null) {
+      const conLaCarta = utilidadDeCarta(arriba, [...vista.mano, arriba], vista.contrato)
+      if (conLaCarta >= MITAD_DEL_CAMINO) return { type: 'robar', de: 'descarte' }
+    } else if (ligaDeInmediato(vista, arriba)) {
+      // Once bajado, "useful for the contract" means nothing — the contract is
+      // already on the mesa. The face-up card is only worth taking if it can
+      // be unloaded right now. Anything looser loops: two bajado bots passing
+      // each other's "useful" discards forever is how the one soak stall that
+      // survived the tablas rule actually happened (seed soak-204).
+      return { type: 'robar', de: 'descarte' }
+    }
   }
 
   return vista.stock > 0 || vista.descarte.length > 1
     ? { type: 'robar', de: 'stock' }
     : { type: 'robar', de: 'descarte' }
+}
+
+/** Whether the descarte's top card could be ligada this very turn. */
+function ligaDeInmediato(vista: VistaDeAsiento, arriba: Card): boolean {
+  const trasTomarla: VistaDeAsiento = {
+    ...vista,
+    fase: 'act',
+    mano: [...vista.mano, arriba],
+    descarte: vista.descarte.slice(0, -1),
+  }
+  return ligaEnAlgunGrupo(trasTomarla, arriba) !== null
 }
 
 /**
@@ -92,23 +112,34 @@ function buscarDescarga(vista: VistaDeAsiento): Move | null {
     // discard.
     if (vista.mano.length <= 1) return null
 
-    for (const seat of asientos) {
-      const grupos = vista.jugadores[seat].grupos
-      for (let grupoIndex = 0; grupoIndex < grupos.length; grupoIndex++) {
-        for (const end of ['tail', 'head'] as const) {
-          const move = {
-            type: 'agregar',
-            seat,
-            grupoIndex,
-            cardIds: [card.id],
-            end,
-          } satisfies Move
-          if (probarEnMesa(vista, move).ok) return move
-        }
+    const move = ligaEnAlgunGrupo(vista, card, asientos)
+    if (move) return move
+  }
+
+  return null
+}
+
+/** The first grupo on the mesa that the referee lets this card join. */
+function ligaEnAlgunGrupo(
+  vista: VistaDeAsiento,
+  card: Card,
+  asientos: readonly number[] = vista.jugadores.map((_, seat) => seat),
+): Move | null {
+  for (const seat of asientos) {
+    const grupos = vista.jugadores[seat].grupos
+    for (let grupoIndex = 0; grupoIndex < grupos.length; grupoIndex++) {
+      for (const end of ['tail', 'head'] as const) {
+        const move = {
+          type: 'agregar',
+          seat,
+          grupoIndex,
+          cardIds: [card.id],
+          end,
+        } satisfies Move
+        if (probarEnMesa(vista, move).ok) return move
       }
     }
   }
-
   return null
 }
 
