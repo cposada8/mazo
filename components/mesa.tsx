@@ -69,7 +69,7 @@ export function GrupoEnMesa({
             key={card.id}
             card={card}
             size="xs"
-            className="-ml-[0.55em] first:ml-0"
+            className="-ml-[0.9em] first:ml-0"
             represents={
               grupo.kind === 'escala' && isComodin(card)
                 ? escalaRankAt(grupo as Escala, index)
@@ -356,7 +356,14 @@ export function Mano({
 
           return (
             <div key={seccion.id} className="flex shrink-0 flex-col gap-0.5">
-              <div className="flex w-max pl-3">
+              {/*
+                The fan is tight on purpose: each card only shows its left
+                edge, and since Phase 25 that edge carries the whole identity
+                — rank with its pinta right under it, like a real card. The
+                overlap scales with the card so the visible slice is always
+                the corner plus a finger's worth.
+              */}
+              <div className="flex w-max pl-[calc(var(--carta-md,5rem)*0.34)]">
                 {seccion.cards.map((card) => {
                   const elegida = seleccionadas?.has(card.id) ?? false
                   const carta = (
@@ -376,12 +383,18 @@ export function Mano({
                       type="button"
                       onClick={() => onCarta(card.id)}
                       aria-pressed={elegida}
-                      className={cn('-ml-3 shrink-0', elegida && 'z-10')}
+                      className={cn(
+                        '-ml-[calc(var(--carta-md,5rem)*0.34)] shrink-0',
+                        elegida && 'z-10',
+                      )}
                     >
                       {carta}
                     </button>
                   ) : (
-                    <div key={card.id} className="-ml-3 shrink-0">
+                    <div
+                      key={card.id}
+                      className="-ml-[calc(var(--carta-md,5rem)*0.34)] shrink-0"
+                    >
                       {carta}
                     </div>
                   )

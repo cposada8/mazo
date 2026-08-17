@@ -433,7 +433,7 @@ Three things came out differently than written above:
   20.
 
 Left deliberately undone: animations, real avatars, and any decoration of the
-room beyond a dark ground. Those are Phase 27, and none of them is what made
+room beyond a dark ground. Those are Phase 28, and none of them is what made
 the old screen unreadable.
 
 ### Phase 18 — Room to play ✅
@@ -521,7 +521,7 @@ arrangement — seats across the top, mesa in the middle, hand along the
 bottom — so this phase is a container query on `.cancha`, not a second
 layout. Below 1:1 aspect the oval hides and the grupos wrap into rows
 (portrait's spare dimension is height, so the mesa trades its sideways
-scroll for wrapping — which incidentally previews the fix Phase 27 wants
+scroll for wrapping — which incidentally previews the fix Phase 28 wants
 for the six-player overflow). The rotate-your-phone screen is deleted, the
 manifest orientation loosened to `any`, and rotation mid-turn was verified
 to preserve selection and bloques — nothing unmounts, so nothing is lost.
@@ -615,7 +615,7 @@ ways of showing a move that has already been made:
 One rule shapes the line: **it may only say what everybody can see.** A card
 taken off the descarte was face up, so it is named. A card off the mazo is
 secret, and the line says only that somebody drew — never which card. That is
-the same discipline Phase 25 makes structural, and writing the log against it
+the same discipline Phase 26 makes structural, and writing the log against it
 first is a rehearsal: a public log is a view of the ronda with one seat's
 privileges, which is precisely what a bot is about to be handed.
 
@@ -703,23 +703,45 @@ preference, not an arrangement, so the next hand arrives already sorted
 (Claude's call). The historial keeps `Relato` values, not strings, so the
 information rule is enforced by the same type it was written in.
 
+### Phase 25 — Cards with corners ✅
+Asked for after playing with the Phase 24 build: the hand cards were still too
+big, and the old face — rank top-left, pinta alone in the middle — wasted the
+one part of a fanned card that stays visible. A real card prints the rank in
+the corner with its pinta **directly underneath**, precisely so a fan can be
+held tight; ours now does the same, mirrored in the far corner, with the
+centre pip kept as decoration for the cards that sit uncovered.
+
+With the corner carrying the whole identity, the fan tightens: the overlap
+scales with the card (each shows its left edge plus a finger's worth) and the
+hand cards shrink about 15%. The payoff measured at 615 × 287: a dealt hand
+of twelve went from scrolling off-screen to **372 pixels wide, all visible at
+once** — the mesa lane got taller for free.
+
+**Done when:** every card in a tightly fanned hand is identifiable by its
+left edge alone, the whole dealt hand fits a phone lying down without
+scrolling, and the comodín still shows what it stands for while overlapped.
+
+**Done.** The comodín's binding moved into its corner too (★ with the rank it
+stands for underneath) — bottom-corner labels vanish under the next card in a
+tight fan, corners do not.
+
 ---
 
 ## Milestone 3 — Bots worth playing
 
-### Phase 25 — Bot framework
+### Phase 26 — Bot framework
 Extract the strategy interface: a bot receives the legal state it can see and
 returns a move. Add hand-evaluation helpers shared by all bots.
 **Done when:** a new bot can be added in one file with no engine changes.
 
-### Phase 26 — Bot personalities
+### Phase 27 — Bot personalities
 At least three bots that differ observably: e.g. one that hoards for the perfect
 meld, one that lays down at the first opportunity, one that watches discards and
 plays around opponents. Give them names and short descriptions in the UI.
 **Done when:** a head-to-head tournament shows different win rates and visibly
 different play. **This is Milestone 3.**
 
-### Phase 27 — Rough edges
+### Phase 28 — Rough edges
 A hint for new players, an in-game rules summary, and an end-of-game screen.
 Card animations were pulled forward into Phase 22; what is left here is the
 mesa that runs off the right edge when six players are deep into a partida —
@@ -732,26 +754,26 @@ asking for help, and a full mesa can be read without scrolling to find it.
 
 ## Milestone 4 — Playable together
 
-### Phase 28 — Persistence without accounts
+### Phase 29 — Persistence without accounts
 Prisma schema, finished partidas saved, and a guest identity that survives a
 page reload without anyone signing up. How a seat is claimed and protected is an
 open design question — see `tech-stack.md`.
 **Done when:** a player reloads mid-partida and is still themselves, and nobody
 can claim a seat that is not theirs.
 
-### Phase 29 — Rooms
+### Phase 30 — Rooms
 Create a room, get an invite code, join as a guest with a nickname, see who is in
 the lobby, start when everyone is ready. No gameplay yet.
 **Done when:** three devices sit in the same lobby.
 
-### Phase 30 — Server-authoritative play
+### Phase 31 — Server-authoritative play
 The game state lives on the server. Each player receives only their own hand and
 public information. Moves are submitted and validated server-side. Updates by
 polling.
 **Done when:** three people in three places finish a game from one invite code,
 and no client ever receives another player's cards. **This is Milestone 4.**
 
-### Phase 31 — Real-time transport
+### Phase 32 — Real-time transport
 Replace polling with a push transport behind the same interface. Handle
 disconnects and reconnects, and let a bot take over an abandoned seat.
 **Done when:** a player closes the tab mid-game, returns, and the game is intact.

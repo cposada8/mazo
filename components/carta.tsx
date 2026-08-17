@@ -24,15 +24,9 @@ const RED_SUITS: ReadonlySet<Suit> = new Set<Suit>(['hearts', 'diamonds'])
 export type TamanoDeCarta = 'xs' | 'sm' | 'md'
 
 const TAMANOS: Record<TamanoDeCarta, string> = {
-  xs: 'h-[var(--carta-xs,2.75rem)] text-[calc(var(--carta-xs,2.75rem)*0.22)] p-[0.2em]',
-  sm: 'h-[var(--carta-sm,3.5rem)] text-[calc(var(--carta-sm,3.5rem)*0.21)] p-[0.3em]',
-  md: 'h-[var(--carta-md,5rem)] text-[calc(var(--carta-md,5rem)*0.175)] p-[0.4em]',
-}
-
-const SIMBOLO: Record<TamanoDeCarta, string> = {
-  xs: 'text-[1.1em]',
-  sm: 'text-[1.15em]',
-  md: 'text-[1.4em]',
+  xs: 'h-[var(--carta-xs,2.75rem)] text-[calc(var(--carta-xs,2.75rem)*0.26)]',
+  sm: 'h-[var(--carta-sm,3.5rem)] text-[calc(var(--carta-sm,3.5rem)*0.22)]',
+  md: 'h-[var(--carta-md,5rem)] text-[calc(var(--carta-md,5rem)*0.19)]',
 }
 
 type CartaProps = {
@@ -47,11 +41,19 @@ type CartaProps = {
   className?: string
 }
 
+/**
+ * A card face is drawn like a real card's: the rank in the top-left corner
+ * with its pinta directly underneath, mirrored in the opposite corner, and a
+ * decorative pip in the middle. The corner is the point — a fanned hand only
+ * shows each card's left edge, and that edge has to identify the card on its
+ * own for the fan to be worth tightening.
+ *
+ * A card face does not follow the theme: it is a physical object under the
+ * table's light, and it stays the most legible thing on the screen — white,
+ * in a dark room, in either theme.
+ */
 export function Carta({ card, represents, size = 'md', className }: CartaProps) {
-  // A card face does not follow the theme: it is a physical object under the
-  // table's light, and it stays the most legible thing on the screen — white,
-  // in a dark room, in either theme.
-  const base = `flex ${TAMANOS[size]} aspect-[8/11] shrink-0 flex-col justify-between rounded-md border border-stone-300/80 bg-stone-50 leading-none shadow-sm select-none`
+  const base = `relative ${TAMANOS[size]} aspect-[8/11] shrink-0 rounded-md border border-stone-300/80 bg-stone-50 leading-none shadow-sm select-none`
 
   if (isComodin(card)) {
     return (
@@ -63,11 +65,14 @@ export function Carta({ card, represents, size = 'md', className }: CartaProps) 
         )}
         title={represents ? `Comodín valiendo ${represents}` : 'Comodín'}
       >
-        <span className="font-semibold">★</span>
-        <span className={cn('self-center', SIMBOLO[size])}>☺</span>
-        <span className="self-end text-[0.9em] font-medium tabular-nums">
-          {represents ?? ''}
+        <Esquina arriba="★" abajo={represents} />
+        <span
+          aria-hidden
+          className="absolute inset-0 flex items-center justify-center text-[1.5em]"
+        >
+          ☺
         </span>
+        <Esquina arriba="★" abajo={represents} rotada />
       </div>
     )
   }
@@ -77,19 +82,47 @@ export function Carta({ card, represents, size = 'md', className }: CartaProps) 
 
   return (
     <div
-      className={cn(
-        base,
-        red ? 'text-red-600' : 'text-stone-900',
-        className,
-      )}
+      className={cn(base, red ? 'text-red-600' : 'text-stone-900', className)}
       title={`${card.rank}${symbol}`}
     >
-      <span className="font-semibold tabular-nums">{card.rank}</span>
-      <span className={cn('self-center', SIMBOLO[size])}>{symbol}</span>
-      <span className="rotate-180 self-end font-semibold tabular-nums">
-        {card.rank}
+      <Esquina arriba={card.rank} abajo={symbol} />
+      <span
+        aria-hidden
+        className="absolute inset-0 flex items-center justify-center text-[1.5em]"
+      >
+        {symbol}
       </span>
+      <Esquina arriba={card.rank} abajo={symbol} rotada />
     </div>
+  )
+}
+
+/**
+ * A corner index: rank on top, pinta right under it, the way a real card is
+ * printed. The mirrored copy sits in the far corner so the card reads from
+ * either way up.
+ */
+function Esquina({
+  arriba,
+  abajo,
+  rotada,
+}: {
+  arriba: string
+  abajo?: string
+  rotada?: boolean
+}) {
+  return (
+    <span
+      className={cn(
+        'absolute flex flex-col items-center gap-[0.08em] font-semibold tabular-nums',
+        rotada
+          ? 'right-[0.2em] bottom-[0.22em] rotate-180'
+          : 'top-[0.22em] left-[0.2em]',
+      )}
+    >
+      <span>{arriba}</span>
+      {abajo && <span className="text-[0.85em]">{abajo}</span>}
+    </span>
   )
 }
 

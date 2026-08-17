@@ -5,7 +5,7 @@ import { contratoPorId, describeCard, startRonda } from '@/lib/engine'
 /**
  * The one rule that shapes the log: it may only say what everybody can see.
  * A stock draw is secret, a descarte draw was face up, a discard lands face
- * up. These tests are the rehearsal for Phase 25's structural discipline.
+ * up. These tests are the rehearsal for Phase 26's structural discipline.
  */
 
 const NOMBRES = ['Ana', 'Beto', 'Carla']
