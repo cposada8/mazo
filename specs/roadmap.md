@@ -29,12 +29,16 @@ one trivial test.
 
 **Done.** Live at **https://mazo-six.vercel.app**. Build and tests green.
 
-### Phase 2 — Cards and the mazo
+### Phase 2 — Cards and the mazo ✅
 Card representation with per-instance ids (there are two of every card), the
 cyclic rank ring, deck construction with the comodines toggle, a seeded random
 stream, and dealing.
 **Done when:** the same seed always produces the same deal, proven by a test, and
 consecutiveness works across the K–A–2 wrap.
+
+**Done.** `lib/engine/{cards,random,deck}.ts`, 67 tests. A `purity.test.ts`
+enforces the import rule so the engine cannot quietly grow a dependency on the
+app.
 
 ### Phase 3 — Grupos
 Validate a trío and an escala, with comodines bound to the card they stand for.
