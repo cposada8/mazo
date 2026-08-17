@@ -11,6 +11,7 @@ import {
   aplicarEnPartida,
   describeCard,
   startPartida,
+  vistaDeAsiento,
 } from '@/lib/engine'
 
 const MAX_MOVIMIENTOS = 800
@@ -31,7 +32,7 @@ function simular(seed: string, jugadores: number): Instantanea[] {
 
   for (let i = 0; i < MAX_MOVIMIENTOS && partida.ronda; i++) {
     const ronda = partida.ronda
-    const move = codicioso.decidir(ronda)
+    const move = codicioso.decidir(vistaDeAsiento(ronda, ronda.turno))
     const descripcion = describirMove(move, ronda)
 
     const result = aplicarEnPartida(partida, move)

@@ -16,6 +16,7 @@ import {
   type PartidaState,
   aplicarEnPartida,
   startPartida,
+  vistaDeAsiento,
 } from '@/lib/engine'
 import type { Bot } from './codicioso'
 
@@ -74,7 +75,8 @@ export function jugarPartida(options: {
         return { partida, motivo: 'TOPE_DE_MOVIMIENTOS', turnos }
       }
 
-      const move = bot.decidir(partida.ronda)
+      // The runner holds the full state; a bot only ever sees its view.
+      const move = bot.decidir(vistaDeAsiento(partida.ronda, partida.ronda.turno))
       const result = aplicarEnPartida(partida, move)
 
       if (!result.ok) {

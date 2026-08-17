@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   CONFIG_POR_DEFECTO,
+  vistaDeAsiento,
   type PartidaState,
   aplicarEnPartida,
   contratoPorId,
@@ -175,7 +176,7 @@ describe('two bots, every contract on', () => {
     let movimientos = 0
     while (partida.ronda && movimientos < 20_000) {
       expect(sinComodines(partida.ronda)).toBe(true)
-      const result = aplicarEnPartida(partida, codicioso.decidir(partida.ronda))
+      const result = aplicarEnPartida(partida, codicioso.decidir(vistaDeAsiento(partida.ronda, partida.ronda.turno)))
       expect(result.ok).toBe(true)
       if (!result.ok) return
       partida = result.state

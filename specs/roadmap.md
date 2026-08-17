@@ -961,7 +961,7 @@ front of them, and what was learned since they were written:
 
 ## Milestone 3 — Playable together
 
-### Phase 30 — The seat's view
+### Phase 30 — The seat's view ✅
 What one seat can legitimately see, as a type: its own hand, everyone's
 grupos, the descarte (browsable since Phase 24, public by definition), the
 piles' sizes, everyone's card counts, whose turn it is, the fase, the
@@ -982,6 +982,18 @@ so it is worth getting right rather than fast.
 **Done when:** the Phase 9 soak passes unchanged with the bot deciding from
 the view alone, and a test proves that building any seat's view of any state
 yields no card of any other hand.
+
+**Done.** `lib/engine/vista.ts`, 409 tests. The soak passed untouched — zero
+refused moves with the bot deciding from its view. The port surfaced one
+design question worth recording: the bot *tries* mesa moves before making
+them, and a view cannot run `apply`. The answer is `probarEnMesa`, in the
+engine: a mesa move's legality depends only on public information plus the
+mover's own hand, so the trial imagines the ronda around the view — other
+hands empty, stock empty — and asks the **real** `apply`, whose mesa code
+paths never read the imagined parts. The trial and the referee cannot
+disagree, because they are the same function. The view also drops `rngState`
+deliberately: whoever holds the stream can predict the stock, so a view
+never carries it — and a test pins that.
 
 ### Phase 31 — A ronda that always ends
 The soak has measured it since Phase 9: ~1.3% of partidas reach a state

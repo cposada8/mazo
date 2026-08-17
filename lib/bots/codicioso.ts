@@ -7,23 +7,25 @@
  * reading of opponents, and no waiting for a better hand — those belong to the
  * bots with difficulty levels, later.
  *
- * It looks only at its own seat and the public piles. Never at another hand.
+ * It cannot peek at another hand, because it never receives one: a bot decides
+ * from a `VistaDeAsiento` — what its seat can legitimately see — and the view
+ * has no field that could carry anyone else's cards (Phase 30).
  */
 
 import {
   type Card,
   type Move,
-  type RondaState,
-  apply,
+  type VistaDeAsiento,
   isComodin,
+  probarEnMesa,
   puntosDeCarta,
 } from '@/lib/engine'
 import { buscarAgrupacion, utilidadDeCarta } from './agrupar'
 
 export type Bot = {
   readonly nombre: string
-  /** One legal move for the seat whose turn it is. */
-  decidir(state: RondaState): Move
+  /** One legal move for the seat whose turn it is, decided from its view. */
+  decidir(vista: VistaDeAsiento): Move
 }
 
 export const codicioso: Bot = {
@@ -31,22 +33,20 @@ export const codicioso: Bot = {
   decidir: decidirCodicioso,
 }
 
-export function decidirCodicioso(state: RondaState): Move {
-  const jugador = state.jugadores[state.turno]
-
-  if (state.fase === 'draw') return decidirRobo(state)
+export function decidirCodicioso(vista: VistaDeAsiento): Move {
+  if (vista.fase === 'draw') return decidirRobo(vista)
 
   // Lay down at the first opportunity. A patient bot would sometimes wait; this
   // one never does, which is exactly what makes it a baseline.
-  if (jugador.bajadoEnTurno === null) {
-    const agrupacion = buscarAgrupacion(jugador.hand, state.contrato)
+  if (vista.jugadores[vista.asiento].bajadoEnTurno === null) {
+    const agrupacion = buscarAgrupacion(vista.mano, vista.contrato)
     if (agrupacion) return { type: 'bajarse', propuestas: agrupacion }
   } else {
-    const descarga = buscarDescarga(state)
+    const descarga = buscarDescarga(vista)
     if (descarga) return descarga
   }
 
-  return { type: 'descartar', cardId: peorCarta(state).id }
+  return { type: 'descartar', cardId: peorCarta(vista).id }
 }
 
 /**
@@ -60,52 +60,50 @@ export function decidirCodicioso(state: RondaState): Move {
  */
 const MITAD_DEL_CAMINO = 0.5
 
-function decidirRobo(state: RondaState): Move {
-  const jugador = state.jugadores[state.turno]
-  const arriba = state.discard.at(-1)
+function decidirRobo(vista: VistaDeAsiento): Move {
+  const arriba = vista.descarte.at(-1)
 
   if (arriba) {
-    const conLaCarta = utilidadDeCarta(arriba, [...jugador.hand, arriba], state.contrato)
+    const conLaCarta = utilidadDeCarta(arriba, [...vista.mano, arriba], vista.contrato)
     if (conLaCarta >= MITAD_DEL_CAMINO) return { type: 'robar', de: 'descarte' }
   }
 
-  return state.stock.length > 0 || state.discard.length > 1
+  return vista.stock > 0 || vista.descarte.length > 1
     ? { type: 'robar', de: 'stock' }
     : { type: 'robar', de: 'descarte' }
 }
 
 /**
- * The first card that the engine will accept onto some grupo already on the
+ * The first card that the referee will accept onto some grupo already on the
  * mesa. Proposing and letting the referee answer avoids re-implementing the
- * rules about who may touch what and when.
+ * rules about who may touch what and when — `probarEnMesa` runs the real
+ * `apply` over the view, so the trial and the real move cannot disagree.
  */
-function buscarDescarga(state: RondaState): Move | null {
-  const jugador = state.jugadores[state.turno]
-
+function buscarDescarga(vista: VistaDeAsiento): Move | null {
   // Own grupos first, simply as a preference: on the turn it bajó the engine
   // refuses every one of these, and the bot falls through to a discard.
   const asientos = [
-    state.turno,
-    ...state.jugadores.map((_, seat) => seat).filter((seat) => seat !== state.turno),
+    vista.asiento,
+    ...vista.jugadores.map((_, seat) => seat).filter((seat) => seat !== vista.asiento),
   ]
 
-  for (const card of jugador.hand) {
+  for (const card of vista.mano) {
     // Never unload the last card this way — the turn still has to end in a
     // discard.
-    if (jugador.hand.length <= 1) return null
+    if (vista.mano.length <= 1) return null
 
     for (const seat of asientos) {
-      const grupos = state.jugadores[seat].grupos
+      const grupos = vista.jugadores[seat].grupos
       for (let grupoIndex = 0; grupoIndex < grupos.length; grupoIndex++) {
         for (const end of ['tail', 'head'] as const) {
-          const move: Move = {
+          const move = {
             type: 'agregar',
             seat,
             grupoIndex,
             cardIds: [card.id],
             end,
-          }
-          if (apply(state, move).ok) return move
+          } satisfies Move
+          if (probarEnMesa(vista, move).ok) return move
         }
       }
     }
@@ -118,12 +116,10 @@ function buscarDescarga(state: RondaState): Move | null {
  * The card to throw: least useful first, and among equally useless ones the
  * most expensive, since points are penalties.
  */
-function peorCarta(state: RondaState): Card {
-  const jugador = state.jugadores[state.turno]
-
-  return jugador.hand.reduce((peor, card) => {
-    const utilidadCard = utilidadDeCarta(card, jugador.hand, state.contrato)
-    const utilidadPeor = utilidadDeCarta(peor, jugador.hand, state.contrato)
+function peorCarta(vista: VistaDeAsiento): Card {
+  return vista.mano.reduce((peor, card) => {
+    const utilidadCard = utilidadDeCarta(card, vista.mano, vista.contrato)
+    const utilidadPeor = utilidadDeCarta(peor, vista.mano, vista.contrato)
 
     if (utilidadCard !== utilidadPeor) return utilidadCard < utilidadPeor ? card : peor
     if (isComodin(card) || isComodin(peor)) return isComodin(peor) ? card : peor

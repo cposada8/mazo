@@ -1,6 +1,6 @@
 # Project status — pick up here
 
-Last updated after Phase 29.
+Last updated after Phase 30.
 
 Read this first, then `mission.md` for the why, `carioca-rules.md` for the game,
 `tech-stack.md` for the stack, and `roadmap.md` for what comes next. This file is
@@ -56,8 +56,8 @@ empty seats), and the better bots moved behind it as Milestone 4.
 | 27 | Sin comodines, and the flipped defaults | ✅ |
 | 28 | Ajustes from inside the partida | ✅ |
 | 29 | The comodines get a face | ✅ |
-| 30 | The seat's view | ← **next** |
-| 31 | A ronda that always ends | not started |
+| 30 | The seat's view | ✅ |
+| 31 | A ronda that always ends | ← **next** |
 | 32 | Who you are: identity, alias from a file, persistence | not started |
 | 33 | One door: create (host, 3 bots default) or join by code | not started |
 | 34 | The partida lives on the server | not started |
@@ -200,17 +200,18 @@ personalities and the rough edges moved behind all of it. The full argument
 and each phase's done-when are in `roadmap.md` under "Online moves to the
 front".
 
-**Phase 30 — the seat's view** is first. Right now a bot receives the whole
-`RondaState` and is merely well-behaved about not reading other hands. Phase
-30 makes that structural: a **view** of what one seat can legitimately see —
-its own hand, the grupos on the mesa, the descarte, how many cards everyone
-holds. A bot takes the view and returns a `Move`.
+**Phase 30 is done: the seat's view.** `lib/engine/vista.ts` — a
+`VistaDeAsiento` holds exactly one hand (its own seat's), everyone else as
+counts, grupos and bajado status, the stock as a number, and no `rngState`
+(whoever holds the stream can predict the stock). Bots decide from a view —
+`decidir(vista)` — and `probarEnMesa` lets them try mesa moves against the
+real `apply` run over an imagined ronda whose invented parts are never read.
+The soak passed untouched: zero refused moves. This view is what the server
+sends each player in Phase 34.
 
-That same view is what the server sends each player in Phase 34, so it is
-worth getting right rather than fast. It also unlocks what bots with memory
-need: once the input is explicitly "what this seat has seen", remembering
-discards and reading opponents becomes a property of the bot rather than a
-licence to peek.
+**Phase 31 is next — a ronda that always ends.** The stalemate rule: the
+options are written in `carioca-rules.md`, and one has to be settled with
+the owner before anything goes online.
 
 ## Open questions, deliberately unanswered
 

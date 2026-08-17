@@ -13,6 +13,7 @@ import {
   type Move,
   type PartidaState,
   aplicarEnPartida,
+  vistaDeAsiento,
 } from '@/lib/engine'
 import { codicioso } from './codicioso'
 
@@ -38,7 +39,8 @@ export function movesDelTurno(partida: PartidaState): Move[] {
     // opening turn there is a new turn, not a continuation of this one.
     if (estado.historial.length !== partida.historial.length) break
 
-    const move = codicioso.decidir(actual)
+    // The runner holds the full state; the bot only ever sees its view.
+    const move = codicioso.decidir(vistaDeAsiento(actual, seat))
     const result = aplicarEnPartida(estado, move)
     if (!result.ok) break
 

@@ -1,15 +1,21 @@
 import { describe, expect, it } from 'vitest'
 import {
   type Move,
+  type RondaState,
   apply,
   contratoPorId,
   crearEscenario,
   describeCard,
   isComodin,
+  vistaDeAsiento,
 } from '@/lib/engine'
 import { decidirCodicioso } from '@/lib/bots'
 
 const DOS_TRIOS = contratoPorId('c1')!
+
+/** The bot only ever sees its view; these tests hold full states. */
+const decidir = (state: RondaState): Move =>
+  decidirCodicioso(vistaDeAsiento(state, state.turno))
 
 describe('drawing', () => {
   it('takes the descarte when the card has partners in hand', () => {
@@ -20,7 +26,7 @@ describe('drawing', () => {
       seed: 'robo',
     })
 
-    expect(decidirCodicioso(state)).toEqual({ type: 'robar', de: 'descarte' })
+    expect(decidir(state)).toEqual({ type: 'robar', de: 'descarte' })
   })
 
   it('takes the stock when the face-up card is a loner', () => {
@@ -31,7 +37,7 @@ describe('drawing', () => {
       seed: 'robo-2',
     })
 
-    const move = decidirCodicioso(state)
+    const move = decidir(state)
     // The filler could hand it a partner for the ace, so accept either — what
     // matters is that it draws.
     expect(move.type).toBe('robar')
@@ -51,7 +57,7 @@ describe('laying down', () => {
     const robado = apply(listo(), { type: 'robar', de: 'stock' })
     if (!robado.ok) throw new Error(robado.code)
 
-    const move = decidirCodicioso(robado.state)
+    const move = decidir(robado.state)
     expect(move.type).toBe('bajarse')
     if (move.type === 'bajarse') expect(move.propuestas).toHaveLength(2)
   })
@@ -60,7 +66,7 @@ describe('laying down', () => {
     const robado = apply(listo(), { type: 'robar', de: 'stock' })
     if (!robado.ok) throw new Error(robado.code)
 
-    const bajada = apply(robado.state, decidirCodicioso(robado.state))
+    const bajada = apply(robado.state, decidir(robado.state))
     expect(bajada.ok).toBe(true)
   })
 
@@ -71,7 +77,7 @@ describe('laying down', () => {
 
     // Play the rest of the turn: lay down, unload, discard.
     for (let i = 0; i < 20; i++) {
-      const move = decidirCodicioso(current)
+      const move = decidir(current)
       const result = apply(current, move)
       if (!result.ok) throw new Error(`${result.code}: ${result.detail}`)
       current = result.state
@@ -97,7 +103,7 @@ describe('discarding', () => {
     })
 
     const enFaseDeActuar = { ...state, fase: 'act' as const }
-    const move = decidirCodicioso(enFaseDeActuar)
+    const move = decidir(enFaseDeActuar)
 
     expect(move.type).toBe('descartar')
     if (move.type === 'descartar') {
@@ -114,7 +120,7 @@ describe('discarding', () => {
       seed: 'comodin',
     })
 
-    const move = decidirCodicioso({ ...state, fase: 'act' })
+    const move = decidir({ ...state, fase: 'act' })
     expect(move.type).toBe('descartar')
     if (move.type === 'descartar') {
       const card = state.jugadores[0].hand.find((c) => c.id === move.cardId)!
@@ -140,7 +146,7 @@ describe('it does not peek', () => {
       seed: 'espiar',
     })
 
-    const decision = (state: typeof base): Move => decidirCodicioso(state)
+    const decision = (state: typeof base): Move => decidir(state)
     expect(decision(base).type).toEqual(decision(otro).type)
   })
 })
