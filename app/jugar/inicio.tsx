@@ -21,6 +21,10 @@ export type Ajustes = {
   contratos: Contrato[]
   /** Seconds a bot spends on its whole turn — draw, unload and discard. */
   segundosBot: number
+  /** May the descarte pile be browsed, or does memory stay part of the game? */
+  verDescarte: boolean
+  /** May the relato line be opened into the ronda's whole story? */
+  verHistorial: boolean
 }
 
 /** Whole-turn thinking times on offer. Two is the pace of a real table. */
@@ -46,6 +50,8 @@ export function Inicio({
   const [jugadores, setJugadores] = useState(3)
   const [semilla, setSemilla] = useState('')
   const [segundosBot, setSegundosBot] = useState(2)
+  const [verDescarte, setVerDescarte] = useState(true)
+  const [verHistorial, setVerHistorial] = useState(true)
   const [encendidos, setEncendidos] = useState<readonly string[]>(
     CONTRATOS_POR_DEFECTO,
   )
@@ -91,6 +97,8 @@ export function Inicio({
       seed: limpiarSemilla(semilla) || semillaAleatoria(),
       contratos: [...contratos],
       segundosBot,
+      verDescarte,
+      verHistorial,
     })
   }
 
@@ -214,6 +222,46 @@ export function Inicio({
         <p className="text-muted-foreground text-sm text-balance">
           El turno completo del bot — robar, bajar y botar — cabe en ese
           tiempo, y el anillo del que juega se va vaciando.
+        </p>
+      </section>
+
+      <section className="flex flex-col gap-3">
+        <h2 className="text-muted-foreground text-xs font-medium tracking-widest uppercase">
+          Ayudas de memoria
+        </h2>
+        <label className="flex items-center gap-3 text-sm">
+          <input
+            type="checkbox"
+            checked={verDescarte}
+            onChange={() => setVerDescarte((antes) => !antes)}
+            className="size-4 accent-current"
+          />
+          <span>
+            Mirar el descarte completo
+            <span className="text-muted-foreground">
+              {' '}
+              — tocando el número de la pila
+            </span>
+          </span>
+        </label>
+        <label className="flex items-center gap-3 text-sm">
+          <input
+            type="checkbox"
+            checked={verHistorial}
+            onChange={() => setVerHistorial((antes) => !antes)}
+            className="size-4 accent-current"
+          />
+          <span>
+            Releer lo que ha pasado
+            <span className="text-muted-foreground">
+              {' '}
+              — tocando la línea de la última jugada
+            </span>
+          </span>
+        </label>
+        <p className="text-muted-foreground text-sm text-balance">
+          Nada de esto cambia una regla: solo muestra lo que ya pasó a la
+          vista de todos. Apágalas si recordar es parte del juego en tu mesa.
         </p>
       </section>
 

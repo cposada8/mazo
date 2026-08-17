@@ -61,6 +61,8 @@ export function usePartida(options: {
   const [resumen, setResumen] = useState<Marcador | null>(null)
   /** The last public thing that happened, for the line under the piles. */
   const [relato, setRelato] = useState<Relato | null>(null)
+  /** Everything public that has happened this ronda, in order. */
+  const [historia, setHistoria] = useState<readonly Relato[]>([])
   /** The card currently travelling across the table, if any. */
   const [viaje, setViaje] = useState<Viaje | null>(null)
   const proximoViaje = useRef(1)
@@ -85,6 +87,7 @@ export function usePartida(options: {
     // The log belongs to the ronda it narrated; the summary screen tells the
     // ending better than a stale line could.
     setRelato(null)
+    setHistoria([])
     setViaje(null)
   }
 
@@ -117,11 +120,26 @@ export function usePartida(options: {
     return propuestas.filter((p) => p.cardIds.every((id) => enMano.has(id)))
   }, [ronda, propuestas])
 
+  /**
+   * The sort that is currently latched, if any. While it is down, the loose
+   * cards re-sort themselves on every change — the card you draw files itself
+   * into place. It is a preference, not an arrangement, so unlike `orden` and
+   * `bloques` it survives a new reparto: the next hand arrives already sorted.
+   */
+  const [acomodoActivo, setAcomodoActivo] = useState<Acomodo | null>(null)
+
   /** Your hand laid out: pinned bloques first, then the loose cards. */
   const secciones = useMemo(() => {
     if (!ronda) return []
-    return distribuir(ronda.jugadores[TU_ASIENTO].hand, orden, bloques)
-  }, [ronda, orden, bloques])
+    const hand = ronda.jugadores[TU_ASIENTO].hand
+    if (!acomodoActivo) return distribuir(hand, orden, bloques)
+
+    // Latched: the order is computed, not remembered.
+    const fijadas = new Set(bloques.flat())
+    const sueltas = hand.filter((card) => !fijadas.has(card.id))
+    const ordenadas = acomodar(sueltas, acomodoActivo).map((card) => card.id)
+    return distribuir(hand, ordenadas, bloques)
+  }, [ronda, orden, bloques, acomodoActivo])
 
   const mano = useMemo<Card[]>(() => aplanar(secciones), [secciones])
 
@@ -148,16 +166,25 @@ export function usePartida(options: {
   )
 
   /**
-   * Sort only what is loose. Pinned bloques are exactly the cards you have said
-   * you want left alone, so an arrangement button that scattered them would be
-   * doing the opposite of what it says.
+   * Latch or release a sort. Pinned bloques are exactly the cards you have
+   * said you want left alone, so neither state ever touches them.
+   *
+   * Releasing freezes the hand exactly as it lies — the sorted order is
+   * written into `orden`, so nothing moves — and newly drawn cards go back to
+   * arriving at the end, where they are easy to notice.
    */
   const acomodarMano = useCallback(
     (como: Acomodo) => {
-      const sueltas = secciones.find((seccion) => !seccion.bloqueada)?.cards ?? []
-      setOrden(acomodar(sueltas, como).map((card) => card.id))
+      if (acomodoActivo === como) {
+        const sueltas =
+          secciones.find((seccion) => !seccion.bloqueada)?.cards ?? []
+        setOrden(sueltas.map((card) => card.id))
+        setAcomodoActivo(null)
+        return
+      }
+      setAcomodoActivo(como)
     },
-    [secciones],
+    [acomodoActivo, secciones],
   )
 
   const fijarSeleccion = useCallback(() => {
@@ -197,6 +224,9 @@ export function usePartida(options: {
           hacia,
         ),
       )
+      // Moving cards by hand is a claim about where they go; a latched sort
+      // would put them right back, so the move releases it.
+      setAcomodoActivo(null)
     },
     [secciones, seleccion],
   )
@@ -216,15 +246,31 @@ export function usePartida(options: {
     if (!ronda) return
 
     const cuento = relatar(move, ronda)
-    if (cuento) setRelato(cuento)
+    if (cuento) {
+      setRelato(cuento)
+      setHistoria((antes) => [...antes, cuento])
+    }
 
     if (move.type === 'robar') {
       setViaje({
         clave: proximoViaje.current++,
-        de: move.de,
-        seat: ronda.turno,
+        desde: { pila: move.de },
+        hasta: { seat: ronda.turno },
         // Only the descarte card was face up; a stock draw travels face down.
         carta: move.de === 'descarte' ? (ronda.discard.at(-1) ?? null) : null,
+      })
+    }
+
+    if (move.type === 'descartar') {
+      const carta = ronda.jugadores[ronda.turno].hand.find(
+        (card) => card.id === move.cardId,
+      )
+      setViaje({
+        clave: proximoViaje.current++,
+        desde: { seat: ronda.turno },
+        hasta: { pila: 'descarte' },
+        // A discard lands face up: everybody sees it, so the trip shows it.
+        carta: carta ?? null,
       })
     }
   }, [])
@@ -427,8 +473,12 @@ export function usePartida(options: {
     reloj: { segundos: segundosBot, clave: claveDeTurno },
     /** The last public thing that happened. */
     relato,
+    /** Everything public that happened this ronda, oldest first. */
+    historia,
     /** The card travelling across the table right now, if any. */
     viaje,
+    /** Which sort is latched, if any. */
+    acomodoActivo,
     /** True once the last contract has been played and scored. */
     seAcabo: partida.ronda === null,
     siguiente,

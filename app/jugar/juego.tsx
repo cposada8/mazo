@@ -19,7 +19,7 @@ import {
   hayPantallaCompleta,
   usePantallaCompleta,
 } from '@/lib/pantalla'
-import { contarRelato } from '@/lib/relato'
+import { type Relato, contarRelato } from '@/lib/relato'
 import {
   CONFIG_POR_DEFECTO,
   type Card,
@@ -35,6 +35,8 @@ export function Juego({
   seed,
   contratos,
   segundosBot,
+  verDescarte,
+  verHistorial,
   onSalir,
 }: {
   jugadores: number
@@ -42,6 +44,9 @@ export function Juego({
   contratos: readonly Contrato[]
   /** Seconds a bot spends on its whole turn. */
   segundosBot: number
+  /** Memory aids from the setup screen: browse the pile, reread the story. */
+  verDescarte: boolean
+  verHistorial: boolean
   onSalir: () => void
 }) {
   const config = useMemo(
@@ -50,6 +55,8 @@ export function Juego({
   )
   const juego = usePartida({ jugadores, seed, config, segundosBot })
   const [verMenu, setVerMenu] = useState(false)
+  const [verPila, setVerPila] = useState(false)
+  const [verHistoria, setVerHistoria] = useState(false)
 
   const { partida, ronda, esTuTurno, esperando, aviso, resumen } = juego
 
@@ -98,6 +105,8 @@ export function Juego({
               : undefined
           }
           viaje={juego.viaje}
+          onVerDescarte={verDescarte ? () => setVerPila(true) : undefined}
+          onVerHistorial={verHistorial ? () => setVerHistoria(true) : undefined}
           secciones={juego.secciones}
           puntos={juego.puntos}
           onSoltar={juego.soltar}
@@ -150,6 +159,21 @@ export function Juego({
             seed={seed}
             onCerrar={() => setVerMenu(false)}
             onSalir={onSalir}
+          />
+        )}
+
+        {verPila && (
+          <PilaDeDescarte
+            cartas={ronda.discard}
+            onCerrar={() => setVerPila(false)}
+          />
+        )}
+
+        {verHistoria && (
+          <HistorialDeRonda
+            historia={juego.historia}
+            nombres={nombres(jugadores)}
+            onCerrar={() => setVerHistoria(false)}
           />
         )}
       </div>
@@ -229,6 +253,103 @@ function MenuDePartida({
               Seguir jugando
             </button>
           </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+/**
+ * The whole descarte, top card first. Only the top card is playable — this
+ * changes no rule, it just spares the memory of what everyone already saw.
+ */
+function PilaDeDescarte({
+  cartas,
+  onCerrar,
+}: {
+  cartas: readonly Card[]
+  onCerrar: () => void
+}) {
+  const desdeArriba = [...cartas].reverse()
+
+  return (
+    <div className="absolute inset-0 z-30 flex items-center justify-center bg-black/50 p-4">
+      <div className="bg-background max-h-full w-full max-w-md overflow-y-auto rounded-lg border p-4">
+        <p className="text-muted-foreground mb-3 text-xs tracking-wide uppercase">
+          El descarte, de arriba hacia abajo · {cartas.length}
+        </p>
+        <div className="flex flex-wrap items-start gap-1.5">
+          {desdeArriba.map((card, indice) => (
+            <div key={card.id} className="relative">
+              <Carta card={card} size="sm" />
+              {indice === 0 && (
+                <span className="text-muted-foreground absolute -bottom-4 left-1/2 -translate-x-1/2 text-[9px] tracking-wide uppercase">
+                  arriba
+                </span>
+              )}
+            </div>
+          ))}
+        </div>
+        <div className="mt-6 flex justify-end">
+          <button
+            type="button"
+            onClick={onCerrar}
+            autoFocus
+            className="bg-foreground text-background rounded-md px-3 py-1.5 text-sm"
+          >
+            Cerrar
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+/**
+ * Everything public that happened this ronda, newest first — every line under
+ * the Phase 22 rule: only what everybody was entitled to see.
+ */
+function HistorialDeRonda({
+  historia,
+  nombres,
+  onCerrar,
+}: {
+  historia: readonly Relato[]
+  nombres: readonly string[]
+  onCerrar: () => void
+}) {
+  const recientesPrimero = [...historia].reverse()
+
+  return (
+    <div className="absolute inset-0 z-30 flex items-center justify-center bg-black/50 p-4">
+      <div className="bg-background flex max-h-full w-full max-w-md flex-col rounded-lg border p-4">
+        <p className="text-muted-foreground mb-2 text-xs tracking-wide uppercase">
+          Lo que ha pasado · lo último primero
+        </p>
+        <ol className="min-h-0 flex-1 overflow-y-auto text-sm">
+          {recientesPrimero.length === 0 && (
+            <li className="text-muted-foreground py-1">
+              Todavía no pasa nada en esta ronda.
+            </li>
+          )}
+          {recientesPrimero.map((relato, indice) => (
+            <li
+              key={historia.length - indice}
+              className="border-border/60 border-b py-1.5 last:border-0"
+            >
+              {contarRelato(relato, nombres, TU_ASIENTO)}
+            </li>
+          ))}
+        </ol>
+        <div className="mt-3 flex justify-end">
+          <button
+            type="button"
+            onClick={onCerrar}
+            autoFocus
+            className="bg-foreground text-background rounded-md px-3 py-1.5 text-sm"
+          >
+            Cerrar
+          </button>
         </div>
       </div>
     </div>
@@ -343,13 +464,15 @@ function AccionesDeMano({ juego }: { juego: ReturnType<typeof usePartida> }) {
 
       <BotonDeMano
         onClick={() => juego.acomodarMano('pintas')}
-        etiqueta="Acomodar por pintas"
+        etiqueta="Acomodar por pintas — mantenlo presionado y lo que robes se acomoda solo"
+        activo={juego.acomodoActivo === 'pintas'}
       >
         <Spade className="size-4" aria-hidden />
       </BotonDeMano>
       <BotonDeMano
         onClick={() => juego.acomodarMano('numeros')}
-        etiqueta="Acomodar por números"
+        etiqueta="Acomodar por números — mantenlo presionado y lo que robes se acomoda solo"
+        activo={juego.acomodoActivo === 'numeros'}
       >
         <ArrowUp01 className="size-4" aria-hidden />
       </BotonDeMano>
@@ -361,11 +484,14 @@ function BotonDeMano({
   onClick,
   etiqueta,
   sinBorde,
+  activo,
   children,
 }: {
   onClick: () => void
   etiqueta: string
   sinBorde?: boolean
+  /** A latched toggle: pressed stays pressed, and the styling says so. */
+  activo?: boolean
   children: React.ReactNode
 }) {
   return (
@@ -374,7 +500,12 @@ function BotonDeMano({
       onClick={onClick}
       aria-label={etiqueta}
       title={etiqueta}
-      className={`bg-card hover:bg-accent p-1.5 ${sinBorde ? '' : 'rounded-md border'}`}
+      aria-pressed={activo}
+      className={`p-1.5 ${sinBorde ? '' : 'rounded-md border'} ${
+        activo
+          ? 'bg-foreground text-background border-transparent'
+          : 'bg-card hover:bg-accent'
+      }`}
     >
       {children}
     </button>

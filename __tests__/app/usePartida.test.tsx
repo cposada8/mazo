@@ -1,6 +1,7 @@
 import { act, renderHook, waitFor } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { CONFIG_POR_DEFECTO, contratoPorId, describeCard } from '@/lib/engine'
+import { acomodar } from '@/lib/mano'
 import { TU_ASIENTO, usePartida } from '@/app/jugar/usePartida'
 
 /**
@@ -187,6 +188,67 @@ describe('discarding', () => {
 
     expect(result.current.esTuTurno).toBe(false)
     expect(result.current.esperando).toBe(true)
+  })
+})
+
+describe('a latched sort', () => {
+  it('files a drawn card into place while held down', () => {
+    const { result } = montar()
+
+    act(() => result.current.acomodarMano('numeros'))
+    expect(result.current.acomodoActivo).toBe('numeros')
+
+    act(() => result.current.robar('stock'))
+
+    // The hand is exactly what sorting it would produce: the drawn card has
+    // already found its slot, not the end of the row.
+    const mano = result.current.mano
+    expect(mano).toHaveLength(13)
+    expect(mano.map((card) => card.id)).toEqual(
+      acomodar([...mano], 'numeros').map((card) => card.id),
+    )
+  })
+
+  it('releases without moving a card, and newcomers go back to the end', () => {
+    const { result } = montar()
+
+    act(() => result.current.acomodarMano('pintas'))
+    const sorted = result.current.mano.map((card) => card.id)
+
+    act(() => result.current.acomodarMano('pintas'))
+    expect(result.current.acomodoActivo).toBeNull()
+    expect(result.current.mano.map((card) => card.id)).toEqual(sorted)
+
+    // Released: the next draw lands at the end, easy to notice.
+    act(() => result.current.robar('stock'))
+    const despues = result.current.mano
+    expect(despues.slice(0, -1).map((card) => card.id)).toEqual(sorted)
+  })
+
+  it('is released by moving cards by hand', () => {
+    const { result } = montar()
+    act(() => result.current.acomodarMano('pintas'))
+    act(() =>
+      result.current.alternarCarta(result.current.disponibles[3].id),
+    )
+    act(() => result.current.moverCartas('izquierda'))
+    expect(result.current.acomodoActivo).toBeNull()
+  })
+})
+
+describe('the public story', () => {
+  it('accumulates relatos as moves land', () => {
+    const { result } = montar()
+
+    act(() => result.current.robar('descarte'))
+    act(() => result.current.alternarCarta(result.current.disponibles[0].id))
+    act(() => result.current.descartar())
+
+    expect(result.current.historia.map((r) => r.tipo)).toEqual([
+      'descarte',
+      'bota',
+    ])
+    expect(result.current.relato?.tipo).toBe('bota')
   })
 })
 

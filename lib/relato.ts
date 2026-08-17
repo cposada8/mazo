@@ -33,13 +33,17 @@ export type Relato =
   | { readonly tipo: 'comodin'; readonly seat: number; readonly carta: string }
   | { readonly tipo: 'bota'; readonly seat: number; readonly carta: string }
 
+/** One end of a card's trip: a pile, or a player's hand. */
+export type PuntoDeViaje =
+  | { readonly pila: 'stock' | 'descarte' }
+  | { readonly seat: number }
+
 /** A card on its way across the table, for the travel animation. */
 export type Viaje = {
   /** Monotonic, so each journey is its own element and its own animation. */
   readonly clave: number
-  readonly de: 'stock' | 'descarte'
-  /** The seat whose hand the card travels to. */
-  readonly seat: number
+  readonly desde: PuntoDeViaje
+  readonly hasta: PuntoDeViaje
   /** The face to show, only when everybody saw it. Null travels face down. */
   readonly carta: Card | null
 }

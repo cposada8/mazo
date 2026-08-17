@@ -26,6 +26,8 @@ export default function Jugar() {
       seed={ajustes.seed}
       contratos={ajustes.contratos}
       segundosBot={ajustes.segundosBot}
+      verDescarte={ajustes.verDescarte}
+      verHistorial={ajustes.verHistorial}
       onSalir={() => setAjustes(null)}
     />
   )

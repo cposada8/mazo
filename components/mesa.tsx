@@ -36,7 +36,7 @@ import {
   isComodin,
 } from '@/lib/engine'
 import type { Seccion } from '@/lib/mano'
-import type { Viaje } from '@/lib/relato'
+import type { PuntoDeViaje, Viaje } from '@/lib/relato'
 import { cn } from '@/lib/utils'
 
 const SIMBOLO_DE_PALO = {
@@ -221,14 +221,19 @@ const inicial = (nombre: string): string =>
 export function Pilas({
   state,
   onRobar,
+  onVerDescarte,
 }: {
   state: RondaState
   /** When given, both piles become buttons for drawing. */
   onRobar?: (de: 'stock' | 'descarte') => void
+  /** When given, the descarte wears a tappable chip that opens the pile. */
+  onVerDescarte?: () => void
 }) {
   const arriba = state.discard.at(-1)
   const activo = Boolean(onRobar)
   const estiloPila = activo ? 'ring-2 ring-stone-100/80 ring-offset-2 ring-offset-stone-950' : ''
+  const chip =
+    'absolute -top-1 -right-1 z-10 rounded-full bg-stone-800 px-1 text-[calc(var(--texto-mesa,0.75rem)*0.9)] text-stone-300 tabular-nums ring-1 ring-stone-600/60'
 
   return (
     <div className="flex shrink-0 items-end gap-2">
@@ -240,24 +245,36 @@ export function Pilas({
         className="relative cursor-default enabled:cursor-pointer"
       >
         <CartaBocaAbajo size="sm" className={estiloPila} />
-        <span className="absolute -top-1 -right-1 z-10 rounded-full bg-stone-800 px-1 text-[calc(var(--texto-mesa,0.75rem)*0.9)] text-stone-300 tabular-nums ring-1 ring-stone-600/60">
-          {state.stock.length}
-        </span>
+        <span className={chip}>{state.stock.length}</span>
       </button>
 
-      <button
-        type="button"
-        data-pila="descarte"
-        disabled={!activo || !arriba}
-        onClick={() => onRobar?.('descarte')}
-        className="cursor-default enabled:cursor-pointer"
-      >
-        {arriba ? (
-          <Carta card={arriba} size="sm" className={estiloPila} />
-        ) : (
-          <div className="aspect-[8/11] h-[var(--carta-sm,3.5rem)] rounded-md border border-dashed border-stone-500/40" />
+      {/* The chip is a sibling, not a child: tapping the card draws, tapping
+          the count browses, and nested buttons are not a thing. */}
+      <div className="relative" data-pila="descarte">
+        <button
+          type="button"
+          disabled={!activo || !arriba}
+          onClick={() => onRobar?.('descarte')}
+          className="cursor-default enabled:cursor-pointer"
+        >
+          {arriba ? (
+            <Carta card={arriba} size="sm" className={estiloPila} />
+          ) : (
+            <div className="aspect-[8/11] h-[var(--carta-sm,3.5rem)] rounded-md border border-dashed border-stone-500/40" />
+          )}
+        </button>
+        {onVerDescarte && state.discard.length > 0 && (
+          <button
+            type="button"
+            onClick={onVerDescarte}
+            aria-label="Ver todas las cartas del descarte"
+            title="Ver todas las cartas del descarte"
+            className={cn(chip, 'hover:bg-stone-700')}
+          >
+            {state.discard.length}
+          </button>
         )}
-      </button>
+      </div>
     </div>
   )
 }
@@ -407,8 +424,13 @@ function CartaViajera({ viaje }: { viaje: Viaje }) {
     const cancha = el?.closest('.cancha')
     if (!el || !cancha) return
 
-    const desde = cancha.querySelector(`[data-pila="${viaje.de}"]`)
-    const hasta = cancha.querySelector(`[data-destino="${viaje.seat}"]`)
+    const selector = (punto: PuntoDeViaje) =>
+      'pila' in punto
+        ? `[data-pila="${punto.pila}"]`
+        : `[data-destino="${punto.seat}"]`
+
+    const desde = cancha.querySelector(selector(viaje.desde))
+    const hasta = cancha.querySelector(selector(viaje.hasta))
     if (!desde || !hasta) return
 
     const caja = cancha.getBoundingClientRect()
@@ -460,6 +482,8 @@ export function Mesa({
   reloj,
   relatoLinea,
   viaje,
+  onVerDescarte,
+  onVerHistorial,
   secciones,
   puntos,
   onSoltar,
@@ -492,6 +516,10 @@ export function Mesa({
   relatoLinea?: string
   /** A drawn card in flight. Rendered once per `clave`. */
   viaje?: Viaje | null
+  /** When given, the descarte's count chip opens the whole pile. */
+  onVerDescarte?: () => void
+  /** When given, the relato line opens the ronda's whole story. */
+  onVerHistorial?: () => void
 } & MesaInteractiva) {
   const nombreDe = (seat: number) => nombres?.[seat] ?? nombrePorDefecto(seat)
   const tu = state.jugadores[asiento]
@@ -538,7 +566,7 @@ export function Mesa({
             Bottom-aligned — toward the viewer, and away from the seat band's
             edge, where the lowest seats live. */}
         <div className="carril-mesa relative z-10 min-h-0 flex-1">
-          <Pilas state={state} onRobar={onRobar} />
+          <Pilas state={state} onRobar={onRobar} onVerDescarte={onVerDescarte} />
 
           <div className="grupos-en-mesa">
             {enMesa.length === 0 ? (
@@ -563,12 +591,24 @@ export function Mesa({
           way a table has its house name printed on the felt.
         */}
         <div className="relative z-10 flex shrink-0 items-center justify-between gap-3 px-[7cqw] pb-[0.5cqh]">
-          <span
-            aria-live="polite"
-            className="min-w-0 truncate text-[var(--texto-mesa,0.75rem)] text-stone-300"
-          >
-            {relatoLinea}
-          </span>
+          {onVerHistorial && relatoLinea ? (
+            <button
+              type="button"
+              onClick={onVerHistorial}
+              aria-live="polite"
+              title="Ver todo lo que ha pasado esta ronda"
+              className="min-w-0 truncate text-left text-[var(--texto-mesa,0.75rem)] text-stone-300 underline decoration-stone-600 decoration-dotted underline-offset-2 hover:text-stone-100"
+            >
+              {relatoLinea}
+            </button>
+          ) : (
+            <span
+              aria-live="polite"
+              className="min-w-0 truncate text-[var(--texto-mesa,0.75rem)] text-stone-300"
+            >
+              {relatoLinea}
+            </span>
+          )}
           <span
             aria-hidden
             className="shrink-0 text-[var(--texto-mesa,0.75rem)] font-semibold tracking-[0.2em] whitespace-nowrap text-stone-100/25 uppercase"
