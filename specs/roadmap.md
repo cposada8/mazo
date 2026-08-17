@@ -105,22 +105,43 @@ The winner of a ronda opens the next one; the first opener is chosen or drawn.
 
 ## Milestone 2 — Playable solo
 
-### Phase 8 — A bot that can finish a game
+### Phase 8 — Escenarios: dealing the cards you dictate ✅
+Build a ronda from named cards instead of a shuffle: these hands for these
+seats, these cards coming off the stock in this order, the rest filled from the
+seed. Card notation accepts `7♠` and `7s` alike, `**` for a comodín.
+
+This is what makes bots comparable. Put two bots in front of the identical hand
+and the identical draw order and the only variable left is the decision each
+one makes — otherwise the better cards win and it looks like the better bot.
+**Done when:** a test dictates a hand and a draw order, plays it, and gets
+exactly the cards it asked for; and asking for a card that does not exist, or a
+third copy of one that only has two, is refused.
+
+**Done.** `lib/engine/{notacion,escenario}.ts`, 230 tests. Named cards leave the
+deck before the filler is shuffled, so the filler can never duplicate one.
+
+### Phase 9 — A bot that can finish a game
 One greedy bot: keep what helps the current contract, discard what does not. It
 does not need to play well, only legally and to the end.
-**Done when:** four bots play 1,000 seeded games with no crash and no illegal
-move.
 
-### Phase 9 — The table
+The real work is the **grouping search**: because the engine validates rather
+than groups, the bot has to find the partitions of its own hand that satisfy the
+contrato. That search is reused by every later bot and by the UI when it offers
+a hint.
+**Done when:** four bots play 1,000 seeded partidas with no crash and no refused
+move, under a turn cap that fails loudly instead of hanging — a stalled ronda is
+data about the game, since Carioca has no stalemate rule.
+
+### Phase 10 — The table
 Mobile-first UI: your hand, the stock and discard piles, melds on the table,
 whose turn it is. Read-only at first — it renders a game state, it does not
 mutate one.
 **Done when:** a finished game state from Phase 7 renders correctly on a phone
 screen.
 
-### Phase 10 — Play it
+### Phase 11 — Play it
 Wire interaction: draw, select cards, lay down, discard. Local game against the
-Phase 8 bots, state in Zustand.
+Phase 9 bots, state in Zustand.
 **Done when:** a person plays a full game against bots on the deployed site.
 **This is Milestone 2.**
 
@@ -128,19 +149,19 @@ Phase 8 bots, state in Zustand.
 
 ## Milestone 3 — Bots worth playing
 
-### Phase 11 — Bot framework
+### Phase 12 — Bot framework
 Extract the strategy interface: a bot receives the legal state it can see and
 returns a move. Add hand-evaluation helpers shared by all bots.
 **Done when:** a new bot can be added in one file with no engine changes.
 
-### Phase 12 — Bot personalities
+### Phase 13 — Bot personalities
 At least three bots that differ observably: e.g. one that hoards for the perfect
 meld, one that lays down at the first opportunity, one that watches discards and
 plays around opponents. Give them names and short descriptions in the UI.
 **Done when:** a head-to-head tournament shows different win rates and visibly
 different play. **This is Milestone 3.**
 
-### Phase 13 — Rough edges
+### Phase 14 — Rough edges
 Card animations, a hint for new players, an in-game rules summary, and an
 end-of-game screen.
 **Done when:** someone who has never played Carioca finishes a bot game without
@@ -150,26 +171,26 @@ asking for help.
 
 ## Milestone 4 — Playable together
 
-### Phase 14 — Persistence without accounts
+### Phase 15 — Persistence without accounts
 Prisma schema, finished partidas saved, and a guest identity that survives a
 page reload without anyone signing up. How a seat is claimed and protected is an
 open design question — see `tech-stack.md`.
 **Done when:** a player reloads mid-partida and is still themselves, and nobody
 can claim a seat that is not theirs.
 
-### Phase 15 — Rooms
+### Phase 16 — Rooms
 Create a room, get an invite code, join as a guest with a nickname, see who is in
 the lobby, start when everyone is ready. No gameplay yet.
 **Done when:** three devices sit in the same lobby.
 
-### Phase 16 — Server-authoritative play
+### Phase 17 — Server-authoritative play
 The game state lives on the server. Each player receives only their own hand and
 public information. Moves are submitted and validated server-side. Updates by
 polling.
 **Done when:** three people in three places finish a game from one invite code,
 and no client ever receives another player's cards. **This is Milestone 4.**
 
-### Phase 17 — Real-time transport
+### Phase 18 — Real-time transport
 Replace polling with a push transport behind the same interface. Handle
 disconnects and reconnects, and let a bot take over an abandoned seat.
 **Done when:** a player closes the tab mid-game, returns, and the game is intact.
