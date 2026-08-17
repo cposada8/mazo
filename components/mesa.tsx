@@ -392,15 +392,17 @@ export function Mano({
                   )
 
                   return onCarta ? (
+                    // Never raised above its neighbours: a selected card
+                    // slides up, like a card pushed out of a real fan. Give
+                    // it a z-index and it covers the next card's corner and
+                    // steals its taps — on a tight fan that made everything
+                    // to the right unselectable.
                     <button
                       key={card.id}
                       type="button"
                       onClick={() => onCarta(card.id)}
                       aria-pressed={elegida}
-                      className={cn(
-                        '-ml-[calc(var(--carta-md,5rem)*0.34)] shrink-0',
-                        elegida && 'z-10',
-                      )}
+                      className="-ml-[calc(var(--carta-md,5rem)*0.34)] shrink-0"
                     >
                       {carta}
                     </button>
