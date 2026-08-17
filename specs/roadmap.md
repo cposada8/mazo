@@ -40,12 +40,16 @@ consecutiveness works across the K–A–2 wrap.
 enforces the import rule so the engine cannot quietly grow a dependency on the
 app.
 
-### Phase 3 — Grupos
+### Phase 3 — Grupos ✅
 Validate a trío and an escala, with comodines bound to the card they stand for.
 Phase-dependent: one comodín at lay-down, unlimited in trios afterwards, never
 two consecutive in an escala.
 **Done when:** a table-driven test covers every valid and invalid example in
 `carioca-rules.md`.
+
+**Done.** `lib/engine/grupos.ts`, 94 tests. A comodín's binding is *positional*:
+an escala knows the rank it starts on, so slot `i` stands for
+`rankAfter(start, i)` and nothing can drift out of sync.
 
 ### Phase 4 — One ronda, start to finish
 Turn order, draw from stock or descarte, lay down a contrato, discard, detect
