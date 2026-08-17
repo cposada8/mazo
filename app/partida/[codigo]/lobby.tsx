@@ -65,6 +65,9 @@ export function Lobby({
     queryKey: ['lobby', codigo, identidad?.secreto],
     enabled: Boolean(identidad),
     refetchInterval: MS_ENTRE_CONSULTAS,
+    // Keep asking with the tab in the background: somebody waiting for
+    // friends to arrive will be doing something else while they wait.
+    refetchIntervalInBackground: true,
     queryFn: () => leerLobby(codigo, identidad!.secreto),
   })
 
@@ -246,7 +249,7 @@ export function Lobby({
         <div className="flex flex-col gap-2">
           <button
             type="button"
-            disabled={!puedeEmpezar || mutacion.isPending || humanos.length > 1}
+            disabled={!puedeEmpezar || mutacion.isPending}
             onClick={() =>
               mutacion.mutate({ tipo: 'empezar', seed: semillaAleatoria() })
             }
@@ -257,9 +260,8 @@ export function Lobby({
           </button>
           {humanos.length > 1 && (
             <p className="text-muted-foreground text-xs">
-              Con más de una persona en la mesa hace falta el servidor jugando la
-              partida — eso llega en la siguiente fase. Por ahora se reparte solo
-              con bots.
+              Con más de una persona la partida la lleva el servidor: cada quien
+              ve solo su mano, y la mesa avanza aunque cierres la página.
             </p>
           )}
         </div>

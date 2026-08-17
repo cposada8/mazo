@@ -26,27 +26,28 @@ import {
   type Card,
   type Contrato,
   type Marcador as MarcadorDeRonda,
-  type PartidaState,
+  type VistaDePartida,
   type Propuesta,
 } from '@/lib/engine'
 import { carasDeRonda } from '@/lib/caras'
 import { CarasDeComodinProvider } from '@/components/caras'
 import { useIdentidad } from '@/components/identidad'
-import { BotonDeBaraja, SEGUNDOS, recordarBaraja } from './inicio'
+import { BotonDeBaraja, SEGUNDOS, recordarBaraja } from './ajustes'
+import type { useMesa } from './useMesa'
 import { TU_ASIENTO, usePartida } from './usePartida'
 
+/**
+ * A partida in this browser: the local transport, wrapped around the table
+ * (Phase 34). A bots-only table takes this route, and needs nothing else.
+ */
 export function Juego({
   jugadores,
   seed,
   contratos,
   comodines,
   segundosBot: segundosBotInicial,
-  verDescarte,
-  verHistorial,
-  cartasOscuras: cartasOscurasInicial,
-  galeriaDeComodines,
-  nombresDeAsientos,
-  onSalir,
+  id,
+  ...resto
 }: {
   jugadores: number
   seed: string
@@ -55,30 +56,67 @@ export function Juego({
   comodines: boolean
   /** Seconds a bot spends on its whole turn. */
   segundosBot: number
-  /** Memory aids from the setup screen: browse the pile, reread the story. */
+  /** The partida's código: what makes it resumable in this browser. */
+  id?: string
+} & Omit<PropsDeTablero, 'juego' | 'segundosBot' | 'onSegundosBot'>) {
+  const config = useMemo(
+    () => ({ ...CONFIG_POR_DEFECTO, contratos, comodines }),
+    [contratos, comodines],
+  )
+  // Pacing is not a rule (Phase 28): it can be changed mid-partida from the
+  // menu, so what the lobby said is only where it starts.
+  const [segundosBot, setSegundosBot] = useState(segundosBotInicial)
+  const juego = usePartida({ jugadores, seed, config, segundosBot, id })
+
+  return (
+    <Tablero
+      {...resto}
+      juego={juego}
+      jugadores={jugadores}
+      seed={seed}
+      segundosBot={segundosBot}
+      onSegundosBot={setSegundosBot}
+    />
+  )
+}
+
+export type PropsDeTablero = {
+  /** Whichever transport built it — local or remote. They agree by design. */
+  juego: ReturnType<typeof useMesa>
+  jugadores: number
+  seed: string
+  /** Memory aids from the lobby: browse the pile, reread the story. */
   verDescarte: boolean
   verHistorial: boolean
-  /** The dark deck: near-black card faces, chosen on the setup screen. */
+  /** The dark deck: near-black card faces, a per-browser preference. */
   cartasOscuras: boolean
   /** Images the comodines can wear, dealt fresh each ronda. May be empty. */
   galeriaDeComodines: readonly string[]
   /**
    * Who is in each seat, by index — the lobby's aliases (Phase 33). Without
-   * it the table falls back to «Jugador n», which is what a partida with no
-   * lobby behind it still gets.
+   * it the table falls back to «Jugador n».
    */
   nombresDeAsientos?: readonly string[]
+  /** Seconds a bot thinks. Editable only where this browser owns the pacing. */
+  segundosBot: number
+  onSegundosBot?: (segundos: number) => void
   onSalir: () => void
-}) {
-  const config = useMemo(
-    () => ({ ...CONFIG_POR_DEFECTO, contratos, comodines }),
-    [contratos, comodines],
-  )
-  // Pacing and paint, not rules (Phase 28): both can be changed mid-partida
-  // from the menu, so the setup screen only says where they start.
-  const [segundosBot, setSegundosBot] = useState(segundosBotInicial)
+}
+
+export function Tablero({
+  juego,
+  jugadores,
+  seed,
+  verDescarte,
+  verHistorial,
+  cartasOscuras: cartasOscurasInicial,
+  galeriaDeComodines,
+  nombresDeAsientos,
+  segundosBot,
+  onSegundosBot,
+  onSalir,
+}: PropsDeTablero) {
   const [cartasOscuras, setCartasOscuras] = useState(cartasOscurasInicial)
-  const juego = usePartida({ jugadores, seed, config, segundosBot })
   const { identidad } = useIdentidad()
   const nombresEnMesa = useMemo(
     () => nombres(jugadores, identidad?.alias, nombresDeAsientos),
@@ -93,7 +131,7 @@ export function Juego({
     setCartasOscuras(oscuras)
   }
 
-  const { partida, ronda, esTuTurno, esperando, aviso, resumen } = juego
+  const { partida, vista: ronda, esTuTurno, esperando, aviso, resumen } = juego
 
   // The faces this ronda's comodines wear — dealt from the seed, like the
   // cards, so a replayed partida replays its comodines too.
@@ -102,14 +140,14 @@ export function Juego({
       carasDeRonda({
         imagenes: galeriaDeComodines,
         seed,
-        ronda: partida.indiceContrato,
+        ronda: partida?.indiceContrato ?? 0,
       }),
-    [galeriaDeComodines, seed, partida.indiceContrato],
+    [galeriaDeComodines, seed, partida?.indiceContrato],
   )
 
   // The pause comes first: a ronda has ended and nobody has seen it yet, even
   // when the next one is already dealt behind it.
-  if (resumen) {
+  if (resumen && partida) {
     return (
       <FinDeRonda
         partida={partida}
@@ -122,8 +160,8 @@ export function Juego({
     )
   }
 
-  // The view is derived from the ronda, so they are absent together.
-  if (!ronda || !juego.vista) {
+  if (!ronda || !partida) {
+    if (!partida) return null
     return (
       <FinDePartida
         partida={partida}
@@ -151,7 +189,7 @@ export function Juego({
         )}
       >
         <Mesa
-          state={juego.vista}
+          state={ronda}
           asiento={TU_ASIENTO}
           nombres={nombresEnMesa}
           reloj={juego.reloj}
@@ -183,7 +221,7 @@ export function Juego({
                   mesaAbierta={juego.mesaAbierta}
                 />
               )}
-              <Apartadas juego={juego} mano={ronda.jugadores[TU_ASIENTO].hand} />
+              <Apartadas juego={juego} mano={ronda.mano} />
             </div>
           }
           seleccionadas={new Set(juego.seleccion)}
@@ -216,7 +254,7 @@ export function Juego({
             nombres={nombresEnMesa}
             seed={seed}
             segundosBot={segundosBot}
-            onSegundosBot={setSegundosBot}
+            onSegundosBot={onSegundosBot}
             cartasOscuras={cartasOscuras}
             onCartasOscuras={escogerBaraja}
             onCerrar={() => setVerMenu(false)}
@@ -226,7 +264,7 @@ export function Juego({
 
         {verPila && (
           <PilaDeDescarte
-            cartas={ronda.discard}
+            cartas={ronda.descarte}
             onCerrar={() => setVerPila(false)}
           />
         )}
@@ -266,12 +304,13 @@ function MenuDePartida({
   onCerrar,
   onSalir,
 }: {
-  partida: PartidaState
+  partida: VistaDePartida
   contrato: string
   nombres: readonly string[]
   seed: string
   segundosBot: number
-  onSegundosBot: (segundos: number) => void
+  /** Absent when the pacing belongs to the host, not to this browser. */
+  onSegundosBot?: (segundos: number) => void
   cartasOscuras: boolean
   onCartasOscuras: (oscuras: boolean) => void
   onCerrar: () => void
@@ -291,13 +330,15 @@ function MenuDePartida({
         <div className="mt-4 flex flex-col gap-2">
           <p className="text-muted-foreground text-xs tracking-wide uppercase">
             Cuánto piensa un bot
+            {!onSegundosBot && ' · lo decide el host'}
           </p>
           <div className="grid grid-cols-4 gap-2">
             {SEGUNDOS.map((s) => (
               <button
                 key={s}
                 type="button"
-                onClick={() => onSegundosBot(s)}
+                disabled={!onSegundosBot}
+                onClick={() => onSegundosBot?.(s)}
                 aria-pressed={segundosBot === s}
                 className={`rounded-md border py-2 text-sm tabular-nums transition-colors ${
                   segundosBot === s
@@ -481,7 +522,7 @@ function Apartadas({
   juego,
   mano,
 }: {
-  juego: ReturnType<typeof usePartida>
+  juego: ReturnType<typeof useMesa>
   mano: readonly Card[]
 }) {
   if (juego.propuestas.length === 0) return null
@@ -552,7 +593,7 @@ function Instruccion({
  * phone and pushed the table into a strip. Each one still says its name to a
  * finger held on it and to a screen reader.
  */
-function AccionesDeMano({ juego }: { juego: ReturnType<typeof usePartida> }) {
+function AccionesDeMano({ juego }: { juego: ReturnType<typeof useMesa> }) {
   const haySeleccion = juego.seleccion.length > 0
 
   return (
@@ -639,8 +680,8 @@ function BotonDeMano({
  * The turn's actions, in the bottom-right corner where the thumb already is,
  * and in the same order every turn so the corner can be used without reading.
  */
-function Controles({ juego }: { juego: ReturnType<typeof usePartida> }) {
-  const { ronda, esTuTurno } = juego
+function Controles({ juego }: { juego: ReturnType<typeof useMesa> }) {
+  const { vista: ronda, esTuTurno } = juego
   if (!ronda || !esTuTurno || ronda.fase !== 'act') return null
 
   const seleccionadas = juego.seleccionadas.length
@@ -710,7 +751,7 @@ function FinDeRonda({
   onSiguiente,
   onSalir,
 }: {
-  partida: PartidaState
+  partida: VistaDePartida
   resumen: MarcadorDeRonda
   nombres: readonly string[]
   seAcabo: boolean
@@ -777,7 +818,7 @@ function FinDePartida({
   seed,
   onOtra,
 }: {
-  partida: PartidaState
+  partida: VistaDePartida
   nombres: readonly string[]
   seed: string
   onOtra: () => void

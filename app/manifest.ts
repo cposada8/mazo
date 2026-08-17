@@ -13,7 +13,7 @@ export default function manifest(): MetadataRoute.Manifest {
     name: 'Mazo — Carioca',
     short_name: 'Mazo',
     description: 'Juegos de cartas. Empezando por Carioca.',
-    start_url: '/jugar',
+    start_url: '/',
     display: 'standalone',
     orientation: 'any',
     background_color: '#0c0a09',

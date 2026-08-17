@@ -1,6 +1,6 @@
 # Project status — pick up here
 
-Last updated after Phase 33.
+Last updated after Phase 34.
 
 Read this first, then `mission.md` for the why, `carioca-rules.md` for the game,
 `tech-stack.md` for the stack, and `roadmap.md` for what comes next. This file is
@@ -61,8 +61,8 @@ empty seats), and the better bots moved behind it as Milestone 4.
 | 31 | A ronda that always ends: tablas | ✅ |
 | 32 | Who you are: identity, alias from a file, persistence | ✅ |
 | 33 | One door: create (host, 3 bots default) or join by code | ✅ |
-| 34 | The partida lives on the server | ← **next** |
-| 35 | Several people at one table | not started |
+| 34 | The partida lives on the server | ✅ |
+| 35 | Several people at one table | ← **next** |
 | 36 | The player's clock | not started |
 | 37 | Absences: reconnection, the empty chair | not started |
 | 38 | Real-time transport, if polling isn't enough | not started |
@@ -255,9 +255,19 @@ types both sides share. The old `/jugar` setup screen was absorbed into the
 host's lobby. A bots-only table plays locally from the server's deal, per
 the two-homes rule, and reloading the URL already resumes it.
 
-**Phase 34 is next — the partida lives on the server:** moves submitted as
-requests, `apply()` refereeing server-side, each client receiving only its
-Phase 30 view, bots advanced lazily, and `/jugar` retiring at parity.
+**Phase 34 is done: the partida lives on the server.** `lib/server/juego.ts`
+referees with the same `apply()`; `/api/partidas/[codigo]/mesa` reads and
+plays. The table now draws from a view rather than a `RondaState`, so
+opponents' cards never reach the component. One controller (`useMesa`) is
+the whole game on screen, with two transports — local (`usePartida`, which
+also keeps the partida in localStorage under its código) and remote
+(`useMesaRemota`). Your own move lands before the server answers via
+`aplicarEnVista`; only a stock draw waits, because that card is genuinely
+unknowable. `/jugar` is retired: the door is the only way in.
+
+**Phase 35 is next — several people at one table.** The mechanism is
+already there and verified with two humans; what is left is playing it at
+three, and the rough edges that only show with people in every seat.
 
 ## Open questions, deliberately unanswered
 

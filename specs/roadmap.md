@@ -1115,7 +1115,7 @@ One deliberate stop: starting with more than one human is refused with a
 note, because the transport is Phases 34–35. The button is there; the
 server behind it is next.
 
-### Phase 34 — The partida lives on the server
+### Phase 34 — The partida lives on the server ✅
 The thin slice that proves the architecture with the least new truth: **one
 human plays against server-side bots** from a room code. A bots-only table
 normally lives in the browser under the two-homes rule — this phase is the
@@ -1150,6 +1150,38 @@ code with no visible lag on the player's own moves, and a reload resumes it
 mid-turn; a bots-only partida started at the door plays to the end in
 airplane mode and survives its own reload; and a test on the wire format
 proves no payload ever contains a card of another hand.
+
+**Done.** `lib/server/juego.ts` referees with the same `apply()`, and
+`/api/partidas/[codigo]/mesa` reads and plays. 447 tests. Four things came
+out of building it:
+
+- **The table had to stop taking a `RondaState` first.** It rendered
+  opponents' fans by mapping over their actual cards and merely not looking
+  at the faces. It now takes a `VistaDeAsiento` and draws each fan from a
+  count, so a card that is not yours never reaches the component — which is
+  what let the payload be the view.
+- **One table, two transports.** `useMesa` is the whole game on screen;
+  `usePartida` (local) and `useMesaRemota` (server) only differ in where the
+  view comes from and where a move goes. The pause, the travelling card and
+  the mark on what you just drew are now **derived from the public log**
+  rather than recorded when a move is sent — which is why a move somebody
+  *else* made animates too.
+- **Your own move lands before the server answers.** `aplicarEnVista` runs
+  the real `apply` over the imagined ronda, so a move out of your own hand
+  shows at once and the server can only agree. Drawing from the stock is the
+  one move it refuses to guess: which card you drew is genuinely unknowable
+  until the answer arrives.
+- **Polling is everybody's clock.** A serverless function has no clock
+  between requests, so a bot turn is *due* rather than scheduled, and any
+  request arriving after its thinking time plays it. That also means the poll
+  must keep running with the tab in the background — found in the browser,
+  where a backgrounded lobby quietly stopped noticing people arriving.
+
+The local home stayed and grew persistence: a bots-only partida is kept in
+localStorage under its **código** — not its seed, because a seed names a
+deal and replaying one should start over. Verified in a browser: a
+five-seat table with two people and three bots, each seeing only their own
+hand, played from one code.
 
 ### Phase 35 — Several people at one table
 The seats fill with people. Each device polls, receives its own view, and

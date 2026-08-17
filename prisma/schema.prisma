@@ -25,6 +25,13 @@ model Partida {
   config    String
   /// JSON PartidaState once dealt; null while the lobby is still filling.
   estado    String?
+  /// JSON Relato[] — everything public that has happened this ronda, in
+  /// order. Cleared when a new reparto starts, like the table's own log.
+  relatos   String  @default("[]")
+  /// When the turn in play began. Bot turns are advanced lazily against it:
+  /// a serverless function has no clock between requests, so the deadline is
+  /// stored and the next request applies whatever has come due.
+  turnoDesde DateTime?
   /// Seconds per human turn (Phase 36). The host's to change in the lobby.
   segundosPorTurno Int @default(45)
   /// Seconds a bot thinks per turn.

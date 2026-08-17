@@ -75,7 +75,7 @@ describe('going out by ligando, seen from the table', () => {
     expect(resumen!.puntos).toEqual([0, 19])
 
     // The next reparto was dealt behind the pause, and nobody plays into it.
-    expect(result.current.partida.indiceContrato).toBe(1)
+    expect(result.current.partida!.indiceContrato).toBe(1)
     expect(result.current.esTuTurno).toBe(false)
     expect(result.current.esperando).toBe(false)
   })

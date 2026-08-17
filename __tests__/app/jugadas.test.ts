@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { type Card, type Escala, apply, isComodin } from '@/lib/engine'
-import { jugadasParaGrupo } from '@/app/jugar/usePartida'
+import { jugadasParaGrupo } from '@/app/jugar/useMesa'
 import { c, ids, makeRonda, n } from '../engine/helpers'
 
 /**

@@ -31,8 +31,8 @@ describe('starting a partida', () => {
   it('opens on your turn, waiting for a draw', () => {
     const { result } = montar()
     expect(result.current.esTuTurno).toBe(true)
-    expect(result.current.ronda!.fase).toBe('draw')
-    expect(result.current.ronda!.jugadores[TU_ASIENTO].hand).toHaveLength(12)
+    expect(result.current.vista!.fase).toBe('draw')
+    expect(result.current.vista!.mano).toHaveLength(12)
   })
 })
 
@@ -42,17 +42,17 @@ describe('drawing', () => {
 
     act(() => result.current.robar('stock'))
 
-    expect(result.current.ronda!.jugadores[TU_ASIENTO].hand).toHaveLength(13)
-    expect(result.current.ronda!.fase).toBe('act')
+    expect(result.current.vista!.mano).toHaveLength(13)
+    expect(result.current.vista!.fase).toBe('act')
   })
 
   it('takes the top of the descarte instead', () => {
     const { result } = montar()
-    const arriba = result.current.ronda!.discard.at(-1)!
+    const arriba = result.current.vista!.descarte.at(-1)!
 
     act(() => result.current.robar('descarte'))
 
-    const mano = result.current.ronda!.jugadores[TU_ASIENTO].hand
+    const mano = result.current.vista!.mano
     expect(mano.map((card) => card.id)).toContain(arriba.id)
   })
 
@@ -62,7 +62,7 @@ describe('drawing', () => {
     act(() => result.current.robar('stock'))
     act(() => result.current.robar('stock'))
 
-    expect(result.current.ronda!.jugadores[TU_ASIENTO].hand).toHaveLength(13)
+    expect(result.current.vista!.mano).toHaveLength(13)
   })
 })
 
@@ -135,7 +135,7 @@ describe('laying down', () => {
 
     act(() => result.current.bajarse())
 
-    expect(result.current.ronda!.jugadores[TU_ASIENTO].grupos).toHaveLength(2)
+    expect(result.current.vista!.jugadores[TU_ASIENTO].grupos).toHaveLength(2)
     expect(result.current.propuestas).toHaveLength(0)
     expect(result.current.yaBajado).toBe(true)
   })
@@ -177,7 +177,7 @@ describe('discarding', () => {
     act(() => result.current.descartar())
 
     expect(result.current.aviso).toMatch(/exactamente una/)
-    expect(result.current.ronda!.fase).toBe('act')
+    expect(result.current.vista!.fase).toBe('act')
   })
 
   it('ends the turn and hands it to the bot', () => {
@@ -301,7 +301,7 @@ describe('the bots', () => {
     await waitFor(() => expect(result.current.esTuTurno).toBe(true), {
       timeout: 5000,
     })
-    expect(result.current.ronda!.fase).toBe('draw')
+    expect(result.current.vista!.fase).toBe('draw')
   })
 
   it('adopt a new thinking time mid-partida, on the turn in progress', async () => {
@@ -366,8 +366,8 @@ describe('the end of a ronda', () => {
     expect(resumen.ganador).not.toBe(TU_ASIENTO)
     expect(resumen.contrato.id).toBe('c1')
     // The scoreboard says the same thing, because it is the same record.
-    expect(result.current.partida.historial.at(-1)).toBe(resumen)
-    expect(result.current.partida.totales[resumen.ganador as number]).toBe(0)
+    expect(result.current.partida!.historial.at(-1)).toBe(resumen)
+    expect(result.current.partida!.totales[resumen.ganador as number]).toBe(0)
   })
 
   it('freezes the table while the summary is up', () => {
@@ -413,7 +413,7 @@ describe('the end of a ronda', () => {
 
     expect(result.current.resumen).toBeNull()
     expect(result.current.seAcabo).toBe(false)
-    expect(result.current.ronda!.contrato.id).toBe('c2')
+    expect(result.current.vista!.contrato.id).toBe('c2')
     // Whoever went out opens the next one, so it is the bot's turn.
     expect(result.current.esperando).toBe(true)
 

@@ -5,7 +5,7 @@
  * table either way.
  */
 
-import { type PartidaState } from '@/lib/engine'
+import { type VistaDePartida } from '@/lib/engine'
 import { cn } from '@/lib/utils'
 
 export function Marcador({
@@ -15,7 +15,7 @@ export function Marcador({
   destacar,
   siguiente,
 }: {
-  partida: PartidaState
+  partida: VistaDePartida
   nombres: readonly string[]
   className?: string
   /** Index into the historial of the ronda to pick out — the one just played. */

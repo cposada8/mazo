@@ -12,6 +12,7 @@ import {
   describeCard,
   startPartida,
   vistaDeAsiento,
+  vistaDePartida,
 } from '@/lib/engine'
 
 const MAX_MOVIMIENTOS = 800
@@ -195,7 +196,7 @@ export default function MesaPage() {
       )}
 
       <Marcador
-        partida={actual.partida}
+        partida={vistaDePartida(actual.partida, 0)}
         nombres={Array.from({ length: jugadores }, (_, seat) =>
           nombrePorDefecto(seat),
         )}

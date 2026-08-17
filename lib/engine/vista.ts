@@ -141,6 +141,38 @@ export function probarEnMesa(
   return result.ok ? { ok: true } : result
 }
 
+export type ResultadoEnVista =
+  | { readonly ok: true; readonly vista: VistaDeAsiento }
+  | { readonly ok: false; readonly code: MoveErrorCode | 'SECRETO' }
+
+/**
+ * Play one of **your own** moves against your view, so the table can show it
+ * before the server answers (Phase 34).
+ *
+ * The same trick as `probarEnMesa`, one step further: every move a seat makes
+ * out of its own hand — discarding, laying down, unloading, freeing a
+ * comodín, and taking the face-up card — depends only on public information
+ * plus that hand, so the real `apply` run over the imagined ronda produces
+ * exactly the view the server will send back.
+ *
+ * The one move it refuses is drawing from the stock, and refusing it is the
+ * point: which card you drew is genuinely unknowable until the server says.
+ * Guessing would mean the table showing a card that is not there.
+ */
+export function aplicarEnVista(
+  vista: VistaDeAsiento,
+  move: Move,
+): ResultadoEnVista {
+  if (move.type === 'robar' && move.de === 'stock') {
+    return { ok: false, code: 'SECRETO' }
+  }
+
+  const result = apply(rondaImaginada(vista), move)
+  if (!result.ok) return result
+
+  return { ok: true, vista: vistaDeAsiento(result.state, vista.asiento) }
+}
+
 /**
  * A ronda that agrees with the view on everything public and invents nothing
  * else: hands it cannot know are empty, the stock is empty, the rng is a
