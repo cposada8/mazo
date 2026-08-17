@@ -57,6 +57,25 @@ export function usePartida(options: {
    */
   const [resumen, setResumen] = useState<Marcador | null>(null)
 
+  /**
+   * A new reparto starts with nothing arranged and nothing pinned.
+   *
+   * Not merely tidy: card ids repeat from one deal to the next — `7-s#0` is the
+   * same string in every ronda — so a bloque left over from the last hand
+   * silently pins cards it was never made from, and the player is handed a hand
+   * that arrived pre-locked. The arrangement belongs to the ronda it was made
+   * in, so it is dropped the moment the ronda changes rather than wherever it
+   * happens to be convenient to clear it.
+   */
+  const [rondaVista, setRondaVista] = useState(partida.indiceContrato)
+  if (rondaVista !== partida.indiceContrato) {
+    setRondaVista(partida.indiceContrato)
+    setOrden([])
+    setBloques([])
+    setSeleccion([])
+    setPropuestas([])
+  }
+
   const ronda = partida.ronda
   const enPausa = resumen !== null
   const enJuego = ronda !== null && ronda.ganador === null && !enPausa
@@ -180,16 +199,13 @@ export function usePartida(options: {
   }, [])
 
   /**
-   * Move on to the next reparto. The cards are already dealt — what this ends
-   * is the pause — so your arrangement is cleared here: the order and the
-   * pinned bloques belonged to a hand that no longer exists.
+   * Move on to the next reparto. The cards were dealt when the ronda closed —
+   * what this ends is the pause. Clearing the arrangement is not this
+   * function's job: it happens when the ronda changes, whether or not anyone
+   * passed through here.
    */
   const siguiente = useCallback(() => {
     setResumen(null)
-    setSeleccion([])
-    setPropuestas([])
-    setOrden([])
-    setBloques([])
     setAviso(null)
   }, [])
 

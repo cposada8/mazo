@@ -262,6 +262,29 @@ describe('the end of a ronda', () => {
     expect(result.current.partida).toBe(antes)
   })
 
+  it('deals a hand with nothing pinned and nothing arranged', () => {
+    const { result } = partidaLarga()
+
+    // Pin the whole hand, so a leak cannot be missed by luck: whichever of
+    // these cards is dealt again next ronda would come back already pinned.
+    const fijadas = result.current.disponibles.map((card) => card.id)
+    act(() => {
+      for (const id of fijadas) result.current.alternarCarta(id)
+    })
+    act(() => result.current.fijarSeleccion())
+    expect(result.current.secciones.some((s) => s.bloqueada)).toBe(true)
+
+    hastaQueAlguienGane(result)
+    act(() => result.current.siguiente())
+
+    // Card ids repeat between deals — `7-s#0` is the same string every time —
+    // so this seed really does deal some of them back.
+    const nueva = result.current.disponibles.map((card) => card.id)
+    expect(nueva.filter((id) => fijadas.includes(id)).length).toBeGreaterThan(0)
+    expect(result.current.secciones.some((s) => s.bloqueada)).toBe(false)
+    expect(result.current.seleccion).toEqual([])
+  })
+
   it('deals the next reparto when you move on', () => {
     const { result } = partidaLarga()
     hastaQueAlguienGane(result)
