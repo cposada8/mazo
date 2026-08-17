@@ -82,7 +82,7 @@ export function Juego({
     <main className="fixed inset-0 z-10 overflow-hidden">
       {/* Safe areas are padded, not ignored: fullscreen and standalone put the
           table under the notch, and a card behind a camera is a card lost. */}
-      <div className="relative h-full bg-emerald-950 pt-[env(safe-area-inset-top)] pr-[env(safe-area-inset-right)] pb-[env(safe-area-inset-bottom)] pl-[env(safe-area-inset-left)]">
+      <div className="relative h-full bg-stone-950 pt-[env(safe-area-inset-top)] pr-[env(safe-area-inset-right)] pb-[env(safe-area-inset-bottom)] pl-[env(safe-area-inset-left)]">
         <Mesa
           state={ronda}
           asiento={TU_ASIENTO}
@@ -126,7 +126,7 @@ export function Juego({
           onClick={() => setVerMenu(true)}
           aria-label="Menú de la partida"
           aria-expanded={verMenu}
-          className="absolute top-1.5 left-1.5 z-20 rounded-md border border-emerald-100/25 bg-emerald-950/60 p-1.5 text-emerald-50"
+          className="absolute top-1.5 left-1.5 z-20 rounded-md border border-stone-600/60 bg-stone-900/80 p-1.5 text-stone-100"
         >
           <Menu className="size-4" aria-hidden />
         </button>

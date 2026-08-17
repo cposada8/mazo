@@ -48,14 +48,17 @@ type CartaProps = {
 }
 
 export function Carta({ card, represents, size = 'md', className }: CartaProps) {
-  const base = `flex ${TAMANOS[size]} aspect-[8/11] shrink-0 flex-col justify-between rounded-md border leading-none shadow-sm select-none`
+  // A card face does not follow the theme: it is a physical object under the
+  // table's light, and it stays the most legible thing on the screen — white,
+  // in a dark room, in either theme.
+  const base = `flex ${TAMANOS[size]} aspect-[8/11] shrink-0 flex-col justify-between rounded-md border border-stone-300/80 bg-stone-50 leading-none shadow-sm select-none`
 
   if (isComodin(card)) {
     return (
       <div
         className={cn(
           base,
-          'border-dashed bg-linear-to-br from-violet-500/15 to-fuchsia-500/15 text-violet-600 dark:text-violet-300',
+          'border-dashed border-violet-400/60 bg-linear-to-br from-violet-500/15 to-fuchsia-500/15 text-violet-700',
           className,
         )}
         title={represents ? `Comodín valiendo ${represents}` : 'Comodín'}
@@ -76,8 +79,7 @@ export function Carta({ card, represents, size = 'md', className }: CartaProps) 
     <div
       className={cn(
         base,
-        'bg-card',
-        red ? 'text-red-600 dark:text-red-400' : 'text-foreground',
+        red ? 'text-red-600' : 'text-stone-900',
         className,
       )}
       title={`${card.rank}${symbol}`}
@@ -103,7 +105,7 @@ export function CartaBocaAbajo({
     <div
       className={cn(
         TAMANOS[size],
-        'aspect-[8/11] shrink-0 rounded-md border bg-linear-to-br from-slate-600 to-slate-800 shadow-sm',
+        'aspect-[8/11] shrink-0 rounded-md border border-red-950/80 bg-linear-to-br from-red-900 to-red-950 shadow-sm',
         className,
       )}
       aria-label="Carta boca abajo"

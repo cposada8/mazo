@@ -14,8 +14,11 @@
  *
  * You are always at the bottom, because your hand is there and a player's own
  * cards are the one fixed point on the screen. Everyone else is spread along
- * the band **in turn order, starting on your left** — the player who goes
- * after you is the one on your left, exactly as at a real table.
+ * the band **in turn order, starting on your right** — Carioca goes
+ * anticlockwise, so the player who goes after you sits to your right, exactly
+ * as at a real table. (See "The deal and the turn" in carioca-rules.md; the
+ * first version of this file had it backwards, which is why the direction is
+ * now written down there.)
  */
 
 /**
@@ -42,7 +45,8 @@ export type Asiento = {
 }
 
 /**
- * Every seat but yours, left to right, in turn order.
+ * Every seat but yours, in turn order: right to left across the band, because
+ * play runs anticlockwise and the next player sits on your right.
  *
  * With one opponent there is no row to spread: they go straight across from
  * you, which is what two people at a table actually do.
@@ -57,7 +61,8 @@ export function asientosRivales(jugadores: number, tuyo: number): Asiento[] {
   const paso = rivales > 1 ? (100 - 2 * margen) / (rivales - 1) : 0
 
   return Array.from({ length: rivales }, (_, i) => {
-    const x = margen + i * paso
+    // The first rival after you takes the rightmost seat; the arc mirrors.
+    const x = 100 - (margen + i * paso)
 
     return {
       seat: (tuyo + 1 + i) % jugadores,

@@ -532,7 +532,7 @@ the element outranks a components-layer rule, so a lane styled half in each
 place cannot be re-arranged by a media or container query. (Claude's call:
 `.carril-mesa` and `.grupos-en-mesa` are now styled in `globals.css` alone.)
 
-### Phase 20 — The right way round, and a table worth looking at
+### Phase 20 — The right way round, and a table worth looking at ✅
 Two corrections to what Phase 17 built.
 
 **It turns the wrong way.** Carioca goes anticlockwise: play passes to the
@@ -552,6 +552,22 @@ has to still read against the new ground; and both themes keep working.
 
 **Done when:** the player who goes after you is sitting on your right, and the
 table looks like something somebody chose.
+
+**Done.** The direction went into `carioca-rules.md` first ("The deal and the
+turn"), then `lib/asientos.ts` mirrored its x axis — one line — and the test
+now asserts turn order runs right to left. The table is black on black: the
+room `stone-950`, the felt `stone-900`, a one-pixel `red-800` line following
+the rim, and dark red card backs. The turn accent stayed **amber**, not red
+(Claude's call): the rim line is already red, and an accent that matches the
+decoration stops meaning anything. Amber appears in exactly two places — the
+ficha of the seat in play and the badge on your hand — and the draw-me rings
+on the piles went neutral to keep it that way.
+
+One change beyond the letter of the phase (Claude's call, in service of "the
+card faces stay the most legible thing on the screen"): **card faces no
+longer follow the theme.** In dark mode they were dark grey on a black felt;
+now a card is white with black or red pips in either theme, the way a card
+under a table lamp would be. The comodín kept its violet, always on white.
 
 ### Phase 21 — The clock
 A turn takes time, and the time is something you can watch.

@@ -21,13 +21,13 @@ describe('asientosRivales', () => {
     expect(rival.y).toBe(0) // the top of the band: dead ahead
   })
 
-  it('goes round in turn order, starting on your left', () => {
+  it('goes round anticlockwise: the next player is on your right', () => {
     const rivales = asientosRivales(4, 0)
     expect(rivales.map((a) => a.seat)).toEqual([1, 2, 3])
 
-    // Left to right on screen is the same as the order of play.
+    // Turn order runs right to left on screen — play passes to the right.
     const xs = rivales.map((a) => a.x)
-    expect([...xs].sort((a, b) => a - b)).toEqual(xs)
+    expect([...xs].sort((a, b) => b - a)).toEqual(xs)
   })
 
   it('counts round from whichever seat is yours', () => {

@@ -56,7 +56,7 @@ export function GrupoEnMesa({
 }) {
   const contenido = (
     <div className="flex flex-col gap-0.5">
-      <span className="text-[calc(var(--texto-mesa,0.75rem)*0.85)] font-medium tracking-wide text-emerald-50/70 uppercase">
+      <span className="text-[calc(var(--texto-mesa,0.75rem)*0.85)] font-medium tracking-wide text-stone-300/80 uppercase">
         {tituloDeGrupo(grupo)}
       </span>
       <div className="flex">
@@ -83,7 +83,7 @@ export function GrupoEnMesa({
     <button
       type="button"
       onClick={onClick}
-      className="shrink-0 rounded-md border border-transparent p-1 text-left transition-colors hover:border-emerald-100/40 hover:bg-emerald-50/10"
+      className="shrink-0 rounded-md border border-transparent p-1 text-left transition-colors hover:border-stone-400/40 hover:bg-white/5"
     >
       {contenido}
     </button>
@@ -130,7 +130,7 @@ export function Asiento({
         {jugador.hand.map((card) => (
           <CartaBocaAbajo
             key={card.id}
-            className="-ml-[0.55em] h-[1em] w-[0.72em] rounded-[2px] border-0 shadow-none ring-1 ring-emerald-950/40 first:ml-0"
+            className="-ml-[0.55em] h-[1em] w-[0.72em] rounded-[2px] border-0 shadow-none ring-1 ring-black/60 first:ml-0"
           />
         ))}
       </div>
@@ -140,15 +140,15 @@ export function Asiento({
           'flex size-[var(--ficha,2rem)] items-center justify-center rounded-full border text-[calc(var(--ficha,2rem)*0.45)] font-semibold transition-shadow',
           esSuTurno
             ? 'border-amber-300 bg-amber-300 text-amber-950 ring-4 ring-amber-300/40'
-            : 'border-emerald-100/25 bg-emerald-950/60 text-emerald-50',
+            : 'border-stone-500/40 bg-stone-900 text-stone-100',
         )}
       >
         {inicial(nombre)}
       </div>
 
-      <span className="max-w-full truncate text-[var(--texto-mesa,0.75rem)] leading-tight font-medium text-emerald-50">
+      <span className="max-w-full truncate text-[var(--texto-mesa,0.75rem)] leading-tight font-medium text-stone-100">
         {nombre}
-        <span className="text-emerald-100/60">
+        <span className="text-stone-400">
           {' '}
           · {jugador.hand.length}
           {jugador.bajadoEnTurno !== null && ' · bajado'}
@@ -172,7 +172,7 @@ export function Pilas({
 }) {
   const arriba = state.discard.at(-1)
   const activo = Boolean(onRobar)
-  const estiloPila = activo ? 'ring-2 ring-amber-300 ring-offset-2 ring-offset-emerald-900' : ''
+  const estiloPila = activo ? 'ring-2 ring-stone-100/80 ring-offset-2 ring-offset-stone-950' : ''
 
   return (
     <div className="flex shrink-0 items-start gap-2">
@@ -183,7 +183,7 @@ export function Pilas({
         className="flex cursor-default flex-col items-center gap-0.5 enabled:cursor-pointer"
       >
         <CartaBocaAbajo size="sm" className={estiloPila} />
-        <span className="text-[var(--texto-mesa,0.75rem)] text-emerald-100/70">
+        <span className="text-[var(--texto-mesa,0.75rem)] text-stone-400">
           {state.stock.length}
         </span>
       </button>
@@ -197,9 +197,9 @@ export function Pilas({
         {arriba ? (
           <Carta card={arriba} size="sm" className={estiloPila} />
         ) : (
-          <div className="aspect-[8/11] h-[var(--carta-sm,3.5rem)] rounded-md border border-dashed border-emerald-100/30" />
+          <div className="aspect-[8/11] h-[var(--carta-sm,3.5rem)] rounded-md border border-dashed border-stone-500/40" />
         )}
-        <span className="text-[var(--texto-mesa,0.75rem)] text-emerald-100/70">
+        <span className="text-[var(--texto-mesa,0.75rem)] text-stone-400">
           {state.discard.length}
         </span>
       </button>
@@ -384,7 +384,7 @@ export function Mesa({
   )
 
   return (
-    <div className="cancha flex h-full w-full flex-col overflow-hidden bg-emerald-950">
+    <div className="cancha flex h-full w-full flex-col overflow-hidden bg-stone-950">
       {/*
         The table: felt behind, then two lanes on top of it — seats, then the
         mesa. The room around the felt is dark in both themes: a card table is
@@ -394,13 +394,13 @@ export function Mesa({
       <div className="relative flex min-h-0 flex-1 flex-col">
         <div
           aria-hidden
-          className="ovalo absolute inset-x-[2%] top-[6%] bottom-[3%] rounded-[50%] border-4 border-emerald-950/60 bg-emerald-800 shadow-[inset_0_0_60px_rgba(0,0,0,0.35)] dark:bg-emerald-900"
+          className="ovalo absolute inset-x-[2%] top-[6%] bottom-[3%] rounded-[50%] border border-red-800/80 bg-stone-900 shadow-[inset_0_0_80px_rgba(0,0,0,0.55)]"
         />
         {/* The contract, printed on the felt the way a table has its house
             name on it: always there, never in the way. */}
         <span
           aria-hidden
-          className="absolute bottom-[4%] left-1/2 -translate-x-1/2 text-[var(--texto-mesa,0.75rem)] font-semibold tracking-[0.3em] whitespace-nowrap text-emerald-100/20 uppercase"
+          className="absolute bottom-[4%] left-1/2 -translate-x-1/2 text-[var(--texto-mesa,0.75rem)] font-semibold tracking-[0.3em] whitespace-nowrap text-stone-100/15 uppercase"
         >
           {state.contrato.nombre}
         </span>
@@ -427,7 +427,7 @@ export function Mesa({
 
           <div className="grupos-en-mesa">
             {enMesa.length === 0 ? (
-              <span className="self-center text-[var(--texto-mesa,0.75rem)] text-emerald-100/40">
+              <span className="self-center text-[var(--texto-mesa,0.75rem)] text-stone-500">
                 Nadie se ha bajado todavía.
               </span>
             ) : (

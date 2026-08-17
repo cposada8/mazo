@@ -291,6 +291,13 @@ With jokers off, subtract 4 from every stock figure. Two players is assumed
 playable and is what makes solo-against-one-bot possible; revisit if it turns out
 to be a poor game.
 
+Play goes **anticlockwise**: the turn passes to the player on the current
+player's **right**. This never mattered to the engine — `turno` advances by one
+and the engine has no opinion about geometry — but it decides where the next
+player is *drawn*, and it went unwritten long enough for the first table
+layout to get it backwards. (Recorded in Phase 20; the seating in
+`lib/asientos.ts` follows this document, not the other way round.)
+
 A turn is always the same two steps:
 
 1. **Draw** one card — the hand goes to 13. The player chooses freely between
