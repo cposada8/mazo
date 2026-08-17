@@ -322,10 +322,38 @@ This phase is about the shape of the thing:
 - Portrait phone first, light and dark, and no canvas or WebGL — this stays HTML
   the browser can lay out and a screen reader can read.
 
-Worth looking at before starting: the online carioca implementations that exist
-already — playcarioca.cl, cariocaonline.com, ludocca.com — and the ordinary
-online-poker table, which solved seating people around an ellipse a long time
-ago. Skeuomorphic felt and wood are not the point; legibility is.
+#### What was looked at, and what is worth taking
+
+**cardgames.io/hearts, on a phone in portrait** — the closest thing to our
+problem, and the more useful of the two. Four seats: you at the bottom, one
+opponent at the top, one on each side edge. There is **no drawn table at all** —
+the felt is a flat green background and the *arrangement* is what reads as a
+table. Each seat is a small avatar with a name under it. Opponents' hands are
+fanned card backs at their seat, so how many cards someone is holding is
+something you see rather than a number you read. Your hand is one overlapping
+row across the full width, sitting on a light tray that separates it from the
+felt. The instruction for the turn is a yellow strip **directly above the
+hand** — where the eye already is. The running score is a tiny permanent table
+in the corner, never a screen of its own.
+
+**PokerNow** — the drawn-oval version: a green ellipse floating on a dark
+ground, each seat a small plate on the ellipse's edge with name and chip count,
+the common cards and pot in the middle, your own cards at the near edge. It is
+the look people picture when they say "poker table", and it is a desktop
+layout: on a phone the ellipse eats the room the cards need.
+
+Taken together: **seats on the edges and hand at the bottom, felt as background,
+no drawn oval.** Avatars, wood grain and felt texture are decoration and can
+wait; what does the work is position, a lit seat for the turn, and seeing card
+counts as cards.
+
+The one thing neither reference solves for us: poker's middle holds five cards
+and ours holds **the whole mesa** — up to four grupos per player, six players.
+That communal area is the hard part of this phase, not the seating.
+
+Also worth a look if they come back up: playcarioca.cl, cariocaonline.com and
+ludocca.com are existing online cariocas. All three were down or behind a login
+when checked on 2026-08-17.
 
 **Done when:** someone who has not seen the project recognises a card table in
 the first second, follows whose turn it is without being told, and the same
