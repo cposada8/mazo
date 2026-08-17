@@ -311,21 +311,24 @@ This phase is about the shape of the thing:
 - **A table, round or oval**, with the seats placed around it and each player's
   name at their position. Positions are computed from the number of players —
   the table takes 2 to 6 — not hardcoded per layout.
-- **The turn is visible from across the room**: the seat in play is lit, and it
-  is obvious at a glance how many cards each opponent is holding.
+- **The turn is drawn on the player, not somewhere else** — a ring around the
+  seat in play, the way Plato does it. And it is obvious at a glance how many
+  cards each opponent is holding.
+- **The actions live in the bottom-right corner**, under the thumb, and stay in
+  the same place from turn to turn.
 - **Grupos live in the middle, not next to their owner.** Once laid down they
   are communal, and the engine already knows whose is whose — `seat` and
   `grupoIndex` still identify a grupo in a move. Where it *sits on screen* is a
   free choice, and the middle of the table is the honest one.
 - **Your hand keeps the bottom of the screen**, with everything Phase 13 and 15
   built: order, pinned bloques, points.
-- Portrait phone first, light and dark, and no canvas or WebGL — this stays HTML
-  the browser can lay out and a screen reader can read.
+- Landscape phone first, light and dark, and no canvas or WebGL — this stays
+  HTML the browser can lay out and a screen reader can read.
 
 #### What was looked at, and what is worth taking
 
-**cardgames.io/hearts, on a phone in portrait** — the closest thing to our
-problem, and the more useful of the two. Four seats: you at the bottom, one
+**cardgames.io/hearts, on a phone in portrait** — the plainest of the three,
+and proof of how little it takes. Four seats: you at the bottom, one
 opponent at the top, one on each side edge. There is **no drawn table at all** —
 the felt is a flat green background and the *arrangement* is what reads as a
 table. Each seat is a small avatar with a name under it. Opponents' hands are
@@ -368,12 +371,16 @@ The one thing none of the references solves for us: poker's middle holds five
 cards and ours holds **the whole mesa** — up to four grupos per player, six
 players. That communal area is the hard part of this phase, not the seating.
 
-**Open, and to be settled before the phase starts: portrait or landscape.**
-Everything built so far is portrait, which is how a phone is held by default.
-Plato is landscape, and for a game whose hand is thirteen cards wide and whose
-mesa is a row of grupos, landscape is the shape the content actually wants.
-Rotating is a real cost — it is a thing the player has to be told to do — so
-this is a decision, not a detail.
+**Settled: the game is played in landscape.** Everything built so far is
+portrait, which is how a phone is held by default — but a hand is thirteen
+cards wide and the mesa is a row of grupos, so the content is landscape-shaped,
+and Plato has already trained the owner to turn the phone sideways for a card
+game. The cost is real and has to be paid explicitly: someone arriving in
+portrait must be *told* to rotate, kindly and once, rather than being shown a
+squashed table.
+
+The pages around the game — setup, the scoreboard, the end of a ronda — stay
+readable in portrait. It is the table that wants the width.
 
 Also worth a look if they come back up: playcarioca.cl, cariocaonline.com and
 ludocca.com are existing online cariocas. All three were down or behind a login
@@ -381,7 +388,7 @@ when checked on 2026-08-17.
 
 **Done when:** someone who has not seen the project recognises a card table in
 the first second, follows whose turn it is without being told, and the same
-screen works for two players and for six on a phone.
+screen works for two players and for six on a phone held sideways.
 
 ---
 
