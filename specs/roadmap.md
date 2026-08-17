@@ -342,14 +342,38 @@ the common cards and pot in the middle, your own cards at the near edge. It is
 the look people picture when they say "poker table", and it is a desktop
 layout: on a phone the ellipse eats the room the cards need.
 
+**Plato's poker table** — the one the owner actually plays, and the richest of
+the three. It is **landscape**, with an oval table drawn in perspective sitting
+inside an illustrated room. Every seat is a round avatar with the name under it,
+a chips pill under that, and the player's two cards as small backs beside the
+avatar. The player in turn wears a **ring around their avatar** that doubles as
+the countdown — the turn is not a colour change somewhere else on the screen,
+it is drawn on the person. Empty seats keep a grey silhouette, so the table does
+not change shape with the number of players. Your own cards are larger, at the
+bottom centre, and the three actions are big buttons in the **bottom-right
+corner, under the thumb**. A small badge above your cards names what you are
+holding — "Pareja J" — a derived hint about your own hand, which is exactly what
+our points readout already is.
+
+What Plato teaches that the other two do not: the actions belong in the thumb's
+corner, the turn belongs on the avatar, and the *room* does the decorating so
+the felt itself can stay plain and legible.
+
 Taken together: **seats on the edges and hand at the bottom, felt as background,
 no drawn oval.** Avatars, wood grain and felt texture are decoration and can
 wait; what does the work is position, a lit seat for the turn, and seeing card
 counts as cards.
 
-The one thing neither reference solves for us: poker's middle holds five cards
-and ours holds **the whole mesa** — up to four grupos per player, six players.
-That communal area is the hard part of this phase, not the seating.
+The one thing none of the references solves for us: poker's middle holds five
+cards and ours holds **the whole mesa** — up to four grupos per player, six
+players. That communal area is the hard part of this phase, not the seating.
+
+**Open, and to be settled before the phase starts: portrait or landscape.**
+Everything built so far is portrait, which is how a phone is held by default.
+Plato is landscape, and for a game whose hand is thirteen cards wide and whose
+mesa is a row of grupos, landscape is the shape the content actually wants.
+Rotating is a real cost — it is a thing the player has to be told to do — so
+this is a decision, not a detail.
 
 Also worth a look if they come back up: playcarioca.cl, cariocaonline.com and
 ludocca.com are existing online cariocas. All three were down or behind a login
