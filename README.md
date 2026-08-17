@@ -6,9 +6,9 @@ a Chilean rummy variant played over a configurable sequence of contracts.
 Play against bots when nobody is around, or share a code and play with friends
 from their own phones — no account required.
 
-> Status: the rules engine is complete through a full ronda — dealing, grupos,
-> turns, laying down, and the mesa. Scoring is next, and nothing is playable by a
-> human yet. See [`specs/estado.md`](./specs/estado.md).
+> Status: **playable.** Open [`/jugar`](https://mazo-six.vercel.app/jugar) on a
+> phone and play a full partida against bots. Next is how it looks — a table
+> instead of a form. See [`specs/estado.md`](./specs/estado.md).
 
 ## How it is built
 
@@ -49,3 +49,16 @@ npm run dev        # http://localhost:3000
 npm run test:run   # Vitest, once
 npm run build      # production build
 ```
+
+## Shipping it
+
+Work happens on `dev`. Production is `main`, and nothing else deploys it.
+
+```bash
+git push origin dev              # → https://mazo-git-dev-cepm23.vercel.app
+git checkout main && git merge dev && git push origin main   # → producción
+```
+
+Vercel builds both by itself: any branch that is not `main` gets a preview, and
+the `dev` URL above always shows the latest commit on the branch. Push to `dev`,
+open it on a phone, and only then merge.
