@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest'
-import { CONFIG_POR_DEFECTO, contratoPorId } from '@/lib/engine'
+import {
+  CONFIG_POR_DEFECTO,
+  type PartidaState,
+  aplicarEnPartida,
+  contratoPorId,
+  isComodin,
+  startPartida,
+} from '@/lib/engine'
 import { codicioso, jugarPartida } from '@/lib/bots'
 
 /**
@@ -144,14 +151,39 @@ describe('two bots, every contract on', () => {
     expect(resultado.partida.historial).toHaveLength(8)
   })
 
-  it('finishes without comodines', () => {
-    const resultado = jugarPartida({
-      bots: [codicioso, codicioso],
+  it('finishes without comodines, and none ever appears anywhere', () => {
+    // Not just the deal: the whole partida — every hand, the stock and the
+    // descarte through every reshuffle — is played move by move and checked.
+    let partida = startPartida({
+      players: 2,
       seed: 'sin-comodines',
       config: { ...CONFIG_POR_DEFECTO, comodines: false },
     })
 
-    expect(resultado.motivo).toBe('TERMINADA')
+    const sinComodines = (ronda: NonNullable<PartidaState['ronda']>) => {
+      const cartas = [
+        ...ronda.stock,
+        ...ronda.discard,
+        ...ronda.jugadores.flatMap((jugador) => [
+          ...jugador.hand,
+          ...jugador.grupos.flatMap((grupo) => grupo.cards),
+        ]),
+      ]
+      return cartas.every((carta) => !isComodin(carta))
+    }
+
+    let movimientos = 0
+    while (partida.ronda && movimientos < 20_000) {
+      expect(sinComodines(partida.ronda)).toBe(true)
+      const result = aplicarEnPartida(partida, codicioso.decidir(partida.ronda))
+      expect(result.ok).toBe(true)
+      if (!result.ok) return
+      partida = result.state
+      movimientos++
+    }
+
+    expect(partida.ronda).toBeNull()
+    expect(partida.ganadores).not.toBeNull()
   })
 
   it('finishes with a ronda-winner bonus', () => {

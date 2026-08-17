@@ -52,8 +52,8 @@ table.
 | 24 | Watching the table work: descarte, historial, latched sort | ✅ |
 | 25 | Cards with corners | ✅ |
 | 26 | Going out by ligando | ✅ |
-| 27 | Sin comodines, and the flipped defaults | ← **next** |
-| 28 | Ajustes from inside the partida | not started |
+| 27 | Sin comodines, and the flipped defaults | ✅ |
+| 28 | Ajustes from inside the partida | ← **next** |
 | 29–31 | Bot framework and personalities | not started |
 | 32–35 | Online: persistence, rooms, server play, real-time | not started |
 

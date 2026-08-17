@@ -21,10 +21,11 @@ export default function Jugar() {
 
   return (
     <Juego
-      key={`${ajustes.jugadores}-${ajustes.seed}-${ajustes.contratos.length}-${ajustes.segundosBot}`}
+      key={`${ajustes.jugadores}-${ajustes.seed}-${ajustes.contratos.length}-${ajustes.comodines}-${ajustes.segundosBot}`}
       jugadores={ajustes.jugadores}
       seed={ajustes.seed}
       contratos={ajustes.contratos}
+      comodines={ajustes.comodines}
       segundosBot={ajustes.segundosBot}
       verDescarte={ajustes.verDescarte}
       verHistorial={ajustes.verHistorial}

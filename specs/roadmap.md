@@ -792,7 +792,7 @@ was always "the seat with the empty hand". The relato carries a `cierra`
 flag on the moves that can now end a ronda, and the bots were already safe:
 El Codicioso has never ligado its last card, by its own guard.
 
-### Phase 27 — Sin comodines, and the defaults the owner keeps correcting
+### Phase 27 — Sin comodines, and the defaults the owner keeps correcting ✅
 Two setup-screen matters, both cheap and both about the first minute.
 
 - **Playing without comodines is a real variant**, and the engine has had the
@@ -809,6 +809,15 @@ Two setup-screen matters, both cheap and both about the first minute.
 **Done when:** a partida dealt with comodines off contains none anywhere —
 hands, stock, descarte — through every reshuffle; and a fresh browser gets
 dark cards, no fullscreen, and comodines on, without touching a switch.
+
+**Done.** The engine needed nothing — `comodines` already rode
+`PartidaConfig` from `buildDeck` up; the whole phase is one checkbox on the
+setup screen and the plumbing through `Ajustes`. A test now plays a full
+sin-comodines partida move by move asserting no comodín in any hand, pile or
+grupo of any state. The comodines choice is deliberately **not** remembered
+(Claude's call): it is a rule, like the contract list, so every setup starts
+from the standard game. The two flipped defaults only rewrote what an empty
+localStorage means — anyone who already chose keeps their choice.
 
 ### Phase 28 — Ajustes from inside the partida
 The bots' thinking time and the card finish are chosen on the setup screen

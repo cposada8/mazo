@@ -19,6 +19,8 @@ export type Ajustes = {
   seed: string
   /** The contratos to play, in order. Never empty. */
   contratos: Contrato[]
+  /** Deal the deck with its four comodines, or with none at all. A rule. */
+  comodines: boolean
   /** Seconds a bot spends on its whole turn — draw, unload and discard. */
   segundosBot: number
   /** May the descarte pile be browsed, or does memory stay part of the game? */
@@ -54,13 +56,18 @@ export function Inicio({
 }) {
   const [jugadores, setJugadores] = useState(3)
   const [semilla, setSemilla] = useState('')
+  // A rule, chosen per partida like the contract list — deliberately not
+  // remembered: every setup starts from the standard game.
+  const [comodines, setComodines] = useState(true)
   const [segundosBot, setSegundosBot] = useState(2)
   const [verDescarte, setVerDescarte] = useState(true)
   const [verHistorial, setVerHistorial] = useState(true)
+  // Oscuras by default (Phase 27): the owner kept correcting this one. Anyone
+  // who already chose keeps their choice.
   const [cartasOscuras, setCartasOscuras] = useState(
     () =>
       typeof window !== 'undefined' &&
-      localStorage.getItem(CLAVE_BARAJA) === 'si',
+      localStorage.getItem(CLAVE_BARAJA) !== 'no',
   )
 
   const escogerBaraja = (oscuras: boolean) => {
@@ -83,10 +90,12 @@ export function Inicio({
     () => false,
   )
   const ofrecerPantalla = montado && hayPantallaCompleta()
+  // Off by default (Phase 27): fullscreen is asked for, never presumed. Anyone
+  // who already switched it on keeps it on.
   const [conPantalla, setConPantalla] = useState(
     () =>
       typeof window !== 'undefined' &&
-      localStorage.getItem(CLAVE_PANTALLA) !== 'no',
+      localStorage.getItem(CLAVE_PANTALLA) === 'si',
   )
 
   const alternarPantalla = () => {
@@ -111,6 +120,7 @@ export function Inicio({
       jugadores,
       seed: limpiarSemilla(semilla) || semillaAleatoria(),
       contratos: [...contratos],
+      comodines,
       segundosBot,
       verDescarte,
       verHistorial,
@@ -216,6 +226,29 @@ export function Inicio({
 
       <section className="flex flex-col gap-3">
         <h2 className="text-muted-foreground text-xs font-medium tracking-widest uppercase">
+          Comodines
+        </h2>
+        <label className="flex items-center gap-3 text-sm">
+          <input
+            type="checkbox"
+            checked={comodines}
+            onChange={() => setComodines((antes) => !antes)}
+            className="size-4 accent-current"
+          />
+          <span>
+            Jugar con comodines
+            <span className="text-muted-foreground"> — cuatro en el mazo</span>
+          </span>
+        </label>
+        <p className="text-muted-foreground text-sm text-balance">
+          Apágalos y se reparte un mazo sin ninguno: 104 cartas y ningún
+          comodín en toda la partida. Es una regla — se decide aquí y no
+          cambia a mitad de juego.
+        </p>
+      </section>
+
+      <section className="flex flex-col gap-3">
+        <h2 className="text-muted-foreground text-xs font-medium tracking-widest uppercase">
           Cuánto piensa un bot
         </h2>
         <div className="grid grid-cols-4 gap-2">
@@ -286,15 +319,17 @@ export function Inicio({
           La baraja
         </h2>
         <div className="grid grid-cols-2 gap-2">
+          {/* Until mounted the stored choice is unknown, so the default —
+              oscuras — shows as active; the real choice takes over on mount. */}
           <BotonDeBaraja
             nombre="Claras"
-            activo={!montado || !cartasOscuras}
+            activo={montado && !cartasOscuras}
             onClick={() => escogerBaraja(false)}
             carta="border-stone-300 bg-stone-50 text-stone-900"
           />
           <BotonDeBaraja
             nombre="Oscuras"
-            activo={montado && cartasOscuras}
+            activo={!montado || cartasOscuras}
             onClick={() => escogerBaraja(true)}
             carta="border-stone-600 bg-stone-900 text-stone-50"
           />

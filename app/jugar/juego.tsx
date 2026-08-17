@@ -35,6 +35,7 @@ export function Juego({
   jugadores,
   seed,
   contratos,
+  comodines,
   segundosBot,
   verDescarte,
   verHistorial,
@@ -44,6 +45,8 @@ export function Juego({
   jugadores: number
   seed: string
   contratos: readonly Contrato[]
+  /** Deal with the four comodines, or with none at all. */
+  comodines: boolean
   /** Seconds a bot spends on its whole turn. */
   segundosBot: number
   /** Memory aids from the setup screen: browse the pile, reread the story. */
@@ -54,8 +57,8 @@ export function Juego({
   onSalir: () => void
 }) {
   const config = useMemo(
-    () => ({ ...CONFIG_POR_DEFECTO, contratos }),
-    [contratos],
+    () => ({ ...CONFIG_POR_DEFECTO, contratos, comodines }),
+    [contratos, comodines],
   )
   const juego = usePartida({ jugadores, seed, config, segundosBot })
   const [verMenu, setVerMenu] = useState(false)
