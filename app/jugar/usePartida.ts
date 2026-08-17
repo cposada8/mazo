@@ -1,7 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { armarGrupo, codicioso } from '@/lib/bots'
+import { armarGrupo, movesDelTurno, tiemposDeMoves } from '@/lib/bots'
 import {
   type Acomodo,
   type Bloque,
@@ -25,8 +25,8 @@ import {
   startPartida,
 } from '@/lib/engine'
 
-/** How long a bot appears to think, so its turn can be followed. */
-const PAUSA_DEL_BOT = 550
+/** How long a bot's whole turn takes if the setup screen said nothing. */
+const SEGUNDOS_DEL_BOT = 2
 
 export const TU_ASIENTO = 0
 
@@ -34,8 +34,10 @@ export function usePartida(options: {
   jugadores: number
   seed: string
   config?: PartidaConfig
+  /** Seconds a bot spends on its whole turn — draw, unload and discard. */
+  segundosBot?: number
 }) {
-  const { jugadores, seed, config } = options
+  const { jugadores, seed, config, segundosBot = SEGUNDOS_DEL_BOT } = options
 
   const [partida, setPartida] = useState<PartidaState>(() =>
     startPartida({ players: jugadores, seed, config }),
@@ -219,39 +221,56 @@ export function usePartida(options: {
     setAviso(null)
   }, [])
 
-  // Bots take their turns on their own, one move at a time so the table can be
-  // watched rather than jumping to your next turn.
-  const enCurso = useRef(false)
+  /**
+   * One string that changes exactly when a new turn starts — and not while a
+   * turn is being played out. It keys both the bot scheduler below and the
+   * draining ring on the ficha, so the clock and the moves share a start line.
+   */
+  const claveDeTurno =
+    ronda && ronda.ganador === null
+      ? `${partida.indiceContrato}:${ronda.numeroDeTurno}:${ronda.turno}`
+      : 'nada'
+
+  /**
+   * Bots play their whole turn inside their allotted seconds (Phase 21).
+   *
+   * The moves are planned up front — deciding is pure, so the plan and the
+   * play walk identical states — and spread across the clock, the last one
+   * landing when the time runs out. The effect is keyed by the turn, not by
+   * the state: the intermediate moves it applies must not reschedule it.
+   */
+  const partidaRef = useRef(partida)
   useEffect(() => {
-    const actual = partida.ronda
+    partidaRef.current = partida
+  }, [partida])
+
+  useEffect(() => {
+    const estado = partidaRef.current
+    const actual = estado.ronda
     if (!actual || actual.ganador !== null) return
     if (actual.turno === TU_ASIENTO) return
     // A ronda waiting to be acknowledged is not a ronda in progress: the next
     // one is already dealt, and a bot playing into it behind the summary would
     // mean coming back to a table that had moved on without you.
     if (resumen) return
-    if (enCurso.current) return
 
-    enCurso.current = true
+    const moves = movesDelTurno(estado)
+    const tiempos = tiemposDeMoves(moves.length, segundosBot * 1000)
 
-    const id = setTimeout(() => {
-      enCurso.current = false
-      setPartida((estado) => {
-        const ronda = estado.ronda
-        if (!ronda || ronda.turno === TU_ASIENTO || ronda.ganador !== null) return estado
-        const result = aplicarEnPartida(estado, codicioso.decidir(ronda))
-        if (!result.ok) return estado
-        const cerrada = rondaCerrada(estado, result.state)
-        if (cerrada) setResumen(cerrada)
-        return result.state
-      })
-    }, PAUSA_DEL_BOT)
+    const ids = moves.map((move, i) =>
+      setTimeout(() => {
+        setPartida((antes) => {
+          const result = aplicarEnPartida(antes, move)
+          if (!result.ok) return antes
+          const cerrada = rondaCerrada(antes, result.state)
+          if (cerrada) setResumen(cerrada)
+          return result.state
+        })
+      }, tiempos[i]),
+    )
 
-    return () => {
-      clearTimeout(id)
-      enCurso.current = false
-    }
-  }, [partida, resumen])
+    return () => ids.forEach(clearTimeout)
+  }, [claveDeTurno, resumen, segundosBot])
 
   // --------------------------------------------------------------- actions
 
@@ -365,6 +384,8 @@ export function usePartida(options: {
     partida,
     ronda,
     resumen,
+    /** For the draining ring: how long a bot turn lasts, and its start line. */
+    reloj: { segundos: segundosBot, clave: claveDeTurno },
     /** True once the last contract has been played and scored. */
     seAcabo: partida.ronda === null,
     siguiente,

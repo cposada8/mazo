@@ -33,18 +33,21 @@ export function Juego({
   jugadores,
   seed,
   contratos,
+  segundosBot,
   onSalir,
 }: {
   jugadores: number
   seed: string
   contratos: readonly Contrato[]
+  /** Seconds a bot spends on its whole turn. */
+  segundosBot: number
   onSalir: () => void
 }) {
   const config = useMemo(
     () => ({ ...CONFIG_POR_DEFECTO, contratos }),
     [contratos],
   )
-  const juego = usePartida({ jugadores, seed, config })
+  const juego = usePartida({ jugadores, seed, config, segundosBot })
   const [verMenu, setVerMenu] = useState(false)
 
   const { partida, ronda, esTuTurno, esperando, aviso, resumen } = juego
@@ -87,6 +90,7 @@ export function Juego({
           state={ronda}
           asiento={TU_ASIENTO}
           nombres={nombres(jugadores)}
+          reloj={juego.reloj}
           secciones={juego.secciones}
           puntos={juego.puntos}
           onSoltar={juego.soltar}

@@ -187,6 +187,26 @@
   }
 
   /*
+   * The clock, drawn on the player (Phase 21): the ring around the ficha in
+   * play empties as the turn's time runs out. The circle below has r=17.5 in
+   * a 40-unit box, so one lap of dash is 2π·17.5 ≈ 109.96. The duration comes
+   * inline from the setup screen; restarting is done by keying the SVG to the
+   * turn, so a new turn is a new element and the animation begins again.
+   */
+  .reloj-arco {
+    stroke-dasharray: 109.96;
+    animation: reloj-agota linear both;
+  }
+  @keyframes reloj-agota {
+    from {
+      stroke-dashoffset: 0;
+    }
+    to {
+      stroke-dashoffset: 109.96;
+    }
+  }
+
+  /*
    * Standing up. The same lanes work upright — seats across the top, mesa in
    * the middle, hand along the bottom — but two things give way when the box
    * is taller than it is wide: the drawn oval (there is no room for an

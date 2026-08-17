@@ -21,10 +21,11 @@ export default function Jugar() {
 
   return (
     <Juego
-      key={`${ajustes.jugadores}-${ajustes.seed}-${ajustes.contratos.length}`}
+      key={`${ajustes.jugadores}-${ajustes.seed}-${ajustes.contratos.length}-${ajustes.segundosBot}`}
       jugadores={ajustes.jugadores}
       seed={ajustes.seed}
       contratos={ajustes.contratos}
+      segundosBot={ajustes.segundosBot}
       onSalir={() => setAjustes(null)}
     />
   )

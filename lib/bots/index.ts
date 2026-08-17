@@ -9,3 +9,4 @@
 export * from './agrupar'
 export * from './codicioso'
 export * from './mesa'
+export * from './turno'

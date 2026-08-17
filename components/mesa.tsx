@@ -106,12 +106,20 @@ function tituloDeGrupo(grupo: Grupo): string {
  * the name line, one line, because on a short screen every line costs a card's
  * worth of height.
  */
+export type Reloj = {
+  /** How long the seat in play gets for its whole turn. */
+  readonly segundos: number
+  /** Changes when a new turn starts; keys the ring so it restarts. */
+  readonly clave: string
+}
+
 export function Asiento({
   jugador,
   nombre,
   esSuTurno,
   x,
   y,
+  reloj,
 }: {
   jugador: JugadorState
   nombre: string
@@ -119,6 +127,8 @@ export function Asiento({
   /** Percent of the seat band. `y` anchors the seat's top edge. */
   x: number
   y: number
+  /** When given, the turn ring drains instead of merely glowing. */
+  reloj?: Reloj
 }) {
   return (
     <div
@@ -135,15 +145,49 @@ export function Asiento({
         ))}
       </div>
 
-      <div
-        className={cn(
-          'flex size-[var(--ficha,2rem)] items-center justify-center rounded-full border text-[calc(var(--ficha,2rem)*0.45)] font-semibold transition-shadow',
-          esSuTurno
-            ? 'border-amber-300 bg-amber-300 text-amber-950 ring-4 ring-amber-300/40'
-            : 'border-stone-500/40 bg-stone-900 text-stone-100',
+      <div className="relative">
+        {/* The countdown is drawn on the player, where the turn already is:
+            a full track, and an arc that empties as the time runs out. */}
+        {esSuTurno && reloj && (
+          <svg
+            key={reloj.clave}
+            aria-hidden
+            viewBox="0 0 40 40"
+            className="absolute -inset-1 -rotate-90"
+          >
+            <circle
+              cx="20"
+              cy="20"
+              r="17.5"
+              fill="none"
+              strokeWidth="3.5"
+              className="stroke-amber-300/25"
+            />
+            <circle
+              cx="20"
+              cy="20"
+              r="17.5"
+              fill="none"
+              strokeWidth="3.5"
+              strokeLinecap="round"
+              className="reloj-arco stroke-amber-300"
+              style={{ animationDuration: `${reloj.segundos}s` }}
+            />
+          </svg>
         )}
-      >
-        {inicial(nombre)}
+        <div
+          className={cn(
+            'flex size-[var(--ficha,2rem)] items-center justify-center rounded-full border text-[calc(var(--ficha,2rem)*0.45)] font-semibold transition-shadow',
+            esSuTurno
+              ? cn(
+                  'border-amber-300 bg-amber-300 text-amber-950',
+                  !reloj && 'ring-4 ring-amber-300/40',
+                )
+              : 'border-stone-500/40 bg-stone-900 text-stone-100',
+          )}
+        >
+          {inicial(nombre)}
+        </div>
       </div>
 
       <span className="max-w-full truncate text-[var(--texto-mesa,0.75rem)] leading-tight font-medium text-stone-100">
@@ -345,6 +389,7 @@ export function Mesa({
   state,
   asiento,
   nombres,
+  reloj,
   secciones,
   puntos,
   onSoltar,
@@ -360,6 +405,8 @@ export function Mesa({
   /** The seat whose hand is shown face up. */
   asiento: number
   nombres?: readonly string[]
+  /** When given, the ring of the seat in play drains over the turn's time. */
+  reloj?: Reloj
   /** Your hand laid out. Defaults to the dealt order, unpinned. */
   secciones?: readonly Seccion[]
   /** What your hand would cost right now. */
@@ -415,6 +462,7 @@ export function Mesa({
               esSuTurno={state.turno === seat && state.ganador === null}
               x={x}
               y={y}
+              reloj={reloj}
             />
           ))}
         </div>

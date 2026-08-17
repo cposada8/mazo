@@ -19,7 +19,12 @@ export type Ajustes = {
   seed: string
   /** The contratos to play, in order. Never empty. */
   contratos: Contrato[]
+  /** Seconds a bot spends on its whole turn — draw, unload and discard. */
+  segundosBot: number
 }
+
+/** Whole-turn thinking times on offer. Two is the pace of a real table. */
+const SEGUNDOS = [1, 2, 3, 5] as const
 
 /**
  * Everything chosen before the first card is dealt.
@@ -40,6 +45,7 @@ export function Inicio({
 }) {
   const [jugadores, setJugadores] = useState(3)
   const [semilla, setSemilla] = useState('')
+  const [segundosBot, setSegundosBot] = useState(2)
   const [encendidos, setEncendidos] = useState<readonly string[]>(
     CONTRATOS_POR_DEFECTO,
   )
@@ -84,6 +90,7 @@ export function Inicio({
       jugadores,
       seed: limpiarSemilla(semilla) || semillaAleatoria(),
       contratos: [...contratos],
+      segundosBot,
     })
   }
 
@@ -180,6 +187,33 @@ export function Inicio({
               Deja al menos una encendida.
             </span>
           )}
+        </p>
+      </section>
+
+      <section className="flex flex-col gap-3">
+        <h2 className="text-muted-foreground text-xs font-medium tracking-widest uppercase">
+          Cuánto piensa un bot
+        </h2>
+        <div className="grid grid-cols-4 gap-2">
+          {SEGUNDOS.map((s) => (
+            <button
+              key={s}
+              type="button"
+              onClick={() => setSegundosBot(s)}
+              aria-pressed={segundosBot === s}
+              className={`rounded-md border py-3 text-sm tabular-nums transition-colors ${
+                segundosBot === s
+                  ? 'bg-foreground text-background border-transparent'
+                  : 'bg-card hover:bg-accent'
+              }`}
+            >
+              {s} s
+            </button>
+          ))}
+        </div>
+        <p className="text-muted-foreground text-sm text-balance">
+          El turno completo del bot — robar, bajar y botar — cabe en ese
+          tiempo, y el anillo del que juega se va vaciando.
         </p>
       </section>
 

@@ -569,7 +569,7 @@ longer follow the theme.** In dark mode they were dark grey on a black felt;
 now a card is white with black or red pips in either theme, the way a card
 under a table lamp would be. The comodín kept its violet, always on white.
 
-### Phase 21 — The clock
+### Phase 21 — The clock ✅
 A turn takes time, and the time is something you can watch.
 
 - **Bots think for a set number of seconds**, chosen on the setup screen, **two
@@ -587,6 +587,21 @@ A turn takes time, and the time is something you can watch.
 
 **Done when:** a bot's turn takes as long as the setup screen says it does, and
 how much of it is left can be seen without reading a number.
+
+**Done.** Timing the whole turn required knowing the whole turn before its
+first move lands, and the engine's purity made that free: `movesDelTurno`
+(`lib/bots/turno.ts`) simulates the bot's turn to completion, and the real
+applications then walk the exact same states on a schedule —
+`tiemposDeMoves` spreads them so the **last** move lands when the time runs
+out, which is what makes the turn take exactly what the setup screen says
+(measured: two 3-second bots, 6.1 seconds). The scheduler effect is keyed by
+the *turn*, not the state, so the moves it applies cannot reschedule it.
+
+The ring is CSS, not ticks: an SVG arc keyed to the turn, one
+`stroke-dashoffset` animation whose duration is the configured seconds —
+restarting is remounting, and no JavaScript runs per frame. Options offered:
+1 / 2 / 3 / 5 seconds, two by default. Your own badge does not drain;
+nothing hurries a human yet, as specified.
 
 ### Phase 22 — What just happened
 The game changes state in silence and expects you to have been looking. Two
