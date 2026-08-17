@@ -191,6 +191,46 @@ describe('scoring a finished ronda', () => {
     expect(state.totales[0]).toBe(0)
   })
 
+  it('scores a ronda closed by ligando exactly like one closed by botando', () => {
+    // Phase 26: the hand emptied onto the mesa, not onto the descarte. The
+    // ronda closes right there and the winner scores as if they had discarded.
+    const ultima = n('7', 'diamonds')
+    const perdedor = [n('K', 'spades'), n('9', 'hearts')] // 10 + 9
+    const ronda = makeRonda({
+      contrato: CUATRO_TRIOS,
+      jugadores: [
+        {
+          hand: [ultima],
+          grupos: [
+            {
+              kind: 'trio',
+              rank: '7',
+              cards: [n('7', 'spades'), n('7', 'hearts'), n('7', 'clubs')],
+            },
+          ],
+          bajadoEnTurno: 1,
+        },
+        { hand: perdedor },
+      ],
+      numeroDeTurno: 3,
+      fase: 'act',
+    })
+
+    const result = aplicarEnPartida(partidaCon(ronda), {
+      type: 'agregar',
+      seat: 0,
+      grupoIndex: 0,
+      cardIds: [ultima.id],
+    })
+    expect(result.ok).toBe(true)
+    if (!result.ok) return
+
+    expect(result.state.historial).toHaveLength(1)
+    expect(result.state.historial[0].ganador).toBe(0)
+    expect(result.state.historial[0].puntos).toEqual([0, 19])
+    expect(result.state.totales).toEqual([0, 19])
+  })
+
   it('refuses to close a ronda nobody has gone out of', () => {
     const state = startPartida({ players: 2, seed: 'abierta' })
     expect(() => cerrarRonda(state)).toThrow(/gone out/)

@@ -5,7 +5,7 @@ import {
   contratoPorId,
   startRonda,
 } from '@/lib/engine'
-import { ids, makeRonda, n, play } from './helpers'
+import { c, ids, makeRonda, n, play } from './helpers'
 
 const DOS_TRIOS = contratoPorId('c1')!
 const CUATRO_TRIOS = contratoPorId('c8')!
@@ -217,9 +217,9 @@ describe('bajarse', () => {
     expectFail(apply(after, { type: 'bajarse', propuestas: dosTrios }), 'YA_SE_BAJO')
   })
 
-  it('refuses to leave nothing to discard', () => {
-    // Four trios is twelve cards; laid from a hand of exactly twelve there
-    // would be no thirteenth card to discard.
+  it('goes out on the spot when the bajada consumes the whole hand', () => {
+    // Four trios is twelve cards; laid from a hand of exactly twelve there is
+    // nothing left to discard — and an empty hand wins, however it was emptied.
     const cuatro = [
       ...sietes,
       ...reinas,
@@ -232,7 +232,7 @@ describe('bajarse', () => {
       fase: 'act',
     })
 
-    expectFail(
+    const after = unwrap(
       apply(state, {
         type: 'bajarse',
         propuestas: [
@@ -242,8 +242,10 @@ describe('bajarse', () => {
           { kind: 'trio', rank: '4', cardIds: ids(cuatro.slice(9, 12)) },
         ],
       }),
-      'SIN_CARTA_PARA_DESCARTAR',
     )
+    expect(after.ganador).toBe(0)
+    expect(after.jugadores[0].hand).toEqual([])
+    expect(after.jugadores[0].grupos).toHaveLength(4)
   })
 })
 
@@ -296,6 +298,100 @@ describe('going out', () => {
     const after = unwrap(apply(state, { type: 'descartar', cardId: last.id }))
     expect(after.ganador).toBe(0)
     expect(after.jugadores[0].hand).toEqual([])
+  })
+
+  it('ends the ronda when the last card is ligada onto a grupo', () => {
+    // The exact freeze from the bug report: every card unloaded onto the mesa,
+    // and a turn that could not end because there was nothing left to discard.
+    const ultima = n('7', 'diamonds')
+    const state = makeRonda({
+      jugadores: [
+        {
+          hand: [ultima],
+          grupos: [
+            {
+              kind: 'trio',
+              rank: '7',
+              cards: [n('7', 'spades'), n('7', 'hearts'), n('7', 'clubs')],
+            },
+          ],
+          bajadoEnTurno: 1,
+        },
+        { hand: [n('2', 'spades')] },
+      ],
+      numeroDeTurno: 3,
+      fase: 'act',
+    })
+
+    const after = unwrap(
+      apply(state, { type: 'agregar', seat: 0, grupoIndex: 0, cardIds: [ultima.id] }),
+    )
+    expect(after.ganador).toBe(0)
+    expect(after.jugadores[0].hand).toEqual([])
+    // The last card lies on the mesa, not on the descarte.
+    expect(ids(after.jugadores[0].grupos[0].cards)).toContain(ultima.id)
+    expect(ids(after.discard)).not.toContain(ultima.id)
+  })
+
+  it('ends the ronda when the last card frees a comodín', () => {
+    const seis = n('6', 'hearts')
+    const state = makeRonda({
+      jugadores: [
+        {
+          hand: [seis],
+          grupos: [
+            {
+              kind: 'escala',
+              suit: 'hearts',
+              start: '5',
+              cards: [n('5', 'hearts'), c(), n('7', 'hearts'), n('8', 'hearts')],
+            },
+          ],
+          bajadoEnTurno: 1,
+        },
+        { hand: [n('2', 'spades')] },
+      ],
+      numeroDeTurno: 3,
+      fase: 'act',
+    })
+
+    const after = unwrap(
+      apply(state, {
+        type: 'moverComodin',
+        seat: 0,
+        grupoIndex: 0,
+        cardId: seis.id,
+        to: 'tail',
+      }),
+    )
+    expect(after.ganador).toBe(0)
+    expect(after.jugadores[0].hand).toEqual([])
+  })
+
+  it('refuses every move once a ligada closed the ronda', () => {
+    const ultima = n('7', 'diamonds')
+    const state = makeRonda({
+      jugadores: [
+        {
+          hand: [ultima],
+          grupos: [
+            {
+              kind: 'trio',
+              rank: '7',
+              cards: [n('7', 'spades'), n('7', 'hearts'), n('7', 'clubs')],
+            },
+          ],
+          bajadoEnTurno: 1,
+        },
+        { hand: [n('2', 'spades')] },
+      ],
+      numeroDeTurno: 3,
+      fase: 'act',
+    })
+    const cerrada = unwrap(
+      apply(state, { type: 'agregar', seat: 0, grupoIndex: 0, cardIds: [ultima.id] }),
+    )
+    expectFail(apply(cerrada, { type: 'robar', de: 'stock' }), 'RONDA_TERMINADA')
   })
 
   it('refuses every move once the ronda is over', () => {

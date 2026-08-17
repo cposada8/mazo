@@ -757,7 +757,7 @@ that can only be chosen before the game that asks for them. Same policy as the
 last list: findings from real games outrank new machinery, so these go first
 and Milestones 3 and 4 move down three.
 
-### Phase 26 — Going out by ligando
+### Phase 26 — Going out by ligando ✅
 Found at the table, and it froze the game: the player unloaded every card in
 hand onto the mesa and the turn could not end. Going out was defined as
 discarding your last card, so a hand emptied by ligar was a state the rules
@@ -780,6 +780,17 @@ the ronda after a ligada that empties the hand, and the relato says so:
 **Done when:** the exact situation from the bug report plays to the end —
 ligando everything wins the ronda on the spot — and a scripted test holds the
 ronda closed, the winner's score right, and the relato telling it.
+
+**Done.** The check lives in `apply()` itself, once, after every accepted
+move: an empty hand closes the ronda whatever emptied it, so no move can
+leave the ronda in a state it cannot get out of. That made two older rules
+redundant rather than wrong: `bajarse` no longer refuses to consume the whole
+hand (a bajada of all thirteen now goes out on the spot, and
+`SIN_CARTA_PARA_DESCARTAR` is gone from the error codes), and freeing a
+comodín with the last card closes too. Scoring needed nothing — the winner
+was always "the seat with the empty hand". The relato carries a `cierra`
+flag on the moves that can now end a ronda, and the bots were already safe:
+El Codicioso has never ligado its last card, by its own guard.
 
 ### Phase 27 — Sin comodines, and the defaults the owner keeps correcting
 Two setup-screen matters, both cheap and both about the first minute.

@@ -593,8 +593,6 @@ function mensajeDeError(code: string, detail: string): string {
       return 'Eso no es lo que pide el contrato de esta ronda.'
     case 'GRUPO_INVALIDO':
       return 'Alguno de esos grupos no es válido.'
-    case 'SIN_CARTA_PARA_DESCARTAR':
-      return 'Te quedarías sin carta para botar. Guarda una.'
     case 'NO_SE_HA_BAJADO':
       return 'No puedes tocar la mesa hasta que te bajes.'
     case 'MESA_BLOQUEADA_MISMO_TURNO':

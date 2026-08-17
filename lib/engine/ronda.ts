@@ -83,7 +83,6 @@ export type MoveErrorCode =
   | 'MESA_BLOQUEADA_MISMO_TURNO'
   | 'CONTRATO_NO_COINCIDE'
   | 'GRUPO_INVALIDO'
-  | 'SIN_CARTA_PARA_DESCARTAR'
   | 'DESCARTE_VACIO'
   | 'SIN_CARTAS'
   | 'NO_EXISTE_EL_GRUPO'
@@ -135,6 +134,21 @@ export function apply(state: RondaState, move: Move): MoveResult {
     return fail('RONDA_TERMINADA', `seat ${state.ganador} already went out`)
   }
 
+  const result = applyMove(state, move)
+  if (!result.ok || result.state.ganador !== null) return result
+
+  // Going out is running out of cards, however it happened: a hand emptied by
+  // ligar — or by a bajada that consumed all thirteen — closes the ronda as
+  // surely as discarding the last card does. Checked here, once, so no move
+  // can leave the ronda in a state it cannot get out of.
+  if (result.state.jugadores[state.turno].hand.length === 0) {
+    return { ok: true, state: { ...result.state, ganador: state.turno } }
+  }
+
+  return result
+}
+
+function applyMove(state: RondaState, move: Move): MoveResult {
   switch (move.type) {
     case 'robar':
       return robar(state, move.de)
@@ -251,14 +265,6 @@ function bajarse(state: RondaState, propuestas: readonly Propuesta[]): MoveResul
       return fail('GRUPO_INVALIDO', `${check.code}: ${check.detail}`)
     }
     grupos.push(grupo)
-  }
-
-  // A turn always ends with a discard, so laying down may never empty the hand.
-  if (taken.rest.length < 1) {
-    return fail(
-      'SIN_CARTA_PARA_DESCARTAR',
-      'laying these grupos would leave nothing to discard',
-    )
   }
 
   return {

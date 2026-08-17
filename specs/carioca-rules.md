@@ -318,7 +318,8 @@ A turn is always the same two steps:
 2. **Discard** one card — the hand returns to 12.
 
 Whatever else happens in a turn (laying down, adding to melds) happens between
-those two steps.
+those two steps. Exactly one turn does not end in a discard: the one where the
+hand runs out before the discard could happen — see **Going out** below.
 
 Only the **top** card of the descarte is available. The pile underneath is out of
 play.
@@ -326,6 +327,27 @@ play.
 A player **may discard the same card they just took** from the descarte. Many
 rummy variants forbid this because it lets a turn pass at no cost; Carioca as
 played here does not, and the permission is deliberate rather than an oversight.
+
+#### Going out
+
+A player goes out by **running out of cards** — however the hand was emptied:
+
+- **Botando**: discarding the last card. The common case: the card lands on the
+  descarte and the ronda is over.
+- **Ligando**: playing the last card onto the mesa — adding it to a grupo,
+  freeing a comodín with it, or laying down a contract that consumes the whole
+  hand. The ronda closes right there, with the last card lying on the mesa
+  instead of the descarte.
+
+Both close the ronda identically: the player who went out scores 0 or the
+bonus, and everyone else counts what they still hold.
+
+This rule was settled after a real game froze on it (Phase 26): going out had
+been defined as *discarding* the last card, so a hand emptied by ligar was a
+state the rules never contemplated — the turn could not end. The alternative,
+refusing the ligada that would empty the hand, scores identically — the card
+could always be discarded instead — but turns the most satisfying play in the
+game into a refusal that has to be explained.
 
 #### When the stock runs out
 
@@ -379,7 +401,9 @@ escala 4 — against the 13 cards held mid-turn:
 
 So contracts 7 and 8 consume the entire hand: laying them down leaves exactly one
 card, which is the discard — **bajarse and going out are the same move** in those
-rondas. And an escalera needs all 13, which is why the escalera contracts cannot
+rondas. (In any contract, a bajada whose grupos run bigger than the minimum can
+consume all 13 cards — and then it goes out on the spot: an empty hand wins
+however it was emptied.) And an escalera needs all 13, which is why the escalera contracts cannot
 follow the normal draw-lay-discard flow at all.
 
 ### Scoring

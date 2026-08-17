@@ -51,8 +51,8 @@ table.
 | 23 | The comodín that slides | ✅ |
 | 24 | Watching the table work: descarte, historial, latched sort | ✅ |
 | 25 | Cards with corners | ✅ |
-| 26 | Going out by ligando | ← **next** |
-| 27 | Sin comodines, and the flipped defaults | not started |
+| 26 | Going out by ligando | ✅ |
+| 27 | Sin comodines, and the flipped defaults | ← **next** |
 | 28 | Ajustes from inside the partida | not started |
 | 29–31 | Bot framework and personalities | not started |
 | 32–35 | Online: persistence, rooms, server play, real-time | not started |

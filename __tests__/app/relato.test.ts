@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { contarRelato, relatar } from '@/lib/relato'
 import { contratoPorId, describeCard, startRonda } from '@/lib/engine'
+import { makeRonda, n } from '../engine/helpers'
 
 /**
  * The one rule that shapes the log: it may only say what everybody can see.
@@ -59,12 +60,55 @@ describe('relatar', () => {
   it('counts a bajada without listing the hand it came from', () => {
     const antes = ronda()
     const relato = relatar(
-      { type: 'bajarse', propuestas: [{}, {}] as never },
+      { type: 'bajarse', propuestas: [{ cardIds: ['a', 'b', 'c'] }, { cardIds: ['d', 'e', 'f'] }] as never },
       antes,
     )!
 
-    expect(relato).toEqual({ tipo: 'bajada', seat: antes.turno, grupos: 2 })
+    expect(relato).toEqual({
+      tipo: 'bajada',
+      seat: antes.turno,
+      grupos: 2,
+      cierra: false,
+    })
     expect(contarRelato(relato, NOMBRES)).toBe('Ana se bajó con 2 grupos')
+  })
+
+  it('says a ligada closed the ronda when it emptied the hand', () => {
+    const ultima = n('7', 'diamonds')
+    const antes = makeRonda({
+      jugadores: [{ hand: [ultima], bajadoEnTurno: 1 }, { hand: [] }],
+      numeroDeTurno: 3,
+      fase: 'act',
+    })
+    const relato = relatar(
+      { type: 'agregar', seat: 1, grupoIndex: 0, cardIds: [ultima.id] },
+      antes,
+    )!
+
+    expect(relato.tipo).toBe('agrega')
+    expect(contarRelato(relato, NOMBRES)).toBe(
+      'Ana ligó su última carta (7♦) y cerró la ronda',
+    )
+    expect(contarRelato(relato, NOMBRES, antes.turno)).toBe(
+      'Ligaste tu última carta (7♦) y cerraste la ronda',
+    )
+  })
+
+  it('says a freed comodín closed the ronda when it emptied the hand', () => {
+    const ultima = n('6', 'hearts')
+    const antes = makeRonda({
+      jugadores: [{ hand: [ultima], bajadoEnTurno: 1 }, { hand: [] }],
+      numeroDeTurno: 3,
+      fase: 'act',
+    })
+    const relato = relatar(
+      { type: 'moverComodin', seat: 0, grupoIndex: 0, cardId: ultima.id, to: 'tail' },
+      antes,
+    )!
+
+    expect(contarRelato(relato, NOMBRES)).toBe(
+      'Ana liberó un comodín con su última carta (6♥) y cerró la ronda',
+    )
   })
 
   it('speaks to you in second person about your own moves', () => {

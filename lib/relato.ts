@@ -22,15 +22,29 @@ import {
 export type Relato =
   | { readonly tipo: 'mazo'; readonly seat: number }
   | { readonly tipo: 'descarte'; readonly seat: number; readonly carta: string }
-  | { readonly tipo: 'bajada'; readonly seat: number; readonly grupos: number }
+  | {
+      readonly tipo: 'bajada'
+      readonly seat: number
+      readonly grupos: number
+      /** The move emptied the hand and closed the ronda (Phase 26). */
+      readonly cierra?: boolean
+    }
   | {
       readonly tipo: 'agrega'
       readonly seat: number
       readonly cartas: readonly string[]
       /** Whose grupo received them. */
       readonly dueno: number
+      /** The move emptied the hand and closed the ronda (Phase 26). */
+      readonly cierra?: boolean
     }
-  | { readonly tipo: 'comodin'; readonly seat: number; readonly carta: string }
+  | {
+      readonly tipo: 'comodin'
+      readonly seat: number
+      readonly carta: string
+      /** The move emptied the hand and closed the ronda (Phase 26). */
+      readonly cierra?: boolean
+    }
   | { readonly tipo: 'bota'; readonly seat: number; readonly carta: string }
 
 /** One end of a card's trip: a pile, or a player's hand. */
@@ -55,6 +69,9 @@ export type Viaje = {
 export function relatar(move: Move, antes: RondaState): Relato | null {
   const seat = antes.turno
   const mano = antes.jugadores[seat].hand
+  // Going out is running out of cards, however it happened (Phase 26). Public
+  // by definition: everybody sees a hand run out and a ronda end.
+  const vacia = (jugadas: number) => mano.length === jugadas
 
   switch (move.type) {
     case 'robar': {
@@ -64,21 +81,37 @@ export function relatar(move: Move, antes: RondaState): Relato | null {
         ? { tipo: 'descarte', seat, carta: describeCard(arriba) }
         : null
     }
-    case 'bajarse':
-      return { tipo: 'bajada', seat, grupos: move.propuestas.length }
+    case 'bajarse': {
+      const consumidas = move.propuestas.reduce(
+        (total, propuesta) => total + propuesta.cardIds.length,
+        0,
+      )
+      return {
+        tipo: 'bajada',
+        seat,
+        grupos: move.propuestas.length,
+        cierra: vacia(consumidas),
+      }
+    }
     case 'agregar': {
       const cartas = move.cardIds
         .map((id) => mano.find((card) => card.id === id))
         .filter((card): card is Card => Boolean(card))
         .map(describeCard)
       return cartas.length > 0
-        ? { tipo: 'agrega', seat, cartas, dueno: move.seat }
+        ? {
+            tipo: 'agrega',
+            seat,
+            cartas,
+            dueno: move.seat,
+            cierra: vacia(cartas.length),
+          }
         : null
     }
     case 'moverComodin': {
       const carta = mano.find((card) => card.id === move.cardId)
       return carta
-        ? { tipo: 'comodin', seat, carta: describeCard(carta) }
+        ? { tipo: 'comodin', seat, carta: describeCard(carta), cierra: vacia(1) }
         : null
     }
     case 'descartar': {
@@ -117,17 +150,36 @@ export function contarRelato(
         : `${quien} tomó ${relato.carta} del descarte`
     case 'bajada': {
       const cuantos = `${relato.grupos} grupo${relato.grupos === 1 ? '' : 's'}`
+      if (relato.cierra) {
+        return esTuyo
+          ? `Te bajaste con ${cuantos} y cerraste la ronda`
+          : `${quien} se bajó con ${cuantos} y cerró la ronda`
+      }
       return esTuyo
         ? `Te bajaste con ${cuantos}`
         : `${quien} se bajó con ${cuantos}`
     }
     case 'agrega': {
       const cartas = relato.cartas.join(' ')
+      if (relato.cierra) {
+        const ultima = (posesivo: 'tu' | 'su') =>
+          relato.cartas.length === 1
+            ? `${posesivo} última carta (${cartas})`
+            : `${posesivo}s últimas cartas (${cartas})`
+        return esTuyo
+          ? `Ligaste ${ultima('tu')} y cerraste la ronda`
+          : `${quien} ligó ${ultima('su')} y cerró la ronda`
+      }
       return esTuyo
         ? `Pusiste ${cartas} en ${dueno(relato.dueno)}`
         : `${quien} puso ${cartas} en ${dueno(relato.dueno)}`
     }
     case 'comodin':
+      if (relato.cierra) {
+        return esTuyo
+          ? `Liberaste un comodín con tu última carta (${relato.carta}) y cerraste la ronda`
+          : `${quien} liberó un comodín con su última carta (${relato.carta}) y cerró la ronda`
+      }
       return esTuyo
         ? `Liberaste un comodín con ${relato.carta}`
         : `${quien} liberó un comodín con ${relato.carta}`
