@@ -81,7 +81,9 @@ stored and reloaded and still reshuffle deterministically.
 ### Phase 6 — The mesa ✅
 Adding cards to grupos and repositioning comodines within a grupo, under the
 rules that gate them: the mesa is untouchable before bajarse, own grupos are
-open on the lay-down turn, opponents' only from the next turn.
+open on the lay-down turn, opponents' only from the next turn. (That last part
+was wrong, and was corrected after Phase 15: the mesa is shut on the lay-down
+turn for everyone, own grupos included. See `carioca-rules.md`.)
 **Done when:** a test reproduces the worked example — `2♦ comodín(3♦) 4♦ 5♦`
 becoming `2♦ 3♦ 4♦ 5♦ comodín(6♦) 7♦` — and rejects every gated case.
 
@@ -262,21 +264,90 @@ this turn, while a **bloque** is just how you like to hold your cards.
 
 ---
 
+## How it ships, and how it looks — before more machinery
+
+Two things that are cheap now and expensive later. The first changes where work
+lands before it reaches anyone; the second is the only part of the project a
+person actually sees.
+
+### Phase 16 — Dev before prod
+Every commit so far has gone straight to production, which was fine while the
+only player was the person writing it. It stops being fine the moment a partida
+is worth showing to someone. Work moves to a **`dev` branch with its own
+permanent URL**, and production changes only by a deliberate merge.
+
+What has to be true when this is done is mostly settings and habit, not code:
+
+- `dev` exists, is the branch that gets pushed to, and every push to it builds
+  on Vercel by itself. Vercel already does this for any branch that is not the
+  production branch — the branch URL is
+  `<project>-git-<branch>-<scope>.vercel.app` and always shows the latest commit
+  on that branch, so it can be bookmarked on a phone.
+- The dev URL opens without a Vercel login, or we know why not. On the Hobby
+  plan, Deployment Protection defaults to protecting exactly the preview URLs
+  and leaving production public — which is the wrong way round for showing a
+  friend a link. It is one setting in the project.
+- `main` stays the production branch. Promoting is merging `dev` into `main`,
+  and nothing else deploys production.
+- The flow is written down in the README, in two lines, because a workflow that
+  has to be remembered is a workflow that gets skipped at 1 a.m.
+
+Custom environments (a real `staging` target with its own env vars) are a Pro
+feature and are not needed: a branch and its URL are the whole idea.
+
+**Done when:** a push to `dev` is playable on a URL that is not
+mazo-six.vercel.app, production is untouched by it, and merging `dev` into
+`main` puts exactly what was tested into production.
+
+### Phase 17 — The table
+The game is playable and looks like a form. Everything is stacked in one
+column — opponents as lines of text, grupos as another list, the piles as two
+buttons, the hand at the bottom — and nothing about it says *cards on a table*.
+Whose turn it is, who is about to go out, and what is even in play all have to
+be read rather than seen.
+
+This phase is about the shape of the thing:
+
+- **A table, round or oval**, with the seats placed around it and each player's
+  name at their position. Positions are computed from the number of players —
+  the table takes 2 to 6 — not hardcoded per layout.
+- **The turn is visible from across the room**: the seat in play is lit, and it
+  is obvious at a glance how many cards each opponent is holding.
+- **Grupos live in the middle, not next to their owner.** Once laid down they
+  are communal, and the engine already knows whose is whose — `seat` and
+  `grupoIndex` still identify a grupo in a move. Where it *sits on screen* is a
+  free choice, and the middle of the table is the honest one.
+- **Your hand keeps the bottom of the screen**, with everything Phase 13 and 15
+  built: order, pinned bloques, points.
+- Portrait phone first, light and dark, and no canvas or WebGL — this stays HTML
+  the browser can lay out and a screen reader can read.
+
+Worth looking at before starting: the online carioca implementations that exist
+already — playcarioca.cl, cariocaonline.com, ludocca.com — and the ordinary
+online-poker table, which solved seating people around an ellipse a long time
+ago. Skeuomorphic felt and wood are not the point; legibility is.
+
+**Done when:** someone who has not seen the project recognises a card table in
+the first second, follows whose turn it is without being told, and the same
+screen works for two players and for six on a phone.
+
+---
+
 ## Milestone 3 — Bots worth playing
 
-### Phase 16 — Bot framework
+### Phase 18 — Bot framework
 Extract the strategy interface: a bot receives the legal state it can see and
 returns a move. Add hand-evaluation helpers shared by all bots.
 **Done when:** a new bot can be added in one file with no engine changes.
 
-### Phase 17 — Bot personalities
+### Phase 19 — Bot personalities
 At least three bots that differ observably: e.g. one that hoards for the perfect
 meld, one that lays down at the first opportunity, one that watches discards and
 plays around opponents. Give them names and short descriptions in the UI.
 **Done when:** a head-to-head tournament shows different win rates and visibly
 different play. **This is Milestone 3.**
 
-### Phase 18 — Rough edges
+### Phase 20 — Rough edges
 Card animations, a hint for new players, an in-game rules summary, and an
 end-of-game screen.
 **Done when:** someone who has never played Carioca finishes a bot game without
@@ -286,26 +357,26 @@ asking for help.
 
 ## Milestone 4 — Playable together
 
-### Phase 19 — Persistence without accounts
+### Phase 21 — Persistence without accounts
 Prisma schema, finished partidas saved, and a guest identity that survives a
 page reload without anyone signing up. How a seat is claimed and protected is an
 open design question — see `tech-stack.md`.
 **Done when:** a player reloads mid-partida and is still themselves, and nobody
 can claim a seat that is not theirs.
 
-### Phase 20 — Rooms
+### Phase 22 — Rooms
 Create a room, get an invite code, join as a guest with a nickname, see who is in
 the lobby, start when everyone is ready. No gameplay yet.
 **Done when:** three devices sit in the same lobby.
 
-### Phase 21 — Server-authoritative play
+### Phase 23 — Server-authoritative play
 The game state lives on the server. Each player receives only their own hand and
 public information. Moves are submitted and validated server-side. Updates by
 polling.
 **Done when:** three people in three places finish a game from one invite code,
 and no client ever receives another player's cards. **This is Milestone 4.**
 
-### Phase 22 — Real-time transport
+### Phase 24 — Real-time transport
 Replace polling with a push transport behind the same interface. Handle
 disconnects and reconnects, and let a bot take over an abandoned seat.
 **Done when:** a player closes the tab mid-game, returns, and the game is intact.

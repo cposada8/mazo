@@ -40,8 +40,9 @@ table.
 | 13 | Arranging your hand | ✅ |
 | 14 | Setting up a partida, seeing the score | ✅ |
 | 15 | Reading your own hand | ✅ |
-| 16 | Bot framework, with a restricted view | ← **next** |
-| 17–22 | Bot personalities, then online | not started |
+| 16 | Dev before prod: a branch and its own URL | ← **next** |
+| 17 | The table: seats around it, grupos in the middle | not started |
+| 18–24 | Bot framework and personalities, then online | not started |
 
 Off the roadmap, after Phase 15: **a ronda no longer slips past you.** When
 somebody goes out, the game stops on a screen that says who won, with the
@@ -131,15 +132,26 @@ the cards are gone and has to be dropped when the ronda changes.
 
 ## What comes next
 
-**Phase 16 — the bot framework.** The step that makes difficulty levels
+**Phase 16 — dev before prod.** Every commit so far has gone straight to
+production. Work moves to a `dev` branch with its own permanent Vercel URL, and
+production changes only by merging `dev` into `main`. Settings and habit, not
+code — and the thing to check is Deployment Protection, which on the Hobby plan
+defaults to protecting previews and leaving production public.
+
+**Phase 17 — the table.** The game looks like a form: one column, opponents as
+lines of text, grupos as a list. It should look like a table with seats around
+it, names in position, and the grupos in the middle where they belong once they
+are communal. First feature to be built on `dev`.
+
+**Phase 18 — the bot framework.** The step that makes difficulty levels
 possible, and the one online play needs anyway.
 
 Right now a bot receives the whole `RondaState` and is merely well-behaved about
-not reading other hands. Phase 16 makes that structural: a **view** of what one
+not reading other hands. Phase 18 makes that structural: a **view** of what one
 seat can legitimately see — its own hand, the grupos on the mesa, the descarte,
 how many cards everyone holds. A bot takes the view and returns a `Move`.
 
-That same function is what the server will need in Phase 21 to send each player
+That same function is what the server will need in Phase 23 to send each player
 only their own cards, so it is worth getting right rather than fast.
 
 It also unlocks what bots with memory need: once the input is explicitly "what
@@ -155,14 +167,14 @@ property of the bot rather than a licence to peek.
   partida with a code and a nickname, so the system still needs to know which
   seat is whose, survive a reload, and stop someone claiming another player's
   seat and seeing their hand. Likely a per-seat secret in the browser. Settle it
-  before Phase 19.
+  before Phase 21.
 - **Real-time transport.** Vercel functions cannot hold WebSockets. Polling with
   TanStack Query is the likely first implementation, behind an interface so it
-  can be swapped for Pusher or Supabase Realtime. Decide in Phase 21, not before.
+  can be swapped for Pusher or Supabase Realtime. Decide in Phase 23, not before.
 - **A ronda nobody can win.** Carioca has no stalemate rule, and the soak
   measures the consequence: ~1.3% of bot partidas never end. Harmless in a test,
   a hung game online. Options are written up in `carioca-rules.md`; decide before
-  Phase 21.
+  Phase 23.
 
 ## How this project is run
 
