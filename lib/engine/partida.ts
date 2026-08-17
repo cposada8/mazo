@@ -9,6 +9,7 @@
 import { CATALOGO, type Contrato } from './contratos'
 import { MAX_PLAYERS, MIN_PLAYERS } from './deck'
 import { puntosDeMano } from './puntaje'
+import { createRng } from './random'
 import {
   type Move,
   type MoveErrorCode,
@@ -23,12 +24,19 @@ export type PartidaConfig = {
   readonly comodines: boolean
   /** Subtracted from the ronda winner's score. 0 means they simply score none. */
   readonly bonusGanadorRonda: number
+  /**
+   * Who opens the **first** ronda: a seat chosen by whoever set up the partida,
+   * or `'aleatorio'` to draw one. Every ronda after that is opened by whoever
+   * won the previous one.
+   */
+  readonly empiezaPrimeraRonda: number | 'aleatorio'
 }
 
 export const CONFIG_POR_DEFECTO: PartidaConfig = {
   contratos: CATALOGO.slice(0, 7),
   comodines: true,
   bonusGanadorRonda: 0,
+  empiezaPrimeraRonda: 'aleatorio',
 }
 
 /** What one finished ronda contributed. */
@@ -87,7 +95,7 @@ export function startPartida(options: {
       players,
       comodines: config.comodines,
       seed: seedDeRonda(seed, 0),
-      empieza: 0,
+      empieza: quienAbrePrimero(config.empiezaPrimeraRonda, players, seed),
     }),
     historial: [],
     totales: Array.from({ length: players }, () => 0),
@@ -119,8 +127,8 @@ export function aplicarEnPartida(state: PartidaState, move: Move): PartidaResult
  * Score a finished ronda, add it to the totals, and either deal the next
  * contract or declare the winners.
  *
- * The next ronda starts one seat further along, so that being first to play is
- * not a standing advantage for whoever happened to sit at seat 0.
+ * Whoever went out opens the next ronda — one more reason to close a ronda
+ * rather than merely unload cards.
  */
 export function cerrarRonda(state: PartidaState): PartidaState {
   const ronda = state.ronda
@@ -166,9 +174,27 @@ export function cerrarRonda(state: PartidaState): PartidaState {
       players: state.players,
       comodines: state.config.comodines,
       seed: seedDeRonda(state.seed, indiceContrato),
-      empieza: indiceContrato,
+      empieza: ganador,
     }),
   }
+}
+
+/**
+ * The opening seat for the first ronda. A drawn seat is still derived from the
+ * partida's seed, so an entire partida stays reproducible.
+ */
+function quienAbrePrimero(
+  eleccion: number | 'aleatorio',
+  players: number,
+  seed: string,
+): number {
+  if (eleccion === 'aleatorio') {
+    return createRng(`${seed}#empieza`).nextInt(players)
+  }
+  if (!Number.isInteger(eleccion) || eleccion < 0 || eleccion >= players) {
+    throw new Error(`seat ${eleccion} cannot open a partida of ${players} players`)
+  }
+  return eleccion
 }
 
 export function contratoActual(state: PartidaState): Contrato | null {

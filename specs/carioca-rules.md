@@ -47,6 +47,7 @@ type PartidaConfig = {
   contratos: Contrato[]      // which contracts are enabled, in order
   comodines: boolean         // play with jokers or without
   bonusGanadorRonda: number  // points subtracted from the ronda winner; 0 = none
+  empiezaPrimeraRonda: number | 'aleatorio'  // who opens; later rondas: the winner
 }
 ```
 
@@ -57,6 +58,7 @@ Settled so far:
 | Enabled contracts | Each contract toggled independently, always in standard order | 1–7 on, rest off |
 | Jokers | On / off | On |
 | Ronda-winner bonus | Any number ≥ 0, suggested 0 / 10 / 25 / 50 | 0 |
+| Who opens the first ronda | A chosen seat, or random | Random |
 
 The bonus is **one number, not a switch plus a number**: `0` means the winner
 simply scores nothing, any other value is subtracted from their total. Two fields
@@ -315,12 +317,17 @@ Replaying a seed has to reproduce every reshuffle, not just the deal.
 
 After dealing, one card is turned face up from the stock to start the descarte.
 
-**Who plays first rotates.** Seat 0 opens the first ronda, seat 1 the second, and
-so on around the table. This was not stated in the rules as given; it is
-implemented because the alternative — the same seat always opening — hands that
-seat a standing advantage across a whole partida, which no card game intends.
-Flagged here rather than buried in the code, and easy to change: `startRonda`
-takes the opening seat as an argument.
+#### Who opens
+
+- **The first ronda:** whoever set up the partida picks a seat, or leaves it
+  **random**. Random is the default, and even a drawn seat comes from the
+  partida's seed, so the whole partida stays reproducible.
+- **Every ronda after that:** the player who **won the previous ronda** opens the
+  next one.
+
+Winning a ronda therefore pays twice — no points that ronda, and the first move
+of the next. It is one more reason to close a ronda rather than settle for
+unloading cards.
 
 This means the first turn is **not a special case**: the first player faces the
 same choice as everyone else — take the face-up card, or draw from the stock.

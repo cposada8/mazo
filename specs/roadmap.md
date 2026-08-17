@@ -97,7 +97,7 @@ scoreboard. **This is Milestone 1.**
 
 **Done.** `lib/engine/{puntaje,partida}.ts`, 188 tests. `aplicarEnPartida` closes
 a ronda and deals the next contract by itself, so callers never see the seam.
-Who opens a ronda rotates — see the note in `carioca-rules.md`.
+The winner of a ronda opens the next one; the first opener is chosen or drawn.
 
 **Milestone 1 is complete: the engine is right.**
 

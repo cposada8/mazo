@@ -34,7 +34,7 @@ a human yet; that is Milestone 2.
 - **Repo:** https://github.com/cposada8/mazo
 - **Live:** https://mazo-six.vercel.app — and https://mazo-six.vercel.app/pruebas
 - **Deploys:** every push to `main` goes to production automatically.
-- **Tests:** 188, all green. `npm run test:run`, `npx tsc --noEmit`, `npm run lint`.
+- **Tests:** 192, all green. `npm run test:run`, `npx tsc --noEmit`, `npm run lint`.
 
 ## What exists
 
@@ -81,9 +81,9 @@ them by accident.
    survives serialization, so a ronda can be stored in a database, reloaded, and
    keep reshuffling deterministically. Replays come free later.
 
-One more worth knowing, decided rather than specified: **the opening seat
-rotates** each ronda, because a fixed opener would advantage seat 0 for a whole
-partida. See the note in `carioca-rules.md`.
+One more worth knowing: **the winner of a ronda opens the next one.** The first
+ronda's opener is chosen by whoever set up the partida, or drawn — and even the
+draw comes from the partida seed, so nothing about a partida is unreproducible.
 
 ## What comes next
 

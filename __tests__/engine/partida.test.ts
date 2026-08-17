@@ -97,6 +97,46 @@ describe('startPartida', () => {
   })
 })
 
+describe('who opens the first ronda', () => {
+  it('is the seat the host chose', () => {
+    for (const asiento of [0, 1, 2, 3]) {
+      const state = startPartida({
+        players: 4,
+        seed: 'elegido',
+        config: config({ empiezaPrimeraRonda: asiento }),
+      })
+      expect(state.ronda?.turno).toBe(asiento)
+    }
+  })
+
+  it('is drawn when left random, and drawn from the partida seed', () => {
+    const state = startPartida({ players: 4, seed: 'sorteo' })
+    expect(state.config.empiezaPrimeraRonda).toBe('aleatorio')
+    expect(state.ronda!.turno).toBeGreaterThanOrEqual(0)
+    expect(state.ronda!.turno).toBeLessThan(4)
+
+    const otra = startPartida({ players: 4, seed: 'sorteo' })
+    expect(otra.ronda!.turno).toBe(state.ronda!.turno)
+  })
+
+  it('draws differently for different partidas', () => {
+    const turnos = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'].map(
+      (seed) => startPartida({ players: 4, seed }).ronda!.turno,
+    )
+    expect(new Set(turnos).size).toBeGreaterThan(1)
+  })
+
+  it('refuses a seat that is not at the table', () => {
+    expect(() =>
+      startPartida({
+        players: 3,
+        seed: 'x',
+        config: config({ empiezaPrimeraRonda: 5 }),
+      }),
+    ).toThrow(/cannot open a partida/)
+  })
+})
+
 describe('scoring a finished ronda', () => {
   const partidaCon = (ronda: PartidaState['ronda'], overrides: Partial<PartidaConfig> = {}) => {
     const base = startPartida({
@@ -183,9 +223,10 @@ describe('moving from one contract to the next', () => {
     expect(state.ganadores).toBeNull()
   })
 
-  it('rotates who plays first, so seat 0 is not always first', () => {
+  it('lets whoever won the ronda open the next one', () => {
     const state = jugarPrimeraRonda()
-    expect(state.ronda?.turno).toBe(1)
+    expect(state.historial[0].ganador).toBe(0)
+    expect(state.ronda?.turno).toBe(0)
   })
 
   it('carries the totals forward', () => {
