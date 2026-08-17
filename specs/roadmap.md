@@ -120,7 +120,7 @@ third copy of one that only has two, is refused.
 **Done.** `lib/engine/{notacion,escenario}.ts`, 230 tests. Named cards leave the
 deck before the filler is shuffled, so the filler can never duplicate one.
 
-### Phase 9 — A bot that can finish a game
+### Phase 9 — A bot that can finish a game ✅
 One greedy bot: keep what helps the current contract, discard what does not. It
 does not need to play well, only legally and to the end.
 
@@ -131,6 +131,16 @@ a hint.
 **Done when:** four bots play 1,000 seeded partidas with no crash and no refused
 move, under a turn cap that fails loudly instead of hanging — a stalled ronda is
 data about the game, since Carioca has no stalemate rule.
+
+**Done.** `lib/bots/`, 265 tests. Zero refused moves across 1,000 partidas: the
+bot and the engine never disagree about what is legal. **987 finish; 13 stall**
+(1.3%) because nobody completes the contrato and Carioca has no rule for that —
+see the open question in `carioca-rules.md`.
+
+The measurable lesson was in the discard heuristic. Counting "cards of the same
+suit within three ranks" as useful made `4♦` and `7♦` protect each other forever
+without ever forming an escala, and **no** partida with an escala contract ever
+finished. Scoring by the length of the actual consecutive run fixed it.
 
 ### Phase 10 — The table
 Mobile-first UI: your hand, the stock and discard piles, melds on the table,

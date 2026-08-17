@@ -446,5 +446,29 @@ likely bypasses the normal lay-down-then-discard flow. It does not fit the
 type must not be designed in a way that makes escaleras impossible to add later,
 but no attempt is made to model them yet.
 
+### A ronda nobody can win
+
+There is no stalemate rule. A ronda ends when a player goes out, and if nobody
+ever completes the contrato it does not end at all.
+
+At a real table this is invisible: people eventually get there, and if a hand
+drags someone proposes calling it. Measured, it is not zero — four bots playing
+1,000 partidas stall on about **1.3%** of them, always on a contract with
+escalas in it, which need four specific consecutive cards rather than three of
+anything.
+
+Three ways out, none of them chosen yet:
+
+1. **Leave it.** Better bots stall less, and humans stall less still. The cost is
+   that an online partida can hang with no way to end it.
+2. **End the ronda when the stock has been exhausted N times.** Everyone scores
+   the cards in their hand and nobody wins the ronda. Simple, and it makes the
+   reshuffle count meaningful.
+3. **Let the table agree to abandon a ronda**, the way people actually resolve
+   it. Needs UI and consent, and does not help a solo game against bots.
+
+Worth deciding before online play (Phase 17), where a hung partida is a real
+product problem rather than a slow test.
+
 Everything else is settled. Any rule discovered to be missing during
 implementation is written here first, then coded.
