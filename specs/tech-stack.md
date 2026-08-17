@@ -18,7 +18,7 @@ tooling. Anything not already proven there needs a justification in this file.
 | Server state | TanStack Query | Only once online play needs polling/refetching. Not before. |
 | Tests | Vitest + Testing Library | The engine is tested with plain Vitest, no DOM. |
 | Database | Prisma + libSQL (Turso) | Same setup as `fwc_2026`: a local SQLite file in dev, Turso in production. |
-| Auth | Clerk | Same as `fwc_2026`. Required only for saved history and hosting a room. |
+| Auth | **None** | Dropped deliberately. Nobody wants to create an account to play a card game. Players join a partida with a code and a nickname. How a guest is identified in the database is an open design question — see below. |
 | Hosting | Vercel | Already used and working on mobile and desktop. |
 | Package manager | npm | Matches the existing project. |
 
@@ -59,6 +59,12 @@ is known. Current leaning, in order:
 
 Polling is the likely first implementation precisely because it needs no new
 vendor; the transport sits behind an interface so it can be swapped.
+
+**Guest identity.** With no accounts, the system still has to know which player
+at a table is which, survive a page reload, and stop someone from claiming
+another player's seat and seeing their hand. The likely shape is a per-seat
+secret stored in the browser, but the design is open and is discussed before the
+online phases.
 
 **Animations.** Card movement will need something better than CSS transitions.
 Evaluate when the table UI exists, not before.
