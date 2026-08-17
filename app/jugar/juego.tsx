@@ -80,11 +80,9 @@ export function Juego({
     // lying down has no room to spare for a header, and 100dvh under one puts
     // the hand off the bottom of the screen.
     <main className="fixed inset-0 z-10 overflow-hidden">
-      <GiraElTelefono onSalir={onSalir} />
-
       {/* Safe areas are padded, not ignored: fullscreen and standalone put the
           table under the notch, and a card behind a camera is a card lost. */}
-      <div className="relative hidden h-full bg-emerald-950 pr-[env(safe-area-inset-right)] pb-[env(safe-area-inset-bottom)] pl-[env(safe-area-inset-left)] landscape:block">
+      <div className="relative h-full bg-emerald-950 pt-[env(safe-area-inset-top)] pr-[env(safe-area-inset-right)] pb-[env(safe-area-inset-bottom)] pl-[env(safe-area-inset-left)]">
         <Mesa
           state={ronda}
           asiento={TU_ASIENTO}
@@ -145,35 +143,6 @@ export function Juego({
         )}
       </div>
     </main>
-  )
-}
-
-/**
- * The table wants the width, so the phone has to be turned. Said once, kindly,
- * and with a way out — being stuck on a screen you cannot use is worse than an
- * ugly table.
- */
-function GiraElTelefono({ onSalir }: { onSalir: () => void }) {
-  return (
-    <div className="flex h-full flex-col items-center justify-center gap-4 px-8 text-center landscape:hidden">
-      <span aria-hidden className="text-5xl">
-        📱↻
-      </span>
-      <p className="text-lg font-medium text-balance">
-        Gira el teléfono para jugar.
-      </p>
-      <p className="text-muted-foreground text-sm text-balance">
-        La mesa se juega acostada: trece cartas en la mano y los grupos de todos
-        no caben de pie.
-      </p>
-      <button
-        type="button"
-        onClick={onSalir}
-        className="text-muted-foreground text-xs underline"
-      >
-        Empezar otra partida
-      </button>
-    </div>
   )
 }
 

@@ -152,5 +152,62 @@
     --ficha: clamp(1.375rem, 8cqh, 2.25rem);
     /* Seat names, pile counts, grupo titles: legible, never dominant. */
     --texto-mesa: clamp(0.5625rem, 3.8cqh, 0.75rem);
+    /*
+     * The seat band's height. Clamped rather than a percentage: a seat's
+     * contents are clamped too, so on a tall (portrait) screen a percentage
+     * would open a dead strip between the seats and the mesa.
+     */
+    --banda-asientos: clamp(3.75rem, 22.5cqh, 5.5rem);
+  }
+
+  /*
+   * The mesa lane and the grupos inside it are styled here, not with
+   * utilities: the portrait rules below must win, and a Tailwind utility
+   * would outrank them from the utilities layer.
+   *
+   * Lying down: everything bottom-aligned — toward the viewer, and away from
+   * the seat band's edge, where the lowest seats live — with the grupos in
+   * one sideways-scrolling row.
+   */
+  .carril-mesa {
+    display: flex;
+    align-items: flex-end;
+    gap: calc(var(--spacing) * 3);
+    padding-inline: 7cqw;
+    padding-bottom: 1.5cqh;
+  }
+  .grupos-en-mesa {
+    display: flex;
+    height: 100%;
+    min-width: 0;
+    flex: 1;
+    align-items: flex-end;
+    gap: calc(var(--spacing) * 1);
+    overflow-x: auto;
+  }
+
+  /*
+   * Standing up. The same lanes work upright — seats across the top, mesa in
+   * the middle, hand along the bottom — but two things give way when the box
+   * is taller than it is wide: the drawn oval (there is no room for an
+   * ellipse, and the arrangement alone reads as a table — cardgames.io's
+   * lesson), and the single scrolling row of grupos, which wraps instead,
+   * because height is the one thing portrait has plenty of.
+   */
+  @container (max-aspect-ratio: 1/1) {
+    .ovalo {
+      display: none;
+    }
+    .carril-mesa {
+      align-items: center;
+      padding-bottom: 0;
+    }
+    .grupos-en-mesa {
+      flex-wrap: wrap;
+      align-content: center;
+      align-items: center;
+      overflow-x: hidden;
+      overflow-y: auto;
+    }
   }
 }

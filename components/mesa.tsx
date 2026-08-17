@@ -394,7 +394,7 @@ export function Mesa({
       <div className="relative flex min-h-0 flex-1 flex-col">
         <div
           aria-hidden
-          className="absolute inset-x-[2%] top-[6%] bottom-[3%] rounded-[50%] border-4 border-emerald-950/60 bg-emerald-800 shadow-[inset_0_0_60px_rgba(0,0,0,0.35)] dark:bg-emerald-900"
+          className="ovalo absolute inset-x-[2%] top-[6%] bottom-[3%] rounded-[50%] border-4 border-emerald-950/60 bg-emerald-800 shadow-[inset_0_0_60px_rgba(0,0,0,0.35)] dark:bg-emerald-900"
         />
         {/* The contract, printed on the felt the way a table has its house
             name on it: always there, never in the way. */}
@@ -406,7 +406,7 @@ export function Mesa({
         </span>
 
         {/* Seat lane: the opponents' strip, and nothing else may enter it. */}
-        <div className="relative z-10 h-[42%] shrink-0">
+        <div className="relative z-10 h-[var(--banda-asientos,42%)] shrink-0">
           {rivales.map(({ seat, x, y }) => (
             <Asiento
               key={seat}
@@ -422,10 +422,10 @@ export function Mesa({
         {/* Mesa lane: piles on the left, everyone's grupos scrolling beside.
             Bottom-aligned — toward the viewer, and away from the seat band's
             edge, where the lowest seats live. */}
-        <div className="relative z-10 flex min-h-0 flex-1 items-end gap-3 px-[7cqw] pb-[1.5cqh]">
+        <div className="carril-mesa relative z-10 min-h-0 flex-1">
           <Pilas state={state} onRobar={onRobar} />
 
-          <div className="flex h-full min-w-0 flex-1 items-end gap-1 overflow-x-auto">
+          <div className="grupos-en-mesa">
             {enMesa.length === 0 ? (
               <span className="self-center text-[var(--texto-mesa,0.75rem)] text-emerald-100/40">
                 Nadie se ha bajado todavía.

@@ -495,7 +495,7 @@ own, noted per the working agreement):
   seats out of their lane and under the piles — measured, not guessed: the
   first six-player screenshot printed the stock on "Jugador 2".
 
-### Phase 19 — Standing up
+### Phase 19 — Standing up ✅
 The table works held upright, and nobody is told to turn their phone.
 
 Portrait is how a phone is picked up and how it is held one-handed on a sofa.
@@ -515,6 +515,22 @@ and the owner said so the first time he played it on a real phone.
 **Done when:** a whole ronda can be played without turning the phone, and
 turning it in the middle of one loses neither the selection nor the pinned
 bloques.
+
+**Done.** Almost no new code: the lanes built in Phase 18 *are* the portrait
+arrangement — seats across the top, mesa in the middle, hand along the
+bottom — so this phase is a container query on `.cancha`, not a second
+layout. Below 1:1 aspect the oval hides and the grupos wrap into rows
+(portrait's spare dimension is height, so the mesa trades its sideways
+scroll for wrapping — which incidentally previews the fix Phase 25 wants
+for the six-player overflow). The rotate-your-phone screen is deleted, the
+manifest orientation loosened to `any`, and rotation mid-turn was verified
+to preserve selection and bloques — nothing unmounts, so nothing is lost.
+
+One lesson worth keeping: the portrait overrides only took effect once the
+mesa lane's styles moved fully into the stylesheet — a Tailwind utility on
+the element outranks a components-layer rule, so a lane styled half in each
+place cannot be re-arranged by a media or container query. (Claude's call:
+`.carril-mesa` and `.grupos-en-mesa` are now styled in `globals.css` alone.)
 
 ### Phase 20 — The right way round, and a table worth looking at
 Two corrections to what Phase 17 built.

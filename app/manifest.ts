@@ -5,8 +5,8 @@ import type { MetadataRoute } from 'next'
  * standalone, without the browser's own bar taking a fifth of a phone that is
  * already only 287 pixels tall lying down.
  *
- * Orientation is landscape because that is how the table is played today;
- * when the table learns to stand up (Phase 19), this loosens to `any`.
+ * Orientation is `any` since Phase 19: the table plays upright too, and the
+ * phone's own rotation is the player's business.
  */
 export default function manifest(): MetadataRoute.Manifest {
   return {
@@ -15,7 +15,7 @@ export default function manifest(): MetadataRoute.Manifest {
     description: 'Juegos de cartas. Empezando por Carioca.',
     start_url: '/jugar',
     display: 'standalone',
-    orientation: 'landscape',
+    orientation: 'any',
     background_color: '#022c22',
     theme_color: '#022c22',
     icons: [
