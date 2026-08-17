@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useSyncExternalStore } from 'react'
 import {
   CATALOGO,
   CONTRATOS_POR_DEFECTO,
@@ -8,7 +8,11 @@ import {
   MIN_PLAYERS,
   type Contrato,
 } from '@/lib/engine'
+import { hayPantallaCompleta, pedirPantallaCompleta } from '@/lib/pantalla'
 import { limpiarSemilla, semillaAleatoria } from '@/lib/semilla'
+
+/** Remembered across partidas: the answer to this rarely changes per person. */
+const CLAVE_PANTALLA = 'mazo:pantalla-completa'
 
 export type Ajustes = {
   jugadores: number
@@ -40,6 +44,31 @@ export function Inicio({
     CONTRATOS_POR_DEFECTO,
   )
 
+  /**
+   * Fullscreen is asked for here, on the Repartir press, because that is the
+   * one moment a user gesture and the start of a partida coincide — the
+   * browser will not grant it on a timer. Whether it is even offered is only
+   * known in the browser, so the checkbox appears after hydration.
+   */
+  const montado = useSyncExternalStore(
+    () => () => {},
+    () => true,
+    () => false,
+  )
+  const ofrecerPantalla = montado && hayPantallaCompleta()
+  const [conPantalla, setConPantalla] = useState(
+    () =>
+      typeof window !== 'undefined' &&
+      localStorage.getItem(CLAVE_PANTALLA) !== 'no',
+  )
+
+  const alternarPantalla = () => {
+    setConPantalla((antes) => {
+      localStorage.setItem(CLAVE_PANTALLA, antes ? 'no' : 'si')
+      return !antes
+    })
+  }
+
   // Always in catalogue order, however they were switched on.
   const contratos = CATALOGO.filter((contrato) => encendidos.includes(contrato.id))
 
@@ -50,6 +79,7 @@ export function Inicio({
 
   const empezar = () => {
     if (contratos.length === 0) return
+    if (conPantalla) pedirPantallaCompleta()
     onEmpezar({
       jugadores,
       seed: limpiarSemilla(semilla) || semillaAleatoria(),
@@ -181,6 +211,24 @@ export function Inicio({
           )}
         </p>
       </section>
+
+      {ofrecerPantalla && (
+        <label className="flex items-center gap-3 text-sm">
+          <input
+            type="checkbox"
+            checked={conPantalla}
+            onChange={alternarPantalla}
+            className="size-4 accent-current"
+          />
+          <span>
+            Pantalla completa
+            <span className="text-muted-foreground">
+              {' '}
+              — la mesa se queda con todo el teléfono
+            </span>
+          </span>
+        </label>
+      )}
 
       <button
         type="button"

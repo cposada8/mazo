@@ -128,3 +128,29 @@
     @apply font-sans;
   }
 }
+
+/*
+ * The one scale the table is drawn in.
+ *
+ * `.cancha` is the game's root box: a size container, so everything inside can
+ * be sized in `cqh`/`cqw` — percent of the height and width actually
+ * available, whatever phone or box the table landed in. Nothing fixed that
+ * could be fluid: card heights, the ficha, the small type all derive from
+ * these few numbers, clamped so a huge screen does not produce playing cards
+ * the size of books and a tiny one still produces cards a finger can hit.
+ *
+ * Everything else follows from --carta-md by ratio, so there is exactly one
+ * knob. A card's width follows from its height in the component
+ * (aspect-ratio), not here.
+ */
+@layer components {
+  .cancha {
+    container-type: size;
+    --carta-md: clamp(3.25rem, 30cqh, 6.75rem);
+    --carta-sm: calc(var(--carta-md) * 0.62);
+    --carta-xs: calc(var(--carta-md) * 0.52);
+    --ficha: clamp(1.375rem, 8cqh, 2.25rem);
+    /* Seat names, pile counts, grupo titles: legible, never dominant. */
+    --texto-mesa: clamp(0.5625rem, 3.8cqh, 0.75rem);
+  }
+}

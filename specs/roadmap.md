@@ -436,7 +436,7 @@ Left deliberately undone: animations, real avatars, and any decoration of the
 room beyond a dark ground. Those are Phase 25, and none of them is what made
 the old screen unreadable.
 
-### Phase 18 — Room to play
+### Phase 18 — Room to play ✅
 Measured on the owner's phone, Chrome on Android, held sideways: the CSS
 viewport is about **615 × 287**. The browser's own URL bar takes a fifth of the
 screen before the game gets any, and of what is left the hand band takes half —
@@ -466,6 +466,34 @@ designed against a number and one that survives the phone it runs on.
 **Done when:** the phone from that screenshot shows the same partida with no
 overlap, no dead band, no browser bar — and the hand is the biggest thing on
 the screen, because it is the thing being read.
+
+**Done.** Verified in a controlled browser at exactly 615 × 287 (and at 250,
+and with six players): the lanes hold, nothing prints on anything, and the
+hand band is the tallest thing on the screen at 133 of 287 pixels. The scale
+is `.cancha` in `globals.css` — a size container, so every card, ficha and
+label derives from `cqh` of the box the table actually landed in, which also
+made the `/mesa` viewer fluid for free. The manifest is `app/manifest.ts`
+(standalone, landscape for now), and fullscreen is a remembered checkbox on
+the setup screen, because the Repartir press is the one user gesture the
+Fullscreen API will accept.
+
+Judgment calls made while building, beyond what was written above (Claude's
+own, noted per the working agreement):
+
+- **The arranging controls are icons always**, not only at small sizes. Two
+  visual grammars for the same buttons is a cost with no payer: each icon
+  still says its name on hold and to a screen reader.
+- **The top-left corner collapsed to a single menu button.** The old strip —
+  contract badge, Marcador, Salir — was itself a lane violation waiting for a
+  fifth player. Contract, marcador, seed, fullscreen and salir now live behind
+  one button that opens the existing overlay.
+- **The seat's card count moved onto the name line** — "Jugador 2 · 12" — one
+  line instead of two, because on a 287-pixel phone every line under a ficha
+  costs a card's worth of height. The fan still shows the count as cards.
+- **The seating arc flattened** (`ARCO` 32 → 14 in `lib/asientos.ts`). A seat
+  is nearly as tall as the band it lives in, so a deep arc hung the edge
+  seats out of their lane and under the piles — measured, not guessed: the
+  first six-player screenshot printed the stock on "Jugador 2".
 
 ### Phase 19 — Standing up
 The table works held upright, and nobody is told to turn their phone.

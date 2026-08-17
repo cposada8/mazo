@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- A card on a dark table. The thin red rim is the house style. -->
+  <rect width="512" height="512" rx="100" fill="#0c0a09"/>
+  <rect x="16" y="16" width="480" height="480" rx="88" fill="none" stroke="#dc2626" stroke-width="10"/>
+  <g transform="rotate(-8 256 256)">
+    <rect x="146" y="106" width="220" height="300" rx="26" fill="#292524"/>
+  </g>
+  <g transform="rotate(6 256 256)">
+    <rect x="146" y="106" width="220" height="300" rx="26" fill="#fafaf9"/>
+    <path
+      transform="translate(256 272) scale(7) translate(-12 -13.5)"
+      fill="#dc2626"
+      d="M12 21s-6.7-4.35-9.33-8.11C.9 10.05 2.24 6.5 5.5 6.5c1.74 0 3.41.81 4.5 2.09C11.09 7.31 12.76 6.5 14.5 6.5c3.26 0 4.6 3.55 2.83 6.39C18.7 16.65 12 21 12 21z"/>
+    <text x="172" y="164" font-family="Georgia, serif" font-size="64" font-weight="bold" fill="#dc2626">A</text>
+  </g>
+</svg>

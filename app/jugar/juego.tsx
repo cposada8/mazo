@@ -1,9 +1,24 @@
 'use client'
 
 import { useMemo, useState } from 'react'
+import {
+  ArrowLeft,
+  ArrowRight,
+  ArrowUp01,
+  Lock,
+  Maximize,
+  Menu,
+  Minimize,
+  Spade,
+} from 'lucide-react'
 import { Carta } from '@/components/carta'
 import { Marcador } from '@/components/marcador'
 import { Mesa, nombrePorDefecto } from '@/components/mesa'
+import {
+  alternarPantallaCompleta,
+  hayPantallaCompleta,
+  usePantallaCompleta,
+} from '@/lib/pantalla'
 import {
   CONFIG_POR_DEFECTO,
   type Card,
@@ -30,7 +45,7 @@ export function Juego({
     [contratos],
   )
   const juego = usePartida({ jugadores, seed, config })
-  const [verMarcador, setVerMarcador] = useState(false)
+  const [verMenu, setVerMenu] = useState(false)
 
   const { partida, ronda, esTuTurno, esperando, aviso, resumen } = juego
 
@@ -67,7 +82,9 @@ export function Juego({
     <main className="fixed inset-0 z-10 overflow-hidden">
       <GiraElTelefono onSalir={onSalir} />
 
-      <div className="relative hidden h-full landscape:block">
+      {/* Safe areas are padded, not ignored: fullscreen and standalone put the
+          table under the notch, and a card behind a camera is a card lost. */}
+      <div className="relative hidden h-full bg-emerald-950 pr-[env(safe-area-inset-right)] pb-[env(safe-area-inset-bottom)] pl-[env(safe-area-inset-left)] landscape:block">
         <Mesa
           state={ronda}
           asiento={TU_ASIENTO}
@@ -100,45 +117,31 @@ export function Juego({
           onGrupo={esTuTurno && ronda.fase === 'act' ? juego.agregarA : undefined}
         />
 
-        <div className="absolute top-2 left-2 flex items-center gap-1.5">
-          <span className="rounded-md bg-amber-300/90 px-2 py-1 text-[11px] font-semibold text-amber-950">
-            {ronda.contrato.nombre}
-          </span>
-          <button
-            type="button"
-            onClick={() => setVerMarcador((abierto) => !abierto)}
-            aria-expanded={verMarcador}
-            className="rounded-md border border-emerald-100/25 bg-emerald-950/60 px-2 py-1 text-[11px] text-emerald-50"
-          >
-            Marcador
-          </button>
-          <button
-            type="button"
-            onClick={onSalir}
-            className="rounded-md border border-emerald-100/25 bg-emerald-950/60 px-2 py-1 text-[11px] text-emerald-50"
-          >
-            Salir
-          </button>
-        </div>
+        {/*
+          One small button, not a row: the top-left corner borders the seat
+          band, and a strip of controls up there is exactly the kind of
+          neighbour the lanes exist to forbid. Everything it used to say —
+          contract, marcador, seed, salir — lives behind it.
+        */}
+        <button
+          type="button"
+          onClick={() => setVerMenu(true)}
+          aria-label="Menú de la partida"
+          aria-expanded={verMenu}
+          className="absolute top-1.5 left-1.5 z-20 rounded-md border border-emerald-100/25 bg-emerald-950/60 p-1.5 text-emerald-50"
+        >
+          <Menu className="size-4" aria-hidden />
+        </button>
 
-        {verMarcador && (
-          <div className="absolute inset-0 z-20 flex items-center justify-center bg-black/50 p-4">
-            <div className="bg-background max-h-full w-full max-w-md overflow-y-auto rounded-lg border p-4">
-              <Marcador partida={partida} nombres={nombres(jugadores)} />
-              <div className="mt-3 flex items-center justify-between gap-3">
-                <span className="text-muted-foreground font-mono text-xs">
-                  {seed}
-                </span>
-                <button
-                  type="button"
-                  onClick={() => setVerMarcador(false)}
-                  className="bg-card hover:bg-accent rounded-md border px-3 py-1.5 text-sm"
-                >
-                  Cerrar
-                </button>
-              </div>
-            </div>
-          </div>
+        {verMenu && (
+          <MenuDePartida
+            partida={partida}
+            contrato={ronda.contrato.nombre}
+            nombres={nombres(jugadores)}
+            seed={seed}
+            onCerrar={() => setVerMenu(false)}
+            onSalir={onSalir}
+          />
         )}
       </div>
     </main>
@@ -170,6 +173,84 @@ function GiraElTelefono({ onSalir }: { onSalir: () => void }) {
       >
         Empezar otra partida
       </button>
+    </div>
+  )
+}
+
+/**
+ * Everything about the partida that is not the next move: the contract being
+ * played, the marcador, the seed, leaving, and the screen itself. It opens
+ * over the table and holds nothing that is needed mid-turn.
+ */
+function MenuDePartida({
+  partida,
+  contrato,
+  nombres,
+  seed,
+  onCerrar,
+  onSalir,
+}: {
+  partida: PartidaState
+  contrato: string
+  nombres: readonly string[]
+  seed: string
+  onCerrar: () => void
+  onSalir: () => void
+}) {
+  const enPantallaCompleta = usePantallaCompleta()
+
+  return (
+    <div className="absolute inset-0 z-30 flex items-center justify-center bg-black/50 p-4">
+      <div className="bg-background max-h-full w-full max-w-md overflow-y-auto rounded-lg border p-4">
+        <p className="text-muted-foreground mb-2 text-xs tracking-wide uppercase">
+          {contrato}
+        </p>
+        <Marcador partida={partida} nombres={nombres} />
+
+        <div className="mt-3 flex items-center justify-between gap-3">
+          <span className="text-muted-foreground font-mono text-xs">{seed}</span>
+          <div className="flex items-center gap-1.5">
+            {hayPantallaCompleta() && (
+              <button
+                type="button"
+                onClick={alternarPantallaCompleta}
+                aria-label={
+                  enPantallaCompleta
+                    ? 'Salir de pantalla completa'
+                    : 'Pantalla completa'
+                }
+                title={
+                  enPantallaCompleta
+                    ? 'Salir de pantalla completa'
+                    : 'Pantalla completa'
+                }
+                className="bg-card hover:bg-accent rounded-md border p-2"
+              >
+                {enPantallaCompleta ? (
+                  <Minimize className="size-4" aria-hidden />
+                ) : (
+                  <Maximize className="size-4" aria-hidden />
+                )}
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={onSalir}
+              className="bg-card hover:bg-accent rounded-md border px-3 py-1.5 text-sm"
+            >
+              Salir
+            </button>
+            <button
+              type="button"
+              onClick={onCerrar}
+              autoFocus
+              className="bg-foreground text-background rounded-md border border-transparent px-3 py-1.5 text-sm"
+            >
+              Seguir jugando
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
   )
 }
@@ -242,59 +323,81 @@ function Instruccion({
 /**
  * Arranging your hand. Always available — it changes nothing about the game, so
  * there is no reason to lock it to your turn.
+ *
+ * Icons, not words: as text these controls wrapped into three rows on a real
+ * phone and pushed the table into a strip. Each one still says its name to a
+ * finger held on it and to a screen reader.
  */
 function AccionesDeMano({ juego }: { juego: ReturnType<typeof usePartida> }) {
   const haySeleccion = juego.seleccion.length > 0
 
   return (
-    <div className="flex flex-wrap items-center gap-1.5">
+    <div className="flex shrink-0 items-center gap-1.5">
       {haySeleccion && (
         <div className="flex gap-px overflow-hidden rounded-md border">
-          <button
-            type="button"
+          <BotonDeMano
             onClick={() => juego.moverCartas('izquierda')}
-            aria-label="Mover las cartas seleccionadas a la izquierda"
-            className="bg-card hover:bg-accent px-2 py-1 text-sm"
+            etiqueta="Mover las cartas seleccionadas a la izquierda"
+            sinBorde
           >
-            ←
-          </button>
-          <button
-            type="button"
+            <ArrowLeft className="size-4" aria-hidden />
+          </BotonDeMano>
+          <BotonDeMano
             onClick={() => juego.moverCartas('derecha')}
-            aria-label="Mover las cartas seleccionadas a la derecha"
-            className="bg-card hover:bg-accent px-2 py-1 text-sm"
+            etiqueta="Mover las cartas seleccionadas a la derecha"
+            sinBorde
           >
-            →
-          </button>
+            <ArrowRight className="size-4" aria-hidden />
+          </BotonDeMano>
         </div>
       )}
 
       {haySeleccion && (
-        <button
-          type="button"
+        <BotonDeMano
           onClick={juego.fijarSeleccion}
-          className="bg-card hover:bg-accent rounded-md border px-2.5 py-1 text-xs"
-          title="Deja estas cartas fijas: acomodar no las va a mover"
+          etiqueta="Fijar: deja estas cartas juntas, acomodar no las mueve"
         >
-          🔒 Fijar
-        </button>
+          <Lock className="size-4" aria-hidden />
+        </BotonDeMano>
       )}
 
-      <button
-        type="button"
+      <BotonDeMano
         onClick={() => juego.acomodarMano('pintas')}
-        className="bg-card hover:bg-accent rounded-md border px-2.5 py-1 text-xs"
+        etiqueta="Acomodar por pintas"
       >
-        Por pintas
-      </button>
-      <button
-        type="button"
+        <Spade className="size-4" aria-hidden />
+      </BotonDeMano>
+      <BotonDeMano
         onClick={() => juego.acomodarMano('numeros')}
-        className="bg-card hover:bg-accent rounded-md border px-2.5 py-1 text-xs"
+        etiqueta="Acomodar por números"
       >
-        Por números
-      </button>
+        <ArrowUp01 className="size-4" aria-hidden />
+      </BotonDeMano>
     </div>
+  )
+}
+
+function BotonDeMano({
+  onClick,
+  etiqueta,
+  sinBorde,
+  children,
+}: {
+  onClick: () => void
+  etiqueta: string
+  sinBorde?: boolean
+  children: React.ReactNode
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-label={etiqueta}
+      title={etiqueta}
+      className={`bg-card hover:bg-accent p-1.5 ${sinBorde ? '' : 'rounded-md border'}`}
+    >
+      {children}
+    </button>
   )
 }
 

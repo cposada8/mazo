@@ -2,32 +2,39 @@
  * Where everyone sits around the table.
  *
  * Pure geometry, no React: given how many are playing and which seat is yours,
- * this says where each one goes as a percentage of the table box. The component
- * places them; this decides where.
+ * this says where each one goes as a percentage of the **seat band** — the
+ * strip of screen that belongs to the opponents and to nobody else. The
+ * component places them; this decides where.
+ *
+ * The band exists so that lanes cannot collide: seats own this strip, the mesa
+ * owns the one below it, your hand owns the bottom, and no lane may borrow
+ * from its neighbour. Inside the band the seats still sit on an arc — edge
+ * seats a little lower, the far seat at the top — which is what keeps the row
+ * reading as a table rather than as a toolbar.
  *
  * You are always at the bottom, because your hand is there and a player's own
  * cards are the one fixed point on the screen. Everyone else is spread along
- * the arc above, **in turn order, starting on your left** — the player who goes
+ * the band **in turn order, starting on your left** — the player who goes
  * after you is the one on your left, exactly as at a real table.
  */
 
-/** The arc the opponents occupy, in degrees. 180 is due left, 270 straight up. */
-const DESDE = 200
-const HASTA = 340
-
-/** Half-width and half-height of the ellipse the seats sit on, in percent. */
-const RADIO_X = 44
-const RADIO_Y = 27
 /**
- * Centre of that ellipse. Above the middle, because the bottom belongs to your
- * hand — and not so high that the seat at the top has its cards cropped off.
+ * Horizontal margin before the first seat, by how many rivals share the band.
+ * Fewer rivals sit closer to the centre, the way people actually spread out.
  */
-const CENTRO_X = 50
-const CENTRO_Y = 45
+const MARGEN = [0, 50, 28, 18, 13, 10] as const
+
+/**
+ * How far below the band's top an edge seat sits, in percent of the band.
+ * Kept shallow on purpose: a seat is nearly as tall as the band it lives in,
+ * so a deep arc would hang the edge seats out of their lane and into the
+ * mesa's — the exact collision the lanes exist to prevent.
+ */
+const ARCO = 14
 
 export type Asiento = {
   readonly seat: number
-  /** Percent of the table box, for `left` and `top`. */
+  /** Percent of the seat band, for `left` (centre) and `top` (anchor). */
   readonly x: number
   readonly y: number
   /** Turns until this player plays after you. 0 is you. */
@@ -37,7 +44,7 @@ export type Asiento = {
 /**
  * Every seat but yours, left to right, in turn order.
  *
- * With one opponent there is no arc to spread: they go straight across from
+ * With one opponent there is no row to spread: they go straight across from
  * you, which is what two people at a table actually do.
  */
 export function asientosRivales(jugadores: number, tuyo: number): Asiento[] {
@@ -46,16 +53,18 @@ export function asientosRivales(jugadores: number, tuyo: number): Asiento[] {
   }
 
   const rivales = jugadores - 1
-  const paso = rivales > 1 ? (HASTA - DESDE) / (rivales - 1) : 0
+  const margen = MARGEN[Math.min(rivales, MARGEN.length - 1)]
+  const paso = rivales > 1 ? (100 - 2 * margen) / (rivales - 1) : 0
 
   return Array.from({ length: rivales }, (_, i) => {
-    const grados = rivales > 1 ? DESDE + i * paso : (DESDE + HASTA) / 2
-    const radianes = (grados * Math.PI) / 180
+    const x = margen + i * paso
 
     return {
       seat: (tuyo + 1 + i) % jugadores,
-      x: redondear(CENTRO_X + RADIO_X * Math.cos(radianes)),
-      y: redondear(CENTRO_Y + RADIO_Y * Math.sin(radianes)),
+      x: redondear(x),
+      // A parabola on the distance from centre: the far seat at the top of the
+      // band, edge seats dropping toward the table's rim.
+      y: redondear(ARCO * ((x - 50) / 40) ** 2),
       vuelta: i + 1,
     }
   })

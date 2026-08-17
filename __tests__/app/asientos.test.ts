@@ -3,7 +3,7 @@ import { asientosRivales } from '@/lib/asientos'
 
 /**
  * Seating is geometry, so it can be checked without a browser: who is where,
- * in what order, and whether anybody has been placed off the table.
+ * in what order, and whether anybody has been placed outside the seat band.
  */
 
 describe('asientosRivales', () => {
@@ -18,7 +18,7 @@ describe('asientosRivales', () => {
   it('puts a single opponent straight across from you', () => {
     const [rival] = asientosRivales(2, 0)
     expect(rival.x).toBe(50)
-    expect(rival.y).toBeLessThan(20) // top of the table
+    expect(rival.y).toBe(0) // the top of the band: dead ahead
   })
 
   it('goes round in turn order, starting on your left', () => {
@@ -36,14 +36,22 @@ describe('asientosRivales', () => {
     expect(rivales.map((a) => a.vuelta)).toEqual([1, 2, 3])
   })
 
-  it('keeps every seat on the table', () => {
+  it('sits edge seats lower than the middle, on an arc', () => {
+    const rivales = asientosRivales(6, 0)
+    const ys = rivales.map((a) => a.y)
+    // Symmetric, and the middle is the top of the arc.
+    expect(ys[0]).toBeCloseTo(ys[ys.length - 1], 5)
+    expect(Math.min(...ys)).toBeLessThan(ys[0])
+  })
+
+  it('keeps every seat inside the band', () => {
     for (let jugadores = 2; jugadores <= 6; jugadores++) {
       for (const asiento of asientosRivales(jugadores, 0)) {
-        expect(asiento.x).toBeGreaterThan(2)
-        expect(asiento.x).toBeLessThan(98)
-        expect(asiento.y).toBeGreaterThan(2)
-        // Well clear of the bottom, which is your hand.
-        expect(asiento.y).toBeLessThan(75)
+        expect(asiento.x).toBeGreaterThanOrEqual(10)
+        expect(asiento.x).toBeLessThanOrEqual(90)
+        expect(asiento.y).toBeGreaterThanOrEqual(0)
+        // Anchored near the band's top so the seat hangs inside it.
+        expect(asiento.y).toBeLessThanOrEqual(35)
       }
     }
   })
