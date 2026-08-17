@@ -43,11 +43,17 @@ table.
 | 16 | Bot framework, with a restricted view | ← **next** |
 | 17–22 | Bot personalities, then online | not started |
 
+Off the roadmap, after Phase 15: **a ronda no longer slips past you.** When
+somebody goes out, the game stops on a screen that says who won, with the
+scoreboard and the ronda just played picked out, and deals the next one only
+when you press «Siguiente reparto». The engine still closes and deals in the
+same move — the pause lives in `usePartida`, and no bot plays while it is up.
+
 - **Repo:** https://github.com/cposada8/mazo
 - **Live:** https://mazo-six.vercel.app — `/mesa` steps through a bot partida,
   `/pruebas` shows deals and grupo validation.
 - **Deploys:** every push to `main` goes to production automatically.
-- **Tests:** 348, all green (the soak takes ~15s). `npm run test:run`, `npx tsc --noEmit`, `npm run lint`.
+- **Tests:** 351, all green (the soak takes ~15s). `npm run test:run`, `npx tsc --noEmit`, `npm run lint`.
 
 ## What exists
 

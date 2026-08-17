@@ -8,6 +8,7 @@ import {
   CONFIG_POR_DEFECTO,
   type Card,
   type Contrato,
+  type Marcador as MarcadorDeRonda,
   type PartidaState,
   type Propuesta,
 } from '@/lib/engine'
@@ -31,7 +32,22 @@ export function Juego({
   const juego = usePartida({ jugadores, seed, config })
   const [verMarcador, setVerMarcador] = useState(false)
 
-  const { partida, ronda, esTuTurno, esperando, aviso } = juego
+  const { partida, ronda, esTuTurno, esperando, aviso, resumen } = juego
+
+  // The pause comes first: a ronda has ended and nobody has seen it yet, even
+  // when the next one is already dealt behind it.
+  if (resumen) {
+    return (
+      <FinDeRonda
+        partida={partida}
+        resumen={resumen}
+        nombres={nombres(jugadores)}
+        seAcabo={juego.seAcabo}
+        onSiguiente={juego.siguiente}
+        onSalir={onSalir}
+      />
+    )
+  }
 
   if (!ronda) {
     return (
@@ -294,6 +310,72 @@ function PropuestaApartada({
         ))}
       </div>
     </div>
+  )
+}
+
+/**
+ * A ronda has ended. Who went out, what it cost everyone, and where that leaves
+ * the partida — held until whoever is at the phone says to deal the next one.
+ */
+function FinDeRonda({
+  partida,
+  resumen,
+  nombres,
+  seAcabo,
+  onSiguiente,
+  onSalir,
+}: {
+  partida: PartidaState
+  resumen: MarcadorDeRonda
+  nombres: readonly string[]
+  seAcabo: boolean
+  onSiguiente: () => void
+  onSalir: () => void
+}) {
+  const ganaste = resumen.ganador === TU_ASIENTO
+  const tuyos = resumen.puntos[TU_ASIENTO]
+
+  return (
+    <main className="mx-auto flex w-full max-w-md flex-1 flex-col justify-center gap-8 px-6 py-12">
+      <div className="flex flex-col gap-2">
+        <p className="text-muted-foreground text-xs tracking-wide uppercase">
+          {resumen.contrato.nombre}
+        </p>
+        <h1 className="text-4xl font-semibold tracking-tight">
+          {ganaste ? '¡Ganaste la ronda!' : `Ganó ${nombres[resumen.ganador]}`}
+        </h1>
+        <p className="text-muted-foreground">
+          {ganaste
+            ? 'Te quedaste sin cartas primero.'
+            : `Te quedaste con ${tuyos} punto${tuyos === 1 ? '' : 's'} en la mano.`}
+        </p>
+      </div>
+
+      <Marcador
+        partida={partida}
+        nombres={nombres}
+        destacar={partida.historial.length - 1}
+        siguiente
+      />
+
+      <div className="flex flex-col gap-2">
+        <button
+          type="button"
+          onClick={onSiguiente}
+          autoFocus
+          className="bg-foreground text-background rounded-md px-4 py-3.5 text-sm font-medium"
+        >
+          {seAcabo ? 'Ver el resultado' : 'Siguiente reparto'}
+        </button>
+        <button
+          type="button"
+          onClick={onSalir}
+          className="text-muted-foreground self-center text-xs underline"
+        >
+          Empezar otra partida
+        </button>
+      </div>
+    </main>
   )
 }
 

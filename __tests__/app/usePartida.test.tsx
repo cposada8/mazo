@@ -11,6 +11,8 @@ import { TU_ASIENTO, usePartida } from '@/app/jugar/usePartida'
  * — rather than about markup.
  */
 
+type Juego = ReturnType<typeof usePartida>
+
 const soloDosTrios = {
   ...CONFIG_POR_DEFECTO,
   contratos: [contratoPorId('c1')!],
@@ -202,6 +204,80 @@ describe('the bots', () => {
       timeout: 5000,
     })
     expect(result.current.ronda!.fase).toBe('draw')
+  })
+})
+
+describe('the end of a ronda', () => {
+  const dosRondas = {
+    ...CONFIG_POR_DEFECTO,
+    contratos: [contratoPorId('c1')!, contratoPorId('c2')!],
+    empiezaPrimeraRonda: TU_ASIENTO,
+  }
+
+  /**
+   * Play the dullest possible game — draw, discard, never bajarse — until a bot
+   * goes out. Fake timers so the bots' thinking pause costs nothing.
+   */
+  const hastaQueAlguienGane = (result: { current: Juego }) => {
+    for (let turno = 0; turno < 600 && !result.current.resumen; turno++) {
+      if (result.current.esTuTurno) {
+        act(() => result.current.robar('stock'))
+        act(() => result.current.alternarCarta(result.current.disponibles[0].id))
+        act(() => result.current.descartar())
+      } else {
+        act(() => void vi.advanceTimersByTime(1000))
+      }
+    }
+    if (!result.current.resumen) throw new Error('no bot ever went out')
+  }
+
+  const partidaLarga = (seed = 'fin-de-ronda') => {
+    vi.useFakeTimers()
+    return renderHook(() =>
+      usePartida({ jugadores: 2, seed, config: dosRondas }),
+    )
+  }
+
+  it('holds on the winner instead of dealing straight past them', () => {
+    const { result } = partidaLarga()
+    hastaQueAlguienGane(result)
+
+    const resumen = result.current.resumen!
+    expect(resumen.ganador).not.toBe(TU_ASIENTO)
+    expect(resumen.contrato.id).toBe('c1')
+    // The scoreboard says the same thing, because it is the same record.
+    expect(result.current.partida.historial.at(-1)).toBe(resumen)
+    expect(result.current.partida.totales[resumen.ganador]).toBe(0)
+  })
+
+  it('freezes the table while the summary is up', () => {
+    const { result } = partidaLarga()
+    hastaQueAlguienGane(result)
+
+    expect(result.current.esTuTurno).toBe(false)
+    expect(result.current.esperando).toBe(false)
+
+    const antes = result.current.partida
+    act(() => void vi.advanceTimersByTime(10_000))
+    expect(result.current.partida).toBe(antes)
+  })
+
+  it('deals the next reparto when you move on', () => {
+    const { result } = partidaLarga()
+    hastaQueAlguienGane(result)
+
+    act(() => result.current.siguiente())
+
+    expect(result.current.resumen).toBeNull()
+    expect(result.current.seAcabo).toBe(false)
+    expect(result.current.ronda!.contrato.id).toBe('c2')
+    // Whoever went out opens the next one, so it is the bot's turn.
+    expect(result.current.esperando).toBe(true)
+
+    // Two ticks: a bot's turn is a draw and then an act, each after its pause.
+    act(() => void vi.advanceTimersByTime(1000))
+    act(() => void vi.advanceTimersByTime(1000))
+    expect(result.current.esTuTurno).toBe(true)
   })
 })
 

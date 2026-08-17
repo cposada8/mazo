@@ -14,6 +14,7 @@ import {
 } from '@/lib/mano'
 import {
   type Card,
+  type Marcador,
   type Move,
   type PartidaConfig,
   type PartidaState,
@@ -46,9 +47,19 @@ export function usePartida(options: {
   const [orden, setOrden] = useState<readonly string[]>([])
   /** Cards you have pinned together so sorting leaves them alone. */
   const [bloques, setBloques] = useState<readonly Bloque[]>([])
+  /**
+   * The ronda that just ended, held on screen until you move on.
+   *
+   * The engine closes a ronda and deals the next one in the same move, which is
+   * right for a program and wrong for a person: whoever went out disappeared
+   * before anyone could see it. This is the pause, and nothing but `siguiente`
+   * ends it.
+   */
+  const [resumen, setResumen] = useState<Marcador | null>(null)
 
   const ronda = partida.ronda
-  const enJuego = ronda !== null && ronda.ganador === null
+  const enPausa = resumen !== null
+  const enJuego = ronda !== null && ronda.ganador === null && !enPausa
   const esTuTurno = enJuego && ronda.turno === TU_ASIENTO
   // Derived rather than stored: a bot is thinking exactly when it is a bot's
   // turn. Keeping it as state would just be a second copy that can go stale.
@@ -162,8 +173,24 @@ export function usePartida(options: {
         return actual
       }
       setAviso(null)
+      const cerrada = rondaCerrada(actual, result.state)
+      if (cerrada) setResumen(cerrada)
       return result.state
     })
+  }, [])
+
+  /**
+   * Move on to the next reparto. The cards are already dealt — what this ends
+   * is the pause — so your arrangement is cleared here: the order and the
+   * pinned bloques belonged to a hand that no longer exists.
+   */
+  const siguiente = useCallback(() => {
+    setResumen(null)
+    setSeleccion([])
+    setPropuestas([])
+    setOrden([])
+    setBloques([])
+    setAviso(null)
   }, [])
 
   // Bots take their turns on their own, one move at a time so the table can be
@@ -173,6 +200,10 @@ export function usePartida(options: {
     const actual = partida.ronda
     if (!actual || actual.ganador !== null) return
     if (actual.turno === TU_ASIENTO) return
+    // A ronda waiting to be acknowledged is not a ronda in progress: the next
+    // one is already dealt, and a bot playing into it behind the summary would
+    // mean coming back to a table that had moved on without you.
+    if (resumen) return
     if (enCurso.current) return
 
     enCurso.current = true
@@ -183,7 +214,10 @@ export function usePartida(options: {
         const ronda = estado.ronda
         if (!ronda || ronda.turno === TU_ASIENTO || ronda.ganador !== null) return estado
         const result = aplicarEnPartida(estado, codicioso.decidir(ronda))
-        return result.ok ? result.state : estado
+        if (!result.ok) return estado
+        const cerrada = rondaCerrada(estado, result.state)
+        if (cerrada) setResumen(cerrada)
+        return result.state
       })
     }, PAUSA_DEL_BOT)
 
@@ -191,7 +225,7 @@ export function usePartida(options: {
       clearTimeout(id)
       enCurso.current = false
     }
-  }, [partida])
+  }, [partida, resumen])
 
   // --------------------------------------------------------------- actions
 
@@ -304,6 +338,10 @@ export function usePartida(options: {
   return {
     partida,
     ronda,
+    resumen,
+    /** True once the last contract has been played and scored. */
+    seAcabo: partida.ronda === null,
+    siguiente,
     esTuTurno,
     esperando,
     aviso,
@@ -329,6 +367,19 @@ export function usePartida(options: {
     agregarA,
     descartar,
   }
+}
+
+/**
+ * The ronda a move just closed, if it closed one.
+ *
+ * Read from the historial rather than from the ronda, because by the time
+ * `aplicarEnPartida` returns, the finished ronda is gone and the next one is
+ * dealt. The historial is what is left of it — and it is also what the
+ * scoreboard shows, so the two can never disagree.
+ */
+function rondaCerrada(antes: PartidaState, despues: PartidaState): Marcador | null {
+  if (despues.historial.length === antes.historial.length) return null
+  return despues.historial[despues.historial.length - 1]
 }
 
 /**

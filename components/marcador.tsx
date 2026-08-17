@@ -12,10 +12,16 @@ export function Marcador({
   partida,
   nombres,
   className,
+  destacar,
+  siguiente,
 }: {
   partida: PartidaState
   nombres: readonly string[]
   className?: string
+  /** Index into the historial of the ronda to pick out — the one just played. */
+  destacar?: number
+  /** The ronda in `partida` has not started yet: it is what comes next. */
+  siguiente?: boolean
 }) {
   const jugadores = partida.totales.length
   const menor = Math.min(...partida.totales)
@@ -36,7 +42,10 @@ export function Marcador({
           </thead>
           <tbody>
             {partida.historial.map((marcador, index) => (
-              <tr key={index} className="border-t">
+              <tr
+                key={index}
+                className={cn('border-t', index === destacar && 'bg-accent')}
+              >
                 <td className="text-muted-foreground py-1 pr-3">
                   {marcador.contrato.nombre}
                 </td>
@@ -45,9 +54,14 @@ export function Marcador({
                     key={seat}
                     className={cn(
                       'py-1 pl-3 text-right tabular-nums',
-                      seat === marcador.ganador && 'font-semibold',
+                      seat === marcador.ganador && 'text-foreground font-semibold',
                     )}
                   >
+                    {seat === marcador.ganador && (
+                      <span aria-label="ganó la ronda" className="mr-1">
+                        🏆
+                      </span>
+                    )}
                     {puntos}
                   </td>
                 ))}
@@ -57,7 +71,7 @@ export function Marcador({
             {partida.ronda && (
               <tr className="border-t">
                 <td className="text-muted-foreground py-1 pr-3 italic">
-                  {partida.ronda.contrato.nombre} · en juego
+                  {partida.ronda.contrato.nombre} · {siguiente ? 'sigue' : 'en juego'}
                 </td>
                 {Array.from({ length: jugadores }, (_, seat) => (
                   <td key={seat} className="text-muted-foreground py-1 pl-3 text-right">
