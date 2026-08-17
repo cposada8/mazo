@@ -25,7 +25,12 @@ export type Ajustes = {
   verDescarte: boolean
   /** May the relato line be opened into the ronda's whole story? */
   verHistorial: boolean
+  /** Dark card faces instead of light ones. A deck preference, remembered. */
+  cartasOscuras: boolean
 }
+
+/** Remembered across partidas: which deck you like holding rarely changes. */
+const CLAVE_BARAJA = 'mazo:cartas-oscuras'
 
 /** Whole-turn thinking times on offer. Two is the pace of a real table. */
 const SEGUNDOS = [1, 2, 3, 5] as const
@@ -52,6 +57,16 @@ export function Inicio({
   const [segundosBot, setSegundosBot] = useState(2)
   const [verDescarte, setVerDescarte] = useState(true)
   const [verHistorial, setVerHistorial] = useState(true)
+  const [cartasOscuras, setCartasOscuras] = useState(
+    () =>
+      typeof window !== 'undefined' &&
+      localStorage.getItem(CLAVE_BARAJA) === 'si',
+  )
+
+  const escogerBaraja = (oscuras: boolean) => {
+    localStorage.setItem(CLAVE_BARAJA, oscuras ? 'si' : 'no')
+    setCartasOscuras(oscuras)
+  }
   const [encendidos, setEncendidos] = useState<readonly string[]>(
     CONTRATOS_POR_DEFECTO,
   )
@@ -99,6 +114,7 @@ export function Inicio({
       segundosBot,
       verDescarte,
       verHistorial,
+      cartasOscuras,
     })
   }
 
@@ -267,6 +283,26 @@ export function Inicio({
 
       <section className="flex flex-col gap-3">
         <h2 className="text-muted-foreground text-xs font-medium tracking-widest uppercase">
+          La baraja
+        </h2>
+        <div className="grid grid-cols-2 gap-2">
+          <BotonDeBaraja
+            nombre="Claras"
+            activo={!montado || !cartasOscuras}
+            onClick={() => escogerBaraja(false)}
+            carta="border-stone-300 bg-stone-50 text-stone-900"
+          />
+          <BotonDeBaraja
+            nombre="Oscuras"
+            activo={montado && cartasOscuras}
+            onClick={() => escogerBaraja(true)}
+            carta="border-stone-600 bg-stone-900 text-stone-50"
+          />
+        </div>
+      </section>
+
+      <section className="flex flex-col gap-3">
+        <h2 className="text-muted-foreground text-xs font-medium tracking-widest uppercase">
           Semilla
         </h2>
         <input
@@ -321,5 +357,41 @@ export function Inicio({
         Repartir
       </button>
     </main>
+  )
+}
+
+/** One deck on offer, with a miniature of the card face it stands for. */
+function BotonDeBaraja({
+  nombre,
+  activo,
+  onClick,
+  carta,
+}: {
+  nombre: string
+  activo: boolean
+  onClick: () => void
+  /** The miniature's colours — a preview of the actual face. */
+  carta: string
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-pressed={activo}
+      className={`flex items-center justify-center gap-2.5 rounded-md border py-2.5 text-sm transition-colors ${
+        activo
+          ? 'bg-foreground text-background border-transparent'
+          : 'bg-card hover:bg-accent'
+      }`}
+    >
+      <span
+        aria-hidden
+        className={`flex h-7 w-5 flex-col items-start gap-px rounded-[3px] border pt-0.5 pl-0.5 text-[9px] leading-none font-semibold ${carta}`}
+      >
+        <span>A</span>
+        <span>♠</span>
+      </span>
+      {nombre}
+    </button>
   )
 }

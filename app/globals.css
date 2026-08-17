@@ -187,6 +187,21 @@
   }
 
   /*
+   * The dark deck. Card faces read their colours from these variables
+   * (components/carta.tsx holds the light-deck fallbacks), so one class on
+   * the game's wrapper reskins every card — hand, piles, grupos, overlays.
+   * Near-black faces, light pips, a softer red that keeps its contrast.
+   */
+  .cartas-oscuras {
+    --carta-fondo: #1c1917;
+    --carta-borde: #57534e99;
+    --carta-tinta: #fafaf9;
+    --carta-roja: #f87171;
+    --carta-comodin: #c4b5fd;
+    --carta-comodin-borde: #8b5cf680;
+  }
+
+  /*
    * The clock, drawn on the player (Phase 21): the ring around the ficha in
    * play empties as the turn's time runs out. The circle below has r=17.5 in
    * a 40-unit box, so one lap of dash is 2π·17.5 ≈ 109.96. The duration comes

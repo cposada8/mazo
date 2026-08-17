@@ -379,12 +379,12 @@ export function Mano({
                       card={card}
                       className={cn(
                         'transition-transform',
-                        // The mark on the just-drawn card: a blue ring and a
-                        // nudge upward, so it stands out of the fan even
-                        // after a latched sort files it into place. Selection
-                        // wins when both apply — its lift is higher.
+                        // The mark on the just-drawn card: a thin gold halo,
+                        // nothing raised — enough to find it after a latched
+                        // sort files it into place, quiet enough to ignore.
+                        // Selection wins when both apply.
                         nueva &&
-                          'ring-offset-background -translate-y-1 ring-2 ring-sky-400 ring-offset-1',
+                          'ring-offset-background ring-[1.5px] ring-amber-400 ring-offset-1',
                         elegida &&
                           'ring-foreground ring-offset-background -translate-y-2 ring-2 ring-offset-2',
                       )}

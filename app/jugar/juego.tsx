@@ -20,6 +20,7 @@ import {
   usePantallaCompleta,
 } from '@/lib/pantalla'
 import { type Relato, contarRelato } from '@/lib/relato'
+import { cn } from '@/lib/utils'
 import {
   CONFIG_POR_DEFECTO,
   type Card,
@@ -37,6 +38,7 @@ export function Juego({
   segundosBot,
   verDescarte,
   verHistorial,
+  cartasOscuras,
   onSalir,
 }: {
   jugadores: number
@@ -47,6 +49,8 @@ export function Juego({
   /** Memory aids from the setup screen: browse the pile, reread the story. */
   verDescarte: boolean
   verHistorial: boolean
+  /** The dark deck: near-black card faces, chosen on the setup screen. */
+  cartasOscuras: boolean
   onSalir: () => void
 }) {
   const config = useMemo(
@@ -93,7 +97,14 @@ export function Juego({
     <main className="fixed inset-0 z-10 overflow-hidden">
       {/* Safe areas are padded, not ignored: fullscreen and standalone put the
           table under the notch, and a card behind a camera is a card lost. */}
-      <div className="relative h-full bg-stone-950 pt-[env(safe-area-inset-top)] pr-[env(safe-area-inset-right)] pb-[env(safe-area-inset-bottom)] pl-[env(safe-area-inset-left)]">
+      {/* The deck class sits on the wrapper so the overlays — descarte,
+          historial — deal from the same deck as the table. */}
+      <div
+        className={cn(
+          'relative h-full bg-stone-950 pt-[env(safe-area-inset-top)] pr-[env(safe-area-inset-right)] pb-[env(safe-area-inset-bottom)] pl-[env(safe-area-inset-left)]',
+          cartasOscuras && 'cartas-oscuras',
+        )}
+      >
         <Mesa
           state={ronda}
           asiento={TU_ASIENTO}

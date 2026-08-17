@@ -49,18 +49,23 @@ type CartaProps = {
  * own for the fan to be worth tightening.
  *
  * A card face does not follow the theme: it is a physical object under the
- * table's light, and it stays the most legible thing on the screen — white,
- * in a dark room, in either theme.
+ * table's light. It does follow the *deck* — light faces by default, or the
+ * dark deck via `.cartas-oscuras` — because which cards you like holding is a
+ * preference about the object, chosen on the setup screen, not about the UI.
  */
 export function Carta({ card, represents, size = 'md', className }: CartaProps) {
-  const base = `relative ${TAMANOS[size]} aspect-[8/11] shrink-0 rounded-md border border-stone-300/80 bg-stone-50 leading-none shadow-sm select-none`
+  // Colours come from variables so the deck can be reskinned by an ancestor
+  // class: `.cartas-oscuras` (globals.css) turns the faces near-black with
+  // light pips, for the players who prefer the dark deck. The fallbacks are
+  // the light deck.
+  const base = `relative ${TAMANOS[size]} aspect-[8/11] shrink-0 rounded-md border border-[var(--carta-borde,#d6d3d1cc)] bg-[var(--carta-fondo,#fafaf9)] leading-none shadow-sm select-none`
 
   if (isComodin(card)) {
     return (
       <div
         className={cn(
           base,
-          'border-dashed border-violet-400/60 bg-linear-to-br from-violet-500/15 to-fuchsia-500/15 text-violet-700',
+          'border-dashed border-[var(--carta-comodin-borde,#a78bfa99)] bg-linear-to-br from-violet-500/15 to-fuchsia-500/15 text-[var(--carta-comodin,#6d28d9)]',
           className,
         )}
         title={represents ? `Comodín valiendo ${represents}` : 'Comodín'}
@@ -82,7 +87,13 @@ export function Carta({ card, represents, size = 'md', className }: CartaProps) 
 
   return (
     <div
-      className={cn(base, red ? 'text-red-600' : 'text-stone-900', className)}
+      className={cn(
+        base,
+        red
+          ? 'text-[var(--carta-roja,#dc2626)]'
+          : 'text-[var(--carta-tinta,#1c1917)]',
+        className,
+      )}
       title={`${card.rank}${symbol}`}
     >
       <Esquina arriba={card.rank} abajo={symbol} />

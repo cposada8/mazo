@@ -725,12 +725,26 @@ scrolling, and the comodín still shows what it stands for while overlapped.
 stands for underneath) — bottom-corner labels vanish under the next card in a
 tight fan, corners do not.
 
-One follow-up from the first game played with the latch on: **the drawn card
-is marked** — a blue ring and a nudge up out of the fan — until your discard
-ends the turn. The latch files a drawn card into place, which is its job, and
-also exactly how you lose track of what you just drew; the mark gives that
-back. Found by hand-diffing, not by peeking at the stock, so a reshuffle
-cannot mislabel it, and a bot's draws never mark anything.
+Follow-ups from the first games played with this build, each asked for at
+the table:
+
+- **The drawn card is marked** until your discard ends the turn. The latch
+  files a drawn card into place, which is its job, and also exactly how you
+  lose track of what you just drew; the mark gives that back. Found by
+  hand-diffing, not by peeking at the stock, so a reshuffle cannot mislabel
+  it, and a bot's draws never mark anything. First shipped as a blue ring
+  plus a nudge out of the fan; the owner asked for quieter, so it is now a
+  **thin gold halo and nothing raised**.
+- **A selected card slides up, never in front.** Selection used to raise the
+  card with a z-index so its ring stayed visible — and on the tight fan that
+  covered the next card's corner and stole its taps, forcing right-to-left
+  selection. The lift alone is the signal now, like a card pushed out of a
+  real fan.
+- **The deck comes in two finishes.** Card faces read their colours from CSS
+  variables, and `.cartas-oscuras` on the game's wrapper reskins every card —
+  hand, piles, grupos, overlays — to the near-black faces of the pre-Phase-20
+  build, which the owner missed. Chosen on the setup screen, remembered in
+  the browser, light by default.
 
 ---
 

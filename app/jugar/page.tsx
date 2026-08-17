@@ -28,6 +28,7 @@ export default function Jugar() {
       segundosBot={ajustes.segundosBot}
       verDescarte={ajustes.verDescarte}
       verHistorial={ajustes.verHistorial}
+      cartasOscuras={ajustes.cartasOscuras}
       onSalir={() => setAjustes(null)}
     />
   )
