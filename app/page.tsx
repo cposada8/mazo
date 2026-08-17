@@ -38,9 +38,18 @@ export default function Home() {
 
       <section className="flex flex-col gap-3">
         <h2 className="text-muted-foreground text-xs font-medium tracking-widest uppercase">
-          Mientras se construye
+          Ya se puede
         </h2>
         <nav className="flex flex-col gap-px overflow-hidden rounded-lg border">
+          <a
+            href="/jugar"
+            className="bg-card hover:bg-accent flex flex-col gap-0.5 px-4 py-3 transition-colors"
+          >
+            <span className="text-sm font-medium">Jugar contra bots</span>
+            <span className="text-muted-foreground text-xs">
+              Una partida completa de Carioca, aquí mismo
+            </span>
+          </a>
           <a
             href="/mesa"
             className="bg-card hover:bg-accent flex flex-col gap-0.5 px-4 py-3 transition-colors"
@@ -63,7 +72,7 @@ export default function Home() {
       </section>
 
       <footer className="text-muted-foreground mt-auto text-sm">
-        En construcción. Todavía no se puede jugar.
+        En construcción. Falta jugar con amigos.
       </footer>
     </main>
   );

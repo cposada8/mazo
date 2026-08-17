@@ -1,6 +1,6 @@
 # Project status — pick up here
 
-Last updated after Phase 10.
+Last updated after Phase 11 — Milestone 2 complete.
 
 Read this first, then `mission.md` for the why, `carioca-rules.md` for the game,
 `tech-stack.md` for the stack, and `roadmap.md` for what comes next. This file is
@@ -14,10 +14,13 @@ doc is worse than none.
 
 ## Where things stand
 
-Phases 0–10 are done. **Milestone 1 is complete: the engine is right.** Bots now
-play whole partidas against each other, and `/mesa` draws one move by move on a
-phone. A person still cannot play: the table renders a state, it does not change
-one. That is Phase 11, and it finishes Milestone 2.
+Phases 0–11 are done. **Carioca is playable.** Open `/jugar` on a phone and play
+a full partida against bots: draw, lay down, unload onto anyone's grupos,
+discard, and see the scoreboard at the end.
+
+Milestones 1 and 2 are both complete. What is missing is other people —
+Milestone 3 makes the bots worth playing, Milestone 4 puts friends at the
+table.
 
 | Phase | | |
 | --- | --- | --- |
@@ -32,14 +35,15 @@ one. That is Phase 11, and it finishes Milestone 2.
 | 8 | Escenarios: dictated deals | ✅ |
 | 9 | El Codicioso, the baseline bot | ✅ |
 | 10 | The table on screen | ✅ |
-| 11 | Playing it against bots | ← **next** |
-| 12–18 | Better bots, then online | not started |
+| 11 | Playing it against bots | ✅ |
+| 12 | Bot framework, with a restricted view | ← **next** |
+| 13–18 | Bot personalities, then online | not started |
 
 - **Repo:** https://github.com/cposada8/mazo
 - **Live:** https://mazo-six.vercel.app — `/mesa` steps through a bot partida,
   `/pruebas` shows deals and grupo validation.
 - **Deploys:** every push to `main` goes to production automatically.
-- **Tests:** 265, all green (the soak takes ~15s). `npm run test:run`, `npx tsc --noEmit`, `npm run lint`.
+- **Tests:** 294, all green (the soak takes ~15s). `npm run test:run`, `npx tsc --noEmit`, `npm run lint`.
 
 ## What exists
 
@@ -62,7 +66,9 @@ lib/bots/             Clients of the engine. Nothing in the engine imports these
   codicioso.ts       El Codicioso: the baseline bot.
   mesa.ts            Runs a whole partida with bots in the seats.
 components/carta.tsx The visual card.
-components/mesa.tsx  The table: opponents, grupos, piles, your hand.
+components/mesa.tsx  The table: opponents, grupos, piles, your hand. Optional
+                     callbacks turn it from a game you watch into one you play.
+app/jugar/           The playable game: page.tsx and usePartida.ts.
 app/pruebas/         The page that makes the engine visible.
 __tests__/engine/    Tests, including helpers.ts for scripted rondas.
 ```
@@ -100,22 +106,20 @@ draw comes from the partida seed, so nothing about a partida is unreproducible.
 
 ## What comes next
 
-**Phase 11 — play it.** The first time a person can play Carioca here. It needs:
+**Phase 12 — the bot framework.** The step that makes difficulty levels
+possible, and the one online play needs anyway.
 
-- Interaction on top of the components in `components/mesa.tsx`, which already
-  draw everything: tap a pile to draw, select cards to lay down or add, tap one
-  to discard.
-- El Codicioso in the other seats, moving after you do.
-- Client state in Zustand; the engine stays the referee, so every tap becomes a
-  `Move` handed to `aplicarEnPartida` and refusals surface as "you cannot do
-  that" rather than as a broken board.
-- **Done when** a person plays a full partida against bots on the deployed site.
-  That is Milestone 2.
+Right now a bot receives the whole `RondaState` and is merely well-behaved about
+not reading other hands. Phase 12 makes that structural: a **view** of what one
+seat can legitimately see — its own hand, the grupos on the mesa, the descarte,
+how many cards everyone holds. A bot takes the view and returns a `Move`.
 
-Worth knowing while building it: `buscarAgrupacion` from `lib/bots` is what the
-"can I bajarme?" hint should call — it already finds a grouping the engine will
-accept. And scenarios give you any board state to work against without playing
-to it.
+That same function is what the server will need in Phase 17 to send each player
+only their own cards, so it is worth getting right rather than fast.
+
+It also unlocks what bots with memory need: once the input is explicitly "what
+this seat has seen", remembering discards and reading opponents becomes a
+property of the bot rather than a licence to peek.
 
 ## Open questions, deliberately unanswered
 

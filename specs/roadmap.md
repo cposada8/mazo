@@ -153,11 +153,28 @@ screen.
 partida move by move. Comodines on the mesa render the rango they stand for, so
 the positional binding is visible on screen and not just in the code.
 
-### Phase 11 — Play it
+### Phase 11 — Play it ✅
 Wire interaction: draw, select cards, lay down, discard. Local game against the
-Phase 9 bots, state in Zustand.
+Phase 9 bots.
 **Done when:** a person plays a full game against bots on the deployed site.
 **This is Milestone 2.**
+
+**Done.** `/jugar`, 294 tests. Interaction is optional props on the Phase 10
+components, so the same code renders a game you watch and a game you play.
+
+Two deviations, both deliberate:
+
+- **No Zustand.** One page with one state object does not need a store. The
+  controller is `app/jugar/usePartida.ts`; reach for a store when a second
+  screen needs the same state.
+- **No comodín repositioning yet.** Drawing, laying down, adding to any grupo
+  and discarding are all wired; moving a comodín within an escala is not. The
+  engine supports it — the interface does not, and it needs a way to say *which*
+  card pays for it. Deferred to Phase 14, the polish phase.
+
+The player still groups: you select the cards and `armarGrupo` only works out
+whether they read as a trío or an escala, and where a comodín has to sit. It
+never picks the cards for you.
 
 ---
 

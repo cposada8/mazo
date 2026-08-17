@@ -23,7 +23,10 @@ import {
   ESCALA_MIN_SIZE,
   TRIO_MIN_SIZE,
   type Contrato,
+  type Grupo,
+  type Phase,
   type Propuesta,
+  validateGrupo,
 } from '@/lib/engine'
 
 /** Cap on how many ways a single escala window is explored. */
@@ -91,6 +94,125 @@ export function buscarAgrupacion(
 
 export function puedeBajarse(hand: readonly Card[], contrato: Contrato): boolean {
   return buscarAgrupacion(hand, contrato) !== null
+}
+
+/**
+ * Read a selection of cards as one grupo, if it can be read as one.
+ *
+ * This is for the interface: the player picks the cards, and this works out
+ * whether they mean a trío or an escala — including where a comodín has to sit
+ * for the escala to hold. It is *not* the engine deciding how to group a hand:
+ * the player chose these exact cards, and the result is still handed to the
+ * engine to accept or refuse.
+ *
+ * Returns null when the selection is not a grupo at all.
+ */
+export function armarGrupo(
+  cards: readonly Card[],
+  phase: Phase = 'layDown',
+): Propuesta | null {
+  const reales = cards.filter((card) => !isComodin(card))
+  const comodines = cards.filter(isComodin)
+  if (reales.length === 0) return null
+
+  const primero = reales[0] as Exclude<Card, { kind: 'comodin' }>
+
+  // A trío: every real card of the same rango.
+  if (cards.length >= TRIO_MIN_SIZE) {
+    const mismoRango = reales.every(
+      (card) => !isComodin(card) && card.rank === primero.rank,
+    )
+    if (mismoRango) {
+      const propuesta: Propuesta = {
+        kind: 'trio',
+        rank: primero.rank,
+        cardIds: cards.map((card) => card.id),
+      }
+      if (validaComo(propuesta, cards, phase)) return propuesta
+    }
+  }
+
+  // An escala: one suit, and some rotation of the ring that every card fits,
+  // with the comodines taking the positions nothing else covers.
+  if (cards.length >= ESCALA_MIN_SIZE) {
+    const mismoPalo = reales.every(
+      (card) => !isComodin(card) && card.suit === primero.suit,
+    )
+    if (!mismoPalo) return null
+
+    for (const start of RANKS) {
+      const ordenadas = ordenarComoEscala(cards, start, comodines)
+      if (!ordenadas) continue
+
+      const propuesta: Propuesta = {
+        kind: 'escala',
+        suit: primero.suit,
+        start,
+        cardIds: ordenadas.map((card) => card.id),
+      }
+      if (validaComo(propuesta, cards, phase)) return propuesta
+    }
+  }
+
+  return null
+}
+
+/** Lay the cards out from `start`, letting comodines cover the empty slots. */
+function ordenarComoEscala(
+  cards: readonly Card[],
+  start: Rank,
+  comodines: readonly Card[],
+): Card[] | null {
+  const disponibles = new Map<Rank, Card[]>()
+  for (const card of cards) {
+    if (isComodin(card)) continue
+    const existentes = disponibles.get(card.rank)
+    if (existentes) existentes.push(card)
+    else disponibles.set(card.rank, [card])
+  }
+
+  const libres = [...comodines]
+  const ordenadas: Card[] = []
+
+  for (let i = 0; i < cards.length; i++) {
+    const rank = rankAfter(start, i)
+    const real = disponibles.get(rank)?.pop()
+    if (real) {
+      ordenadas.push(real)
+      continue
+    }
+    const comodin = libres.pop()
+    if (!comodin) return null
+    ordenadas.push(comodin)
+  }
+
+  // Every real card has to have found a slot, or this rotation is wrong.
+  for (const restantes of disponibles.values()) {
+    if (restantes.length > 0) return null
+  }
+
+  return ordenadas
+}
+
+function validaComo(
+  propuesta: Propuesta,
+  cards: readonly Card[],
+  phase: Phase,
+): boolean {
+  const porId = new Map(cards.map((card) => [card.id, card]))
+  const ordenadas = propuesta.cardIds.map((id) => porId.get(id)!)
+
+  const grupo: Grupo =
+    propuesta.kind === 'trio'
+      ? { kind: 'trio', rank: propuesta.rank, cards: ordenadas }
+      : {
+          kind: 'escala',
+          suit: propuesta.suit,
+          start: propuesta.start,
+          cards: ordenadas,
+        }
+
+  return validateGrupo(grupo, phase).ok
 }
 
 // ------------------------------------------------------------- candidates
