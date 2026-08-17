@@ -40,8 +40,8 @@ table.
 | 13 | Arranging your hand | ✅ |
 | 14 | Setting up a partida, seeing the score | ✅ |
 | 15 | Reading your own hand | ✅ |
-| 16 | Dev before prod: a branch and its own URL | ← **next** |
-| 17 | The table: seats around it, grupos in the middle | not started |
+| 16 | Dev before prod: a branch and its own URL | ✅ |
+| 17 | The table: seats around it, grupos in the middle | ← **next** |
 | 18–24 | Bot framework and personalities, then online | not started |
 
 Off the roadmap, after Phase 15: **a ronda no longer slips past you.** When
@@ -60,7 +60,10 @@ rather than the correct one.
 - **Repo:** https://github.com/cposada8/mazo
 - **Live:** https://mazo-six.vercel.app — `/mesa` steps through a bot partida,
   `/pruebas` shows deals and grupo validation.
-- **Deploys:** every push to `main` goes to production automatically.
+- **Dev:** https://mazo-git-dev-cepm23.vercel.app — the latest commit on `dev`,
+  public, no login.
+- **Deploys:** work goes to `dev`, which builds by itself. Production changes
+  only by merging `dev` into `main`. Nothing else deploys `main`.
 - **Tests:** 352, all green (the soak takes ~15s). `npm run test:run`, `npx tsc --noEmit`, `npm run lint`.
 
 ## What exists
@@ -132,16 +135,12 @@ the cards are gone and has to be dropped when the ronda changes.
 
 ## What comes next
 
-**Phase 16 — dev before prod.** Every commit so far has gone straight to
-production. Work moves to a `dev` branch with its own permanent Vercel URL, and
-production changes only by merging `dev` into `main`. Settings and habit, not
-code — and the thing to check is Deployment Protection, which on the Hobby plan
-defaults to protecting previews and leaving production public.
-
 **Phase 17 — the table.** The game looks like a form: one column, opponents as
 lines of text, grupos as a list. It should look like a table with seats around
 it, names in position, and the grupos in the middle where they belong once they
-are communal. First feature to be built on `dev`.
+are communal. **Landscape**, decided — the content is thirteen cards wide.
+`roadmap.md` has the three reference tables and what is worth taking from each.
+First feature built on `dev`.
 
 **Phase 18 — the bot framework.** The step that makes difficulty levels
 possible, and the one online play needs anyway.

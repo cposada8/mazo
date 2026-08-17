@@ -270,7 +270,7 @@ Two things that are cheap now and expensive later. The first changes where work
 lands before it reaches anyone; the second is the only part of the project a
 person actually sees.
 
-### Phase 16 — Dev before prod
+### Phase 16 — Dev before prod ✅
 Every commit so far has gone straight to production, which was fine while the
 only player was the person writing it. It stops being fine the moment a partida
 is worth showing to someone. Work moves to a **`dev` branch with its own
@@ -298,6 +298,25 @@ feature and are not needed: a branch and its URL are the whole idea.
 **Done when:** a push to `dev` is playable on a URL that is not
 mazo-six.vercel.app, production is untouched by it, and merging `dev` into
 `main` puts exactly what was tested into production.
+
+**Done.** Dev is **https://mazo-git-dev-cepm23.vercel.app**, production stays
+**https://mazo-six.vercel.app**, and the flow is the two lines in the README.
+No code and no `vercel.json` — the whole phase was a branch, a settings change
+and writing it down.
+
+Two things learned that are not obvious:
+
+- **Vercel does not build a commit it has already built.** Creating `dev` off
+  `main` produced no deployment at all, because the branch pointed at a SHA
+  production had already deployed. The first real commit on `dev` built
+  immediately. Nothing was broken; it just looks broken for a minute.
+- **The protection setting is backwards from what you want.** The project was on
+  `ssoProtection: all_except_custom_domains` — Vercel's Standard Protection —
+  which locks preview URLs behind a Vercel login and leaves the production alias
+  public, since the production domain counts as the custom one. That is the
+  wrong way round for a dev URL whose purpose is to be opened on a phone or sent
+  to a friend, so it is now off. The repo is public and the game holds nobody's
+  data; there is nothing on a preview that is not already on GitHub.
 
 ### Phase 17 — The table
 The game is playable and looks like a form. Everything is stacked in one
