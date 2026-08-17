@@ -160,6 +160,16 @@ describe('moverSeleccion', () => {
     }
   })
 
+  it('moves a card the stored order has never seen', () => {
+    // The card just drawn is appended when the hand is laid out, so it is in
+    // the hand before it is in any saved arrangement. Moving it must still work
+    // — this is exactly the bug where the arrows did nothing to a fresh card.
+    const comoSeVe = ['a', 'b', 'recien-robada']
+    expect(moverSeleccion(comoSeVe, ['recien-robada'], 'izquierda')).toEqual([
+      'a', 'recien-robada', 'b',
+    ])
+  })
+
   it('does nothing when everything is selected, or nothing is', () => {
     const orden = ['a', 'b', 'c']
     expect(moverSeleccion(orden, orden, 'izquierda')).toEqual(orden)

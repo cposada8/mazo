@@ -35,17 +35,6 @@ export function usePartida(options: {
   /** How you have arranged your hand. Cards you have not touched keep dealing order. */
   const [orden, setOrden] = useState<readonly string[]>([])
 
-  const reiniciar = useCallback(
-    (nuevaSemilla: string, cuantos: number) => {
-      setPartida(startPartida({ players: cuantos, seed: nuevaSemilla, config }))
-      setSeleccion([])
-      setPropuestas([])
-      setAviso(null)
-      setOrden([])
-    },
-    [config],
-  )
-
   const ronda = partida.ronda
   const enJuego = ronda !== null && ronda.ganador === null
   const esTuTurno = enJuego && ronda.turno === TU_ASIENTO
@@ -81,15 +70,18 @@ export function usePartida(options: {
     [mano],
   )
 
-  /** Slide everything currently selected one place, gathering it into a block. */
+  /**
+   * Slide everything currently selected one place, gathering it into a block.
+   *
+   * Always works from the hand **as displayed**, never from the stored order.
+   * The stored order does not know about the card just drawn — that one is
+   * appended when the hand is laid out — and moving from a stale order silently
+   * did nothing to it.
+   */
   const moverCartas = useCallback(
     (hacia: 'izquierda' | 'derecha') =>
-      setOrden((actual) =>
-        moverSeleccion(
-          actual.length > 0 ? actual : mano.map((card) => card.id),
-          seleccion,
-          hacia,
-        ),
+      setOrden(() =>
+        moverSeleccion(mano.map((card) => card.id), seleccion, hacia),
       ),
     [mano, seleccion],
   )
@@ -269,7 +261,6 @@ export function usePartida(options: {
     bajarse,
     agregarA,
     descartar,
-    reiniciar,
   }
 }
 

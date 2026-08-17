@@ -212,23 +212,53 @@ highest card, because that is how a person reads a hand. The engine's ring still
 has it at position zero, because an escala can wrap through it. Neither is wrong;
 they answer different questions.
 
+### Phase 14 — Setting up a partida, and seeing the score ✅
+Four things a person notices in the first minute and cannot work around:
+choosing how many bots to play against, choosing which rondas to play, seeing
+where the partida stands without waiting for it to end, and getting a different
+deal each time.
+**Done when:** two partidas in a row deal differently, a typed seed repeats a
+deal exactly, the table size and the contract list are chosen before dealing,
+and the scoreboard can be opened mid-partida.
+
+**Done.** `app/jugar/inicio.tsx` and `components/marcador.tsx`.
+
+The seed bug is the interesting one. Every first partida was identical because
+the seed was fixed — a workaround from Phase 11, when the partida was created
+*while the page rendered*. Dealing at random during render means the prerendered
+HTML and the browser disagree about the cards, so the seed had to be a constant.
+
+Splitting setup from play fixes the cause rather than the symptom: the partida is
+created when the button is pressed, which is long after the page has hydrated,
+so the seed can be as random as it should have been. The game is keyed by its
+settings, so starting another one mounts a fresh game instead of unwinding the
+old one by hand.
+
+Seeds are shown during play and after it, and can be typed back in — a partida
+worth replaying, or a bug worth reporting, is now one short word.
+
+The contract list was specified in Phase 0 — the full catalogue, one row each,
+individually switchable, 1–7 on by default — and had simply never been built.
+The setup screen is where it belongs, and the engine already took the list as
+configuration, so it needed no engine change at all.
+
 ---
 
 ## Milestone 3 — Bots worth playing
 
-### Phase 14 — Bot framework
+### Phase 15 — Bot framework
 Extract the strategy interface: a bot receives the legal state it can see and
 returns a move. Add hand-evaluation helpers shared by all bots.
 **Done when:** a new bot can be added in one file with no engine changes.
 
-### Phase 15 — Bot personalities
+### Phase 16 — Bot personalities
 At least three bots that differ observably: e.g. one that hoards for the perfect
 meld, one that lays down at the first opportunity, one that watches discards and
 plays around opponents. Give them names and short descriptions in the UI.
 **Done when:** a head-to-head tournament shows different win rates and visibly
 different play. **This is Milestone 3.**
 
-### Phase 16 — Rough edges
+### Phase 17 — Rough edges
 Card animations, a hint for new players, an in-game rules summary, and an
 end-of-game screen.
 **Done when:** someone who has never played Carioca finishes a bot game without
@@ -238,26 +268,26 @@ asking for help.
 
 ## Milestone 4 — Playable together
 
-### Phase 17 — Persistence without accounts
+### Phase 18 — Persistence without accounts
 Prisma schema, finished partidas saved, and a guest identity that survives a
 page reload without anyone signing up. How a seat is claimed and protected is an
 open design question — see `tech-stack.md`.
 **Done when:** a player reloads mid-partida and is still themselves, and nobody
 can claim a seat that is not theirs.
 
-### Phase 18 — Rooms
+### Phase 19 — Rooms
 Create a room, get an invite code, join as a guest with a nickname, see who is in
 the lobby, start when everyone is ready. No gameplay yet.
 **Done when:** three devices sit in the same lobby.
 
-### Phase 19 — Server-authoritative play
+### Phase 20 — Server-authoritative play
 The game state lives on the server. Each player receives only their own hand and
 public information. Moves are submitted and validated server-side. Updates by
 polling.
 **Done when:** three people in three places finish a game from one invite code,
 and no client ever receives another player's cards. **This is Milestone 4.**
 
-### Phase 20 — Real-time transport
+### Phase 21 — Real-time transport
 Replace polling with a push transport behind the same interface. Handle
 disconnects and reconnects, and let a bot take over an abandoned seat.
 **Done when:** a player closes the tab mid-game, returns, and the game is intact.

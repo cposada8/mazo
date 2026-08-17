@@ -1,6 +1,6 @@
 # Project status — pick up here
 
-Last updated after Phase 13.
+Last updated after Phase 14.
 
 Read this first, then `mission.md` for the why, `carioca-rules.md` for the game,
 `tech-stack.md` for the stack, and `roadmap.md` for what comes next. This file is
@@ -38,14 +38,15 @@ table.
 | 11 | Playing it against bots | ✅ |
 | 12 | Dark mode | ✅ |
 | 13 | Arranging your hand | ✅ |
-| 14 | Bot framework, with a restricted view | ← **next** |
-| 15–20 | Bot personalities, then online | not started |
+| 14 | Setting up a partida, seeing the score | ✅ |
+| 15 | Bot framework, with a restricted view | ← **next** |
+| 16–21 | Bot personalities, then online | not started |
 
 - **Repo:** https://github.com/cposada8/mazo
 - **Live:** https://mazo-six.vercel.app — `/mesa` steps through a bot partida,
   `/pruebas` shows deals and grupo validation.
 - **Deploys:** every push to `main` goes to production automatically.
-- **Tests:** 327, all green (the soak takes ~15s). `npm run test:run`, `npx tsc --noEmit`, `npm run lint`.
+- **Tests:** 335, all green (the soak takes ~15s). `npm run test:run`, `npx tsc --noEmit`, `npm run lint`.
 
 ## What exists
 
@@ -110,15 +111,15 @@ draw comes from the partida seed, so nothing about a partida is unreproducible.
 
 ## What comes next
 
-**Phase 14 — the bot framework.** The step that makes difficulty levels
+**Phase 15 — the bot framework.** The step that makes difficulty levels
 possible, and the one online play needs anyway.
 
 Right now a bot receives the whole `RondaState` and is merely well-behaved about
-not reading other hands. Phase 14 makes that structural: a **view** of what one
+not reading other hands. Phase 15 makes that structural: a **view** of what one
 seat can legitimately see — its own hand, the grupos on the mesa, the descarte,
 how many cards everyone holds. A bot takes the view and returns a `Move`.
 
-That same function is what the server will need in Phase 19 to send each player
+That same function is what the server will need in Phase 20 to send each player
 only their own cards, so it is worth getting right rather than fast.
 
 It also unlocks what bots with memory need: once the input is explicitly "what
@@ -134,14 +135,14 @@ property of the bot rather than a licence to peek.
   partida with a code and a nickname, so the system still needs to know which
   seat is whose, survive a reload, and stop someone claiming another player's
   seat and seeing their hand. Likely a per-seat secret in the browser. Settle it
-  before Phase 17.
+  before Phase 18.
 - **Real-time transport.** Vercel functions cannot hold WebSockets. Polling with
   TanStack Query is the likely first implementation, behind an interface so it
-  can be swapped for Pusher or Supabase Realtime. Decide in Phase 19, not before.
+  can be swapped for Pusher or Supabase Realtime. Decide in Phase 20, not before.
 - **A ronda nobody can win.** Carioca has no stalemate rule, and the soak
   measures the consequence: ~1.3% of bot partidas never end. Harmless in a test,
   a hung game online. Options are written up in `carioca-rules.md`; decide before
-  Phase 19.
+  Phase 20.
 
 ## How this project is run
 

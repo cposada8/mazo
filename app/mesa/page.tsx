@@ -1,6 +1,7 @@
 'use client'
 
 import { useMemo, useState } from 'react'
+import { Marcador } from '@/components/marcador'
 import { Mesa, nombrePorDefecto } from '@/components/mesa'
 import { codicioso } from '@/lib/bots'
 import {
@@ -185,7 +186,12 @@ export default function MesaPage() {
         <p className="text-muted-foreground text-sm">No hay ronda que mostrar.</p>
       )}
 
-      <Marcador partida={actual.partida} jugadores={jugadores} />
+      <Marcador
+        partida={actual.partida}
+        nombres={Array.from({ length: jugadores }, (_, seat) =>
+          nombrePorDefecto(seat),
+        )}
+      />
     </main>
   )
 }
@@ -197,69 +203,4 @@ function ultimaRonda(instantaneas: Instantanea[], desde: number): RondaState | n
     if (ronda) return ronda
   }
   return null
-}
-
-function Marcador({
-  partida,
-  jugadores,
-}: {
-  partida: PartidaState
-  jugadores: number
-}) {
-  if (partida.historial.length === 0) return null
-
-  return (
-    <section className="flex flex-col gap-2">
-      <h2 className="text-sm font-medium">Marcador</h2>
-      <div className="overflow-x-auto">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="text-muted-foreground text-left text-xs">
-              <th className="py-1 pr-3 font-medium">Contrato</th>
-              {Array.from({ length: jugadores }, (_, seat) => (
-                <th key={seat} className="py-1 pr-3 text-right font-medium">
-                  J{seat + 1}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {partida.historial.map((marcador, index) => (
-              <tr key={index} className="border-t">
-                <td className="py-1 pr-3">{marcador.contrato.nombre}</td>
-                {marcador.puntos.map((puntos, seat) => (
-                  <td
-                    key={seat}
-                    className={`py-1 pr-3 text-right tabular-nums ${
-                      seat === marcador.ganador ? 'font-semibold' : ''
-                    }`}
-                  >
-                    {puntos}
-                  </td>
-                ))}
-              </tr>
-            ))}
-            <tr className="border-t-2 font-semibold">
-              <td className="py-1 pr-3">Total</td>
-              {partida.totales.map((total, seat) => (
-                <td key={seat} className="py-1 pr-3 text-right tabular-nums">
-                  {total}
-                </td>
-              ))}
-            </tr>
-          </tbody>
-        </table>
-      </div>
-
-      {partida.ganadores && (
-        <p className="text-sm">
-          Gana{partida.ganadores.length > 1 ? 'n' : ''}{' '}
-          <span className="font-medium">
-            {partida.ganadores.map((seat) => nombrePorDefecto(seat)).join(' y ')}
-          </span>
-          .
-        </p>
-      )}
-    </section>
-  )
 }
