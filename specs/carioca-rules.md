@@ -476,7 +476,7 @@ Three ways out, none of them chosen yet:
 3. **Let the table agree to abandon a ronda**, the way people actually resolve
    it. Needs UI and consent, and does not help a solo game against bots.
 
-Worth deciding before online play (Phase 23), where a hung partida is a real
+Worth deciding before online play (Phase 26), where a hung partida is a real
 product problem rather than a slow test.
 
 Everything else is settled. Any rule discovered to be missing during

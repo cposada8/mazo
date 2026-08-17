@@ -433,55 +433,118 @@ Three things came out differently than written above:
   20.
 
 Left deliberately undone: animations, real avatars, and any decoration of the
-room beyond a dark ground. Those are Phase 20, and none of them is what made
+room beyond a dark ground. Those are Phase 23, and none of them is what made
 the old screen unreadable.
+
+### Phase 18 — The right way round, and a table worth looking at
+Two corrections to what Phase 17 built.
+
+**It turns the wrong way.** Carioca goes anticlockwise: play passes to the
+player on your **right**. The seating puts the next player on your left. Nothing
+in the engine changes — `turno` still advances by one and the engine has no
+opinion about geometry — only `lib/asientos.ts` decides where that seat is
+drawn. The direction was never written down anywhere, which is exactly why it
+could be wrong without anybody noticing, so it goes into `carioca-rules.md`
+first and the seating follows.
+
+**And it is ugly.** Green felt is the default nobody chose. Black, with a thin
+red line following the rim: elegant and a little gothic rather than a casino
+floor. Three things constrain it — the card faces stay the most legible thing
+on the screen; the accent that means *this seat is playing* is one colour used
+in exactly two places, the ring on the ficha and the badge on your hand, and it
+has to still read against the new ground; and both themes keep working.
+
+**Done when:** the player who goes after you is sitting on your right, and the
+table looks like something somebody chose.
+
+### Phase 19 — The clock
+A turn takes time, and the time is something you can watch.
+
+- **Bots think for a set number of seconds**, chosen on the setup screen, **two
+  by default.** It is the **whole turn** that is timed, not each move: the bot
+  draws, unloads and discards inside its two seconds. Timing each move instead
+  would make a turn with a bajada take six seconds, and waiting is not the same
+  as watching.
+- **The ficha drains.** The ring around the seat in play empties as the time
+  runs out, so the countdown is drawn on the player — the same place the turn
+  already is.
+- **No clock for you, yet.** Nothing hurries a human move. This phase is about
+  being able to follow the bots, not about pressure. What it leaves behind is
+  the mechanism a real timer would need later, when the other seats are people
+  who can walk away from their phone.
+
+**Done when:** a bot's turn takes as long as the setup screen says it does, and
+how much of it is left can be seen without reading a number.
+
+### Phase 20 — What just happened
+The game changes state in silence and expects you to have been looking. Two
+ways of showing a move that has already been made:
+
+- **The card travels.** Taking from the mazo or from the descarte animates the
+  card moving to the hand that took it, slowly enough to follow.
+- **A line under the piles** says what was done, in words: *Jugador 5 robó del
+  mazo*, *Jugador 5 tomó J♥ del descarte*.
+
+One rule shapes the line: **it may only say what everybody can see.** A card
+taken off the descarte was face up, so it is named. A card off the mazo is
+secret, and the line says only that somebody drew — never which card. That is
+the same discipline Phase 21 makes structural, and writing the log against it
+first is a rehearsal: a public log is a view of the ronda with one seat's
+privileges, which is precisely what a bot is about to be handed.
+
+**Done when:** you can look away, look back, and know what happened from the
+line — and nothing in it could ever tell you a card you are not entitled to
+know.
 
 ---
 
 ## Milestone 3 — Bots worth playing
 
-### Phase 18 — Bot framework
+### Phase 21 — Bot framework
 Extract the strategy interface: a bot receives the legal state it can see and
 returns a move. Add hand-evaluation helpers shared by all bots.
 **Done when:** a new bot can be added in one file with no engine changes.
 
-### Phase 19 — Bot personalities
+### Phase 22 — Bot personalities
 At least three bots that differ observably: e.g. one that hoards for the perfect
 meld, one that lays down at the first opportunity, one that watches discards and
 plays around opponents. Give them names and short descriptions in the UI.
 **Done when:** a head-to-head tournament shows different win rates and visibly
 different play. **This is Milestone 3.**
 
-### Phase 20 — Rough edges
-Card animations, a hint for new players, an in-game rules summary, and an
-end-of-game screen.
+### Phase 23 — Rough edges
+A hint for new players, an in-game rules summary, and an end-of-game screen.
+Card animations were pulled forward into Phase 20; what is left here is the
+mesa that runs off the right edge when six players are deep into a partida —
+Phase 17 left it scrolling sideways, which is the honest minimum and not an
+answer.
 **Done when:** someone who has never played Carioca finishes a bot game without
-asking for help.
+asking for help, and a full mesa can be read without scrolling to find it.
 
 ---
 
 ## Milestone 4 — Playable together
 
-### Phase 21 — Persistence without accounts
+### Phase 24 — Persistence without accounts
 Prisma schema, finished partidas saved, and a guest identity that survives a
 page reload without anyone signing up. How a seat is claimed and protected is an
 open design question — see `tech-stack.md`.
 **Done when:** a player reloads mid-partida and is still themselves, and nobody
 can claim a seat that is not theirs.
 
-### Phase 22 — Rooms
+### Phase 25 — Rooms
 Create a room, get an invite code, join as a guest with a nickname, see who is in
 the lobby, start when everyone is ready. No gameplay yet.
 **Done when:** three devices sit in the same lobby.
 
-### Phase 23 — Server-authoritative play
+### Phase 26 — Server-authoritative play
 The game state lives on the server. Each player receives only their own hand and
 public information. Moves are submitted and validated server-side. Updates by
 polling.
 **Done when:** three people in three places finish a game from one invite code,
 and no client ever receives another player's cards. **This is Milestone 4.**
 
-### Phase 24 — Real-time transport
+### Phase 27 — Real-time transport
 Replace polling with a push transport behind the same interface. Handle
 disconnects and reconnects, and let a bot take over an abandoned seat.
 **Done when:** a player closes the tab mid-game, returns, and the game is intact.
