@@ -34,7 +34,7 @@ import { CarasDeComodinProvider } from '@/components/caras'
 import { useIdentidad } from '@/components/identidad'
 import { BotonDeBaraja, SEGUNDOS, recordarBaraja } from './ajustes'
 import type { useMesa } from './useMesa'
-import { TU_ASIENTO, usePartida } from './usePartida'
+import { usePartida } from './usePartida'
 
 /**
  * A partida in this browser: the local transport, wrapped around the table
@@ -118,9 +118,17 @@ export function Tablero({
 }: PropsDeTablero) {
   const [cartasOscuras, setCartasOscuras] = useState(cartasOscurasInicial)
   const { identidad } = useIdentidad()
+  /**
+   * Which chair is yours. It is 0 in the local home, where the only human is
+   * whoever opened the page — and anything at all once other people are at
+   * the table. Reading it from the controller rather than assuming zero is
+   * the difference between seeing the partida from your seat and seeing it
+   * from the host's.
+   */
+  const asiento = juego.asiento
   const nombresEnMesa = useMemo(
-    () => nombres(jugadores, identidad?.alias, nombresDeAsientos),
-    [jugadores, identidad?.alias, nombresDeAsientos],
+    () => nombres(jugadores, asiento, identidad?.alias, nombresDeAsientos),
+    [jugadores, asiento, identidad?.alias, nombresDeAsientos],
   )
   const [verMenu, setVerMenu] = useState(false)
   const [verPila, setVerPila] = useState(false)
@@ -153,6 +161,7 @@ export function Tablero({
         partida={partida}
         resumen={resumen}
         nombres={nombresEnMesa}
+        asiento={asiento}
         seAcabo={juego.seAcabo}
         onSiguiente={juego.siguiente}
         onSalir={onSalir}
@@ -166,6 +175,7 @@ export function Tablero({
       <FinDePartida
         partida={partida}
         nombres={nombresEnMesa}
+        asiento={asiento}
         seed={seed}
         onOtra={onSalir}
       />
@@ -190,12 +200,12 @@ export function Tablero({
       >
         <Mesa
           state={ronda}
-          asiento={TU_ASIENTO}
+          asiento={asiento}
           nombres={nombresEnMesa}
           reloj={juego.reloj}
           relatoLinea={
             juego.relato
-              ? contarRelato(juego.relato, nombresEnMesa, TU_ASIENTO)
+              ? contarRelato(juego.relato, nombresEnMesa, asiento)
               : undefined
           }
           viaje={juego.viaje}
@@ -273,6 +283,7 @@ export function Tablero({
           <HistorialDeRonda
             historia={juego.historia}
             nombres={nombresEnMesa}
+            asiento={asiento}
             onCerrar={() => setVerHistoria(false)}
           />
         )}
@@ -473,10 +484,13 @@ function PilaDeDescarte({
 function HistorialDeRonda({
   historia,
   nombres,
+  asiento,
   onCerrar,
 }: {
   historia: readonly Relato[]
   nombres: readonly string[]
+  /** Which seat is reading: your own moves come back in second person. */
+  asiento: number
   onCerrar: () => void
 }) {
   const recientesPrimero = [...historia].reverse()
@@ -498,7 +512,7 @@ function HistorialDeRonda({
               key={historia.length - indice}
               className="border-border/60 border-b py-1.5 last:border-0"
             >
-              {contarRelato(relato, nombres, TU_ASIENTO)}
+              {contarRelato(relato, nombres, asiento)}
             </li>
           ))}
         </ol>
@@ -747,6 +761,7 @@ function FinDeRonda({
   partida,
   resumen,
   nombres,
+  asiento,
   seAcabo,
   onSiguiente,
   onSalir,
@@ -754,13 +769,15 @@ function FinDeRonda({
   partida: VistaDePartida
   resumen: MarcadorDeRonda
   nombres: readonly string[]
+  /** Which seat is reading this — «¿ganaste?» has no answer without it. */
+  asiento: number
   seAcabo: boolean
   onSiguiente: () => void
   onSalir: () => void
 }) {
-  const ganaste = resumen.ganador === TU_ASIENTO
+  const ganaste = resumen.ganador === asiento
   const tablas = resumen.ganador === 'nadie'
-  const tuyos = resumen.puntos[TU_ASIENTO]
+  const tuyos = resumen.puntos[asiento]
 
   return (
     <main className="mx-auto flex w-full max-w-md flex-1 flex-col justify-center gap-8 px-6 py-12">
@@ -815,16 +832,19 @@ function FinDeRonda({
 function FinDePartida({
   partida,
   nombres,
+  asiento,
   seed,
   onOtra,
 }: {
   partida: VistaDePartida
   nombres: readonly string[]
+  /** Which seat is reading this. */
+  asiento: number
   seed: string
   onOtra: () => void
 }) {
   const ganadores = partida.ganadores ?? []
-  const ganaste = ganadores.includes(TU_ASIENTO)
+  const ganaste = ganadores.includes(asiento)
 
   return (
     <main className="mx-auto flex w-full max-w-md flex-1 flex-col justify-center gap-8 px-6 py-12">
@@ -862,13 +882,14 @@ function FinDePartida({
  * alias for your seat, which the lobby also knows but which survives a table
  * dealt without one.
  */
-const nombres = (
+export const nombres = (
   jugadores: number,
+  asiento: number,
   tu?: string | null,
   deAsientos?: readonly string[],
 ): string[] =>
   Array.from({ length: jugadores }, (_, seat) =>
-    seat === TU_ASIENTO
+    seat === asiento
       ? (tu ?? deAsientos?.[seat] ?? 'Tú')
       : (deAsientos?.[seat] ?? nombrePorDefecto(seat)),
   )

@@ -1225,7 +1225,21 @@ screen is presentation, as it always was.
 code, and no client ever received another player's cards. **This is
 Milestone 3.**
 
-**Done.** Phase 34's machinery is seat-count-blind, so most of this phase
+**Found afterwards, at a real table:** kimberly hosted and lucifer joined,
+and on *lucifer's* screen the other player was also called «lucifer». One
+constant caused it — `TU_ASIENTO = 0`, true while the only human was
+whoever opened the page, and false the moment somebody else sat down. The
+table drew every "is this me?" from seat zero: the names, whose turn it
+was, whether *you* won, your own points. Only the hand was right, because
+that comes from the view. The seat now comes from the controller, and a
+test holds the exact table that failed.
+
+The lesson is about how it survived: every browser check I ran was as the
+**host**, who really is seat 0, so the bug was invisible from where I was
+standing. A promise about several people needs to be checked from more
+than one of their seats.
+
+Phase 34's machinery is seat-count-blind, so most of this phase
 was proving the promise rather than building for it: `varios.test.ts` sits
 three people and a bot at one code, plays the partida to its last contract,
 and checks **on every read by every player** that no card of anyone else's
