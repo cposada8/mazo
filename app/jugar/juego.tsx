@@ -13,7 +13,7 @@ import {
 } from 'lucide-react'
 import { Carta } from '@/components/carta'
 import { Marcador } from '@/components/marcador'
-import { Mesa, nombrePorDefecto } from '@/components/mesa'
+import { GrupoEnMesa, Mesa, nombrePorDefecto } from '@/components/mesa'
 import {
   alternarPantallaCompleta,
   hayPantallaCompleta,
@@ -166,6 +166,9 @@ export function Tablero({
         nombres={nombresEnMesa}
         asiento={asiento}
         seAcabo={juego.seAcabo}
+        cartasOscuras={cartasOscuras}
+        seed={seed}
+        galeriaDeComodines={galeriaDeComodines}
         onSiguiente={juego.siguiente}
         onSalir={onSalir}
       />
@@ -734,6 +737,9 @@ function FinDeRonda({
   nombres,
   asiento,
   seAcabo,
+  cartasOscuras,
+  seed,
+  galeriaDeComodines,
   onSiguiente,
   onSalir,
 }: {
@@ -743,12 +749,42 @@ function FinDeRonda({
   /** Which seat is reading this — «¿ganaste?» has no answer without it. */
   asiento: number
   seAcabo: boolean
+  /** The deck in use, so the snapshot is dealt from the same one as the table. */
+  cartasOscuras: boolean
+  seed: string
+  galeriaDeComodines: readonly string[]
   onSiguiente: () => void
   onSalir: () => void
 }) {
   const ganaste = resumen.ganador === asiento
   const tablas = resumen.ganador === 'nadie'
   const tuyos = resumen.puntos[asiento]
+
+  /**
+   * The mesa comes first, and the score after it (Phase 42). A ronda used to
+   * end straight onto the scoreboard, so nobody ever saw the table that had
+   * just been won — least of all the grupo the last card went to. A partida
+   * saved before the snapshot existed has no mesa to show and goes straight
+   * to the score, as it always did.
+   */
+  const [paso, setPaso] = useState<'mesa' | 'puntaje'>(
+    resumen.mesa ? 'mesa' : 'puntaje',
+  )
+
+  if (paso === 'mesa' && resumen.mesa) {
+    return (
+      <MesaFinal
+        resumen={resumen}
+        nombres={nombres}
+        asiento={asiento}
+        cartasOscuras={cartasOscuras}
+        seed={seed}
+        reparto={partida.historial.length - 1}
+        galeriaDeComodines={galeriaDeComodines}
+        onSeguir={() => setPaso('puntaje')}
+      />
+    )
+  }
 
   return (
     <main className="mx-auto flex w-full max-w-md flex-1 flex-col justify-center gap-8 px-6 py-12">
@@ -788,6 +824,15 @@ function FinDeRonda({
         >
           {seAcabo ? 'Ver el resultado' : 'Siguiente reparto'}
         </button>
+        {resumen.mesa && (
+          <button
+            type="button"
+            onClick={() => setPaso('mesa')}
+            className="text-muted-foreground self-center text-xs underline"
+          >
+            Volver a ver la mesa
+          </button>
+        )}
         <button
           type="button"
           onClick={onSalir}
@@ -797,6 +842,104 @@ function FinDeRonda({
         </button>
       </div>
     </main>
+  )
+}
+
+/**
+ * The mesa as the ronda left it, with the cards that closed it marked.
+ *
+ * Drawn from the snapshot the engine keeps rather than from a live ronda:
+ * there is no live ronda to draw: the next one was dealt in the same move.
+ * The grupos are unlabelled here for the same reason they are unlabelled on
+ * the felt — once it is down it belongs to the table — and the gold answers
+ * the question ownership would not: *which one did the last card go to?*
+ */
+function MesaFinal({
+  resumen,
+  nombres,
+  asiento,
+  cartasOscuras,
+  seed,
+  reparto,
+  galeriaDeComodines,
+  onSeguir,
+}: {
+  resumen: MarcadorDeRonda
+  nombres: readonly string[]
+  asiento: number
+  cartasOscuras: boolean
+  seed: string
+  /** Which ronda this was, for the faces its comodines wore. */
+  reparto: number
+  galeriaDeComodines: readonly string[]
+  onSeguir: () => void
+}) {
+  // The faces of the ronda that just ended, not of the one already dealt
+  // behind it: a snapshot should look like the table it is a picture of.
+  const caras = useMemo(
+    () => carasDeRonda({ imagenes: galeriaDeComodines, seed, ronda: reparto }),
+    [galeriaDeComodines, seed, reparto],
+  )
+
+  const cierre = new Set(resumen.cierre ?? [])
+  const grupos = (resumen.mesa ?? []).flatMap((suyos, seat) =>
+    suyos.map((grupo, indice) => ({ grupo, seat, indice })),
+  )
+  const tablas = resumen.ganador === 'nadie'
+  const ganaste = resumen.ganador === asiento
+
+  return (
+    <CarasDeComodinProvider value={caras}>
+      <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col justify-center gap-6 px-4 py-8">
+        <div className="flex flex-col gap-1">
+          <p className="text-muted-foreground text-xs tracking-wide uppercase">
+            {resumen.contrato.nombre}
+          </p>
+          <h1 className="text-3xl font-semibold tracking-tight">
+            {tablas
+              ? 'Tablas: nadie ganó'
+              : ganaste
+                ? '¡Ganaste la ronda!'
+                : `Ganó ${nombres[resumen.ganador as number]}`}
+          </h1>
+          <p className="text-muted-foreground text-sm">
+            {tablas
+              ? 'Así quedó la mesa cuando se agotó el mazo.'
+              : cierre.size > 0
+                ? 'Salió poniendo lo que está en dorado.'
+                : 'Salió botando su última carta; la mesa quedó así.'}
+          </p>
+        </div>
+
+        {/* The same felt the table has, so the snapshot reads as the table
+            and not as a report about it. */}
+        <div
+          className={cn(
+            'flex max-h-[55vh] flex-wrap items-start justify-center gap-2 overflow-y-auto rounded-xl bg-stone-950 p-3',
+            cartasOscuras && 'cartas-oscuras',
+          )}
+        >
+          {grupos.length === 0 ? (
+            <span className="py-6 text-sm text-stone-500">
+              Nadie alcanzó a bajarse.
+            </span>
+          ) : (
+            grupos.map(({ grupo, seat, indice }) => (
+              <GrupoEnMesa key={`${seat}-${indice}`} grupo={grupo} doradas={cierre} />
+            ))
+          )}
+        </div>
+
+        <button
+          type="button"
+          onClick={onSeguir}
+          autoFocus
+          className="bg-primary text-primary-foreground rounded-md px-4 py-3.5 text-sm font-medium"
+        >
+          Ver el puntaje
+        </button>
+      </main>
+    </CarasDeComodinProvider>
   )
 }
 

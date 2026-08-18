@@ -1750,7 +1750,7 @@ and its rendering by two more. Nobody has yet sat at a live table and watched
 an opponent bajarse in gold; a bot lays down around its twenty-sixth turn,
 which is a long time to hold a browser open.
 
-### Phase 42 — What it was won with
+### Phase 42 — What it was won with ✅
 Somebody goes out and the table is gone: `FinDeRonda` replaces the whole
 screen with the score. You never see the mesa that ended the ronda, nor the
 play that closed it — and going out on a ligada (Phase 26) means the winning
@@ -1775,6 +1775,38 @@ scoreboard, on a tap, the way it works now.
 **Done when:** a ronda you did not win ends and you can study the final mesa
 for as long as you like, see which grupo the winner's last card went to, and
 only then move on to the score.
+
+**Done.** The obstacle was the one the phase named, and the fix is the one it
+proposed: `Marcador` carries a picture of the mesa as it stood when the ronda
+closed, plus `cierre` — the ids the closing move put there, which is the
+answer to *con qué*. Both are optional, so a partida saved before they existed
+opens and goes straight to the score, as it always did.
+
+- **The diff is taken in `aplicarEnPartida`**, which is the only place that
+  holds both the ronda before the closing move and the one after it.
+  `cerrarRonda` takes the earlier one as an argument and subtracts: what is on
+  the mesa now and was not then is what it was won with. Empty when the winner
+  went out by botando, and the screen says so in words instead.
+- **The pause opens on the table.** «Ver el puntaje» is one tap away and
+  «Volver a ver la mesa» comes back, so the score is behind the mesa rather
+  than instead of it. The snapshot is drawn with `GrupoEnMesa` on the same
+  felt and with the same deck, and the comodines wear the faces of the ronda
+  that ended rather than the one already dealt behind it.
+
+**A privacy test caught something worth writing down.** The existing guard —
+no payload may contain a card id belonging to another seat's hand — went red,
+because **card ids repeat from one reparto to the next**: `J-hearts#0` names
+the first J♥ in every deal, so a card photographed on last ronda's mesa shares
+its id with whoever holds that card now. Nothing is leaked (a photograph of a
+finished ronda says nothing about this one, and everything in it was face up
+when it was taken), so the guard now covers the live view and exempts the
+historial, in writing. What keeps it honest structurally is that the snapshot
+is read from `grupos` and never from `hand` — pinned by its own test.
+
+**Seen working, not only tested:** a ronda closed by ligando in a real
+browser, at 390 × 844. The screen says «Salió poniendo lo que está en
+dorado», the three grupos are on the felt, and the 7♦ that closed it is
+ringed on the trío it joined.
 
 ### Phase 43 — The white you choose
 The owner tuned the white by night, over a run of commits, and the result is

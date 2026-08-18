@@ -10,6 +10,7 @@ import { CATALOGO, type Contrato } from './contratos'
 import { MAX_PLAYERS, MIN_PLAYERS } from './deck'
 import { puntosDeMano } from './puntaje'
 import { createRng } from './random'
+import type { Grupo } from './grupos'
 import {
   type Move,
   type MoveErrorCode,
@@ -46,6 +47,21 @@ export type Marcador = {
   readonly puntos: readonly number[]
   /** The seat that went out, or `'nadie'` for a ronda closed en tablas. */
   readonly ganador: number | 'nadie'
+  /**
+   * The mesa as it stood when the ronda closed, by seat (Phase 42).
+   *
+   * Kept rather than caught: closing a ronda deals the next one in the same
+   * move, so by the time anybody hears about the end, the table they would
+   * want to look at has already been swept. Optional because a partida saved
+   * before this existed has a historial without it, and an old partida must
+   * still open.
+   */
+  readonly mesa?: readonly (readonly Grupo[])[]
+  /**
+   * What the closing move put on the mesa — the cards it was won with. Empty
+   * when the winner went out by discarding, which leaves the mesa untouched.
+   */
+  readonly cierre?: readonly string[]
 }
 
 export type PartidaState = {
@@ -114,13 +130,15 @@ export function aplicarEnPartida(state: PartidaState, move: Move): PartidaResult
     return { ok: false, code: 'PARTIDA_TERMINADA', detail: 'every contract has been played' }
   }
 
+  const anterior = state.ronda
   const result = apply(state.ronda, move)
   if (!result.ok) return result
 
   const next: PartidaState = { ...state, ronda: result.state }
   return {
     ok: true,
-    state: result.state.ganador === null ? next : cerrarRonda(next),
+    state:
+      result.state.ganador === null ? next : cerrarRonda(next, anterior),
   }
 }
 
@@ -133,7 +151,15 @@ export function aplicarEnPartida(state: PartidaState, move: Move): PartidaResult
  * everybody scores their hand, nobody takes the bonus, and the seat whose
  * draw closed it opens the next one (Phase 31).
  */
-export function cerrarRonda(state: PartidaState): PartidaState {
+export function cerrarRonda(
+  state: PartidaState,
+  /**
+   * The ronda as it stood before the move that closed it, when the caller has
+   * it. It is the only way to say *what it was won with*: the difference
+   * between the two mesas is exactly what the closing move put there.
+   */
+  antes?: RondaState,
+): PartidaState {
   const ronda = state.ronda
   if (!ronda || ronda.ganador === null) {
     throw new Error('cerrarRonda needs a ronda that somebody has gone out of')
@@ -152,9 +178,23 @@ export function cerrarRonda(state: PartidaState): PartidaState {
   )
 
   const totales = state.totales.map((total, seat) => total + puntos[seat])
+  const mesa = ronda.jugadores.map((jugador) => jugador.grupos)
+  const habia = new Set(
+    (antes?.jugadores ?? []).flatMap((jugador) =>
+      jugador.grupos.flatMap((grupo) => grupo.cards.map((card) => card.id)),
+    ),
+  )
+  const cierre = antes
+    ? mesa
+        .flat()
+        .flatMap((grupo) => grupo.cards)
+        .filter((card) => !habia.has(card.id))
+        .map((card) => card.id)
+    : []
+
   const historial = [
     ...state.historial,
-    { contrato: ronda.contrato, puntos, ganador } satisfies Marcador,
+    { contrato: ronda.contrato, puntos, ganador, mesa, cierre } satisfies Marcador,
   ]
   const indiceContrato = state.indiceContrato + 1
 

@@ -69,8 +69,8 @@ empty seats), and the better bots moved behind it as Milestone 4.
 | 39 | Bot personalities | ✅ — **Milestone 4** |
 | 40 | Your own seat: your clock, arranging off-turn, controls in reach | ✅ |
 | 41 | A turn you can follow: paced narration, and gold on what landed | ✅ |
-| 42 | What it was won with: the final mesa before the score | ← **next** |
-| 43 | The white you choose: one slider, every white | |
+| 42 | What it was won with: the final mesa before the score | ✅ |
+| 43 | The white you choose: one slider, every white | ← **next** |
 | 44 | Rough edges *(was 40)* | |
 
 **Phases 40–43 are the list from playing online**, and they displaced the old

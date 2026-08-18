@@ -244,24 +244,33 @@ export function useMesa(transporte: Transporte) {
    * erasing it in the same frame it appeared.
    */
   const enMesa = useMemo(() => idsEnMesa(ronda), [ronda])
+  /**
+   * The mesa as one comparable value. A poll hands over a freshly parsed view
+   * every time, so two identical mesas arrive as different objects — kept as
+   * a key rather than a reference, what is remembered is what changed rather
+   * than what was re-read.
+   */
+  const claveDeMesa = useMemo(() => [...enMesa].sort().join('|'), [enMesa])
   const claveDeTurno =
     ronda && ronda.ganador === null
       ? `${vista?.indiceContrato}:${ronda.numeroDeTurno}`
       : 'nada'
+
   const [marca, setMarca] = useState({
     turno: claveDeTurno,
-    base: enMesa,
-    antes: enMesa,
+    base: claveDeMesa,
+    antes: claveDeMesa,
   })
   if (marca.turno !== claveDeTurno) {
-    setMarca({ turno: claveDeTurno, base: marca.antes, antes: enMesa })
-  } else if (marca.antes !== enMesa) {
-    setMarca({ ...marca, antes: enMesa })
+    setMarca({ turno: claveDeTurno, base: marca.antes, antes: claveDeMesa })
+  } else if (marca.antes !== claveDeMesa) {
+    setMarca({ ...marca, antes: claveDeMesa })
   }
-  const doradas = useMemo(
-    () => new Set([...enMesa].filter((id) => !marca.base.has(id))),
-    [enMesa, marca.base],
-  )
+
+  const doradas = useMemo(() => {
+    const base = new Set(marca.base ? marca.base.split('|') : [])
+    return new Set([...enMesa].filter((id) => !base.has(id)))
+  }, [enMesa, marca.base])
 
   /**
    * Whether you may put cards on the mesa at all right now. Bajado, and not
