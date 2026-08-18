@@ -46,6 +46,7 @@ export function Juego({
   contratos,
   comodines,
   segundosBot: segundosBotInicial,
+  bots,
   id,
   ...resto
 }: {
@@ -56,6 +57,8 @@ export function Juego({
   comodines: boolean
   /** Seconds a bot spends on its whole turn. */
   segundosBot: number
+  /** Which bot sits in each seat, by id. A seat left out plays as the default. */
+  bots?: readonly (string | null)[]
   /** The partida's código: what makes it resumable in this browser. */
   id?: string
 } & Omit<PropsDeTablero, 'juego' | 'segundosBot' | 'onSegundosBot'>) {
@@ -66,7 +69,7 @@ export function Juego({
   // Pacing is not a rule (Phase 28): it can be changed mid-partida from the
   // menu, so what the lobby said is only where it starts.
   const [segundosBot, setSegundosBot] = useState(segundosBotInicial)
-  const juego = usePartida({ jugadores, seed, config, segundosBot, id })
+  const juego = usePartida({ jugadores, seed, config, segundosBot, bots, id })
 
   return (
     <Tablero

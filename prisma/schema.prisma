@@ -55,6 +55,10 @@ model Asiento {
   /// The per-browser secret that owns this seat. Null for a bot.
   secreto   String?
   esBot     Boolean @default(false)
+  /// Which bot sits here, by its id in `lib/bots/catalogo.ts` (Phase 39).
+  /// Null for a person, and null for a bot seated before there was a choice —
+  /// `botPorId` reads either as El Codicioso, so an old partida still plays.
+  bot       String?
   /// True for the seat that created the partida and runs its lobby.
   esHost    Boolean @default(false)
   /// Retired on purpose (Abandonar, Phase 37): plays no more turns.

@@ -22,6 +22,7 @@ import {
   startPartida,
   vistaDeAsiento,
 } from '@/lib/engine'
+import { BOT_POR_DEFECTO, botPorId } from '@/lib/bots'
 import { codigoAlAzar, limpiarCodigo } from '@/lib/codigo'
 import type {
   ErrorDeLobby,
@@ -52,6 +53,7 @@ type FilaPartida = {
     indice: number
     alias: string
     esBot: boolean
+    bot: string | null
     esHost: boolean
     retirado: boolean
     secreto: string | null
@@ -74,10 +76,11 @@ function publicar(fila: FilaPartida): PartidaGuardada {
     verHistorial: fila.verHistorial,
     asientos: [...fila.asientos]
       .sort((a, b) => a.indice - b.indice)
-      .map(({ indice, alias, esBot, esHost, retirado }) => ({
+      .map(({ indice, alias, esBot, bot, esHost, retirado }) => ({
         indice,
         alias,
         esBot,
+        bot,
         esHost,
         retirado,
       })),
@@ -122,8 +125,9 @@ export async function crearPartida(opciones: {
               { indice: 0, alias, secreto, esHost: true },
               ...Array.from({ length: bots }, (_, i) => ({
                 indice: i + 1,
-                alias: aliasesDeBots[i] ?? `El Codicioso ${i + 1}`,
+                alias: aliasesDeBots[i] ?? `${BOT_POR_DEFECTO.nombre} ${i + 1}`,
                 esBot: true,
+                bot: BOT_POR_DEFECTO.id,
               })),
             ],
           },
@@ -306,6 +310,8 @@ export async function agregarBot(opciones: {
   codigo: string
   secreto: string
   alias?: string
+  /** Which personality sits down. Unknown or absent means the default one. */
+  bot?: string
 }): Promise<ResultadoDeLobby> {
   const acceso = await comoHost(opciones.codigo, opciones.secreto)
   if (!acceso.ok) return acceso
@@ -313,16 +319,52 @@ export async function agregarBot(opciones: {
   const { fila } = acceso
   if (fila.asientos.length >= MAX_PLAYERS) return { ok: false, code: 'MESA_LLENA' }
 
+  const quien = botPorId(opciones.bot)
   const indice = Math.max(...fila.asientos.map((a) => a.indice)) + 1
   await prisma.asiento.create({
     data: {
       partidaId: fila.id,
       indice,
       alias: aliasLibre(
-        opciones.alias ?? 'El Codicioso',
+        opciones.alias ?? quien.nombre,
         fila.asientos.map((a) => a.alias),
       ),
       esBot: true,
+      bot: quien.id,
+    },
+  })
+  return { ok: true, partida: await recargar(fila.id) }
+}
+
+/**
+ * Swap the personality sitting in a bot seat.
+ *
+ * The alias follows the bot, because at this table a bot's name *is* which bot
+ * it is — there is nothing else it could be called. A person's seat is refused:
+ * only the host arranges bots, and a person is never one of them.
+ */
+export async function cambiarBot(opciones: {
+  codigo: string
+  secreto: string
+  indice: number
+  bot: string
+}): Promise<ResultadoDeLobby> {
+  const acceso = await comoHost(opciones.codigo, opciones.secreto)
+  if (!acceso.ok) return acceso
+
+  const { fila } = acceso
+  const asiento = fila.asientos.find((a) => a.indice === opciones.indice)
+  if (!asiento || !asiento.esBot) return { ok: false, code: 'NO_ES_UN_BOT' }
+
+  const quien = botPorId(opciones.bot)
+  await prisma.asiento.updateMany({
+    where: { partidaId: fila.id, indice: opciones.indice },
+    data: {
+      bot: quien.id,
+      alias: aliasLibre(
+        quien.nombre,
+        fila.asientos.filter((a) => a.indice !== opciones.indice).map((a) => a.alias),
+      ),
     },
   })
   return { ok: true, partida: await recargar(fila.id) }

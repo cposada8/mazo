@@ -15,7 +15,7 @@ import {
   aplicarEnPartida,
   vistaDeAsiento,
 } from '@/lib/engine'
-import { codicioso } from './codicioso'
+import { botPorId } from './catalogo'
 
 /** More moves than any legal turn can hold; a stop against a looping bot. */
 const MAX_MOVES_POR_TURNO = 40
@@ -23,12 +23,20 @@ const MAX_MOVES_POR_TURNO = 40
 /**
  * Every move the bot at the current turn will make, in order, ending with the
  * discard that passes the turn (or the move that ends the ronda).
+ *
+ * `botsPorAsiento` says who is sitting where, by id (Phase 39). A seat with no
+ * id — a person's, or a bot seated before there was anything to choose — reads
+ * as El Codicioso, so a partida saved before this existed still plays.
  */
-export function movesDelTurno(partida: PartidaState): Move[] {
+export function movesDelTurno(
+  partida: PartidaState,
+  botsPorAsiento?: readonly (string | null | undefined)[],
+): Move[] {
   const ronda = partida.ronda
   if (!ronda || ronda.ganador !== null) return []
 
   const seat = ronda.turno
+  const bot = botPorId(botsPorAsiento?.[seat])
   const moves: Move[] = []
   let estado = partida
 
@@ -40,7 +48,7 @@ export function movesDelTurno(partida: PartidaState): Move[] {
     if (estado.historial.length !== partida.historial.length) break
 
     // The runner holds the full state; the bot only ever sees its view.
-    const move = codicioso.decidir(vistaDeAsiento(actual, seat))
+    const move = bot.decidir(vistaDeAsiento(actual, seat))
     const result = aplicarEnPartida(estado, move)
     if (!result.ok) break
 

@@ -118,6 +118,7 @@ function MesaLocal({
       cartasOscuras={leerBaraja()}
       galeriaDeComodines={galeriaDeComodines}
       nombresDeAsientos={partida.asientos.map((asiento) => asiento.alias)}
+      bots={partida.asientos.map((asiento) => asiento.bot)}
       onSalir={onSalir}
     />
   )

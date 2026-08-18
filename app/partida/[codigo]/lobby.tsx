@@ -14,6 +14,7 @@ import {
   Bot,
   Check,
   ChevronLeft,
+  ChevronDown,
   Copy,
   Crown,
   Loader2,
@@ -25,6 +26,7 @@ import {
 import Link from 'next/link'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useIdentidad } from '@/components/identidad'
+import { BOTS, BOT_POR_DEFECTO, botPorId } from '@/lib/bots'
 import {
   CATALOGO,
   MAX_PLAYERS,
@@ -248,12 +250,22 @@ export function Lobby({
                   aria-hidden
                 />
               )}
-              <span className="flex-1 truncate">
-                {asiento.alias}
-                {asiento.indice === vista.asiento && (
-                  <span className="text-muted-foreground"> · tú</span>
-                )}
-              </span>
+              {asiento.esBot ? (
+                <QuienJuega
+                  bot={asiento.bot}
+                  puedeElegir={soyHost}
+                  onElegir={(bot) =>
+                    mutacion.mutate({ tipo: 'cambiarBot', indice: asiento.indice, bot })
+                  }
+                />
+              ) : (
+                <span className="flex-1 truncate">
+                  {asiento.alias}
+                  {asiento.indice === vista.asiento && (
+                    <span className="text-muted-foreground"> · tú</span>
+                  )}
+                </span>
+              )}
               {asiento.esHost && (
                 <Crown className="text-muted-foreground size-3.5" aria-hidden />
               )}
@@ -274,7 +286,7 @@ export function Lobby({
         {soyHost && partida.asientos.length < MAX_PLAYERS && (
           <button
             type="button"
-            onClick={() => mutacion.mutate({ tipo: 'bot' })}
+            onClick={() => mutacion.mutate({ tipo: 'bot', bot: BOT_POR_DEFECTO.id })}
             className="border-input hover:bg-accent flex items-center justify-center gap-2 rounded-md border px-4 py-2.5 text-sm transition-colors"
           >
             <Plus className="size-4" aria-hidden />
@@ -329,6 +341,57 @@ export function Lobby({
         </p>
       )}
     </main>
+  )
+}
+
+/**
+ * A bot seat: which personality is playing it, and — for the host — a way to
+ * change it.
+ *
+ * The name shown is the bot's own, because at this table that is the only
+ * thing a bot could be called, and the line under it is what it does. Everyone
+ * else reads the same two lines without the picker: knowing who you are up
+ * against is not a privilege of the host.
+ */
+function QuienJuega({
+  bot,
+  puedeElegir,
+  onElegir,
+}: {
+  bot: string | null
+  puedeElegir: boolean
+  onElegir: (bot: string) => void
+}) {
+  const quien = botPorId(bot)
+
+  return (
+    <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+      {puedeElegir ? (
+        <span className="relative flex items-center">
+          <select
+            value={quien.id}
+            onChange={(evento) => onElegir(evento.target.value)}
+            aria-label={`Quién juega en este asiento, ahora ${quien.nombre}`}
+            className="focus-visible:ring-ring w-full appearance-none truncate rounded-sm bg-transparent pr-5 focus-visible:ring-2 focus-visible:outline-none"
+          >
+            {BOTS.map((otro) => (
+              <option key={otro.id} value={otro.id}>
+                {otro.nombre}
+              </option>
+            ))}
+          </select>
+          <ChevronDown
+            className="text-muted-foreground pointer-events-none absolute right-0 size-3.5"
+            aria-hidden
+          />
+        </span>
+      ) : (
+        <span className="truncate">{quien.nombre}</span>
+      )}
+      <span className="text-muted-foreground truncate text-xs">
+        {quien.descripcion}
+      </span>
+    </span>
   )
 }
 

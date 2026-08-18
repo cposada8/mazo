@@ -14,6 +14,7 @@ import {
   actualizarAjustes,
   agregarBot,
   asientoDe,
+  cambiarBot,
   cargarPorCodigo,
   empezar,
   quitarAsiento,
@@ -68,7 +69,16 @@ async function ejecutar(
     case 'unirse':
       return normalizar(await unirse({ codigo, secreto, alias: accion.alias }))
     case 'bot':
-      return normalizar(await agregarBot({ codigo, secreto }))
+      return normalizar(await agregarBot({ codigo, secreto, bot: accion.bot }))
+    case 'cambiarBot':
+      return normalizar(
+        await cambiarBot({
+          codigo,
+          secreto,
+          indice: accion.indice,
+          bot: accion.bot,
+        }),
+      )
     case 'quitar':
       return normalizar(
         await quitarAsiento({ codigo, secreto, indice: accion.indice }),

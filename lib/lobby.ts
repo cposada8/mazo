@@ -18,6 +18,12 @@ export type AsientoGuardado = {
   readonly indice: number
   readonly alias: string
   readonly esBot: boolean
+  /**
+   * Which bot is sitting here, by its id in `lib/bots/catalogo.ts`. Null for a
+   * person — and null for a bot seated before there was anything to choose,
+   * which reads as El Codicioso wherever it is used.
+   */
+  readonly bot: string | null
   readonly esHost: boolean
   readonly retirado: boolean
 }
@@ -52,6 +58,7 @@ export type ErrorDeLobby =
   | 'MESA_LLENA'
   | 'MESA_MUY_CHICA'
   | 'NO_SE_PUEDE_QUITAR'
+  | 'NO_ES_UN_BOT'
 
 /**
  * What a lobby looks like to one browser: the partida, minus every secreto,
@@ -65,7 +72,10 @@ export type VistaDeLobby = {
 
 export type Accion =
   | { readonly tipo: 'unirse'; readonly alias: string }
-  | { readonly tipo: 'bot' }
+  /** Seat a bot. Without an id the host gets the default one. */
+  | { readonly tipo: 'bot'; readonly bot?: string }
+  /** Swap the personality already sitting in a bot seat. */
+  | { readonly tipo: 'cambiarBot'; readonly indice: number; readonly bot: string }
   | { readonly tipo: 'quitar'; readonly indice: number }
   | {
       readonly tipo: 'ajustes'
@@ -101,6 +111,8 @@ export function mensajeDeLobby(code: ErrorDeLobby): string {
       return 'Se necesitan al menos dos en la mesa.'
     case 'NO_SE_PUEDE_QUITAR':
       return 'Solo se pueden quitar bots.'
+    case 'NO_ES_UN_BOT':
+      return 'En ese asiento hay una persona.'
   }
 }
 

@@ -66,8 +66,8 @@ empty seats), and the better bots moved behind it as Milestone 4.
 | 36 | The player's clock | ✅ |
 | 37 | Absences: reconnection, and leaving on purpose | ✅ |
 | 38 | Real-time transport: measured, polling kept | ✅ — a decision, no code |
-| 39 | Bot personalities | ← **in progress** — **Milestone 4** |
-| 40 | Rough edges | |
+| 39 | Bot personalities | ✅ — **Milestone 4** |
+| 40 | Rough edges | ← **next** |
 
 **The table now holds up on a real phone, held either way.** The lanes built
 in Phase 18 survive a 615 × 287 viewport and double as the portrait
@@ -107,7 +107,7 @@ no code changes. `lib/caras.ts`, `components/caras.tsx`.
   public, no login.
 - **Deploys:** work goes to `dev`, which builds by itself. Production changes
   only by merging `dev` into `main`. Nothing else deploys `main`.
-- **Tests:** 493, all green (the run takes ~16s, mostly the soak). `npm run test:run`, `npx tsc --noEmit`, `npm run lint`.
+- **Tests:** 501, all green (the run takes ~16s, mostly the soak). `npm run test:run`, `npx tsc --noEmit`, `npm run lint`.
 - **Database:** SQLite via Prisma 7 + libSQL. Local dev uses `prisma/dev.db`;
   **online is live on Turso** — database `mazo`, in its own group in
   `aws-us-east-1` so it sits beside Vercel's functions and leaves
@@ -355,18 +355,30 @@ El Paciente is a different bot and a worse one, which is the deal it makes.
 head is a coin flip. Counting what is dead changes which card it throws and
 nothing about who wins; recorded as measured.
 
-**Still open before the phase can close:** the lobby does not yet let the host
-choose who sits down — `esBot` is a boolean and would have to become a bot id,
-in `Asiento`, in `lib/lobby.ts` and in the lobby screen.
+**And the lobby seats them.** `Asiento.bot` stores a bot's id; each bot seat
+shows a picker with the three names and their one-line descriptions — readable
+by everyone at the table, changeable only by the host. The choice reaches both
+homes, the server's loop and the browser's, through `movesDelTurno(estado,
+botsPorAsiento)`. `botPorId` never returns null, so a stored id that no longer
+exists plays as El Codicioso instead of freezing a seat.
 
-**A defect found while measuring, older than this phase: a table of two can
-stall.** Four bots never fail to finish a ronda in 600 partidas; three fail
-once; **two fail 62 times**, and raising the turn cap from 300 to 1,000
-rescues none of them. It is El Codicioso alone, so it predates the
-personalities, and it means Phase 31's "every ronda ends" is not true at two
-seats — a supported size, and the one a person plus one bot sits at. The
-cause is the descarte loop: tablas fires when the stock cannot be served, and
-two bots trading the face-up card never touch the stock.
+**This needs a column online before it deploys.** `ALTER TABLE Asiento ADD
+COLUMN bot TEXT` on Turso — additive and nullable, so the running code is
+unaffected by it, but the new code cannot read a column that is not there.
+
+**A defect found while measuring, older than this phase, and left open on
+purpose: a table of two can stall.** Four bots never fail to finish a ronda in
+600 partidas; three fail once; **two fail 62 times**, and raising the turn cap
+from 300 to 1,000 rescues none of them. It is El Codicioso alone, so it
+predates the personalities. The cause is the descarte loop: tablas fires when
+the stock cannot be served, and two bots trading the face-up card never touch
+the stock.
+
+**The owner read it as theoretical and is not worried**, and the reasoning
+holds: the loop needs *both* players to keep taking the face-up card, and a
+table of two always has a person at it, since a table is created by its host.
+The fix, if it is ever wanted, is a rule rather than a bot patch, and is
+written up in `roadmap.md` beside the measurement.
 
 **And a road deliberately not taken yet.** Everything Phase 39's bots know is
 derivable from `VistaDeAsiento`, so `decidir(vista)` keeps its shape and a bot

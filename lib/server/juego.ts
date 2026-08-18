@@ -37,7 +37,12 @@ export type VistaDeMesa = {
   readonly segundosPorTurno: number
   readonly verDescarte: boolean
   readonly verHistorial: boolean
-  readonly asientos: readonly { indice: number; alias: string; esBot: boolean }[]
+  readonly asientos: readonly {
+    indice: number
+    alias: string
+    esBot: boolean
+    bot: string | null
+  }[]
 }
 
 export type ErrorDeMesa = 'NO_EXISTE' | 'NO_ES_TU_ASIENTO' | 'NO_REPARTIDA'
@@ -65,7 +70,13 @@ type Fila = {
   segundosPorTurno: number
   verDescarte: boolean
   verHistorial: boolean
-  asientos: { indice: number; alias: string; esBot: boolean; secreto: string | null }[]
+  asientos: {
+    indice: number
+    alias: string
+    esBot: boolean
+    bot: string | null
+    secreto: string | null
+  }[]
 }
 
 const INCLUIR = { asientos: true } as const
@@ -88,7 +99,7 @@ function publicar(fila: Fila, estado: PartidaState, asiento: number): VistaDeMes
     verHistorial: fila.verHistorial,
     asientos: [...fila.asientos]
       .sort((a, b) => a.indice - b.indice)
-      .map(({ indice, alias, esBot }) => ({ indice, alias, esBot })),
+      .map(({ indice, alias, esBot, bot }) => ({ indice, alias, esBot, bot })),
   }
 }
 
@@ -200,6 +211,12 @@ async function avanzar(
   const esBot = (seat: number) =>
     Boolean(fila.asientos.find((asiento) => asiento.indice === seat)?.esBot)
 
+  // Who is sitting where, by seat index, for the bots that have to think.
+  const botsPorAsiento: (string | null)[] = []
+  for (const asiento of fila.asientos) {
+    if (asiento.esBot) botsPorAsiento[asiento.indice] = asiento.bot
+  }
+
   for (let vuelta = 0; vuelta < 64; vuelta++) {
     const ronda = estado.ronda
     if (!ronda || ronda.ganador !== null) break
@@ -211,7 +228,7 @@ async function avanzar(
     const contratoAntes = estado.indiceContrato
 
     if (bot) {
-      const moves = movesDelTurno(estado)
+      const moves = movesDelTurno(estado, botsPorAsiento)
       if (moves.length === 0) break
       for (const move of moves) {
         const antes = estado.ronda

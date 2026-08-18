@@ -1394,7 +1394,7 @@ without a diff. Writing the decision down is the deliverable.
 Displaced by the reprioritization, not diminished: online play with one
 dull bot comes before solo play with three interesting ones.
 
-### Phase 39 — Bot personalities
+### Phase 39 — Bot personalities ✅
 At least three bots that differ observably: e.g. one that hoards for the
 perfect meld, one that lays down at the first opportunity, one that watches
 discards and plays around opponents — which the Phase 30 view makes honest,
@@ -1403,8 +1403,17 @@ peek. The rest of the old framework phase lands here too: hand-evaluation
 helpers shared by all bots, and a new bot addable in one file with no engine
 changes. Names and short descriptions in the UI, choosable wherever the host
 seats a bot — which, one door being one door, is the lobby.
-**Done when:** a head-to-head tournament shows different win rates and
-visibly different play. **This is Milestone 4.**
+**Done when:** ✅ a head-to-head tournament shows different win rates and
+visibly different play, and the host seats whoever they like from the lobby.
+**This is Milestone 4.**
+
+**The lobby seats them.** `Asiento.bot` holds a bot's id; the picker on each
+bot seat shows the three names with their one-line descriptions, so everyone
+at the table reads who they are up against and only the host can change it.
+The choice reaches both homes — the server's own loop and the browser's — and
+`botPorId` never returns null, so a partida stored with a bot that has since
+been renamed away keeps playing as El Codicioso rather than owning a seat that
+cannot take its turn.
 
 **Groundwork ✅ — the floor before the personalities.** Playing the bots
 turned up two things that were not character, they were blindness, and the
@@ -1464,13 +1473,25 @@ Two things the measuring turned up that were not the point of the phase:
   hung 222 rondas out of 400 — and tablas did not save them, because tablas
   fires when the *stock* cannot be served and a table of hoarders takes the
   face-up card every turn and never touches the stock.
-- **Two-seat tables stall, and always did.** Four bots: 0 rondas in 600 never
-  end. Three: 1. **Two: 62.** Raising the cap from 300 turns to 1,000 rescues
-  none of them, so they are not slow, they are stuck — the same descarte loop,
-  which two players fall into far more easily than four. This predates the
-  phase: it is El Codicioso alone, and it means Phase 31's promise that every
-  ronda ends is not true at a table of two. Written up under Milestone 4 as
-  its own decision, because the answer is a rule and rules get settled first.
+- **Two-seat tables stall, and always did — and the owner is not worried.**
+  Four bots: 0 rondas in 600 never end. Three: 1. **Two: 62.** Raising the cap
+  from 300 turns to 1,000 rescues none of them, so they are not slow, they are
+  stuck — the same descarte loop, which two players fall into far more easily
+  than four. It predates the phase: it is El Codicioso alone, and strictly it
+  means Phase 31's "every ronda ends" is not true at two seats.
+
+  **Deliberately left open.** The loop needs *both* players to keep taking the
+  face-up card, and a table of two always has a person at it — a table is
+  created by its host, who sits at it. A human does not play the loop. So the
+  case that fails is bots-only-at-two, which nobody can arrange, and the owner
+  read it as theoretical and said so.
+
+  If it is ever worth closing, close it as a rule and not as a patch to one
+  bot: *a ronda in which nobody bajas and nothing is added to the mesa for N
+  full rounds ends en tablas.* That shuts the door on every loop of this
+  shape, including the hoarding one measured above, and it belongs in
+  `carioca-rules.md` before it belongs in the engine — the way tablas itself
+  was settled.
 
 ### Deferred: the components of a stronger bot
 Named while planning Phase 39 and left out of it on purpose. None of these is

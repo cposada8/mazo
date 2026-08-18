@@ -39,6 +39,50 @@ describe('movesDelTurno', () => {
     const partida = startPartida({ players: 2, seed: 'x' })
     expect(movesDelTurno({ ...partida, ronda: null })).toEqual([])
   })
+
+  /**
+   * The seating is what the lobby stores and what both homes hand back
+   * (Phase 39). If the runner ignored it, every table would quietly be four
+   * Codiciosos again and nobody would see a thing.
+   */
+  it('plays the bot the seat says, not the default one', () => {
+    const partida = startPartida({ players: 3, seed: 'elenco' })
+    const seat = partida.ronda!.turno
+
+    const asientos = Array.from({ length: 3 }, (_, i) =>
+      i === seat ? 'paciente' : 'codicioso',
+    )
+    // Turn after turn one of them lays down where the other would not: over a
+    // whole partida the two plans have to part company somewhere.
+    let comoCodicioso = 0
+    let comoPaciente = 0
+    let estado = partida
+
+    for (let turno = 0; turno < 40 && estado.ronda; turno++) {
+      if (estado.ronda.turno === seat) {
+        comoCodicioso += movesDelTurno(estado).filter((m) => m.type === 'bajarse').length
+        comoPaciente += movesDelTurno(estado, asientos).filter(
+          (m) => m.type === 'bajarse',
+        ).length
+      }
+      for (const move of movesDelTurno(estado)) {
+        const result = aplicarEnPartida(estado, move)
+        if (!result.ok) break
+        estado = result.state
+      }
+    }
+
+    expect(comoCodicioso).toBeGreaterThan(comoPaciente)
+  })
+
+  it('reads an unknown or missing id as the default bot', () => {
+    const partida = startPartida({ players: 3, seed: 'fantasma' })
+
+    expect(movesDelTurno(partida, ['no-existe', 'no-existe', 'no-existe'])).toEqual(
+      movesDelTurno(partida),
+    )
+    expect(movesDelTurno(partida, [])).toEqual(movesDelTurno(partida))
+  })
 })
 
 describe('tiemposDeMoves', () => {

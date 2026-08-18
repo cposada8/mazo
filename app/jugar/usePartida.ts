@@ -37,6 +37,11 @@ export function usePartida(options: {
   /** Seconds a bot spends on its whole turn — draw, unload and discard. */
   segundosBot?: number
   /**
+   * Which bot sits in each seat, by id (Phase 39). Seats left out — yours,
+   * and any bot seated before there was a choice — play as El Codicioso.
+   */
+  bots?: readonly (string | null)[]
+  /**
    * Which partida this is — its código. Given one, the game is kept in this
    * browser and resumed on reload; without one it lives only as long as the
    * page does. Deliberately not the seed: a seed names a *deal*, and replaying
@@ -44,7 +49,7 @@ export function usePartida(options: {
    */
   id?: string
 }) {
-  const { jugadores, seed, config, segundosBot = SEGUNDOS_DEL_BOT, id } = options
+  const { jugadores, seed, config, segundosBot = SEGUNDOS_DEL_BOT, bots, id } = options
 
   const [partida, setPartida] = useState<PartidaState>(
     () => recordada(id)?.partida ?? startPartida({ players: jugadores, seed, config }),
@@ -119,6 +124,14 @@ export function usePartida(options: {
    * play walk identical states — and spread across the clock, the last one
    * landing when the time runs out.
    */
+  // Held in a ref, not in the effect's dependencies: the seating comes from
+  // the lobby as a fresh array on every render, and depending on it would
+  // cancel and reschedule the bot's turn faster than the bot can take it.
+  const botsRef = useRef(bots)
+  useEffect(() => {
+    botsRef.current = bots
+  }, [bots])
+
   const partidaRef = useRef(partida)
   useEffect(() => {
     partidaRef.current = partida
@@ -145,7 +158,7 @@ export function usePartida(options: {
     // coming back to a table that had moved on without you.
     if (resumen) return
 
-    const moves = movesDelTurno(estado)
+    const moves = movesDelTurno(estado, botsRef.current)
     const tiempos = tiemposDeMoves(moves.length, segundosBot * 1000)
 
     const ids = moves.map((move, i) =>
