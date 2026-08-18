@@ -6,6 +6,7 @@ import "./globals.css";
 import { ProveedorDeConsultas } from "@/components/consultas";
 import { ProveedorDeIdentidad } from "@/components/identidad";
 import { ProveedorDeTema, SelectorDeTema } from "@/components/tema";
+import { ControlDeBlanco, GUION_DEL_BLANCO } from "@/components/blanco";
 import { parsearAlias } from "@/lib/alias";
 
 /**
@@ -59,10 +60,18 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
+        {/* Before anything paints: the chosen white lands on <html> the way
+            the theme class does, so a reload does not flash the default one
+            (Phase 43). */}
+        <script dangerouslySetInnerHTML={{ __html: GUION_DEL_BLANCO }} />
         <ProveedorDeTema>
           <ProveedorDeConsultas>
             <ProveedorDeIdentidad aliases={leerAliases()}>
-              <div className="mx-auto flex w-full max-w-3xl justify-end px-4 pt-3">
+              <div className="mx-auto flex w-full max-w-3xl items-center justify-end gap-3 px-4 pt-3">
+                {/* Brightness sits beside the theme because it is the same
+                    kind of decision: how this screen should look in the room
+                    it is being read in. */}
+                <ControlDeBlanco className="w-28" />
                 <SelectorDeTema />
               </div>
               {children}

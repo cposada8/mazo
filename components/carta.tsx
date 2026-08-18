@@ -141,7 +141,7 @@ export function Carta({ card, represents, size = 'md', className }: CartaProps) 
 
 /** Corner legibility over a photo: a small scrim, whatever the picture. */
 const ESQUINA_SOBRE_FOTO =
-  'rounded-[0.25em] bg-black/55 px-[0.14em] py-[0.08em] text-stone-200'
+  'rounded-[0.25em] bg-black/55 px-[0.14em] py-[0.08em] text-tinta'
 
 /**
  * A corner index: rank on top, pinta right under it, the way a real card is

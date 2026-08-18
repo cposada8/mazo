@@ -1808,7 +1808,7 @@ browser, at 390 × 844. The screen says «Salió poniendo lo que está en
 dorado», the three grupos are on the felt, and the 7♦ that closed it is
 ringed on the trío it joined.
 
-### Phase 43 — The white you choose
+### Phase 43 — The white you choose ✅
 The owner tuned the white by night, over a run of commits, and the result is
 right in the dark and too dim in daylight. Turning it up puts the lamp back
 in your face at night. **This is not a setting the theme can decide** — it is
@@ -1838,6 +1838,40 @@ on the felt.
 on the table at once — text, cards and buttons together, with none of them
 left behind — the choice survives a reload, and the same phone can be read
 outdoors at noon and in a dark room without touching anything else.
+
+**Done.** The slider was the easy half, as expected. The work was that there
+was no white to turn.
+
+- **One number, everything else a distance from it.** `--blanco` is the
+  lightness of the brightest ink; `--tinta`, `--tinta-suave`, `--tinta-tenue`
+  and `--linea` are written as `calc()` offsets, the dark theme's foreground,
+  primary, muted and ring are written the same way, and the dark deck's
+  `--carta-tinta` is simply `--tinta-suave`. The offsets were read off the
+  values already in the file, so at the default the palette is byte-for-byte
+  the one the owner tuned at night — this phase changes nothing until the
+  slider is moved.
+- **The literals are gone**, or rather sorted: about thirty `stone-*`
+  utilities were inks and became `text-tinta`, `border-linea` and friends
+  through `@theme inline`; the rest were **grounds** — `bg-stone-950`, the
+  ficha, the felt's chips — and stayed, because a dark table is a dark table
+  however bright its ink.
+- **It is not a theme, and it is not the theme's.** What changes is the room,
+  not the hour, so the light theme's near-black text is untouched and the
+  table — dark in both themes — carries the same ink family either way.
+- **Two controls, one number.** Beside the theme switcher in the header, and
+  inside the game's menu, which is where you notice it. Both read one
+  module-level store, so they cannot disagree. The value lands on `<html>`
+  before the first paint from a script at the top of the body — Phase 12's
+  no-flash discipline, for the same reason.
+- **The ends are held.** 0.72 to 0.94: below that the dimmest ink stops
+  clearing the near-black ground, above it the felt gets the lamp the whole
+  palette was tuned to avoid. Anything else — a hand-edited key, a NaN — is
+  clamped or ignored.
+
+**Measured in the browser, dark theme, one partida open:** moving the slider
+from 0.79 to 0.94 took the body text 0.79 → 0.94, the filled slabs 0.62 →
+0.77, the felt's labels 0.71 → 0.86 and the card pips 0.71 → 0.86, all in the
+same frame. The choice survives navigation and reload.
 
 ---
 

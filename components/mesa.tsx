@@ -68,7 +68,7 @@ export function GrupoEnMesa({
 }) {
   const contenido = (
     <div className="flex flex-col gap-0.5">
-      <span className="text-[calc(var(--texto-mesa,0.75rem)*0.85)] font-medium tracking-wide text-stone-300/80 uppercase">
+      <span className="text-[calc(var(--texto-mesa,0.75rem)*0.85)] font-medium tracking-wide text-tinta/80 uppercase">
         {tituloDeGrupo(grupo)}
       </span>
       <div className="flex">
@@ -105,7 +105,7 @@ export function GrupoEnMesa({
     <button
       type="button"
       onClick={onClick}
-      className="shrink-0 rounded-md border border-transparent p-1 text-left transition-colors hover:border-stone-400/40 hover:bg-white/5"
+      className="shrink-0 rounded-md border border-transparent p-1 text-left transition-colors hover:border-tinta-suave/40 hover:bg-tinta/5"
     >
       {contenido}
     </button>
@@ -246,16 +246,16 @@ export function Asiento({
                   'border-amber-600 bg-amber-600 text-amber-950',
                   !reloj && 'ring-4 ring-amber-600/30',
                 )
-              : 'border-stone-500/40 bg-stone-900 text-stone-400',
+              : 'border-linea/60 bg-stone-900 text-tinta-suave',
           )}
         >
           {inicial(nombre)}
         </div>
       </div>
 
-      <span className="max-w-full truncate text-[var(--texto-mesa,0.75rem)] leading-tight font-medium text-stone-400">
+      <span className="max-w-full truncate text-[var(--texto-mesa,0.75rem)] leading-tight font-medium text-tinta-suave">
         {nombre}
-        <span className="text-stone-400">
+        <span className="text-tinta-suave">
           {' '}
           · {jugador.cartas}
           {jugador.bajadoEnTurno !== null && ' · bajado'}
@@ -288,9 +288,9 @@ export function Pilas({
 }) {
   const arriba = state.descarte.at(-1)
   const activo = Boolean(onRobar)
-  const estiloPila = activo ? 'ring-2 ring-stone-400/60 ring-offset-2 ring-offset-stone-950' : ''
+  const estiloPila = activo ? 'ring-2 ring-tinta-suave/60 ring-offset-2 ring-offset-stone-950' : ''
   const chip =
-    'absolute -top-1 -right-1 z-10 rounded-full bg-stone-800 px-1 text-[calc(var(--texto-mesa,0.75rem)*0.9)] text-stone-300 tabular-nums ring-1 ring-stone-600/60'
+    'absolute -top-1 -right-1 z-10 rounded-full bg-stone-800 px-1 text-[calc(var(--texto-mesa,0.75rem)*0.9)] text-tinta tabular-nums ring-1 ring-linea/60'
 
   return (
     <div className="flex shrink-0 items-end gap-2">
@@ -315,7 +315,7 @@ export function Pilas({
           {arriba ? (
             <Carta card={arriba} size="sm" className={estiloPila} />
           ) : (
-            <div className="aspect-[8/11] h-[var(--carta-sm,3.5rem)] rounded-md border border-dashed border-stone-500/40" />
+            <div className="aspect-[8/11] h-[var(--carta-sm,3.5rem)] rounded-md border border-dashed border-linea/60" />
           )}
         </button>
         {state.descarte.length > 0 && (
@@ -695,7 +695,7 @@ export function Mesa({
 
           <div className="grupos-en-mesa">
             {enMesa.length === 0 ? (
-              <span className="self-center text-[var(--texto-mesa,0.75rem)] text-stone-500">
+              <span className="self-center text-[var(--texto-mesa,0.75rem)] text-tinta-tenue">
                 Nadie se ha bajado todavía.
               </span>
             ) : (
@@ -724,14 +724,14 @@ export function Mesa({
               onClick={onVerHistorial}
               aria-live="polite"
               title="Ver todo lo que ha pasado esta ronda"
-              className="min-w-0 truncate text-left text-[var(--texto-mesa,0.75rem)] text-stone-400 underline decoration-stone-700 decoration-dotted underline-offset-2 hover:text-stone-300"
+              className="min-w-0 truncate text-left text-[var(--texto-mesa,0.75rem)] text-tinta-suave underline decoration-stone-700 decoration-dotted underline-offset-2 hover:text-tinta"
             >
               {relatoLinea}
             </button>
           ) : (
             <span
               aria-live="polite"
-              className="min-w-0 truncate text-[var(--texto-mesa,0.75rem)] text-stone-300"
+              className="min-w-0 truncate text-[var(--texto-mesa,0.75rem)] text-tinta"
             >
               {relatoLinea}
             </span>
@@ -747,7 +747,7 @@ export function Mesa({
               type="button"
               onClick={onVerDescarte}
               title="Ver todas las cartas del descarte"
-              className="flex shrink-0 items-center gap-1 rounded-full border border-stone-600/60 bg-stone-800/80 py-[0.6cqh] pr-2 pl-1.5 text-[var(--texto-mesa,0.75rem)] text-stone-400 hover:bg-stone-700"
+              className="flex shrink-0 items-center gap-1 rounded-full border border-linea/60 bg-stone-800/80 py-[0.6cqh] pr-2 pl-1.5 text-[var(--texto-mesa,0.75rem)] text-tinta-suave hover:bg-stone-700"
             >
               <Layers className="size-[1.1em] shrink-0" aria-hidden />
               <span className="tabular-nums">{state.descarte.length}</span>
@@ -756,7 +756,7 @@ export function Mesa({
           )}
           <span
             aria-hidden
-            className="shrink-0 text-[var(--texto-mesa,0.75rem)] font-semibold tracking-[0.2em] whitespace-nowrap text-stone-100/25 uppercase"
+            className="shrink-0 text-[var(--texto-mesa,0.75rem)] font-semibold tracking-[0.2em] whitespace-nowrap text-tinta/25 uppercase"
           >
             {state.contrato.nombre}
           </span>

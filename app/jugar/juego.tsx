@@ -13,6 +13,7 @@ import {
 } from 'lucide-react'
 import { Carta } from '@/components/carta'
 import { Marcador } from '@/components/marcador'
+import { ControlDeBlanco } from '@/components/blanco'
 import { GrupoEnMesa, Mesa, nombrePorDefecto } from '@/components/mesa'
 import {
   alternarPantallaCompleta,
@@ -261,7 +262,7 @@ export function Tablero({
           onClick={() => setVerMenu(true)}
           aria-label="Menú de la partida"
           aria-expanded={verMenu}
-          className="absolute top-1.5 left-1.5 z-20 rounded-md border border-stone-600/60 bg-stone-900/80 p-1.5 text-stone-400"
+          className="absolute top-1.5 left-1.5 z-20 rounded-md border border-linea/60 bg-stone-900/80 p-1.5 text-tinta-suave"
         >
           <Menu className="size-4" aria-hidden />
         </button>
@@ -373,6 +374,19 @@ function MenuDePartida({
         </div>
 
         <div className="mt-3 flex flex-col gap-2">
+          {/*
+            The brightness of the white, reachable from the table (Phase 43).
+            It is the same control the header carries and the same number
+            behind it — but the room you notice it in is this one, with the
+            felt filling the screen.
+          */}
+          <p className="text-muted-foreground text-xs tracking-wide uppercase">
+            Brillo del blanco
+          </p>
+          <ControlDeBlanco etiqueta="Brillo del blanco" className="px-1 py-1" />
+        </div>
+
+        <div className="mt-3 flex flex-col gap-2">
           <p className="text-muted-foreground text-xs tracking-wide uppercase">
             La baraja
           </p>
@@ -381,13 +395,13 @@ function MenuDePartida({
               nombre="Claras"
               activo={!cartasOscuras}
               onClick={() => onCartasOscuras(false)}
-              carta="border-stone-500 bg-stone-400 text-stone-900"
+              carta="border-linea bg-stone-400 text-stone-900"
             />
             <BotonDeBaraja
               nombre="Oscuras"
               activo={cartasOscuras}
               onClick={() => onCartasOscuras(true)}
-              carta="border-stone-600 bg-stone-900 text-stone-400"
+              carta="border-linea bg-stone-900 text-tinta-suave"
             />
           </div>
         </div>
@@ -920,7 +934,7 @@ function MesaFinal({
           )}
         >
           {grupos.length === 0 ? (
-            <span className="py-6 text-sm text-stone-500">
+            <span className="py-6 text-sm text-tinta-tenue">
               Nadie alcanzó a bajarse.
             </span>
           ) : (
