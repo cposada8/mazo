@@ -1367,16 +1367,25 @@ assumption of mine, and the correction was the point of the phase:
   a special case. A table down to one player ends rather than playing on
   alone.
 
-### Phase 38 — Real-time transport
-Only if polling feels bad at a real table. The transport sits behind an
-interface precisely so this phase can be a swap and not a rewrite. The
-options moved since `tech-stack.md` was written: Vercel Functions now hold
-WebSockets on Fluid Compute, so the order to try is keep-polling, first-party
-WebSockets, then Pusher. Decide here, not before.
+### Phase 38 — Real-time transport ✅ — closed as a decision, not as code
+Only if polling feels bad at a real table. It did not. Two people played a
+partida from one code on separate phones on 18 August 2026, and the owner's
+verdict was that it held: an opponent's move is there by the time you look
+up from your own hand. **Polling with TanStack Query stays.**
 
-**Done when:** either polling is measured at a real table and declared good
-enough — closing this phase as a decision — or a push transport sits behind
-the same interface with every done-when from Phases 35–37 still true.
+What this phase inherited stays written down rather than built: Vercel
+Functions now hold WebSockets on Fluid Compute, so the order to try, should
+the day come, is first-party WebSockets and then Pusher. Nothing about that
+swap gets harder by waiting — the transport sitting behind one interface
+(`useMesaRemota`, Phase 34) is exactly what makes the delay free. What would
+reopen it is a bigger table, a slower network, or a real-time feel the game
+does not currently need: Carioca is turn-based, and a second of latency in a
+turn-based game is invisible.
+
+**Learned:** a phase whose done-when is a measurement is allowed to end
+without a diff. Writing the decision down is the deliverable.
+
+**Done when:** ✅ polling measured at a real table and declared good enough.
 
 ---
 

@@ -1,6 +1,6 @@
 # Project status — pick up here
 
-Last updated after Phase 37.
+Last updated after Phase 38.
 
 Read this first, then `mission.md` for the why, `carioca-rules.md` for the game,
 `tech-stack.md` for the stack, and `roadmap.md` for what comes next. This file is
@@ -65,8 +65,9 @@ empty seats), and the better bots moved behind it as Milestone 4.
 | 35 | Several people at one table | ✅ — **Milestone 3** |
 | 36 | The player's clock | ✅ |
 | 37 | Absences: reconnection, and leaving on purpose | ✅ |
-| 38 | Real-time transport, if polling isn't enough | ← **next**, and optional |
-| 39–40 | Bot personalities, rough edges | displaced behind online |
+| 38 | Real-time transport: measured, polling kept | ✅ — a decision, no code |
+| 39 | Bot personalities | ← **next** — **Milestone 4** |
+| 40 | Rough edges | |
 
 **The table now holds up on a real phone, held either way.** The lanes built
 in Phase 18 survive a 615 × 287 viewport and double as the portrait
@@ -106,7 +107,7 @@ no code changes. `lib/caras.ts`, `components/caras.tsx`.
   public, no login.
 - **Deploys:** work goes to `dev`, which builds by itself. Production changes
   only by merging `dev` into `main`. Nothing else deploys `main`.
-- **Tests:** 435, all green (the run takes ~17s, mostly the soak). `npm run test:run`, `npx tsc --noEmit`, `npm run lint`.
+- **Tests:** 478, all green (the run takes ~18s, mostly the soak). `npm run test:run`, `npx tsc --noEmit`, `npm run lint`.
 - **Database:** SQLite via Prisma 7 + libSQL. Local dev uses `prisma/dev.db`;
   **online is live on Turso** — database `mazo`, in its own group in
   `aws-us-east-1` so it sits beside Vercel's functions and leaves
@@ -296,8 +297,27 @@ after one confirmation. A vacated seat is skipped, never played: no cards,
 no turns, no waiting, score frozen, **and no bot inheriting it** — the
 owner cut that deliberately.
 
-**Phase 38 is next and optional:** swap polling for a push transport only
-if polling feels bad at a real table.
+**Phase 38 is done, and it is a decision rather than a diff.** Two people
+played a partida from one code on separate phones and the ritmo held, so
+**polling with TanStack Query stays** and no push transport was built. The
+options it inherited — first-party WebSockets on Fluid Compute, then Pusher —
+stay written down in the roadmap; the transport lives behind one interface
+precisely so that waiting costs nothing.
+
+**Found at that same real table, and fixed off the roadmap:** the shared
+table was drawn from seat 0 rather than from your own seat. `TU_ASIENTO = 0`
+was true while the only human was whoever opened the page, and every "is this
+me?" question still asked it — whose alias, whose turn, who won, whose points,
+which moves read in second person. Only the hand was right, because the hand
+comes from the view. The seat now comes from the controller (`vista.asiento`).
+Worth keeping: every browser check had been run as the host, who really is
+seat 0, so the bug was invisible from where the checking was done. **A promise
+about several people has to be checked from more than one of their seats.**
+
+**Phase 39 is next — Milestone 4, bots worth playing:** at least three bots
+that differ observably, choosable in the lobby wherever the host seats one.
+The Phase 30 view is what makes a discard-watching bot honest: what a seat has
+seen is an input, not a licence to peek.
 
 ## Open questions, deliberately unanswered
 
