@@ -18,7 +18,7 @@ import {
   startPartida,
   vistaDeAsiento,
 } from '@/lib/engine'
-import type { Bot } from './codicioso'
+import type { Bot } from './bot'
 
 export const TOPE_DE_TURNOS_POR_RONDA = 300
 /** Draw, act, act, …, discard. Far above any real turn. */

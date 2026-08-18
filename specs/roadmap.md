@@ -1430,6 +1430,48 @@ bajado, the face-up card is taken only if it ligadoes *right now* — because
 loosening that is what hung seed soak-204, and freeing a comodín shrinks the
 hand and grows the mesa, so it cannot loop.
 
+**The family, and what measuring it said.** `lib/bots/` now has a shape: a
+`Perfil` answers the three judgements that are character — is the face-up card
+worth taking, is this the moment to lay down, what is a card worth in hand —
+and `decidirConPerfil` plays the turn around them. Everything else is shared
+in `evaluar.ts`, because a personality must be a difference of strategy and
+never of competence. One judgement is withheld on purpose: once bajado, the
+face-up card is taken only if the mesa will take it now, which is the rule
+that keeps two bots from passing the same card forever.
+
+Measured over 1,200 four-seat partidas, seats rotated, none unfinished:
+
+| | victorias | puntos por asiento | turno medio de bajada |
+| --- | --- | --- | --- |
+| El Codicioso | 460 | 506 | 26.2 |
+| El Paciente | 303 | 565 | **33.4** |
+| El Memorioso | 443 | 511 | 26.6 |
+
+- **El Paciente is a different bot and a worse one, which is the deal.** It
+  lays down seven turns later, and head to head against the baseline it loses
+  931 to 574 and carries 52 more points a partida. Patience costs exactly what
+  it was always going to cost.
+- **El Memorioso plays differently and finishes level.** 764 to 739 over 1,500
+  partidas is a coin flip, and the points are 401 to 400. Counting what is
+  dead changes which card it throws — it lets go of a pair whose partners are
+  all face up, which the other two protect to the end — and changes nothing
+  about who wins. Recorded as measured, not as hoped.
+
+Two things the measuring turned up that were not the point of the phase:
+
+- **Greed at the draw is not a personality this game can carry.** El Paciente
+  first hoarded at the draw too, taking anything with a partner. Four of them
+  hung 222 rondas out of 400 — and tablas did not save them, because tablas
+  fires when the *stock* cannot be served and a table of hoarders takes the
+  face-up card every turn and never touches the stock.
+- **Two-seat tables stall, and always did.** Four bots: 0 rondas in 600 never
+  end. Three: 1. **Two: 62.** Raising the cap from 300 turns to 1,000 rescues
+  none of them, so they are not slow, they are stuck — the same descarte loop,
+  which two players fall into far more easily than four. This predates the
+  phase: it is El Codicioso alone, and it means Phase 31's promise that every
+  ronda ends is not true at a table of two. Written up under Milestone 4 as
+  its own decision, because the answer is a rule and rules get settled first.
+
 ### Deferred: the components of a stronger bot
 Named while planning Phase 39 and left out of it on purpose. None of these is
 needed for three bots that play observably differently; all of them are needed

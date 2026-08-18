@@ -107,7 +107,7 @@ no code changes. `lib/caras.ts`, `components/caras.tsx`.
   public, no login.
 - **Deploys:** work goes to `dev`, which builds by itself. Production changes
   only by merging `dev` into `main`. Nothing else deploys `main`.
-- **Tests:** 482, all green (the run takes ~16s, mostly the soak). `npm run test:run`, `npx tsc --noEmit`, `npm run lint`.
+- **Tests:** 493, all green (the run takes ~16s, mostly the soak). `npm run test:run`, `npx tsc --noEmit`, `npm run lint`.
 - **Database:** SQLite via Prisma 7 + libSQL. Local dev uses `prisma/dev.db`;
   **online is live on Turso** — database `mazo`, in its own group in
   `aws-us-east-1` so it sits beside Vercel's functions and leaves
@@ -337,6 +337,36 @@ Same thousand seeds: still 1,000/1,000 finished, average partida 11 turns
 shorter. `lib/bots/codicioso.ts` — `puertasDelGrupo`, `valorDeConservar`,
 `alcanceEnMesa`. The next step is the shared evaluation module the roadmap
 asks for, and then the personalities as data over it.
+
+**The elenco exists and is measured.** `lib/bots/` is now a family: `bot.ts`
+(what a bot is), `evaluar.ts` (the shared vocabulary), `perfil.ts` (the turn,
+and the three judgements that are character), `catalogo.ts` (the list the
+lobby will read), and one file per personality. Over 1,200 four-seat partidas
+with seats rotated and none unfinished:
+
+| | victorias | puntos | turno de bajada |
+| --- | --- | --- | --- |
+| El Codicioso | 460 | 506 | 26.2 |
+| El Paciente | 303 | 565 | **33.4** |
+| El Memorioso | 443 | 511 | 26.6 |
+
+El Paciente is a different bot and a worse one, which is the deal it makes.
+**El Memorioso plays differently and finishes level** — 764 to 739 head to
+head is a coin flip. Counting what is dead changes which card it throws and
+nothing about who wins; recorded as measured.
+
+**Still open before the phase can close:** the lobby does not yet let the host
+choose who sits down — `esBot` is a boolean and would have to become a bot id,
+in `Asiento`, in `lib/lobby.ts` and in the lobby screen.
+
+**A defect found while measuring, older than this phase: a table of two can
+stall.** Four bots never fail to finish a ronda in 600 partidas; three fail
+once; **two fail 62 times**, and raising the turn cap from 300 to 1,000
+rescues none of them. It is El Codicioso alone, so it predates the
+personalities, and it means Phase 31's "every ronda ends" is not true at two
+seats — a supported size, and the one a person plus one bot sits at. The
+cause is the descarte loop: tablas fires when the stock cannot be served, and
+two bots trading the face-up card never touch the stock.
 
 **And a road deliberately not taken yet.** Everything Phase 39's bots know is
 derivable from `VistaDeAsiento`, so `decidir(vista)` keeps its shape and a bot

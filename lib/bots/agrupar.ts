@@ -361,9 +361,36 @@ export function utilidadDeCarta(
   hand: readonly Card[],
   contrato: Contrato,
 ): number {
+  const rutas = rutasDeCarta(card, hand, contrato)
+  return Math.max(rutas.trio, rutas.escala)
+}
+
+/** A card's worth along each of the two roads out of it, before choosing one. */
+export type Rutas = {
+  /** Worth if this card ends up in a trío. */
+  readonly trio: number
+  /** Worth if it ends up in an escala. */
+  readonly escala: number
+}
+
+/**
+ * The same measure, split.
+ *
+ * `utilidadDeCarta` takes the better road and reports the distance. Anything
+ * that wants to ask a question *about the road* — whether the cards it still
+ * needs are even in play — needs them apart, because a card is not saved by an
+ * escala being possible when what it is actually doing is waiting for a trío.
+ */
+export function rutasDeCarta(
+  card: Card,
+  hand: readonly Card[],
+  contrato: Contrato,
+): Rutas {
   // A comodín fits anywhere. Throwing one away is almost always a mistake, and
   // it is also the most expensive card to be caught holding.
-  if (isComodin(card)) return Number.MAX_SAFE_INTEGER
+  if (isComodin(card)) {
+    return { trio: Number.MAX_SAFE_INTEGER, escala: Number.MAX_SAFE_INTEGER }
+  }
 
   const mismoRango = hand.filter(
     (otra) => !isComodin(otra) && otra.rank === card.rank,
@@ -378,10 +405,10 @@ export function utilidadDeCarta(
   const pesoTrio = contrato.trios > 0 ? contrato.trios / piezas : 0.15
   const pesoEscala = contrato.escalas > 0 ? contrato.escalas / piezas : 0.15
 
-  return Math.max(
-    (mismoRango / TRIO_MIN_SIZE) * pesoTrio,
-    (cadena / ESCALA_MIN_SIZE) * pesoEscala,
-  )
+  return {
+    trio: (mismoRango / TRIO_MIN_SIZE) * pesoTrio,
+    escala: (cadena / ESCALA_MIN_SIZE) * pesoEscala,
+  }
 }
 
 /**
@@ -405,7 +432,7 @@ export function tieneCompania(card: Card, hand: readonly Card[]): boolean {
  * Length of the run of consecutive same-suit ranks this card belongs to,
  * counting distinct ranks and walking both ways around the ring.
  */
-function largoDeLaCadena(card: Card, hand: readonly Card[]): number {
+export function largoDeLaCadena(card: Card, hand: readonly Card[]): number {
   if (isComodin(card)) return 0
 
   const presentes = new Set<Rank>()
