@@ -98,8 +98,10 @@ replayed seed repeats. Curating the gallery is deleting files and pushing;
 no code changes. `lib/caras.ts`, `components/caras.tsx`.
 
 - **Repo:** https://github.com/cposada8/mazo
-- **Live:** https://mazo-six.vercel.app — `/mesa` steps through a bot partida,
-  `/pruebas` shows deals and grupo validation.
+- **Live:** https://mazo-six.vercel.app — **online play is in production**
+  since Milestone 3: the door creates or joins a partida by code, and a
+  table with more than one person is refereed by the server. `/mesa` steps
+  through a bot partida, `/pruebas` shows deals and grupo validation.
 - **Dev:** https://mazo-git-dev-cepm23.vercel.app — the latest commit on `dev`,
   public, no login.
 - **Deploys:** work goes to `dev`, which builds by itself. Production changes
