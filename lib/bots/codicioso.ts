@@ -5,7 +5,17 @@
  * moment it can, unloads anything that fits, and throws the card that is
  * furthest from being useful. There is no memory of what has been discarded, no
  * reading of opponents, and no waiting for a better hand — those belong to the
- * bots with difficulty levels, later.
+ * bots with personalities, later.
+ *
+ * What it does know is that **a card is worth what its context makes it worth**,
+ * and that the mesa has two doors, not one:
+ *
+ * - Before bajarse a card is worth how far it carries the contrato; after
+ *   bajarse the contrato is already on the mesa and that measure means nothing.
+ *   What counts then is whether some grupo out there can grow to take it.
+ * - A card can join a grupo by `agregar`, or by taking the slot a comodín is
+ *   standing in for — `moverComodin`, which is the *only* way into that slot.
+ *   A bot that knows one door and not the other watches its own card go by.
  *
  * It cannot peek at another hand, because it never receives one: a bot decides
  * from a `VistaDeAsiento` — what its seat can legitimately see — and the view
@@ -13,9 +23,14 @@
  */
 
 import {
+  RANKS,
   type Card,
+  type Escala,
   type Move,
+  type MoveDeMesa,
+  type Rank,
   type VistaDeAsiento,
+  cyclicDistance,
   isComodin,
   probarEnMesa,
   puntosDeCarta,
@@ -107,11 +122,11 @@ function buscarDescarga(vista: VistaDeAsiento): Move | null {
     ...vista.jugadores.map((_, seat) => seat).filter((seat) => seat !== vista.asiento),
   ]
 
-  for (const card of vista.mano) {
-    // Never unload the last card this way — the turn still has to end in a
-    // discard.
-    if (vista.mano.length <= 1) return null
+  // Never unload the last card this way — the turn still has to end in a
+  // discard, and the hand does not change while this loop runs.
+  if (vista.mano.length <= 1) return null
 
+  for (const card of vista.mano) {
     const move = ligaEnAlgunGrupo(vista, card, asientos)
     if (move) return move
   }
@@ -128,14 +143,7 @@ function ligaEnAlgunGrupo(
   for (const seat of asientos) {
     const grupos = vista.jugadores[seat].grupos
     for (let grupoIndex = 0; grupoIndex < grupos.length; grupoIndex++) {
-      for (const end of ['tail', 'head'] as const) {
-        const move = {
-          type: 'agregar',
-          seat,
-          grupoIndex,
-          cardIds: [card.id],
-          end,
-        } satisfies Move
+      for (const move of puertasDelGrupo(card, seat, grupoIndex)) {
         if (probarEnMesa(vista, move).ok) return move
       }
     }
@@ -144,16 +152,116 @@ function ligaEnAlgunGrupo(
 }
 
 /**
- * The card to throw: least useful first, and among equally useless ones the
- * most expensive, since points are penalties.
+ * Every way a single card can enter one grupo, in the order worth trying.
+ *
+ * Extending comes first: it leaves both ends of an escala free, while freeing a
+ * comodín parks it on an end. But `agregar` cannot reach the slot a comodín is
+ * standing in — `moverComodin` is the only move that fills it, paying with the
+ * exact card the comodín stands for. Offering only the first door is how a bot
+ * lets the 6♥ it needed go past while a comodín sits on the mesa pretending to
+ * be it.
+ */
+function puertasDelGrupo(
+  card: Card,
+  seat: number,
+  grupoIndex: number,
+): MoveDeMesa[] {
+  const extender = (['tail', 'head'] as const).map(
+    (end) =>
+      ({ type: 'agregar', seat, grupoIndex, cardIds: [card.id], end }) satisfies MoveDeMesa,
+  )
+
+  // A comodín cannot be the card that frees another comodín, so for one there
+  // is only the one door.
+  if (isComodin(card)) return extender
+
+  return [
+    ...extender,
+    ...(['tail', 'head'] as const).map(
+      (to) =>
+        ({ type: 'moverComodin', seat, grupoIndex, cardId: card.id, to }) satisfies MoveDeMesa,
+    ),
+  ]
+}
+
+/**
+ * The card to throw: least worth keeping first, and among equally worthless
+ * ones the most expensive, since points are penalties.
  */
 function peorCarta(vista: VistaDeAsiento): Card {
-  return vista.mano.reduce((peor, card) => {
-    const utilidadCard = utilidadDeCarta(card, vista.mano, vista.contrato)
-    const utilidadPeor = utilidadDeCarta(peor, vista.mano, vista.contrato)
+  const valores = new Map(
+    vista.mano.map((card) => [card.id, valorDeConservar(card, vista)] as const),
+  )
+  const valor = (card: Card): number => valores.get(card.id)!
 
-    if (utilidadCard !== utilidadPeor) return utilidadCard < utilidadPeor ? card : peor
+  return vista.mano.reduce((peor, card) => {
+    if (valor(card) !== valor(peor)) return valor(card) < valor(peor) ? card : peor
     if (isComodin(card) || isComodin(peor)) return isComodin(peor) ? card : peor
     return puntosDeCarta(card) > puntosDeCarta(peor) ? card : peor
   })
+}
+
+/**
+ * What this card is worth in hand — and the answer depends on which half of
+ * the ronda this seat is in.
+ *
+ * Before bajarse, worth is progress toward the contrato. After bajarse the
+ * contrato is on the mesa and can never be added to, so progress toward a
+ * grupo *in hand* measures nothing at all: that is how a bajado bot came to
+ * protect a useless pair of fours and throw the king that belonged on
+ * somebody's escala.
+ */
+function valorDeConservar(card: Card, vista: VistaDeAsiento): number {
+  return vista.jugadores[vista.asiento].bajadoEnTurno === null
+    ? utilidadDeCarta(card, vista.mano, vista.contrato)
+    : alcanceEnMesa(card, vista)
+}
+
+/**
+ * How near this card is to a home on the mesa, as a fraction: 1 for a card one
+ * step from an open end, less the further out it sits, 0 for nowhere to go.
+ *
+ * Whether it ligadoes *right now* is not asked, and does not need to be: the
+ * discard is only reached after `buscarDescarga` has already unloaded
+ * everything the referee would take. What is left is a question about the
+ * future — which grupo could still grow this way — and it is answered by
+ * reading the mesa, not by trying moves.
+ */
+function alcanceEnMesa(card: Card, vista: VistaDeAsiento): number {
+  // Still the most useful card in the game and still the most expensive one to
+  // be caught with. Throwing it stays out of the question.
+  if (isComodin(card)) return Number.MAX_SAFE_INTEGER
+
+  let mejor = 0
+
+  for (const jugador of vista.jugadores) {
+    for (const grupo of jugador.grupos) {
+      // A trío takes any card of its rango and nothing else, ever. If this card
+      // is not it, no amount of waiting will change that — and if it is, it was
+      // unloaded before the discard was ever considered.
+      if (grupo.kind !== 'escala') continue
+      if (grupo.suit !== card.suit) continue
+
+      const pasos = pasosHastaUnaPunta(grupo, card.rank)
+      if (pasos !== null) mejor = Math.max(mejor, 1 / pasos)
+    }
+  }
+
+  return mejor
+}
+
+/**
+ * Ranks between this card and the nearer end of the escala — 1 for the card
+ * that extends it right now — or null when the escala cannot reach it at all:
+ * the slot is already occupied, or the escala has grown all the way round the
+ * ring and has no ends left.
+ */
+function pasosHastaUnaPunta(escala: Escala, rank: Rank): number | null {
+  const largo = escala.cards.length
+  if (largo >= RANKS.length) return null
+
+  const posicion = cyclicDistance(escala.start, rank)
+  if (posicion < largo) return null
+
+  return Math.min(posicion - largo + 1, RANKS.length - posicion)
 }

@@ -66,7 +66,7 @@ empty seats), and the better bots moved behind it as Milestone 4.
 | 36 | The player's clock | ✅ |
 | 37 | Absences: reconnection, and leaving on purpose | ✅ |
 | 38 | Real-time transport: measured, polling kept | ✅ — a decision, no code |
-| 39 | Bot personalities | ← **next** — **Milestone 4** |
+| 39 | Bot personalities | ← **in progress** — **Milestone 4** |
 | 40 | Rough edges | |
 
 **The table now holds up on a real phone, held either way.** The lanes built
@@ -107,7 +107,7 @@ no code changes. `lib/caras.ts`, `components/caras.tsx`.
   public, no login.
 - **Deploys:** work goes to `dev`, which builds by itself. Production changes
   only by merging `dev` into `main`. Nothing else deploys `main`.
-- **Tests:** 478, all green (the run takes ~18s, mostly the soak). `npm run test:run`, `npx tsc --noEmit`, `npm run lint`.
+- **Tests:** 482, all green (the run takes ~16s, mostly the soak). `npm run test:run`, `npx tsc --noEmit`, `npm run lint`.
 - **Database:** SQLite via Prisma 7 + libSQL. Local dev uses `prisma/dev.db`;
   **online is live on Turso** — database `mazo`, in its own group in
   `aws-us-east-1` so it sits beside Vercel's functions and leaves
@@ -314,10 +314,29 @@ Worth keeping: every browser check had been run as the host, who really is
 seat 0, so the bug was invisible from where the checking was done. **A promise
 about several people has to be checked from more than one of their seats.**
 
-**Phase 39 is next — Milestone 4, bots worth playing:** at least three bots
-that differ observably, choosable in the lobby wherever the host seats one.
-The Phase 30 view is what makes a discard-watching bot honest: what a seat has
-seen is an input, not a licence to peek.
+**Phase 39 is under way — Milestone 4, bots worth playing:** at least three
+bots that differ observably, choosable in the lobby wherever the host seats
+one. The Phase 30 view is what makes a discard-watching bot honest: what a
+seat has seen is an input, not a licence to peek.
+
+**Its groundwork is done: El Codicioso's floor was raised first.** Playing
+against it turned up two blind spots that were not character but competence,
+and a personality has to be a difference of *strategy*, never of competence —
+so they were fixed in the baseline before any second bot exists:
+
+1. **The mesa has two doors.** `moverComodin` — taking the slot a comodín is
+   standing in, paid for with the exact card it stands for — was a legal
+   engine move no bot had ever played, because every trial the bot ran built
+   an `agregar`. Zero uses across the soak before, 1,760 after.
+2. **A card is worth what its context makes it worth.** The discard scored by
+   progress toward the contrato even when the contrato was already on the
+   mesa. Once bajado the measure is now reach on the mesa. Phase 31 patched
+   this at the draw and left the discard alone.
+
+Same thousand seeds: still 1,000/1,000 finished, average partida 11 turns
+shorter. `lib/bots/codicioso.ts` — `puertasDelGrupo`, `valorDeConservar`,
+`alcanceEnMesa`. The next step is the shared evaluation module the roadmap
+asks for, and then the personalities as data over it.
 
 ## Open questions, deliberately unanswered
 

@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
+  type Card,
   type Move,
   type RondaState,
   apply,
@@ -10,6 +11,7 @@ import {
   vistaDeAsiento,
 } from '@/lib/engine'
 import { decidirCodicioso } from '@/lib/bots'
+import { c, makeRonda, n } from '../engine/helpers'
 
 const DOS_TRIOS = contratoPorId('c1')!
 
@@ -194,5 +196,132 @@ describe('drawing once bajado', () => {
   it('takes the descarte card that ligadoes right now', () => {
     // The fourth 7 lands straight on the trio of 7s.
     expect(decidir(bajado('7♦'))).toEqual({ type: 'robar', de: 'descarte' })
+  })
+})
+
+describe('the mesa has two doors', () => {
+  /**
+   * A table where seat 1's escala of hearts runs 5-6-7-8 with a **comodín**
+   * standing in for the 6. Nothing can be added at either end without a 4♥ or
+   * a 9♥, so the only way a 6♥ gets onto this mesa is by taking the slot the
+   * comodín is holding — `moverComodin`, the door the bot used not to know.
+   */
+  const conComodinEnLaEscala = (mano: Card[], fase: 'draw' | 'act', descarte: Card[]) => {
+    const escala = {
+      kind: 'escala' as const,
+      suit: 'hearts' as const,
+      start: '5' as const,
+      cards: [n('5', 'hearts'), c(), n('7', 'hearts'), n('8', 'hearts')],
+    }
+    const trioDeReyes = {
+      kind: 'trio' as const,
+      rank: 'K' as const,
+      cards: [n('K', 'spades'), n('K', 'hearts'), n('K', 'clubs')],
+    }
+
+    return makeRonda({
+      jugadores: [
+        { hand: mano, grupos: [trioDeReyes], bajadoEnTurno: 1 },
+        { hand: [n('A', 'spades'), n('3', 'clubs')], grupos: [escala], bajadoEnTurno: 1 },
+      ],
+      // Bajado on turn 1, and it is turn 3: the mesa is open again.
+      numeroDeTurno: 3,
+      fase,
+      discard: descarte,
+    })
+  }
+
+  it('takes the descarte card that only a comodín swap can place', () => {
+    const state = conComodinEnLaEscala(
+      [n('9', 'spades'), n('2', 'clubs')],
+      'draw',
+      [n('6', 'hearts')],
+    )
+
+    expect(decidir(state)).toEqual({ type: 'robar', de: 'descarte' })
+  })
+
+  it('still draws blind when the same card has nowhere to go', () => {
+    // The 6♠ is the same rank in the wrong suit: no escala of spades, no trio
+    // of sixes, and a comodín only ever stands for one exact card.
+    const state = conComodinEnLaEscala(
+      [n('9', 'spades'), n('2', 'clubs')],
+      'draw',
+      [n('6', 'spades')],
+    )
+
+    expect(decidir(state)).toEqual({ type: 'robar', de: 'stock' })
+  })
+
+  it('frees the comodín, and the engine takes the move', () => {
+    const seis = n('6', 'hearts')
+    const state = conComodinEnLaEscala(
+      [seis, n('9', 'spades'), n('2', 'clubs')],
+      'act',
+      [n('A', 'diamonds')],
+    )
+
+    const move = decidir(state)
+    expect(move).toEqual({
+      type: 'moverComodin',
+      seat: 1,
+      grupoIndex: 0,
+      cardId: seis.id,
+      to: 'tail',
+    })
+    expect(apply(state, move).ok).toBe(true)
+  })
+})
+
+describe('discarding once bajado', () => {
+  /**
+   * The bug this fixes: bajado, the bot went on scoring its hand by progress
+   * toward a contrato it had already laid down — so a pair of fours, worth
+   * nothing to anybody now, outranked the card that had a home waiting on
+   * somebody's escala.
+   */
+  const bajadoConUnaEscalaAjena = () => {
+    const escalaDeDiamantes = {
+      kind: 'escala' as const,
+      suit: 'diamonds' as const,
+      start: '5' as const,
+      cards: [
+        n('5', 'diamonds'),
+        n('6', 'diamonds'),
+        n('7', 'diamonds'),
+        n('8', 'diamonds'),
+      ],
+    }
+    const trioDeReyes = {
+      kind: 'trio' as const,
+      rank: 'K' as const,
+      cards: [n('K', 'spades'), n('K', 'hearts'), n('K', 'clubs')],
+    }
+
+    return makeRonda({
+      // 10♦ ligadoes nowhere today — the escala needs a 9♦ first — but it is
+      // two steps from a real end. The fours are two steps from nothing.
+      jugadores: [
+        {
+          hand: [n('10', 'diamonds'), n('4', 'clubs'), n('4', 'hearts')],
+          grupos: [trioDeReyes],
+          bajadoEnTurno: 1,
+        },
+        { hand: [n('A', 'spades'), n('3', 'clubs')], grupos: [escalaDeDiamantes], bajadoEnTurno: 1 },
+      ],
+      numeroDeTurno: 3,
+      fase: 'act',
+    })
+  }
+
+  it('keeps the card the mesa can still grow to take', () => {
+    const state = bajadoConUnaEscalaAjena()
+    const move = decidir(state)
+
+    expect(move.type).toBe('descartar')
+    if (move.type === 'descartar') {
+      const card = state.jugadores[0].hand.find((carta) => carta.id === move.cardId)!
+      expect(describeCard(card)).toMatch(/^4/)
+    }
   })
 })

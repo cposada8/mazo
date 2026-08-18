@@ -1406,6 +1406,30 @@ seats a bot — which, one door being one door, is the lobby.
 **Done when:** a head-to-head tournament shows different win rates and
 visibly different play. **This is Milestone 4.**
 
+**Groundwork ✅ — the floor before the personalities.** Playing the bots
+turned up two things that were not character, they were blindness, and the
+owner's call was to fix them first so that the new floor is the baseline
+everything else is measured against:
+
+- **The mesa has two doors and the bot knew one.** Every trial the bot ran
+  built an `agregar` move, so the slot a comodín is standing in — reachable
+  only by `moverComodin`, paid for with the exact card it stands for — was
+  invisible. The bot watched the 6♥ it needed go past while a comodín sat on
+  the mesa pretending to be it. **Across the soak's thousand partidas the old
+  bot played that move zero times; the new one plays it 1,760.**
+- **A card is worth what its context makes it worth.** The discard scored
+  every card by progress toward the contrato *even after bajarse*, when there
+  is nothing left to lay down — so a useless pair of fours outranked the card
+  with a home waiting on somebody's escala. Once bajado the measure is now
+  reach on the mesa: which grupo out there could still grow to take it.
+  Phase 31 had already patched this at the draw and left the discard alone.
+
+Same thousand seeds, before and after: still 1,000/1,000 finished, and the
+average partida is 11 turns shorter (332.7 → 321.1). The draw stays strict —
+bajado, the face-up card is taken only if it ligadoes *right now* — because
+loosening that is what hung seed soak-204, and freeing a comodín shrinks the
+hand and grows the mesa, so it cannot loop.
+
 ### Phase 40 — Rough edges
 A hint for new players, an in-game rules summary, and an end-of-game screen.
 Card animations were pulled forward into Phase 22; what is left here is the
