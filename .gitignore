@@ -43,3 +43,6 @@ next-env.d.ts
 # Database (Phase 32): local SQLite in dev; Turso in production
 .env
 prisma/dev.db*
+
+# Turso credentials, loaded only on purpose (see README).
+.env.turso

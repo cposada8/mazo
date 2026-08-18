@@ -302,25 +302,37 @@ function Ajustes({
           Los repartos
         </h2>
         <ul className="flex flex-col gap-px overflow-hidden rounded-lg border">
-          {CATALOGO.map((contrato, i) => (
-            <li key={contrato.id}>
-              <button
-                type="button"
-                onClick={() => onContrato(contrato.id)}
-                className="bg-card hover:bg-accent flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm transition-colors"
-              >
-                <span
-                  className={cn(
-                    'size-4 shrink-0 rounded border',
-                    encendidos.has(contrato.id) && 'bg-foreground border-foreground',
-                  )}
-                  aria-hidden
-                />
-                <span className="text-muted-foreground tabular-nums">{i + 1}</span>
-                <span className="flex-1">{contrato.nombre}</span>
-              </button>
-            </li>
-          ))}
+          {CATALOGO.map((contrato, i) => {
+            const activo = encendidos.has(contrato.id)
+            return (
+              <li key={contrato.id}>
+                <button
+                  type="button"
+                  onClick={() => onContrato(contrato.id)}
+                  aria-pressed={activo}
+                  className="bg-card hover:bg-accent flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm transition-colors"
+                >
+                  {/* The tick is what says "on" — a filled square alone reads
+                      as neither, which is exactly how it was misread. */}
+                  <span
+                    aria-hidden
+                    className={cn(
+                      'flex size-5 shrink-0 items-center justify-center rounded border text-xs',
+                      activo
+                        ? 'bg-foreground text-background border-transparent'
+                        : 'border-muted-foreground/40',
+                    )}
+                  >
+                    {activo ? '✓' : ''}
+                  </span>
+                  <span className="text-muted-foreground tabular-nums">{i + 1}</span>
+                  <span className={cn('flex-1', !activo && 'text-muted-foreground')}>
+                    {contrato.nombre}
+                  </span>
+                </button>
+              </li>
+            )
+          })}
         </ul>
       </div>
 
@@ -393,23 +405,20 @@ function Interruptor({
   onCambiar: (activo: boolean) => void
 }) {
   return (
-    <button
-      type="button"
-      onClick={() => onCambiar(!activo)}
-      className="border-input hover:bg-accent flex items-center gap-3 rounded-lg border px-4 py-3 text-left transition-colors"
-    >
-      <span
-        className={cn(
-          'size-4 shrink-0 rounded border',
-          activo && 'bg-foreground border-foreground',
-        )}
-        aria-hidden
+    <label className="border-input hover:bg-accent flex cursor-pointer items-center gap-3 rounded-lg border px-4 py-3 text-left transition-colors">
+      {/* A real checkbox: the platform draws it, so on and off are never a
+          question of what our own square happens to mean. */}
+      <input
+        type="checkbox"
+        checked={activo}
+        onChange={() => onCambiar(!activo)}
+        className="size-4 shrink-0 accent-current"
       />
       <span className="flex flex-col gap-0.5">
         <span className="text-sm">{titulo}</span>
         {detalle && <span className="text-muted-foreground text-xs">{detalle}</span>}
       </span>
-    </button>
+    </label>
   )
 }
 
