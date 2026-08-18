@@ -461,6 +461,34 @@ With `bonusGanadorRonda: 10`, Ana would score **−10** instead of 0 and the oth
 two would be unchanged. Totals carry into the next ronda; after all seven, the
 lowest total wins.
 
+### Leaving a partida — settled in Phase 37
+
+A player may **abandonar** a partida in progress. It is not a move and it is
+not a forfeit: it is the person leaving the table, and it is deliberate — the
+kind of thing that must never happen by accident.
+
+What happens the moment they leave:
+
+- **Their cards leave play.** The hand is removed — not discarded, not dealt
+  to anyone: those cards take no further part in the ronda. Anything they had
+  already laid on the mesa **stays**, because a grupo on the mesa is communal
+  the moment it lands, and everyone else may still ligar onto it.
+- **The turn order closes over the gap.** Play skips the empty seat from then
+  on, in every remaining ronda. If it was their turn when they left, the turn
+  passes immediately.
+- **Their score freezes.** Whatever they had scored stands, and they appear on
+  the marcador with it to the end. They score nothing further — no hand to
+  count, and no bonus to win.
+- **They are dealt nothing again.** Every reparto after this one deals to the
+  seats still playing.
+
+A table that empties down to one player ends there: a partida needs two.
+
+Winning is unchanged — the lowest total wins — and a player who left is
+eligible on the total they froze at. That is deliberate: leaving early with a
+low score is a strange way to win, and the alternative (disqualifying them)
+punishes the person whose battery died alongside the person who quit.
+
 ### The player groups, the engine validates
 
 With six sevens in hand, `7 7 7 7 7 7` may be laid down as **one** trío of six or

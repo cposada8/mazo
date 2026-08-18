@@ -105,10 +105,15 @@ no code changes. `lib/caras.ts`, `components/caras.tsx`.
 - **Deploys:** work goes to `dev`, which builds by itself. Production changes
   only by merging `dev` into `main`. Nothing else deploys `main`.
 - **Tests:** 435, all green (the run takes ~17s, mostly the soak). `npm run test:run`, `npx tsc --noEmit`, `npm run lint`.
-- **Database:** SQLite via Prisma 7 + libSQL. Dev is `prisma/dev.db`
-  (`npx prisma db push` after a schema change). **Production still needs a
-  Turso database and `DATABASE_URL` + `DATABASE_AUTH_TOKEN` on Vercel** —
-  without them the door cannot create a partida.
+- **Database:** SQLite via Prisma 7 + libSQL. Local dev uses `prisma/dev.db`;
+  **online is live on Turso** — database `mazo`, in its own group in
+  `aws-us-east-1` so it sits beside Vercel's functions and leaves
+  `fwc_2026`'s group alone. Credentials are in `.env.local` (gitignored) and
+  as encrypted Vercel env vars for all three environments.
+  - After a schema change: `npx prisma db push` for local, then
+    `npx prisma migrate diff --from-empty --to-schema prisma/schema.prisma
+    --script | turso db shell mazo` for Turso — the Prisma CLI will not take
+    a `libsql://` URL directly.
 
 ## What exists
 

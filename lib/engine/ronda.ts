@@ -31,6 +31,12 @@ export type JugadorState = {
   readonly grupos: readonly Grupo[]
   /** Turn number on which this player bajó, or null while still in hand. */
   readonly bajadoEnTurno: number | null
+  /**
+   * The player left the partida (Phase 37). Their cards are out of play, the
+   * turn order skips them, and they are dealt nothing again — but whatever
+   * they laid on the mesa stays, because a grupo is communal once it lands.
+   */
+  readonly retirado?: boolean
 }
 
 /** A turn is draw, then optionally act, then discard. In that order, always. */
@@ -114,27 +120,91 @@ export function startRonda(options: {
   seed: string | number
   /** Seat that plays first. Rotates between rondas so no seat is always first. */
   empieza?: number
+  /** Seats whose players left the partida; they are dealt nothing (Phase 37). */
+  retirados?: readonly number[]
 }): RondaState {
-  const { contrato, players, comodines = true, seed, empieza = 0 } = options
+  const { contrato, players, comodines = true, seed, empieza = 0, retirados } = options
   const rng = createRng(seed)
   const dealt = deal(buildDeck({ comodines }), players, rng)
 
   return {
     contrato,
-    jugadores: dealt.hands.map((hand) => ({
-      hand,
+    jugadores: dealt.hands.map((hand, seat) => ({
+      // A seat that left is dealt nothing again.
+      hand: retirados?.includes(seat) ? [] : hand,
       grupos: [],
       bajadoEnTurno: null,
+      ...(retirados?.includes(seat) ? { retirado: true } : {}),
     })),
     stock: dealt.stock,
     discard: dealt.discard,
     rebarajadas: 0,
-    turno: ((empieza % players) + players) % players,
+    turno: primerTurno(((empieza % players) + players) % players, retirados, players),
     numeroDeTurno: 1,
     fase: 'draw',
     rngState: rng.state(),
     ganador: null,
   }
+}
+
+/** The opening seat, skipping anyone who has left. */
+function primerTurno(
+  empieza: number,
+  retirados: readonly number[] | undefined,
+  players: number,
+): number {
+  if (!retirados?.length) return empieza
+  for (let paso = 0; paso < players; paso++) {
+    const seat = (empieza + paso) % players
+    if (!retirados.includes(seat)) return seat
+  }
+  return empieza
+}
+
+/**
+ * Take a seat out of the partida: its cards leave play, and the turn order
+ * closes over the gap from here on (Phase 37).
+ *
+ * Not a move — nobody plays this, the person leaves — so it does not go
+ * through `apply`. What it must not do is change anything else: grupos on the
+ * mesa stay, because they became communal the moment they landed.
+ */
+export function retirarAsiento(state: RondaState, seat: number): RondaState {
+  const jugador = state.jugadores[seat]
+  if (!jugador || jugador.retirado) return state
+
+  const conRetiro: RondaState = {
+    ...state,
+    jugadores: state.jugadores.map((otro, i) =>
+      i === seat ? { ...otro, hand: [], retirado: true } : otro,
+    ),
+  }
+
+  // Whoever is left plays on; if it was their turn, it passes at once.
+  if (conRetiro.ganador !== null || conRetiro.turno !== seat) return conRetiro
+  return { ...conRetiro, ...pasaElTurno(conRetiro) }
+}
+
+/** Seats still in the partida. Two is the fewest a table can be played with. */
+export function asientosActivos(state: RondaState): number[] {
+  return state.jugadores.flatMap((jugador, seat) =>
+    jugador.retirado ? [] : [seat],
+  )
+}
+
+/** The next seat and turn number, skipping anyone who has left. */
+function pasaElTurno(state: RondaState): Pick<
+  RondaState,
+  'turno' | 'numeroDeTurno' | 'fase'
+> {
+  const total = state.jugadores.length
+  for (let paso = 1; paso <= total; paso++) {
+    const seat = (state.turno + paso) % total
+    if (!state.jugadores[seat].retirado) {
+      return { turno: seat, numeroDeTurno: state.numeroDeTurno + 1, fase: 'draw' }
+    }
+  }
+  return { turno: state.turno, numeroDeTurno: state.numeroDeTurno + 1, fase: 'draw' }
 }
 
 export function apply(state: RondaState, move: Move): MoveResult {
@@ -432,12 +502,7 @@ function descartar(state: RondaState, cardId: string): MoveResult {
 
   return {
     ok: true,
-    state: {
-      ...discarded,
-      turno: (state.turno + 1) % state.jugadores.length,
-      numeroDeTurno: state.numeroDeTurno + 1,
-      fase: 'draw',
-    },
+    state: { ...discarded, ...pasaElTurno(discarded) },
   }
 }
 
