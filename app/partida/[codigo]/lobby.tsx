@@ -23,7 +23,7 @@ import {
   X,
 } from 'lucide-react'
 import Link from 'next/link'
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useIdentidad } from '@/components/identidad'
 import {
   CATALOGO,
@@ -33,6 +33,7 @@ import {
 } from '@/lib/engine'
 import {
   type Accion,
+  type RespuestaDeLobby,
   type VistaDeLobby,
   actuar,
   leerLobby,
@@ -61,8 +62,14 @@ export function Lobby({
   const [aviso, setAviso] = useState<string | null>(null)
   const [copiado, setCopiado] = useState(false)
 
+  /** One definition, used by the poll and by every optimistic write. */
+  const clave = useMemo(
+    () => ['lobby', codigo, identidad?.secreto],
+    [codigo, identidad?.secreto],
+  )
+
   const consulta = useQuery({
-    queryKey: ['lobby', codigo, identidad?.secreto],
+    queryKey: clave,
     enabled: Boolean(identidad),
     refetchInterval: MS_ENTRE_CONSULTAS,
     // Keep asking with the tab in the background: somebody waiting for
@@ -77,15 +84,60 @@ export function Lobby({
 
   const mutacion = useMutation({
     mutationFn: (accion: Accion) => actuar(codigo, identidad!.secreto, accion),
+    /**
+     * Show the change before the server has agreed to it.
+     *
+     * Choosing the rules used to be local state and felt like it; going
+     * through the server made every tap wait a round trip, which on a phone
+     * is a checkbox that hesitates. The host is the only one who may change
+     * these, so there is nothing to lose a race with — and the poll is
+     * cancelled first, or an answer already in flight would put the old
+     * value straight back.
+     */
+    onMutate: async (accion: Accion) => {
+      if (accion.tipo !== 'ajustes') return
+      await clienteDeConsultas.cancelQueries({ queryKey: clave })
+
+      const previa = clienteDeConsultas.getQueryData<RespuestaDeLobby>(clave)
+      if (!previa?.ok) return { previa }
+
+      clienteDeConsultas.setQueryData(clave, {
+        ...previa,
+        vista: {
+          ...previa.vista,
+          partida: {
+            ...previa.vista.partida,
+            ...(accion.config ? { config: accion.config } : {}),
+            ...(accion.segundosPorTurno !== undefined
+              ? { segundosPorTurno: accion.segundosPorTurno }
+              : {}),
+            ...(accion.segundosBot !== undefined
+              ? { segundosBot: accion.segundosBot }
+              : {}),
+            ...(accion.verDescarte !== undefined
+              ? { verDescarte: accion.verDescarte }
+              : {}),
+            ...(accion.verHistorial !== undefined
+              ? { verHistorial: accion.verHistorial }
+              : {}),
+          },
+        },
+      } satisfies RespuestaDeLobby)
+
+      return { previa }
+    },
+    onError: (_error, _accion, contexto) => {
+      // The server never heard it: put back exactly what was on screen.
+      if (contexto?.previa) clienteDeConsultas.setQueryData(clave, contexto.previa)
+      setAviso('No se pudo cambiar eso. Intenta otra vez.')
+    },
     onSuccess: (respuesta) => {
       if (respuesta.ok) {
         setAviso(null)
-        clienteDeConsultas.setQueryData(
-          ['lobby', codigo, identidad?.secreto],
-          respuesta,
-        )
+        clienteDeConsultas.setQueryData(clave, respuesta)
       } else {
         setAviso(mensajeDeLobby(respuesta.code))
+        void consulta.refetch()
       }
     },
   })

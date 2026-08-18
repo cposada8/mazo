@@ -681,8 +681,10 @@ game already knows:
 - **The discard travels too.** Phase 22 animated taking a card; botar was
   still a teleport. Same mechanism, opposite direction, always face up —
   a discard is public by definition.
-- **The descarte can be browsed.** Tap the pile's count chip and see every
-  card in it, top first. Only the top card is *playable* — this changes no
+- **The descarte can be browsed.** Tap the count and see every card in it,
+  top first. (The control moved off the pile in Phase 36's follow-ups: a
+  sixteen-pixel chip on the corner of the draw button turned a peek into a
+  card you could not put back. It lives in the info strip now.) Only the top card is *playable* — this changes no
   rule, it only spares the memory. Switchable on the setup screen, on by
   default, for tables that want remembering to be part of the game.
 - **The log can be reread.** Tap the line under the piles and the whole
@@ -1114,6 +1116,17 @@ Four things worth keeping:
 One deliberate stop: starting with more than one human is refused with a
 note, because the transport is Phases 34–35. The button is there; the
 server behind it is next.
+
+Two corrections after the owner used it on a phone. The checkboxes had
+been **rebuilt rather than reused** when the setup screen moved in here,
+and a filled square with nothing in it reads as neither on nor off — the
+tick and the muted label came back, and the switches went back to real
+`<input type="checkbox">`, which the platform draws unmistakably. And
+every tap **waited a round trip**: choosing the rules used to be local
+state and felt like it, so the host's settings now apply optimistically
+and reconcile with the answer. A lesson worth keeping: moving a control
+behind the network is a change to how it *feels*, not only to where its
+value lives.
 
 ### Phase 34 — The partida lives on the server ✅
 The thin slice that proves the architecture with the least new truth: **one

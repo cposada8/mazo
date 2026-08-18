@@ -24,6 +24,7 @@
 
 'use client'
 
+import { Layers } from 'lucide-react'
 import { useLayoutEffect, useRef } from 'react'
 import { Carta, CartaBocaAbajo } from '@/components/carta'
 import { asientosRivales } from '@/lib/asientos'
@@ -234,20 +235,22 @@ const inicial = (nombre: string): string =>
   [...nombre.trim()][0]?.toUpperCase() ?? '?'
 
 /**
- * The two piles. The stock wears its count as a small chip — a line of text
- * under each pile was exactly the height the relato line needed — and the
- * descarte shows its top card, which is its own announcement.
+ * The two piles. Each wears its count as a small chip — a line of text under
+ * each pile was exactly the height the relato line needed — and the descarte
+ * shows its top card, which is its own announcement.
+ *
+ * Nothing here browses the descarte. That control used to be this very chip,
+ * a sixteen-pixel circle sitting on the corner of the draw button: reaching
+ * for a peek and drawing a card instead is a mistake the table cannot undo,
+ * so the peek moved to the info strip, where it has room to be missed.
  */
 export function Pilas({
   state,
   onRobar,
-  onVerDescarte,
 }: {
   state: VistaDeAsiento
   /** When given, both piles become buttons for drawing. */
   onRobar?: (de: 'stock' | 'descarte') => void
-  /** When given, the descarte wears a tappable chip that opens the pile. */
-  onVerDescarte?: () => void
 }) {
   const arriba = state.descarte.at(-1)
   const activo = Boolean(onRobar)
@@ -268,8 +271,6 @@ export function Pilas({
         <span className={chip}>{state.stock}</span>
       </button>
 
-      {/* The chip is a sibling, not a child: tapping the card draws, tapping
-          the count browses, and nested buttons are not a thing. */}
       <div className="relative" data-pila="descarte">
         <button
           type="button"
@@ -283,16 +284,8 @@ export function Pilas({
             <div className="aspect-[8/11] h-[var(--carta-sm,3.5rem)] rounded-md border border-dashed border-stone-500/40" />
           )}
         </button>
-        {onVerDescarte && state.descarte.length > 0 && (
-          <button
-            type="button"
-            onClick={onVerDescarte}
-            aria-label="Ver todas las cartas del descarte"
-            title="Ver todas las cartas del descarte"
-            className={cn(chip, 'hover:bg-stone-700')}
-          >
-            {state.descarte.length}
-          </button>
+        {state.descarte.length > 0 && (
+          <span className={chip}>{state.descarte.length}</span>
         )}
       </div>
     </div>
@@ -586,7 +579,7 @@ export function Mesa({
   relatoLinea?: string
   /** A drawn card in flight. Rendered once per `clave`. */
   viaje?: Viaje | null
-  /** When given, the descarte's count chip opens the whole pile. */
+  /** When given, a button in the info strip opens the whole descarte. */
   onVerDescarte?: () => void
   /** When given, the relato line opens the ronda's whole story. */
   onVerHistorial?: () => void
@@ -638,7 +631,7 @@ export function Mesa({
             Bottom-aligned — toward the viewer, and away from the seat band's
             edge, where the lowest seats live. */}
         <div className="carril-mesa relative z-10 min-h-0 flex-1">
-          <Pilas state={state} onRobar={onRobar} onVerDescarte={onVerDescarte} />
+          <Pilas state={state} onRobar={onRobar} />
 
           <div className="grupos-en-mesa">
             {enMesa.length === 0 ? (
@@ -659,8 +652,9 @@ export function Mesa({
 
         {/*
           The info strip: what just happened on the left — in words, and only
-          words everybody is entitled to — and the contract on the right, the
-          way a table has its house name printed on the felt.
+          words everybody is entitled to — then the peek at the descarte, and
+          the contract on the right, the way a table has its house name
+          printed on the felt.
         */}
         <div className="relative z-10 flex shrink-0 items-center justify-between gap-3 px-[7cqw] pb-[0.5cqh]">
           {onVerHistorial && relatoLinea ? (
@@ -680,6 +674,24 @@ export function Mesa({
             >
               {relatoLinea}
             </span>
+          )}
+          {/*
+            Browsing the descarte lives here, not on the pile. It is something
+            you reach for *while deciding whether to draw from it*, so a
+            target overlapping the draw button turns a peek into a move that
+            cannot be taken back.
+          */}
+          {onVerDescarte && state.descarte.length > 0 && (
+            <button
+              type="button"
+              onClick={onVerDescarte}
+              title="Ver todas las cartas del descarte"
+              className="flex shrink-0 items-center gap-1 rounded-full border border-stone-600/60 bg-stone-800/80 py-[0.6cqh] pr-2 pl-1.5 text-[var(--texto-mesa,0.75rem)] text-stone-200 hover:bg-stone-700"
+            >
+              <Layers className="size-[1.1em] shrink-0" aria-hidden />
+              <span className="tabular-nums">{state.descarte.length}</span>
+              <span className="sr-only">cartas en el descarte, ver todas</span>
+            </button>
           )}
           <span
             aria-hidden
