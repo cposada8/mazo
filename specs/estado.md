@@ -101,7 +101,9 @@ no code changes. `lib/caras.ts`, `components/caras.tsx`.
 - **Repo:** https://github.com/cposada8/mazo
 - **Live:** https://mazo-six.vercel.app — **online play is in production**
   since Milestone 3: the door creates or joins a partida by code, and a
-  table with more than one person is refereed by the server. `/mesa` steps
+  table with more than one person is refereed by the server. **Milestone 4
+  is in production too**, played on dev first and promoted on the owner's
+  word that it held: the host picks who sits in each bot seat. `/mesa` steps
   through a bot partida, `/pruebas` shows deals and grupo validation.
 - **Dev:** https://mazo-git-dev-cepm23.vercel.app — the latest commit on `dev`,
   public, no login.
