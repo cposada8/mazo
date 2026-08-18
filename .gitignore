@@ -46,3 +46,4 @@ prisma/dev.db*
 
 # Turso credentials, loaded only on purpose (see README).
 .env.turso
+.playwright-mcp/

@@ -68,8 +68,8 @@ empty seats), and the better bots moved behind it as Milestone 4.
 | 38 | Real-time transport: measured, polling kept | ✅ — a decision, no code |
 | 39 | Bot personalities | ✅ — **Milestone 4** |
 | 40 | Your own seat: your clock, arranging off-turn, controls in reach | ✅ |
-| 41 | A turn you can follow: paced narration, and gold on what landed | ← **next** |
-| 42 | What it was won with: the final mesa before the score | |
+| 41 | A turn you can follow: paced narration, and gold on what landed | ✅ |
+| 42 | What it was won with: the final mesa before the score | ← **next** |
 | 43 | The white you choose: one slider, every white | |
 | 44 | Rough edges *(was 40)* | |
 

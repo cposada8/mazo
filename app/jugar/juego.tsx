@@ -234,6 +234,7 @@ export function Tablero({
           }
           seleccionadas={new Set(juego.seleccion)}
           resaltada={juego.recienRobada ?? undefined}
+          doradas={juego.doradas}
           onCarta={
             // Selecting is not a move: it touches nothing the referee judges,
             // so it works whether or not the turn is yours (Phase 40). Waiting

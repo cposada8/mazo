@@ -55,9 +55,16 @@ export function nombrePorDefecto(seat: number): string {
 export function GrupoEnMesa({
   grupo,
   onClick,
+  doradas,
 }: {
   grupo: Grupo
   onClick?: () => void
+  /**
+   * Cards this turn put here, marked until the turn is over (Phase 41). A
+   * grupo grows in silence otherwise: the card that joined it looks exactly
+   * like the ones that were there all along.
+   */
+  doradas?: ReadonlySet<string>
 }) {
   const contenido = (
     <div className="flex flex-col gap-0.5">
@@ -65,19 +72,29 @@ export function GrupoEnMesa({
         {tituloDeGrupo(grupo)}
       </span>
       <div className="flex">
-        {grupo.cards.map((card, index) => (
-          <Carta
-            key={card.id}
-            card={card}
-            size="xs"
-            className="-ml-[0.9em] first:ml-0"
-            represents={
-              grupo.kind === 'escala' && isComodin(card)
-                ? escalaRankAt(grupo as Escala, index)
-                : undefined
-            }
-          />
-        ))}
+        {grupo.cards.map((card, index) => {
+          const nueva = doradas?.has(card.id) ?? false
+
+          return (
+            <Carta
+              key={card.id}
+              card={card}
+              size="xs"
+              className={cn(
+                '-ml-[0.9em] first:ml-0',
+                // Raised as well as ringed: the fan overlaps to the right, so
+                // a ring on any card but the last would be painted over by
+                // its neighbour.
+                nueva && 'relative z-10 ring-[1.5px] ring-amber-400',
+              )}
+              represents={
+                grupo.kind === 'escala' && isComodin(card)
+                  ? escalaRankAt(grupo as Escala, index)
+                  : undefined
+              }
+            />
+          )
+        })}
       </div>
     </div>
   )
@@ -595,6 +612,7 @@ export function Mesa({
   onGrupo,
   seleccionadas,
   resaltada,
+  doradas,
 }: {
   state: VistaDeAsiento
   /** The seat whose hand is shown face up. */
@@ -604,6 +622,8 @@ export function Mesa({
   reloj?: Reloj
   /** The card just drawn into your hand, kept visibly marked. */
   resaltada?: string
+  /** Cards the turn in play has put on the mesa, marked gold (Phase 41). */
+  doradas?: ReadonlySet<string>
   /** Your hand laid out. Defaults to the dealt order, unpinned. */
   secciones?: readonly Seccion[]
   /** What your hand would cost right now. */
@@ -683,6 +703,7 @@ export function Mesa({
                 <GrupoEnMesa
                   key={`${seat}-${grupoIndex}`}
                   grupo={grupo}
+                  doradas={doradas}
                   onClick={onGrupo ? () => onGrupo(seat, grupoIndex) : undefined}
                 />
               ))

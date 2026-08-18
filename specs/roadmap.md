@@ -1645,7 +1645,7 @@ of the first ask.
 merely in the way of the controls, it was hiding the clock as well — worth
 remembering the next time something is reported invisible on a phone.
 
-### Phase 41 — A turn you can follow
+### Phase 41 — A turn you can follow ✅
 The complaint, in the owner's words: *de repente te aparece que ya el jugador
 botó y cogió.* Two causes, and they compound.
 
@@ -1697,6 +1697,58 @@ information by construction, so it works in both homes and tells no secrets.
 **Done when:** you can sit through another player's whole turn — a bot's or
 a person's — and see it happen in the order it happened, and when it is over
 the mesa still shows, in gold, exactly what that turn put there.
+
+**Done.** Both halves, and a third thing the first two made necessary.
+
+- **The server divides the turn.** `avanzar` runs the same `tiemposDeMoves`
+  the browser has used since Phase 21, as deadlines rather than timers: move
+  *k* of *n* is due at its share of the allotment, a request plays only what
+  is due, and a turn left half-played keeps its start line so the rest comes
+  due to whoever asks next. The last move still lands at the end, so a turn
+  takes exactly the seconds the lobby set. The bot is re-decided from where
+  the turn stands rather than remembered — it is pure, so the resumed turn is
+  the one that was interrupted.
+- **The write became a compare-and-swap.** Pacing multiplies the windows in
+  which two watchers find the same move due, and the loser used to overwrite
+  the winner — briefly taking a move back. The update is now conditional on
+  the state it was computed from still being the stored one, and the loser
+  reads the winner's answer. No new column: the state is its own version.
+- **The client tells the story rather than displaying it.** `useMesa` counts
+  what has been told; the rest is a queue, 750 ms a line and 300 ms while
+  catching up, and past five waiting it lands where the table is — Phase 22's
+  instinct, kept for the reload it was right about. The travelling card is
+  fired by a line being *told*, not by the log growing, so animation and words
+  stay in step.
+- **And the poll rate follows the wait**, which is Phase 38 reopened and
+  answered without touching the transport: 500 ms while another seat is
+  playing, 1500 ms on your own turn, when nothing can change without you. On
+  balance it is not more polling — only one seat is in turn at a time, and
+  that is the seat that slows down.
+
+**Measured at a two-human table with three-second bots.** Every bot turn now
+reaches the screen as two separate showings about a second apart — *El
+Codicioso 1 robó del mazo*, then *El Codicioso 1 botó J♥* — where before both
+landed in the same frame and only the second was ever shown. A poll costs 4 ms
+with the bot simulation that now runs on every read.
+
+**The gold is derived from the mesa, not from the log**, because `agrega`
+names its cards as prose and `bajada` does not name them at all. The base is
+taken at each turn change from the mesa *as it stood at the look before*,
+which is what keeps a whole turn's work marked in the case that motivated the
+phase: when the turn number and the new cards arrive together, measuring
+against the current look would erase the mark in the same frame it appeared.
+
+**What is honest about the beat.** The queue paces the telling, not the game:
+the view has already moved, so the mesa can be one line ahead of the words
+naming the move that changed it. That is the price of a story told in order
+and it is cheaper than no story.
+
+**Verified by test rather than at the table:** the gold itself. Its derivation
+is pinned by three cases against the real hook — a grupo growing mid-turn, a
+whole turn arriving at once, and the mark clearing when the next turn passes —
+and its rendering by two more. Nobody has yet sat at a live table and watched
+an opponent bajarse in gold; a bot lays down around its twenty-sixth turn,
+which is a long time to hold a browser open.
 
 ### Phase 42 — What it was won with
 Somebody goes out and the table is gone: `FinDeRonda` replaces the whole

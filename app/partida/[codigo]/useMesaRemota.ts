@@ -25,8 +25,23 @@ import { useMesa } from '@/app/jugar/useMesa'
 import { type Move, type VistaDePartida, aplicarEnVista } from '@/lib/engine'
 import type { Relato } from '@/lib/relato'
 
-/** How often the table asks the server whether anything happened. */
-const MS_ENTRE_CONSULTAS = 1200
+/**
+ * How often the table asks the server whether anything happened — which
+ * depends on what it is waiting for (Phase 41).
+ *
+ * Phase 38 measured one interval for everything and kept it, and watching an
+ * opponent play is what reopened the question: a second and a bit is invisible
+ * on your own turn and is exactly the wrong grain for following somebody
+ * else's, where a bot's turn now lands in three pieces spread across two
+ * seconds. So the rate follows the wait. It is not more polling on balance —
+ * only one seat is in turn at a time, and that seat is the one that slows
+ * down — and it is a great deal less than a transport rewrite.
+ */
+const MS_MIRANDO = 500
+/** Your own turn: nothing on the table moves until you move it. */
+const MS_EN_TU_TURNO = 1500
+/** Before the first answer, and once the partida is over. */
+const MS_SIN_SABER = 1200
 
 export type MesaRemota = {
   vista: VistaDePartida
@@ -61,7 +76,7 @@ export function useMesaRemota(options: { codigo: string; secreto: string }) {
     // No identity yet means no seat to ask about; the provider deals one on
     // the first client frame, and the query starts then.
     enabled: secreto.length > 0,
-    refetchInterval: MS_ENTRE_CONSULTAS,
+    refetchInterval: (consulta) => ritmo(consulta.state.data),
     // A backgrounded tab must keep asking: polling is everybody's clock, so a
     // table that stops asking is a table where the bots stop thinking.
     refetchIntervalInBackground: true,
@@ -151,6 +166,17 @@ export function useMesaRemota(options: { codigo: string; secreto: string }) {
     verHistorial: servidor?.verHistorial ?? true,
     nombresDeAsientos: servidor?.asientos.map((asiento) => asiento.alias) ?? [],
   }
+}
+
+/**
+ * How long to wait before asking again. Watching is the case worth spending
+ * requests on: it is the only one in which the answer can change without you.
+ */
+export function ritmo(respuesta: Respuesta | undefined): number {
+  if (!respuesta?.ok) return MS_SIN_SABER
+  const { vista } = respuesta.mesa
+  if (!vista.ronda || vista.ronda.ganador !== null) return MS_SIN_SABER
+  return vista.ronda.turno === vista.asiento ? MS_EN_TU_TURNO : MS_MIRANDO
 }
 
 /** How much of the turn in play is already gone, in seconds. */
