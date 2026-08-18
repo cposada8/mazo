@@ -1,6 +1,6 @@
 # Project status — pick up here
 
-Last updated after Phase 36.
+Last updated after Phase 37.
 
 Read this first, then `mission.md` for the why, `carioca-rules.md` for the game,
 `tech-stack.md` for the stack, and `roadmap.md` for what comes next. This file is
@@ -64,8 +64,8 @@ empty seats), and the better bots moved behind it as Milestone 4.
 | 34 | The partida lives on the server | ✅ |
 | 35 | Several people at one table | ✅ — **Milestone 3** |
 | 36 | The player's clock | ✅ |
-| 37 | Absences: reconnection, abandoning, the empty chair | ← **next** |
-| 38 | Real-time transport, if polling isn't enough | not started |
+| 37 | Absences: reconnection, and leaving on purpose | ✅ |
+| 38 | Real-time transport, if polling isn't enough | ← **next**, and optional |
 | 39–40 | Bot personalities, rough edges | displaced behind online |
 
 **The table now holds up on a real phone, held either way.** The lanes built
@@ -287,9 +287,17 @@ stream, so replays repeat it) and passes; the relato says whose time ran
 out. The ring — and your own «Tu mano» badge, still until now — drains
 from the server's timestamp, so every device shows the same time left.
 
-**Phase 37 is next — absences:** reconnection by secreto, presence on the
-ficha, a bot covering a seat that keeps timing out, and the deliberate
-**Abandonar** the owner asked for.
+**Phase 37 is done: absences, and leaving on purpose.** «Salir» used to be
+a link to the home page — the server never heard it — so quitting and
+losing signal were the same event. Now they are different, and what tells
+them apart is only what you pressed: a closed page keeps your chair and
+the door offers it back (`/api/asiento`), while Salir frees it for good
+after one confirmation. A vacated seat is skipped, never played: no cards,
+no turns, no waiting, score frozen, **and no bot inheriting it** — the
+owner cut that deliberately.
+
+**Phase 38 is next and optional:** swap polling for a push transport only
+if polling feels bad at a real table.
 
 ## Open questions, deliberately unanswered
 

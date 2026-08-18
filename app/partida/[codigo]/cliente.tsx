@@ -13,14 +13,42 @@
  * same deal, because the engine is deterministic.
  */
 
-import { useState } from 'react'
+import { useCallback, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { leerBaraja } from '@/app/jugar/ajustes'
 import { Juego, Tablero } from '@/app/jugar/juego'
 import { useIdentidad } from '@/components/identidad'
-import type { VistaDeLobby } from '@/lib/lobby'
+import { abandonarPartida, type VistaDeLobby } from '@/lib/lobby'
 import { Lobby } from './lobby'
 import { useMesaRemota } from './useMesaRemota'
+
+/**
+ * Leaving a dealt partida frees the chair for good (Phase 37): no more cards,
+ * no more turns, and nobody waits for you — and no bot takes over, because
+ * the point of leaving is that the table stops waiting, not that a stand-in
+ * keeps playing your hand.
+ *
+ * So it asks first. This is the one action here that cannot be taken back,
+ * and «Salir» is also what somebody presses meaning "show me the home page".
+ */
+function useSalir(codigo: string, secreto: string | undefined) {
+  const router = useRouter()
+  return useCallback(
+    async (repartida: boolean) => {
+      if (repartida) {
+        const seguro = window.confirm(
+          'Si sales, dejas la partida para siempre: tu puesto queda libre, no ' +
+            'te reparten más cartas y los demás siguen sin esperarte. Tu puntaje ' +
+            'se queda como está.\n\n¿Salir de todos modos?',
+        )
+        if (!seguro) return
+      }
+      if (secreto) await abandonarPartida(codigo, secreto)
+      router.push('/')
+    },
+    [codigo, secreto, router],
+  )
+}
 
 export function PartidaCliente({
   codigo,
@@ -30,9 +58,17 @@ export function PartidaCliente({
   galeriaDeComodines: readonly string[]
 }) {
   const [repartida, setRepartida] = useState<VistaDeLobby | null>(null)
+  const { identidad } = useIdentidad()
+  const salir = useSalir(codigo, identidad?.secreto)
 
   if (!repartida?.partida.repartida) {
-    return <Lobby codigo={codigo} onEmpezar={setRepartida} />
+    return (
+      <Lobby
+        codigo={codigo}
+        onEmpezar={setRepartida}
+        onSalir={() => void salir(false)}
+      />
+    )
   }
 
   const { partida } = repartida
@@ -44,9 +80,14 @@ export function PartidaCliente({
       codigo={codigo}
       vista={repartida}
       galeriaDeComodines={galeriaDeComodines}
+      onSalir={() => void salir(true)}
     />
   ) : (
-    <MesaDelServidor codigo={codigo} galeriaDeComodines={galeriaDeComodines} />
+    <MesaDelServidor
+      codigo={codigo}
+      galeriaDeComodines={galeriaDeComodines}
+      onSalir={() => void salir(true)}
+    />
   )
 }
 
@@ -54,12 +95,13 @@ export function PartidaCliente({
 function MesaLocal({
   vista,
   galeriaDeComodines,
+  onSalir,
 }: {
   codigo: string
   vista: VistaDeLobby
   galeriaDeComodines: readonly string[]
+  onSalir: () => void
 }) {
-  const router = useRouter()
   const { partida } = vista
 
   return (
@@ -76,7 +118,7 @@ function MesaLocal({
       cartasOscuras={leerBaraja()}
       galeriaDeComodines={galeriaDeComodines}
       nombresDeAsientos={partida.asientos.map((asiento) => asiento.alias)}
-      onSalir={() => router.push('/')}
+      onSalir={onSalir}
     />
   )
 }
@@ -85,11 +127,12 @@ function MesaLocal({
 function MesaDelServidor({
   codigo,
   galeriaDeComodines,
+  onSalir,
 }: {
   codigo: string
   galeriaDeComodines: readonly string[]
+  onSalir: () => void
 }) {
-  const router = useRouter()
   const { identidad } = useIdentidad()
   const juego = useMesaRemota({ codigo, secreto: identidad?.secreto ?? '' })
 
@@ -114,7 +157,7 @@ function MesaDelServidor({
       galeriaDeComodines={galeriaDeComodines}
       nombresDeAsientos={juego.nombresDeAsientos}
       segundosBot={juego.reloj.segundos}
-      onSalir={() => router.push('/')}
+      onSalir={onSalir}
     />
   )
 }

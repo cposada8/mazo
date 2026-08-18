@@ -46,6 +46,7 @@ export type PartidaGuardada = {
 /** Every refusal the lobby can answer with. Codes, not prose: the UI speaks. */
 export type ErrorDeLobby =
   | 'NO_EXISTE'
+  | 'NO_ES_TU_ASIENTO'
   | 'NO_ERES_EL_HOST'
   | 'YA_EMPEZO'
   | 'MESA_LLENA'
@@ -76,6 +77,8 @@ export type Accion =
     }
   | { readonly tipo: 'renombrar'; readonly alias: string }
   | { readonly tipo: 'empezar'; readonly seed: string }
+  /** Leave for good (Phase 37). Only ever sent because Salir was pressed. */
+  | { readonly tipo: 'abandonar' }
 
 export type RespuestaDeLobby =
   | { readonly ok: true; readonly vista: VistaDeLobby }
@@ -86,6 +89,8 @@ export function mensajeDeLobby(code: ErrorDeLobby): string {
   switch (code) {
     case 'NO_EXISTE':
       return 'No existe una partida con ese código.'
+    case 'NO_ES_TU_ASIENTO':
+      return 'No tienes un asiento en esa partida.'
     case 'NO_ERES_EL_HOST':
       return 'Solo el host puede cambiar eso.'
     case 'YA_EMPEZO':
@@ -139,4 +144,23 @@ export async function crearPartidaRemota(cuerpo: {
   })
   if (!respuesta.ok) throw new Error('No se pudo crear la partida')
   return (await respuesta.json()) as VistaDeLobby
+}
+
+/** Leave a partida for good. The seat is freed; nobody takes it over. */
+export async function abandonarPartida(
+  codigo: string,
+  secreto: string,
+): Promise<void> {
+  await actuar(codigo, secreto, { tipo: 'abandonar' })
+}
+
+/** The partida this browser is sitting at, if any — the way back in. */
+export async function dondeEstoyRemoto(secreto: string): Promise<string | null> {
+  const respuesta = await fetch(
+    `/api/asiento?secreto=${encodeURIComponent(secreto)}`,
+    { cache: 'no-store' },
+  )
+  if (!respuesta.ok) return null
+  const dato = (await respuesta.json()) as { codigo: string | null }
+  return dato.codigo
 }

@@ -467,6 +467,12 @@ A player may **abandonar** a partida in progress. It is not a move and it is
 not a forfeit: it is the person leaving the table, and it is deliberate — the
 kind of thing that must never happen by accident.
 
+Leaving is distinct from **being gone**, and the difference is only ever what
+the player pressed. Someone whose page closed, whose battery died or whose
+signal dropped has not left: their seat is still theirs, their turn is still
+played out by the clock, and they can come back to it. Only pressing Salir
+empties a chair.
+
 What happens the moment they leave:
 
 - **Their cards leave play.** The hand is removed — not discarded, not dealt
@@ -482,7 +488,10 @@ What happens the moment they leave:
 - **They are dealt nothing again.** Every reparto after this one deals to the
   seats still playing.
 
-A table that empties down to one player ends there: a partida needs two.
+A table that empties down to one player ends there: a partida needs two. And
+nobody plays a vacated seat — no bot inherits it, because the point of
+leaving is that the table stops waiting, not that a stand-in keeps your
+score moving.
 
 Winning is unchanged — the lowest total wins — and a player who left is
 eligible on the total they froze at. That is deliberate: leaving early with a

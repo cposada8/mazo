@@ -10,6 +10,7 @@
 import type { NextRequest } from 'next/server'
 import type { Accion, ErrorDeLobby, RespuestaDeLobby } from '@/lib/lobby'
 import {
+  abandonar,
   actualizarAjustes,
   agregarBot,
   asientoDe,
@@ -88,5 +89,7 @@ async function ejecutar(
       return normalizar(await renombrarAsiento({ codigo, secreto, alias: accion.alias }))
     case 'empezar':
       return normalizar(await empezar({ codigo, secreto, seed: accion.seed }))
+    case 'abandonar':
+      return normalizar(await abandonar({ codigo, secreto }))
   }
 }

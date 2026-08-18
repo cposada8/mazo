@@ -52,10 +52,13 @@ const SEGUNDOS_BOT = [1, 2, 3, 5] as const
 export function Lobby({
   codigo,
   onEmpezar,
+  onSalir,
 }: {
   codigo: string
   /** Called when the deal lands, with everything the table needs. */
   onEmpezar: (vista: VistaDeLobby) => void
+  /** Leaving before the deal: the seat simply goes, and the others close up. */
+  onSalir: () => void
 }) {
   const { identidad } = useIdentidad()
   const clienteDeConsultas = useQueryClient()
@@ -192,13 +195,14 @@ export function Lobby({
   return (
     <main className="mx-auto flex w-full max-w-md flex-1 flex-col gap-8 px-6 py-10">
       <header className="flex flex-col gap-3">
-        <Link
-          href="/"
+        <button
+          type="button"
+          onClick={onSalir}
           className="text-muted-foreground hover:text-foreground -ml-1 flex w-fit items-center gap-1 text-sm"
         >
           <ChevronLeft className="size-4" aria-hidden />
           Salir de la partida
-        </Link>
+        </button>
         <h1 className="text-3xl font-semibold tracking-tight">La mesa</h1>
         <button
           type="button"

@@ -1285,7 +1285,7 @@ Three things worth keeping:
   table alone with bots still hurries nobody, because there is nobody to
   keep waiting.
 
-### Phase 37 — Absences, and leaving on purpose
+### Phase 37 — Absences, and leaving on purpose ✅
 Reconnection, and the seat whose player is gone. The design leans entirely
 on choices already made: a seat belongs to a **per-browser secret** (Phase
 32), not to a connection — and with polling there is no connection to lose.
@@ -1322,12 +1322,36 @@ If Phase 38 ever swaps polling for a push transport, this is the contract
 it must keep: a dropped socket rejoins by secret and receives the whole
 view again.
 
+**Cut by the owner:** the bot that was going to cover an absent seat. Two
+reasons, and the second is the real one: a stand-in keeps your score
+moving while you are not there, and the point of an empty chair is that
+nobody is playing it. An absent player already loses only what the clock
+takes — draw, random discard, pass — which is the whole cost of being
+away.
+
 **Done when:** killing the page mid-turn and reopening the app puts the
-player back at their seat within one poll, hand and turn intact; the other
-players saw the seat go quiet and saw a bot pick it up after repeated
-timeouts; the returning owner is playing their own turns again; and a
-player who chooses Abandonar lands in the lobby while the table finishes
-the partida without them, their totals frozen where they left.
+player back at their seat, hand and turn intact; and a player who presses
+Salir frees their chair for good — no more cards, no more turns, nobody
+waiting — with their score frozen where they left it.
+
+**Done.** 473 tests. The shape of it came from the owner correcting an
+assumption of mine, and the correction was the point of the phase:
+
+- **«Salir» did nothing.** It was a link to the home page — the server
+  never heard about it — so leaving and losing signal were the same
+  event, and the table kept dealing you cards and waiting out your clock.
+  It now frees the seat, and asks first, because it is the only
+  irreversible thing on that screen and it shares a word with "show me the
+  home page".
+- **Leaving and being gone are different, and the only thing that tells
+  them apart is what you pressed.** A closed page keeps your chair; the
+  door offers it back (`/api/asiento` answers "where is this secreto
+  sitting?"). Pressing Salir gives it up, and the door stops offering it.
+- **A vacated seat is skipped, never played.** Its cards leave play, the
+  turn order closes over it, later repartos deal it nothing, and its total
+  freezes — `puntosDeMano([])` is zero, so the score stops moving without
+  a special case. A table down to one player ends rather than playing on
+  alone.
 
 ### Phase 38 — Real-time transport
 Only if polling feels bad at a real table. The transport sits behind an

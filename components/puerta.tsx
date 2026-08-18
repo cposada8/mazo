@@ -8,13 +8,14 @@
  * bots already at the table, and playing alone is simply not pruning them.
  */
 
-import { Loader2, LogIn, Plus } from 'lucide-react'
+import { useQuery } from '@tanstack/react-query'
+import { CornerUpLeft, Loader2, LogIn, Plus } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 import { useIdentidad } from '@/components/identidad'
 import { CONFIG_POR_DEFECTO } from '@/lib/engine'
 import { LARGO_DE_CODIGO } from '@/lib/codigo'
-import { crearPartidaRemota } from '@/lib/lobby'
+import { crearPartidaRemota, dondeEstoyRemoto } from '@/lib/lobby'
 
 export function Puerta() {
   const router = useRouter()
@@ -22,6 +23,19 @@ export function Puerta() {
   const [codigo, setCodigo] = useState('')
   const [creando, setCreando] = useState(false)
   const [aviso, setAviso] = useState<string | null>(null)
+
+  /**
+   * The way back (Phase 37). A seat belongs to this browser's secreto, not to
+   * a connection, so a page that closed — or a battery that died — left a
+   * chair that is still yours. The door asks whether there is one and offers
+   * it before anything else.
+   */
+  const sentado = useQuery({
+    queryKey: ['asiento', identidad?.secreto],
+    enabled: Boolean(identidad),
+    refetchOnWindowFocus: true,
+    queryFn: () => dondeEstoyRemoto(identidad!.secreto),
+  })
 
   const crear = async () => {
     if (!identidad || creando) return
@@ -57,6 +71,23 @@ export function Puerta() {
       <h2 className="text-muted-foreground text-xs font-medium tracking-widest uppercase">
         Jugar
       </h2>
+
+      {sentado.data && (
+        <button
+          type="button"
+          onClick={() => router.push(`/partida/${sentado.data}`)}
+          className="border-input hover:bg-accent flex items-center gap-3 rounded-lg border px-4 py-3 text-left transition-colors"
+        >
+          <CornerUpLeft className="size-4 shrink-0" aria-hidden />
+          <span className="flex flex-col gap-0.5">
+            <span className="text-sm font-medium">Vuelve a la mesa</span>
+            <span className="text-muted-foreground text-xs">
+              Sigues sentado en la partida{' '}
+              <span className="font-mono tracking-widest">{sentado.data}</span>
+            </span>
+          </span>
+        </button>
+      )}
 
       <button
         type="button"

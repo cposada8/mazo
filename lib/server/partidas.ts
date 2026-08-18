@@ -17,6 +17,8 @@ import {
   type PartidaConfig,
   type PartidaState,
   type VistaDeAsiento,
+  asientosActivos,
+  retirarAsiento,
   startPartida,
   vistaDeAsiento,
 } from '@/lib/engine'
@@ -463,4 +465,99 @@ export async function empezar(opciones: {
     data: { estado: JSON.stringify(estado), fase: 'jugando' },
   })
   return { ok: true, partida: await recargar(fila.id) }
+}
+
+// -------------------------------------------------------------- abandonar
+
+export type ResultadoDeAbandono =
+  | { readonly ok: true; readonly enLobby: boolean }
+  | { readonly ok: false; readonly code: 'NO_EXISTE' | 'NO_ES_TU_ASIENTO' }
+
+/**
+ * Leave a partida on purpose (Phase 37).
+ *
+ * Only ever called because somebody pressed Salir — a closed page, a dead
+ * battery or a lost signal is *being gone*, which is a different thing and
+ * costs you nothing but the turns the clock plays for you.
+ *
+ * Before the deal the seat simply disappears and the others close up. After
+ * it, the seat is retired: its cards leave play, the turn order skips it from
+ * here on, it is dealt nothing again, and its score freezes where it stood.
+ * Nothing takes it over — the point of leaving is that the table stops
+ * waiting for you, not that a stand-in keeps playing your hand.
+ */
+export async function abandonar(opciones: {
+  codigo: string
+  secreto: string
+}): Promise<ResultadoDeAbandono> {
+  const fila = await prisma.partida.findUnique({
+    where: { codigo: limpiarCodigo(opciones.codigo) },
+    include: INCLUIR_ASIENTOS,
+  })
+  if (!fila) return { ok: false, code: 'NO_EXISTE' }
+
+  const propio = fila.asientos.find((a) => a.secreto === opciones.secreto)
+  if (!propio) return { ok: false, code: 'NO_ES_TU_ASIENTO' }
+
+  // Still in the lobby: the seat has nothing in it yet, so it just goes.
+  if (!fila.estado) {
+    await prisma.$transaction([
+      prisma.asiento.deleteMany({
+        where: { partidaId: fila.id, indice: propio.indice },
+      }),
+      ...fila.asientos
+        .filter((a) => a.indice > propio.indice)
+        .map((a) =>
+          prisma.asiento.updateMany({
+            where: { partidaId: fila.id, indice: a.indice },
+            data: { indice: a.indice - 1 },
+          }),
+        ),
+    ])
+    return { ok: true, enLobby: true }
+  }
+
+  const estado = JSON.parse(fila.estado) as PartidaState
+  const conRetiro = estado.ronda
+    ? { ...estado, ronda: retirarAsiento(estado.ronda, propio.indice) }
+    : estado
+
+  // A partida needs two. The last seat standing ends it rather than playing on
+  // alone against nobody.
+  const quedan = conRetiro.ronda ? asientosActivos(conRetiro.ronda).length : 0
+  const terminada = conRetiro.ronda !== null && quedan < MIN_PLAYERS
+
+  await prisma.$transaction([
+    prisma.asiento.updateMany({
+      where: { partidaId: fila.id, indice: propio.indice },
+      data: { retirado: true },
+    }),
+    prisma.partida.update({
+      where: { id: fila.id },
+      data: {
+        estado: JSON.stringify(terminada ? { ...conRetiro, ronda: null } : conRetiro),
+        fase: terminada ? 'terminada' : 'jugando',
+      },
+    }),
+  ])
+
+  return { ok: true, enLobby: false }
+}
+
+/**
+ * The partida this browser is sitting at, if it is sitting at one — so the
+ * door can offer the way back after a page closes (Phase 37). A retired seat
+ * is not a seat: leaving on purpose means the door stops offering it.
+ */
+export async function dondeEstoy(secreto: string): Promise<string | null> {
+  const asiento = await prisma.asiento.findFirst({
+    where: {
+      secreto,
+      retirado: false,
+      partida: { fase: { in: ['lobby', 'jugando'] } },
+    },
+    orderBy: { partida: { actualizadaEn: 'desc' } },
+    select: { partida: { select: { codigo: true } } },
+  })
+  return asiento?.partida.codigo ?? null
 }

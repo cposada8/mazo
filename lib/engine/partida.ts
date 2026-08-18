@@ -180,6 +180,12 @@ export function cerrarRonda(state: PartidaState): PartidaState {
       comodines: state.config.comodines,
       seed: seedDeRonda(state.seed, indiceContrato),
       empieza: ganador === 'nadie' ? ronda.turno : ganador,
+      // Whoever left stays left: no cards, no turn, for the rest of the
+      // partida (Phase 37). The ronda that just closed is where that is
+      // recorded, so it is read from there rather than tracked twice.
+      retirados: ronda.jugadores.flatMap((jugador, seat) =>
+        jugador.retirado ? [seat] : [],
+      ),
     }),
   }
 }
