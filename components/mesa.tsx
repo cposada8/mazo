@@ -185,7 +185,7 @@ export function Asiento({
               r="17.5"
               fill="none"
               strokeWidth="3.5"
-              className="stroke-amber-300/25"
+              className="stroke-amber-400/20"
             />
             <circle
               cx="20"
@@ -194,7 +194,7 @@ export function Asiento({
               fill="none"
               strokeWidth="3.5"
               strokeLinecap="round"
-              className="reloj-arco stroke-amber-300"
+              className="reloj-arco stroke-amber-400"
               style={{
                 animationDuration: `${reloj.segundos}s`,
                 // A negative delay starts the animation partway through,
@@ -209,17 +209,17 @@ export function Asiento({
             'flex size-[var(--ficha,2rem)] items-center justify-center rounded-full border text-[calc(var(--ficha,2rem)*0.45)] font-semibold transition-shadow',
             esSuTurno
               ? cn(
-                  'border-amber-300 bg-amber-300 text-amber-950',
-                  !reloj && 'ring-4 ring-amber-300/40',
+                  'border-amber-500 bg-amber-500 text-amber-950',
+                  !reloj && 'ring-4 ring-amber-500/35',
                 )
-              : 'border-stone-500/40 bg-stone-900 text-stone-100',
+              : 'border-stone-500/40 bg-stone-900 text-stone-300',
           )}
         >
           {inicial(nombre)}
         </div>
       </div>
 
-      <span className="max-w-full truncate text-[var(--texto-mesa,0.75rem)] leading-tight font-medium text-stone-100">
+      <span className="max-w-full truncate text-[var(--texto-mesa,0.75rem)] leading-tight font-medium text-stone-300">
         {nombre}
         <span className="text-stone-400">
           {' '}
@@ -254,7 +254,7 @@ export function Pilas({
 }) {
   const arriba = state.descarte.at(-1)
   const activo = Boolean(onRobar)
-  const estiloPila = activo ? 'ring-2 ring-stone-100/80 ring-offset-2 ring-offset-stone-950' : ''
+  const estiloPila = activo ? 'ring-2 ring-stone-300/70 ring-offset-2 ring-offset-stone-950' : ''
   const chip =
     'absolute -top-1 -right-1 z-10 rounded-full bg-stone-800 px-1 text-[calc(var(--texto-mesa,0.75rem)*0.9)] text-stone-300 tabular-nums ring-1 ring-stone-600/60'
 
@@ -355,7 +355,7 @@ export function Mano({
           <span
             className={cn(
               'relative overflow-hidden rounded px-1.5 py-0.5',
-              esTuTurno && 'bg-amber-300 text-amber-950',
+              esTuTurno && 'bg-amber-500 text-amber-950',
             )}
           >
             {/* Your own clock, once there is one (Phase 36): the badge
@@ -366,7 +366,7 @@ export function Mano({
               <span
                 key={reloj.clave}
                 aria-hidden
-                className="badge-agota absolute inset-0 bg-amber-500/45"
+                className="badge-agota absolute inset-0 bg-amber-700/45"
                 style={{
                   animationDuration: `${reloj.segundos}s`,
                   animationDelay: `-${reloj.transcurrido ?? 0}s`,
@@ -663,7 +663,7 @@ export function Mesa({
               onClick={onVerHistorial}
               aria-live="polite"
               title="Ver todo lo que ha pasado esta ronda"
-              className="min-w-0 truncate text-left text-[var(--texto-mesa,0.75rem)] text-stone-300 underline decoration-stone-600 decoration-dotted underline-offset-2 hover:text-stone-100"
+              className="min-w-0 truncate text-left text-[var(--texto-mesa,0.75rem)] text-stone-300 underline decoration-stone-600 decoration-dotted underline-offset-2 hover:text-stone-200"
             >
               {relatoLinea}
             </button>
@@ -686,7 +686,7 @@ export function Mesa({
               type="button"
               onClick={onVerDescarte}
               title="Ver todas las cartas del descarte"
-              className="flex shrink-0 items-center gap-1 rounded-full border border-stone-600/60 bg-stone-800/80 py-[0.6cqh] pr-2 pl-1.5 text-[var(--texto-mesa,0.75rem)] text-stone-200 hover:bg-stone-700"
+              className="flex shrink-0 items-center gap-1 rounded-full border border-stone-600/60 bg-stone-800/80 py-[0.6cqh] pr-2 pl-1.5 text-[var(--texto-mesa,0.75rem)] text-stone-300 hover:bg-stone-700"
             >
               <Layers className="size-[1.1em] shrink-0" aria-hidden />
               <span className="tabular-nums">{state.descarte.length}</span>

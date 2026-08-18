@@ -242,7 +242,7 @@ export function Tablero({
           onClick={() => setVerMenu(true)}
           aria-label="Menú de la partida"
           aria-expanded={verMenu}
-          className="absolute top-1.5 left-1.5 z-20 rounded-md border border-stone-600/60 bg-stone-900/80 p-1.5 text-stone-100"
+          className="absolute top-1.5 left-1.5 z-20 rounded-md border border-stone-600/60 bg-stone-900/80 p-1.5 text-stone-300"
         >
           <Menu className="size-4" aria-hidden />
         </button>
@@ -361,13 +361,13 @@ function MenuDePartida({
               nombre="Claras"
               activo={!cartasOscuras}
               onClick={() => onCartasOscuras(false)}
-              carta="border-stone-300 bg-stone-50 text-stone-900"
+              carta="border-stone-400 bg-stone-200 text-stone-900"
             />
             <BotonDeBaraja
               nombre="Oscuras"
               activo={cartasOscuras}
               onClick={() => onCartasOscuras(true)}
-              carta="border-stone-600 bg-stone-900 text-stone-50"
+              carta="border-stone-600 bg-stone-900 text-stone-300"
             />
           </div>
         </div>

@@ -563,6 +563,17 @@ decoration stops meaning anything. Amber appears in exactly two places — the
 ficha of the seat in play and the badge on your hand — and the draw-me rings
 on the piles went neutral to keep it that way.
 
+Dimmed later, on the owner's word: **nothing in dark mode is pure white
+any more.** This game is played on a phone at night, often with the lights
+off, and a white slab on a near-black ground is a lamp pointed at the
+reader. The brightest tone is now a soft off-white and the filled slabs —
+a chosen option, Repartir, a ticked box — are dimmer still; the dark
+deck's pips and the light deck's face came down with them, and the amber
+turn accent too, since once the whites dropped it became the brightest
+thing on the screen. Contrast stayed far above what legibility needs; what
+it stopped being is painful. All of it lives in the tokens, which is why
+it was one edit rather than thirty.
+
 One change beyond the letter of the phase (Claude's call, in service of "the
 card faces stay the most legible thing on the screen"): **card faces no
 longer follow the theme.** In dark mode they were dark grey on a black felt;

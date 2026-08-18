@@ -66,7 +66,7 @@ export function Carta({ card, represents, size = 'md', className }: CartaProps) 
   // class: `.cartas-oscuras` (globals.css) turns the faces near-black with
   // light pips, for the players who prefer the dark deck. The fallbacks are
   // the light deck.
-  const base = `relative ${TAMANOS[size]} aspect-[8/11] shrink-0 rounded-md border border-[var(--carta-borde,#d6d3d1cc)] bg-[var(--carta-fondo,#fafaf9)] leading-none shadow-sm select-none`
+  const base = `relative ${TAMANOS[size]} aspect-[8/11] shrink-0 rounded-md border border-[var(--carta-borde,#d6d3d1cc)] bg-[var(--carta-fondo,#e9e6e3)] leading-none shadow-sm select-none`
 
   if (isComodin(card)) {
     return (
@@ -141,7 +141,7 @@ export function Carta({ card, represents, size = 'md', className }: CartaProps) 
 
 /** Corner legibility over a photo: a small scrim, whatever the picture. */
 const ESQUINA_SOBRE_FOTO =
-  'rounded-[0.25em] bg-black/55 px-[0.14em] py-[0.08em] text-white'
+  'rounded-[0.25em] bg-black/55 px-[0.14em] py-[0.08em] text-stone-200'
 
 /**
  * A corner index: rank on top, pinta right under it, the way a real card is

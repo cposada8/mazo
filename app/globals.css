@@ -83,21 +83,29 @@
   --sidebar-ring: oklch(0.708 0 0);
 }
 
+/*
+ * Dark is where this game is actually played — on a phone, at night, often
+ * with the lights off. So nothing here is pure white: the brightest tone is
+ * a soft off-white, and the filled slabs (a chosen option, Repartir, a
+ * ticked box) are dimmer still. Contrast against the near-black ground is
+ * far above what legibility needs even after the drop; what it stops being
+ * is a lamp pointed at the reader.
+ */
 .dark {
   --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
+  --foreground: oklch(0.9 0 0);
   --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
+  --card-foreground: oklch(0.9 0 0);
   --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
+  --popover-foreground: oklch(0.9 0 0);
+  --primary: oklch(0.855 0 0);
   --primary-foreground: oklch(0.205 0 0);
   --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
+  --secondary-foreground: oklch(0.9 0 0);
   --muted: oklch(0.269 0 0);
   --muted-foreground: oklch(0.708 0 0);
   --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
+  --accent-foreground: oklch(0.9 0 0);
   --destructive: oklch(0.704 0.191 22.216);
   --border: oklch(1 0 0 / 10%);
   --input: oklch(1 0 0 / 15%);
@@ -108,11 +116,11 @@
   --chart-4: oklch(0.371 0 0);
   --chart-5: oklch(0.269 0 0);
   --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
+  --sidebar-foreground: oklch(0.9 0 0);
   --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-primary-foreground: oklch(0.9 0 0);
   --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
+  --sidebar-accent-foreground: oklch(0.9 0 0);
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.556 0 0);
 }
@@ -195,7 +203,8 @@
   .cartas-oscuras {
     --carta-fondo: #1c1917;
     --carta-borde: #57534e99;
-    --carta-tinta: #fafaf9;
+    /* Softer than white for the same reason the theme is: read in the dark. */
+    --carta-tinta: #d6d3d1;
     --carta-roja: #f87171;
     --carta-comodin: #c4b5fd;
     --carta-comodin-borde: #8b5cf680;
