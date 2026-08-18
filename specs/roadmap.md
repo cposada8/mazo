@@ -433,7 +433,7 @@ Three things came out differently than written above:
   20.
 
 Left deliberately undone: animations, real avatars, and any decoration of the
-room beyond a dark ground. Those are Phase 40, and none of them is what made
+room beyond a dark ground. Those are Phase 44, and none of them is what made
 the old screen unreadable.
 
 ### Phase 18 — Room to play ✅
@@ -521,7 +521,7 @@ arrangement — seats across the top, mesa in the middle, hand along the
 bottom — so this phase is a container query on `.cancha`, not a second
 layout. Below 1:1 aspect the oval hides and the grupos wrap into rows
 (portrait's spare dimension is height, so the mesa trades its sideways
-scroll for wrapping — which incidentally previews the fix Phase 40 wants
+scroll for wrapping — which incidentally previews the fix Phase 44 wants
 for the six-player overflow). The rotate-your-phone screen is deleted, the
 manifest orientation loosened to `any`, and rotation mid-turn was verified
 to preserve selection and bloques — nothing unmounts, so nothing is lost.
@@ -1539,12 +1539,238 @@ alone can already support is real counting — which cards are dead because both
 copies have been seen, and which are still live — and that is enough for a bot
 that visibly plays differently.
 
-### Phase 40 — Rough edges
-A hint for new players, an in-game rules summary, and an end-of-game screen.
-Card animations were pulled forward into Phase 22; what is left here is the
-mesa that runs off the right edge when six players are deep into a partida —
-Phase 17 left it scrolling sideways, which is the honest minimum and not an
-answer.
+---
+
+## The list from playing online — ahead of the rough edges
+
+Milestone 4 shipped and the owner went and played the thing with other
+people. The list that came back is seven items long, and it sorts into three
+kinds.
+
+**The game knows more than it shows, and it moves faster than the eye.** A
+move made three seats away lands as a fait accompli; the ronda that was just
+won vanishes before anyone can look at what won it; cards appear on the mesa
+with nothing to say they are new.
+
+**Your own seat is the worst-served part of the screen.** Your clock is
+running and you cannot see it; the hand goes rigid the moment it stops being
+your turn, which is exactly when there is time to think; and upright, the
+controls for arranging it are pushed off the edge by a line of text.
+
+**And one colour.** The white was tuned at night and is too dim by day.
+
+Same rule as the two lists before it — what a real game finds outranks new
+machinery — so these go ahead of the rough edges, and **the old Phase 40 is
+now Phase 44.** They are ordered smallest-and-most-unfair first, then the
+two that need design, then the palette last, because a pass over every white
+surface should come after the phases that add surfaces.
+
+### Phase 40 — Your own seat ✅
+Three asks, all about the half of the screen that is yours — the least
+served part of the table. None of them changes a rule, and none of them is
+hard; what they have in common is that the seat you actually sit in is
+treated as a spectator's.
+
+- **The clock you can read.** Phase 36 gave the human turn a clock and drew
+  it in two places: the ring around the ficha of whoever is up, and — for
+  your own turn — a bar that drains behind the words «Tu mano». Online, the
+  owner sees the first and not the second. **You can watch everybody's time
+  run out except your own,** which is the one that costs you a turn. Find
+  out first which it is — not rendering, or rendering and invisible; both
+  are plausible from the code, since `relojPropio` is true only on server
+  tables (`useMesaRemota`) and the mark it produces is a translucent wash
+  behind a heading in a scrolling strip. The fix is the same either way:
+  **your own countdown should be as loud as the one drawn on other people**,
+  and drawn where your eyes already are on your turn, which is your hand and
+  not the far side of the table. Nothing about the mechanism changes — the
+  duration and the start line still come from the server (Phase 36's
+  negative delay), so what you see agrees with what everyone else sees
+  draining.
+
+- **The hand you can arrange while others play.** Waiting is when you have
+  time to think, and it is exactly when the hand goes rigid. The intent is
+  already in the code — `AccionesDeMano` carries the comment "always
+  available: it changes nothing about the game, so there is no reason to
+  lock it to your turn" — and one line defeats it: `onCarta` is passed only
+  when `esTuTurno`, so off your turn you cannot **select**, and everything
+  except the two sort buttons needs a selection. Gathering, sliding, pinning
+  a bloque: all unreachable while somebody else thinks. **Selecting is not a
+  move** — it touches nothing the referee judges — so it should work
+  whenever the hand is on screen, and the selection you built while waiting
+  should still be there when your turn arrives, ready to be discarded or
+  bajado.
+
+- **The controls that do not need a swipe.** In portrait the hand's heading
+  row is one line that does not wrap: the instruction («Toca el mazo o el
+  descarte para robar.»), then «Tu mano», then the arranging controls — and
+  on a phone held upright the instruction eats the row and pushes the
+  controls off the right edge, so grouping, sliding and pinning are reached
+  by scrolling sideways to find them. **The row belongs to the hand's
+  controls.** Take the instruction out of it. If a hint survives at all it
+  belongs where the game already narrates itself — the info strip along the
+  felt — and never in competition with the buttons. Phase 44's hint for new
+  players inherits that constraint rather than reopening it.
+
+**Done when:** on a phone held upright, at a real online table: you can tell
+how much of your turn is left without looking at anyone else's ficha and it
+agrees with what they see; you can select, gather, slide and pin cards while
+another player is thinking, and the arrangement is still there when your
+turn comes; and every one of those controls is on screen without scrolling
+to it.
+
+**Done.** Measured on a 390 × 844 viewport at a two-human table, which is the
+only kind that has a human clock at all — and that turned out to be the whole
+of the first ask.
+
+- **The clock was rendering. It was off the screen.** `relojPropio` was set
+  and the badge was draining, but the heading row was a sideways scroller and
+  «Tu mano» — the thing the wash sits behind — had been pushed past the right
+  edge by the instruction in front of it. So the third ask was the cause of
+  the first, and the two were one fix. The ring is there on merit rather than
+  necessity: it is 18 px beside the badge, drawn by the same `AnilloDeReloj`
+  the fichas use, from the same `Reloj` — measured at 45 s with a −0.19 s
+  delay while the seat across the table showed the same countdown.
+- **The row wraps now instead of scrolling.** The heading and the controls
+  never shrink; whatever is passed in beside them takes the leftover width
+  and drops to a second line when there is none. A long aviso costs 22 px of
+  height while it is up and is readable in full, which is better than the
+  truncation it used to get — and the controls do not move for it.
+- **Selecting off-turn was one conditional.** `useMano` never checked whose
+  turn it was; `Tablero` withheld `onCarta`. Measured while seat 1 was
+  thinking: twelve cards selectable, two gathered and slid left, pinned into
+  a bloque — and nothing that would be a move on offer, because `Controles`
+  still asks whose turn it is.
+
+**Learned:** three complaints, two causes. The instruction line was not
+merely in the way of the controls, it was hiding the clock as well — worth
+remembering the next time something is reported invisible on a phone.
+
+### Phase 41 — A turn you can follow
+The complaint, in the owner's words: *de repente te aparece que ya el jugador
+botó y cogió.* Two causes, and they compound.
+
+- **The server plays a whole turn at once.** A bot's turn comes *due* and
+  `avanzar` applies every move of it in one write (`lib/server/juego.ts`),
+  so the next poll is handed draw, bajada and discard as a single jump. The
+  local home does the opposite: Phase 21's `tiemposDeMoves` spreads the same
+  moves across the bot's seconds precisely so the turn can be watched.
+- **The client narrates only the last one.** `useMesa` animates the newest
+  relato and drops the rest on purpose — "catching up on several at once
+  should land the table where it is now, not replay the last few seconds."
+  That was the right call for a reload. It is the wrong one for a turn that
+  happened while you were looking at it.
+
+The fix has a server half and a client half, and the phase should do both:
+**pace the bot's turn on the server** — one move due at a time, the seconds
+divided the way Phase 21 divides them, so the intermediate states genuinely
+exist for a poll to find — and **queue the narration on the client**, so
+several relatos arriving together are told in order at a readable pace
+rather than all but one thrown away. Keep the drop for the case it was
+written for: catching up after a reload, or a gap long enough that replaying
+it would be a lie.
+
+One constraint is not negotiable and belongs in the write-up: **the view
+cannot be rewound.** The engine has already moved the card by the time the
+client hears about it, so the pacing is presentation, and the mesa may show
+a result a beat before the story finishes telling it. Decide how much of a
+beat is honest.
+
+This is also the first thing that reopens **Phase 38**, which measured
+polling and kept it. The answer may well be *poll faster while somebody else
+is thinking* rather than a new transport — a 1.2 s interval is invisible on
+your own turn and is exactly the wrong grain for watching someone else's.
+Measure before reaching for WebSockets.
+
+**And the other half of following a turn: say what landed.** Every card put
+on the mesa during a turn is **marked — gold — until that turn ends**:
+whatever is bajado, whatever is added to somebody else's grupo, the card
+that pays for a freed comodín. It answers the same question the travelling
+card answers for the piles, and it answers it for your own plays too, which
+is the cheapest way to see that what you tapped went where you meant.
+
+The mark cannot come from the relato: `agrega` names cards as prose («J♥»)
+and `bajada` does not name them at all. **The mesa itself is the source** —
+grupo cards carry ids, the view carries the mesa, and a diff against the
+mesa as it stood at the start of the current `numeroDeTurno` is public
+information by construction, so it works in both homes and tells no secrets.
+
+**Done when:** you can sit through another player's whole turn — a bot's or
+a person's — and see it happen in the order it happened, and when it is over
+the mesa still shows, in gold, exactly what that turn put there.
+
+### Phase 42 — What it was won with
+Somebody goes out and the table is gone: `FinDeRonda` replaces the whole
+screen with the score. You never see the mesa that ended the ronda, nor the
+play that closed it — and going out on a ligada (Phase 26) means the winning
+card can be a single card on somebody else's grupo, which is exactly the
+thing everyone wants to look at.
+
+The obstacle is structural and worth naming before any UI is drawn: **the
+engine closes the ronda and deals the next one in the same move.** By the
+frame the client learns a ronda ended, `vista.ronda` is already the next
+reparto — and a poll can skip the closing state entirely, so even
+remembering the previous render does not save it online. So the closing mesa
+has to be **kept, not caught**: `Marcador` grows a snapshot of the mesa as it
+stood when the ronda closed, and the historial carries it — which means the
+engine, the persisted partida, and every device reading them agree on what
+the final table looked like.
+
+With that in hand the pause gets its first step: **the mesa as it ended,
+before the score.** Whoever won, what they went out with, and — for free, if
+Phase 41 lands first — the last turn's cards still in gold. Then the
+scoreboard, on a tap, the way it works now.
+
+**Done when:** a ronda you did not win ends and you can study the final mesa
+for as long as you like, see which grupo the winner's last card went to, and
+only then move on to the score.
+
+### Phase 43 — The white you choose
+The owner tuned the white by night, over a run of commits, and the result is
+right in the dark and too dim in daylight. Turning it up puts the lamp back
+in your face at night. **This is not a setting the theme can decide** — it is
+ambient light, and the phone is in a different room every time.
+
+So: **one control for the white, and one white for everything.** A slider —
+or whatever reads best on a phone with one thumb — that moves the brightest
+tone the app uses, and moves it *everywhere*: text, card faces, the pips,
+buttons, borders, the marks on the felt.
+
+That last word is the work. Today there is no single white to turn. Dark
+mode defines a family of near-whites by hand (`--foreground` at oklch 0.79,
+`--primary` at 0.62, `--muted-foreground` at 0.6, and the deck's
+`--carta-tinta`), and roughly thirty literal `stone-*` utilities are
+scattered through the components besides. **Unify first, then expose:** one
+token for the white with the rest derived from it by ratio — the way
+`--carta-md` already generates every card size — and the literals folded in.
+Then a slider is one variable, and a value stored per browser and applied
+before paint, exactly the way `components/tema.tsx` already lands the theme
+class without a flash.
+
+Keep the range honest at both ends: the bottom of the slider must still pass
+contrast against the near-black ground, and the top must not be pure white
+on the felt.
+
+**Done when:** one control, moved with a thumb, visibly changes every white
+on the table at once — text, cards and buttons together, with none of them
+left behind — the choice survives a reload, and the same phone can be read
+outdoors at noon and in a dark room without touching anything else.
+
+---
+
+## Closing Milestone 4
+
+### Phase 44 — Rough edges
+*Was Phase 40, displaced by the list above.*
+
+A hint for new players and an in-game rules summary. Card animations were
+pulled forward into Phase 22 and the end-of-game screen into Phase 42; what
+is left here is the mesa that runs off the right edge when six players are
+deep into a partida — Phase 17 left it scrolling sideways, which is the
+honest minimum and not an answer.
+
+Whatever the hint turns out to be, it does not go back in the hand's heading
+row: Phase 40 cleared that row for the arranging controls because upright
+they were being pushed off the screen.
 **Done when:** someone who has never played Carioca finishes a bot game without
 asking for help, and a full mesa can be read without scrolling to find it.
 

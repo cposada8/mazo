@@ -142,7 +142,7 @@ export function Tablero({
     setCartasOscuras(oscuras)
   }
 
-  const { partida, vista: ronda, esTuTurno, esperando, aviso, resumen } = juego
+  const { partida, vista: ronda, esTuTurno, aviso, resumen } = juego
 
   // The faces this ronda's comodines wear — dealt from the seed, like the
   // cards, so a replayed partida replays its comodines too.
@@ -220,26 +220,28 @@ export function Tablero({
           accionesDeMano={<AccionesDeMano juego={juego} />}
           acciones={<Controles juego={juego} />}
           sobreLaMano={
-            <div className="flex min-h-5 flex-wrap items-center gap-x-3 gap-y-1 text-xs">
-              {aviso ? (
-                <span className="text-red-600 dark:text-red-400">{aviso}</span>
-              ) : (
-                <Instruccion
-                  esTuTurno={esTuTurno}
-                  esperando={esperando}
-                  fase={ronda.fase}
-                  turno={ronda.turno}
-                  nombres={nombresEnMesa}
-                  yaBajado={juego.yaBajado}
-                  mesaAbierta={juego.mesaAbierta}
-                />
-              )}
+            // What used to lead this row was a line of instructions — «Toca
+            // el mazo o el descarte para robar.» Upright it filled the row on
+            // its own and pushed the arranging controls off the screen, so
+            // reaching them meant scrolling sideways (Phase 40). It is gone
+            // rather than moved: the felt already narrates every move it could
+            // have explained, and the hint a new player needs is Phase 44's to
+            // design — somewhere that is not this row.
+            <div className="flex min-h-5 min-w-0 flex-wrap items-center gap-x-3 gap-y-1 text-xs">
+              {aviso && <span className="text-red-600 dark:text-red-400">{aviso}</span>}
               <Apartadas juego={juego} mano={ronda.mano} />
             </div>
           }
           seleccionadas={new Set(juego.seleccion)}
           resaltada={juego.recienRobada ?? undefined}
-          onCarta={esTuTurno ? juego.alternarCarta : undefined}
+          onCarta={
+            // Selecting is not a move: it touches nothing the referee judges,
+            // so it works whether or not the turn is yours (Phase 40). Waiting
+            // is when there is time to think, and the hand used to go rigid
+            // for exactly that stretch — everything that arranges it needs
+            // cards selected first.
+            juego.alternarCarta
+          }
           onRobar={esTuTurno && ronda.fase === 'draw' ? juego.robar : undefined}
           onGrupo={esTuTurno && ronda.fase === 'act' ? juego.agregarA : undefined}
         />
@@ -565,41 +567,6 @@ function Apartadas({
       ))}
     </span>
   )
-}
-
-function Instruccion({
-  esTuTurno,
-  esperando,
-  fase,
-  turno,
-  nombres,
-  yaBajado,
-  mesaAbierta,
-}: {
-  esTuTurno: boolean
-  esperando: boolean
-  fase: 'draw' | 'act'
-  turno: number
-  nombres: readonly string[]
-  yaBajado: boolean
-  mesaAbierta: boolean
-}) {
-  if (!esTuTurno) {
-    const quien = nombres[turno] ?? nombrePorDefecto(turno)
-    return (
-      <span className="text-muted-foreground">
-        {esperando ? `Juega ${quien}…` : 'Esperando…'}
-      </span>
-    )
-  }
-
-  if (fase === 'draw') return <>Toca el mazo o el descarte para robar.</>
-
-  // What you may actually do depends on the mesa, and saying otherwise sends
-  // people tapping at grupos the engine is going to refuse.
-  if (!yaBajado) return <>Arma tus grupos para bajarte, o bota una carta.</>
-  if (!mesaAbierta) return <>Ya te bajaste. Bota una carta para terminar el turno.</>
-  return <>Pon cartas en la mesa y bota una para terminar.</>
 }
 
 /**

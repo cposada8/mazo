@@ -67,7 +67,21 @@ empty seats), and the better bots moved behind it as Milestone 4.
 | 37 | Absences: reconnection, and leaving on purpose | ✅ |
 | 38 | Real-time transport: measured, polling kept | ✅ — a decision, no code |
 | 39 | Bot personalities | ✅ — **Milestone 4** |
-| 40 | Rough edges | ← **next** |
+| 40 | Your own seat: your clock, arranging off-turn, controls in reach | ✅ |
+| 41 | A turn you can follow: paced narration, and gold on what landed | ← **next** |
+| 42 | What it was won with: the final mesa before the score | |
+| 43 | The white you choose: one slider, every white | |
+| 44 | Rough edges *(was 40)* | |
+
+**Phases 40–43 are the list from playing online**, and they displaced the old
+Phase 40 to 44 — the same rule as the two lists before them: what a real game
+finds outranks new machinery. Seven asks in three kinds: the game shows less
+than it knows and moves faster than the eye (41, 42), your own seat is the
+worst-served part of the screen (40), and the white was tuned at night and is
+too dim by day (43). They are ordered smallest-and-most-unfair first, then the
+two that need design, then the palette last, because a pass over every white
+surface belongs after the phases that add surfaces. `roadmap.md` has the
+reasoning and the obstacles already found in the code.
 
 **The table now holds up on a real phone, held either way.** The lanes built
 in Phase 18 survive a 615 × 287 viewport and double as the portrait

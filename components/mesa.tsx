@@ -130,6 +130,52 @@ export type Reloj = {
   readonly propio?: boolean
 }
 
+/**
+ * The countdown as a ring: a full track, and an arc that empties as the
+ * turn's time runs out.
+ *
+ * One component for both places it is drawn — around the ficha of whoever is
+ * up, and beside your own hand (Phase 40) — so your own clock and everybody
+ * else's can never drift into showing different amounts of the same turn.
+ * Mount it with `key={reloj.clave}`: restarting the animation is remounting,
+ * and no JavaScript runs per frame.
+ */
+export function AnilloDeReloj({
+  reloj,
+  className,
+}: {
+  reloj: Reloj
+  className?: string
+}) {
+  return (
+    <svg aria-hidden viewBox="0 0 40 40" className={cn('-rotate-90', className)}>
+      <circle
+        cx="20"
+        cy="20"
+        r="17.5"
+        fill="none"
+        strokeWidth="3.5"
+        className="stroke-amber-600/20"
+      />
+      <circle
+        cx="20"
+        cy="20"
+        r="17.5"
+        fill="none"
+        strokeWidth="3.5"
+        strokeLinecap="round"
+        className="reloj-arco stroke-amber-600"
+        style={{
+          animationDuration: `${reloj.segundos}s`,
+          // A negative delay starts the animation partway through, which is
+          // exactly "this turn began a while ago".
+          animationDelay: `-${reloj.transcurrido ?? 0}s`,
+        }}
+      />
+    </svg>
+  )
+}
+
 export function Asiento({
   jugador,
   nombre,
@@ -173,36 +219,7 @@ export function Asiento({
         {/* The countdown is drawn on the player, where the turn already is:
             a full track, and an arc that empties as the time runs out. */}
         {esSuTurno && reloj && (
-          <svg
-            key={reloj.clave}
-            aria-hidden
-            viewBox="0 0 40 40"
-            className="absolute -inset-1 -rotate-90"
-          >
-            <circle
-              cx="20"
-              cy="20"
-              r="17.5"
-              fill="none"
-              strokeWidth="3.5"
-              className="stroke-amber-600/20"
-            />
-            <circle
-              cx="20"
-              cy="20"
-              r="17.5"
-              fill="none"
-              strokeWidth="3.5"
-              strokeLinecap="round"
-              className="reloj-arco stroke-amber-600"
-              style={{
-                animationDuration: `${reloj.segundos}s`,
-                // A negative delay starts the animation partway through,
-                // which is exactly "this turn began a while ago".
-                animationDelay: `-${reloj.transcurrido ?? 0}s`,
-              }}
-            />
-          </svg>
+          <AnilloDeReloj key={reloj.clave} reloj={reloj} className="absolute -inset-1" />
         )}
         <div
           className={cn(
@@ -328,9 +345,11 @@ export function Mano({
   /** Sorting and moving controls, rendered beside the heading. */
   acciones?: React.ReactNode
   /**
-   * What to do and what is set aside, on the same line as the heading. One
-   * line, not two: on a phone lying down, every row costs a card's worth of
-   * height, and the hand is what has to stay readable.
+   * What is set aside, and anything the referee refused, sharing the heading
+   * row. It shares rather than owning one because on a phone lying down every
+   * row costs a card's worth of height — but it is the part that gives way:
+   * it takes the width the heading and the controls do not need, and wraps to
+   * a line of its own only when it cannot fit (Phase 40).
    */
   cabecera?: React.ReactNode
   esTuTurno?: boolean
@@ -349,19 +368,39 @@ export function Mano({
 
   return (
     <div className="flex min-w-0 flex-col">
-      <div className="flex flex-nowrap items-center gap-x-3 overflow-x-auto py-0.5 text-[max(var(--texto-mesa,0.75rem),0.6875rem)] whitespace-nowrap">
-        {cabecera}
-        <h2 className="shrink-0 font-medium">
+      {/*
+        The heading row, and who gets to keep their place in it (Phase 40).
+        Upright there is not enough width for everything, and what used to
+        give way were the arranging controls: they were pushed off the right
+        edge and had to be scrolled into view. So the row wraps instead of
+        scrolling, and the two things that must always be reachable — the
+        hand's own heading, clock and all, and the controls — never shrink.
+        Whatever else is passed in takes the room that is left, and drops to
+        a second line when there is none.
+      */}
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 py-0.5 text-[max(var(--texto-mesa,0.75rem),0.6875rem)]">
+        <h2 className="flex shrink-0 items-center gap-1.5 font-medium whitespace-nowrap">
+          {/* Your own clock, drawn the way everybody else's is (Phase 40).
+              Phase 36 gave it only the draining badge below, which is a wash
+              behind text — legible once you know it is there, and invisible
+              if you do not. The ring is the same countdown in the shape the
+              table already taught you to read. */}
+          {esTuTurno && reloj && (
+            <AnilloDeReloj
+              key={reloj.clave}
+              reloj={reloj}
+              className="size-[1.5em] shrink-0"
+            />
+          )}
           <span
             className={cn(
               'relative overflow-hidden rounded px-1.5 py-0.5',
               esTuTurno && 'bg-amber-600 text-amber-100',
             )}
           >
-            {/* Your own clock, once there is one (Phase 36): the badge
-                empties left to right, the same countdown the ring draws on
-                everybody else. Phase 21 left this deliberately still —
-                nothing hurried a human until other seats were people. */}
+            {/* The badge empties left to right, the same countdown the ring
+                draws — kept from Phase 36, now that it is no longer the only
+                place your own time is shown. */}
             {esTuTurno && reloj && (
               <span
                 key={reloj.clave}
@@ -374,7 +413,7 @@ export function Mano({
               />
             )}
             <span className="relative">Tu mano</span>
-          </span>{' '}
+          </span>
           <span className="text-muted-foreground font-normal tabular-nums">
             {total}
             {puntos !== undefined && (
@@ -386,6 +425,7 @@ export function Mano({
           </span>
         </h2>
         {acciones}
+        {cabecera}
       </div>
 
       <div className="flex items-start gap-3 overflow-x-auto pt-1.5">
