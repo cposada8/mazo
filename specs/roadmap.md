@@ -1430,6 +1430,52 @@ bajado, the face-up card is taken only if it ligadoes *right now* — because
 loosening that is what hung seed soak-204, and freeing a comodín shrinks the
 hand and grows the mesa, so it cannot loop.
 
+### Deferred: the components of a stronger bot
+Named while planning Phase 39 and left out of it on purpose. None of these is
+needed for three bots that play observably differently; all of them are needed
+for a bot that is genuinely hard to beat. Written down here so the next person
+does not have to rediscover them.
+
+- **A model of what each opponent holds.** The owner's idea, and the largest of
+  these. Instead of counting cards in the abstract, the bot keeps a running
+  belief about every other seat — what they have taken face up, what they have
+  declined to take, how many cards they hold, what they have bajado — and from
+  it estimates what each seat *needs* and what it can afford to be without. Two
+  concrete plays fall straight out:
+  - **What my predecessor is likely to throw** is what I can afford to wait for
+    rather than chase.
+  - **What my successor is likely to take** is what I must not throw. Only the
+    player in turn draws, so a discard is offered to exactly one person: the
+    next seat. That makes the defensive half of the model unusually cheap —
+    one seat to worry about, not five.
+- **Relatos as honest memory.** The belief above cannot be derived from a
+  `VistaDeAsiento`: a view is a snapshot, and it shows the descarte as a pile
+  without saying who took what off it. The `Relato` log already persisted
+  beside the partida is the missing input, and it is public *by construction* —
+  a bot reading it is not peeking, which is the whole reason that type was
+  built the way it was. The price is that `Bot.decidir` grows a second
+  argument both homes have to feed. Its limit, in every version of this idea:
+  a rebarajada empties the descarte back into the stock and takes the trail
+  with it.
+- **What a discard gives away.** Phase 39 asks what a card is worth *to me*.
+  The other half is what it is worth to the table — a card that lands on a
+  grupo already on the mesa is a gift to whoever is bajado — and the strict
+  version of that question needs the model above.
+- **Pressure from the end of the ronda.** Points in hand only become a penalty
+  when somebody goes out. How urgently to dump expensive cards should scale
+  with how close the ronda is to closing: hands shrinking, somebody bajado,
+  the stock low, the rebarajadas spent.
+- **The comodín economy.** El Codicioso never throws a comodín and never weighs
+  one against what holding it costs. A stronger bot decides when 50 points in
+  hand outweigh the flexibility.
+
+Phase 39 itself takes the cheaper road deliberately: everything its bots know
+is derivable from the seat's own view, so `decidir(vista)` keeps its shape and
+a bot behaves identically in the browser and on the server. What the view
+alone can already support is real counting — which cards are dead because both
+copies have been seen, and which are still live — and that is enough for a bot
+that visibly plays differently.
+
 ### Phase 40 — Rough edges
 A hint for new players, an in-game rules summary, and an end-of-game screen.
 Card animations were pulled forward into Phase 22; what is left here is the

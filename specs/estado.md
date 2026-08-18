@@ -338,6 +338,14 @@ shorter. `lib/bots/codicioso.ts` — `puertasDelGrupo`, `valorDeConservar`,
 `alcanceEnMesa`. The next step is the shared evaluation module the roadmap
 asks for, and then the personalities as data over it.
 
+**And a road deliberately not taken yet.** Everything Phase 39's bots know is
+derivable from `VistaDeAsiento`, so `decidir(vista)` keeps its shape and a bot
+behaves the same in both homes. The stronger idea — a running model of what
+each opponent holds, fed by the `Relato` log so that "who took what" is an
+input rather than a guess — is written up in `roadmap.md` under **"Deferred:
+the components of a stronger bot"**, together with the rest of what was named
+and postponed. It is postponed, not rejected.
+
 ## Open questions, deliberately unanswered
 
 - **The escalera contracts (9+).** All thirteen ranks, A through K. They do not
