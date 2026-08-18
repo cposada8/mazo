@@ -44,7 +44,7 @@ export function BotonDeBaraja({
       aria-pressed={activo}
       className={`flex items-center justify-center gap-2.5 rounded-md border py-2.5 text-sm transition-colors ${
         activo
-          ? 'bg-foreground text-background border-transparent'
+          ? 'bg-primary text-primary-foreground border-transparent'
           : 'bg-card hover:bg-accent'
       }`}
     >

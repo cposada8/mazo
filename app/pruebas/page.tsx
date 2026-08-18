@@ -161,7 +161,7 @@ export default function Pruebas() {
               type="button"
               onClick={() => setPhase(option)}
               className={`rounded-md border px-3 py-1.5 text-sm ${
-                phase === option ? 'bg-foreground text-background' : 'bg-card'
+                phase === option ? 'bg-primary text-primary-foreground' : 'bg-card'
               }`}
             >
               {option === 'layDown' ? 'Al bajarse' : 'En la mesa'}

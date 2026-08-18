@@ -242,7 +242,7 @@ export function Tablero({
           onClick={() => setVerMenu(true)}
           aria-label="Menú de la partida"
           aria-expanded={verMenu}
-          className="absolute top-1.5 left-1.5 z-20 rounded-md border border-stone-600/60 bg-stone-900/80 p-1.5 text-stone-300"
+          className="absolute top-1.5 left-1.5 z-20 rounded-md border border-stone-600/60 bg-stone-900/80 p-1.5 text-stone-400"
         >
           <Menu className="size-4" aria-hidden />
         </button>
@@ -342,7 +342,7 @@ function MenuDePartida({
                 aria-pressed={segundosBot === s}
                 className={`rounded-md border py-2 text-sm tabular-nums transition-colors ${
                   segundosBot === s
-                    ? 'bg-foreground text-background border-transparent'
+                    ? 'bg-primary text-primary-foreground border-transparent'
                     : 'bg-card hover:bg-accent'
                 }`}
               >
@@ -361,13 +361,13 @@ function MenuDePartida({
               nombre="Claras"
               activo={!cartasOscuras}
               onClick={() => onCartasOscuras(false)}
-              carta="border-stone-400 bg-stone-200 text-stone-900"
+              carta="border-stone-500 bg-stone-400 text-stone-900"
             />
             <BotonDeBaraja
               nombre="Oscuras"
               activo={cartasOscuras}
               onClick={() => onCartasOscuras(true)}
-              carta="border-stone-600 bg-stone-900 text-stone-300"
+              carta="border-stone-600 bg-stone-900 text-stone-400"
             />
           </div>
         </div>
@@ -409,7 +409,7 @@ function MenuDePartida({
               type="button"
               onClick={onCerrar}
               autoFocus
-              className="bg-foreground text-background rounded-md border border-transparent px-3 py-1.5 text-sm"
+              className="bg-primary text-primary-foreground rounded-md border border-transparent px-3 py-1.5 text-sm"
             >
               Seguir jugando
             </button>
@@ -456,7 +456,7 @@ function PilaDeDescarte({
             type="button"
             onClick={onCerrar}
             autoFocus
-            className="bg-foreground text-background rounded-md px-3 py-1.5 text-sm"
+            className="bg-primary text-primary-foreground rounded-md px-3 py-1.5 text-sm"
           >
             Cerrar
           </button>
@@ -507,7 +507,7 @@ function HistorialDeRonda({
             type="button"
             onClick={onCerrar}
             autoFocus
-            className="bg-foreground text-background rounded-md px-3 py-1.5 text-sm"
+            className="bg-primary text-primary-foreground rounded-md px-3 py-1.5 text-sm"
           >
             Cerrar
           </button>
@@ -667,7 +667,7 @@ function BotonDeMano({
       aria-pressed={activo}
       className={`p-1.5 ${sinBorde ? '' : 'rounded-md border'} ${
         activo
-          ? 'bg-foreground text-background border-transparent'
+          ? 'bg-primary text-primary-foreground border-transparent'
           : 'bg-card hover:bg-accent'
       }`}
     >
@@ -731,7 +731,7 @@ function Boton({
       onClick={onClick}
       disabled={disabled}
       className={`rounded-md border px-2 py-1.5 text-xs font-medium transition-colors disabled:opacity-40 ${
-        principal ? 'bg-foreground text-background border-transparent' : 'bg-card'
+        principal ? 'bg-primary text-primary-foreground border-transparent' : 'bg-card'
       }`}
     >
       {children}
@@ -796,7 +796,7 @@ function FinDeRonda({
           type="button"
           onClick={onSiguiente}
           autoFocus
-          className="bg-foreground text-background rounded-md px-4 py-3.5 text-sm font-medium"
+          className="bg-primary text-primary-foreground rounded-md px-4 py-3.5 text-sm font-medium"
         >
           {seAcabo ? 'Ver el resultado' : 'Siguiente reparto'}
         </button>
@@ -847,7 +847,7 @@ function FinDePartida({
         <button
           type="button"
           onClick={onOtra}
-          className="bg-foreground text-background rounded-md px-4 py-3.5 text-sm font-medium"
+          className="bg-primary text-primary-foreground rounded-md px-4 py-3.5 text-sm font-medium"
         >
           Otra partida
         </button>

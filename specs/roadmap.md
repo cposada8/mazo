@@ -563,8 +563,8 @@ decoration stops meaning anything. Amber appears in exactly two places — the
 ficha of the seat in play and the badge on your hand — and the draw-me rings
 on the piles went neutral to keep it that way.
 
-Dimmed later, on the owner's word: **nothing in dark mode is pure white
-any more.** This game is played on a phone at night, often with the lights
+Dimmed later, on the owner's word — twice, because the first pass was too
+timid: **nothing in dark mode is pure white any more.** This game is played on a phone at night, often with the lights
 off, and a white slab on a near-black ground is a lamp pointed at the
 reader. The brightest tone is now a soft off-white and the filled slabs —
 a chosen option, Repartir, a ticked box — are dimmer still; the dark
@@ -573,6 +573,14 @@ turn accent too, since once the whites dropped it became the brightest
 thing on the screen. Contrast stayed far above what legibility needs; what
 it stopped being is painful. All of it lives in the tokens, which is why
 it was one edit rather than thirty.
+
+The second pass separated two things that had been one colour: **text and
+filled slabs**. Everything that reads as a pressed option — Repartir, a
+chosen number of seconds, a ticked box — was `bg-foreground`, so it wore
+exactly the tone the text did. A block of colour throws far more light
+than a letter of it, which is why the buttons still glared after the text
+had stopped. They now take `--primary`, sitting well below the text
+(0.62 against 0.79), and carry dark ink of their own.
 
 One change beyond the letter of the phase (Claude's call, in service of "the
 card faces stay the most legible thing on the screen"): **card faces no

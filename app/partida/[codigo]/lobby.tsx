@@ -305,7 +305,7 @@ export function Lobby({
             onClick={() =>
               mutacion.mutate({ tipo: 'empezar', seed: semillaAleatoria() })
             }
-            className="bg-foreground text-background flex items-center justify-center gap-2 rounded-md px-4 py-3.5 text-sm font-medium disabled:opacity-50"
+            className="bg-primary text-primary-foreground flex items-center justify-center gap-2 rounded-md px-4 py-3.5 text-sm font-medium disabled:opacity-50"
           >
             <Play className="size-4" aria-hidden />
             Repartir
@@ -371,7 +371,7 @@ function Ajustes({
                     className={cn(
                       'flex size-5 shrink-0 items-center justify-center rounded border text-xs',
                       activo
-                        ? 'bg-foreground text-background border-transparent'
+                        ? 'bg-primary text-primary-foreground border-transparent'
                         : 'border-muted-foreground/40',
                     )}
                   >
@@ -501,7 +501,7 @@ function Escogencia({
             className={cn(
               'border-input flex-1 rounded-md border py-2 text-sm tabular-nums transition-colors',
               opcion === valor
-                ? 'bg-foreground text-background border-foreground'
+                ? 'bg-primary text-primary-foreground border-primary'
                 : 'hover:bg-accent',
             )}
           >
@@ -528,7 +528,7 @@ function NoExiste({ mensaje }: { mensaje: string }) {
       <h1 className="text-2xl font-semibold tracking-tight">{mensaje}</h1>
       <Link
         href="/"
-        className="bg-foreground text-background rounded-md px-4 py-3 text-center text-sm font-medium"
+        className="bg-primary text-primary-foreground rounded-md px-4 py-3 text-center text-sm font-medium"
       >
         Volver al inicio
       </Link>

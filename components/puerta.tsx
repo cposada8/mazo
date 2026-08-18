@@ -62,7 +62,7 @@ export function Puerta() {
         type="button"
         onClick={crear}
         disabled={!identidad || creando}
-        className="bg-foreground text-background flex items-center justify-center gap-2 rounded-md px-4 py-3.5 text-sm font-medium disabled:opacity-50"
+        className="bg-primary text-primary-foreground flex items-center justify-center gap-2 rounded-md px-4 py-3.5 text-sm font-medium disabled:opacity-50"
       >
         {creando ? (
           <Loader2 className="size-4 animate-spin" aria-hidden />

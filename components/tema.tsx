@@ -56,7 +56,7 @@ export function SelectorDeTema({ className }: { className?: string }) {
             title={etiqueta}
             className={cn(
               'flex items-center justify-center px-2.5 py-1.5 transition-colors',
-              activo ? 'bg-foreground text-background' : 'bg-card hover:bg-accent',
+              activo ? 'bg-primary text-primary-foreground' : 'bg-card hover:bg-accent',
             )}
           >
             <Icono className="size-4" />
