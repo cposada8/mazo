@@ -1,10 +1,12 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import {
   ArrowLeft,
   ArrowRight,
   ArrowUp01,
+  BookOpen,
+  Lightbulb,
   Lock,
   Maximize,
   Menu,
@@ -14,7 +16,20 @@ import {
 import { Carta } from '@/components/carta'
 import { Marcador } from '@/components/marcador'
 import { ControlDeBlanco } from '@/components/blanco'
-import { GrupoEnMesa, Mesa, nombrePorDefecto } from '@/components/mesa'
+import {
+  GrupoEnMesa,
+  Mesa,
+  RATIO_XS,
+  escalaDeMesa,
+  nombrePorDefecto,
+} from '@/components/mesa'
+import { ComoSeJuega } from '@/components/reglas'
+import {
+  apagarGuiaSiNadieLaEligio,
+  guiar,
+  leerGuia,
+  recordarGuia,
+} from '@/lib/guia'
 import {
   alternarPantallaCompleta,
   hayPantallaCompleta,
@@ -137,13 +152,53 @@ export function Tablero({
   const [verMenu, setVerMenu] = useState(false)
   const [verPila, setVerPila] = useState(false)
   const [verHistoria, setVerHistoria] = useState(false)
+  const [verReglas, setVerReglas] = useState(false)
+  /**
+   * The guide, on until the first partida is over (Phase 45). Read once on
+   * mount like the deck is: it is a per-browser preference, not a rule, and
+   * the table only ever mounts on a browser.
+   */
+  const [mostrarGuia, setMostrarGuia] = useState(leerGuia)
 
   const escogerBaraja = (oscuras: boolean) => {
     recordarBaraja(oscuras)
     setCartasOscuras(oscuras)
   }
 
+  const escogerGuia = (mostrar: boolean) => {
+    recordarGuia(mostrar)
+    setMostrarGuia(mostrar)
+  }
+
   const { partida, vista: ronda, esTuTurno, aviso, resumen } = juego
+
+  /**
+   * One partida finished is the guide's whole job done, so it puts itself
+   * away — and only if nobody ever touched the switch, which is why the
+   * setting has three states and not two.
+   */
+  useEffect(() => {
+    if (juego.seAcabo) apagarGuiaSiNadieLaEligio()
+  }, [juego.seAcabo])
+
+  /**
+   * What to do right now, or null. Everything it reads is already derived —
+   * the phase, whether you are down, whether the mesa is open to you — so the
+   * line cannot drift out of step with the buttons it names.
+   */
+  const linea =
+    mostrarGuia && ronda
+      ? guiar({
+          esTuTurno,
+          fase: ronda.fase,
+          yaBajado: juego.yaBajado,
+          mesaAbierta: juego.mesaAbierta,
+          seleccionadas: juego.seleccionadas.length,
+          apartadas: juego.propuestas.length,
+          contratoCompleto: juego.contratoCompleto,
+          hayMesa: ronda.jugadores.some((jugador) => jugador.grupos.length > 0),
+        })
+      : null
 
   // The faces this ronda's comodines wear — dealt from the seed, like the
   // cards, so a replayed partida replays its comodines too.
@@ -215,6 +270,7 @@ export function Tablero({
               ? contarRelato(juego.relato, nombresEnMesa, asiento)
               : undefined
           }
+          guia={linea}
           viaje={juego.viaje}
           onVerDescarte={verDescarte ? () => setVerPila(true) : undefined}
           onVerHistorial={verHistorial ? () => setVerHistoria(true) : undefined}
@@ -277,8 +333,21 @@ export function Tablero({
             onSegundosBot={onSegundosBot}
             cartasOscuras={cartasOscuras}
             onCartasOscuras={escogerBaraja}
+            mostrarGuia={mostrarGuia}
+            onMostrarGuia={escogerGuia}
+            onComoSeJuega={() => setVerReglas(true)}
             onCerrar={() => setVerMenu(false)}
             onSalir={onSalir}
+          />
+        )}
+
+        {/* Above the menu rather than instead of it: the rules are something
+            you dip into and come back from, so closing them lands you back
+            where you asked from. */}
+        {verReglas && (
+          <Reglas
+            cartasOscuras={cartasOscuras}
+            onCerrar={() => setVerReglas(false)}
           />
         )}
 
@@ -322,6 +391,9 @@ function MenuDePartida({
   onSegundosBot,
   cartasOscuras,
   onCartasOscuras,
+  mostrarGuia,
+  onMostrarGuia,
+  onComoSeJuega,
   onCerrar,
   onSalir,
 }: {
@@ -334,6 +406,10 @@ function MenuDePartida({
   onSegundosBot?: (segundos: number) => void
   cartasOscuras: boolean
   onCartasOscuras: (oscuras: boolean) => void
+  /** Whether the line above the hand is telling you what to do (Phase 45). */
+  mostrarGuia: boolean
+  onMostrarGuia: (mostrar: boolean) => void
+  onComoSeJuega: () => void
   onCerrar: () => void
   onSalir: () => void
 }) {
@@ -406,6 +482,46 @@ function MenuDePartida({
           </div>
         </div>
 
+        {/*
+          Learning to play, last in the menu and right above the buttons
+          (Phase 45) — because the menu opens *scrolled to the bottom*: the
+          focus goes to «Seguir jugando» and takes the view with it. Anything
+          put at the top of this panel is, on a phone lying down, something
+          you have to know is there before you can find it. These two are for
+          the person who does not know what is there.
+        */}
+        <div className="mt-4 flex flex-col gap-2">
+          <button
+            type="button"
+            onClick={onComoSeJuega}
+            className="border-input hover:bg-accent flex items-center gap-3 rounded-md border px-3 py-2.5 text-left transition-colors"
+          >
+            <BookOpen className="size-4 shrink-0" aria-hidden />
+            <span className="flex min-w-0 flex-col">
+              <span className="text-sm font-medium">Cómo se juega</span>
+              <span className="text-muted-foreground text-xs">
+                Los grupos, los comodines y el puntaje
+              </span>
+            </span>
+          </button>
+
+          <label className="border-input hover:bg-accent flex cursor-pointer items-center gap-3 rounded-md border px-3 py-2.5 transition-colors">
+            <Lightbulb className="size-4 shrink-0" aria-hidden />
+            <span className="flex min-w-0 flex-1 flex-col">
+              <span className="text-sm font-medium">Mostrar la guía</span>
+              <span className="text-muted-foreground text-xs">
+                Una línea en la mesa con lo que sigue en tu turno
+              </span>
+            </span>
+            <input
+              type="checkbox"
+              checked={mostrarGuia}
+              onChange={(evento) => onMostrarGuia(evento.target.checked)}
+              className="size-4 shrink-0 accent-amber-600"
+            />
+          </label>
+        </div>
+
         <div className="mt-3 flex items-center justify-between gap-3">
           <span className="text-muted-foreground font-mono text-xs">{seed}</span>
           <div className="flex items-center gap-1.5">
@@ -448,6 +564,47 @@ function MenuDePartida({
               Seguir jugando
             </button>
           </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+/**
+ * The rules, over the felt (Phase 45).
+ *
+ * The same component the `/como-se-juega` page renders, in the shape the
+ * table already uses for *look something up without leaving the table* — the
+ * descarte and the historial are the other two. It is a reference and not a
+ * lesson: a person opens this mid-ronda because the referee refused a card,
+ * and the answer had better be findable by scrolling rather than by reading.
+ */
+function Reglas({
+  cartasOscuras,
+  onCerrar,
+}: {
+  cartasOscuras: boolean
+  onCerrar: () => void
+}) {
+  return (
+    <div className="absolute inset-0 z-40 flex items-center justify-center bg-black/60 p-4">
+      <div className="bg-background flex max-h-full w-full max-w-md flex-col rounded-lg border">
+        <div className="flex items-baseline justify-between gap-3 border-b px-4 py-3">
+          <h2 className="text-base font-semibold">Cómo se juega</h2>
+          <span className="text-muted-foreground text-xs">Carioca</span>
+        </div>
+        <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4">
+          <ComoSeJuega cartasOscuras={cartasOscuras} />
+        </div>
+        <div className="flex justify-end border-t px-4 py-3">
+          <button
+            type="button"
+            onClick={onCerrar}
+            autoFocus
+            className="bg-primary text-primary-foreground rounded-md px-3 py-1.5 text-sm"
+          >
+            Volver a la mesa
+          </button>
         </div>
       </div>
     </div>
@@ -899,6 +1056,9 @@ function MesaFinal({
   const grupos = (resumen.mesa ?? []).flatMap((suyos, seat) =>
     suyos.map((grupo, indice) => ({ grupo, seat, indice })),
   )
+  // A won table is as crowded as the live one was a move ago, and shrinks the
+  // same way (Phase 45) — so the snapshot fits on the screen that took it.
+  const apretada = escalaDeMesa(grupos.length)
   const tablas = resumen.ganador === 'nadie'
   const ganaste = resumen.ganador === asiento
 
@@ -932,6 +1092,13 @@ function MesaFinal({
             'flex max-h-[55vh] flex-wrap items-start justify-center gap-2 overflow-y-auto rounded-xl bg-stone-950 p-3',
             cartasOscuras && 'cartas-oscuras',
           )}
+          style={
+            {
+              // Outside `.cancha` there is no `--carta-md` to take a ratio
+              // of, so the crowding is applied to the card's own fallback.
+              '--carta-xs': `calc(2.75rem * ${apretada.carta / RATIO_XS})`,
+            } as React.CSSProperties
+          }
         >
           {grupos.length === 0 ? (
             <span className="py-6 text-sm text-tinta-tenue">
@@ -939,7 +1106,12 @@ function MesaFinal({
             </span>
           ) : (
             grupos.map(({ grupo, seat, indice }) => (
-              <GrupoEnMesa key={`${seat}-${indice}`} grupo={grupo} doradas={cierre} />
+              <GrupoEnMesa
+                key={`${seat}-${indice}`}
+                grupo={grupo}
+                doradas={cierre}
+                compacto={apretada.compacto}
+              />
             ))
           )}
         </div>
