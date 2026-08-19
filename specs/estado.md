@@ -1,6 +1,6 @@
 # Project status — pick up here
 
-Last updated after Phase 43.
+Last updated after Phase 45 — Milestone 4 is closed.
 
 Read this first, then `mission.md` for the why, `carioca-rules.md` for the game,
 `tech-stack.md` for the stack, and `roadmap.md` for what comes next. This file is
@@ -14,8 +14,9 @@ doc is worse than none.
 
 ## Where things stand
 
-Phases 0–44 are numbered and 0–43 are done. **Carioca is playable, and it is entered through one
-door.** Open the site on a phone, get dealt an alias, create a partida —
+Phases 0–45 are numbered and **all of them are done: Milestones 1 through 4
+are complete.** **Carioca is playable, it is entered through one door, and it
+now teaches itself.** Open the site on a phone, get dealt an alias, create a partida —
 you host, a short code is dealt, three bots sit down — and play a full
 partida: draw, lay down, unload onto anyone's grupos, discard, and see the
 scoreboard at the end.
@@ -72,7 +73,7 @@ empty seats), and the better bots moved behind it as Milestone 4.
 | 42 | What it was won with: the final mesa before the score | ✅ |
 | 43 | The white you choose: one slider, every white | ✅ |
 | 44 | Which tables are still open: the panel, and tables that close themselves | ✅ |
-| 45 | Rough edges *(was 40, then 44)* | ← **next** |
+| 45 | Rough edges: the guía, «Cómo se juega», and a mesa that fits | ✅ — **closes Milestone 4** |
 
 **Phase 44 came from a suspicion that measuring confirmed, and is done.**
 Thirteen partidas on the live database, all thirteen still `jugando`, none
@@ -91,6 +92,30 @@ is polling a table nobody is at. `Asiento.ultimaSenal` is finally written
 (once per thirty seconds, not once per poll), and `/panel` lists every table
 with its ages, its seats and who is actually connected, behind
 `CLAVE_DEL_PANEL`. Preview and Development now read `mazo-dev`.
+
+**Phase 45 closed Milestone 4, and split its own brief in two.** «A hint and
+a rules summary» turned out to be two features for two moments, not two
+halves of one: nobody reads a manual before a game, and help is wanted
+mid-turn with the cards already dealt.
+
+**What shipped:** **la guía** (`lib/guia.ts`), one line naming the next move
+and nothing else, derived from the table's own state — so it can never point
+at a disabled button, and on the turn you bajaste it says *discard* rather
+than pointing at a mesa that would refuse. It shows in the info strip, taking
+the relato's place while it is your turn, and turns itself off after one
+finished partida; the switch in the menu overrides that in both directions,
+which is why the setting is absent/sí/no and not a boolean.
+**«Cómo se juega»** (`components/reglas.tsx`) is one component with two
+entrances — the page at `/como-se-juega`, linked from under the contract list
+on the home screen, and an overlay over the felt from the partida's menu —
+illustrated with real `<Carta>`s on the real felt. Both menu entries sit at
+the bottom of the panel, because it opens autofocused on «Seguir jugando» and
+scrolled to match.
+**And the mesa fits:** Phase 17's sideways scroll is gone. Grupos wrap in both
+orientations and the cards shrink by grupo count in four steps
+(`escalaDeMesa`), titles and half the padding going at the first. Measured on
+a real phone both ways: 18 grupos (six players, *tres escalas*) and even 24
+overflow in neither direction, and every card still shows its corner.
 
 **Phases 40–43 are done, and shipped to dev.** What the list asked for, in
 one line each: your own clock is a ring beside your hand and the arranging
@@ -156,7 +181,7 @@ no code changes. `lib/caras.ts`, `components/caras.tsx`.
   public, no login.
 - **Deploys:** work goes to `dev`, which builds by itself. Production changes
   only by merging `dev` into `main`. Nothing else deploys `main`.
-- **Tests:** 544, all green (the run takes ~18s, mostly the soak). `npm run test:run`, `npx tsc --noEmit`, `npm run lint`.
+- **Tests:** 577, all green (the run takes ~18s, mostly the soak). `npm run test:run`, `npx tsc --noEmit`, `npm run lint`.
 - **Database:** SQLite via Prisma 7 + libSQL. Local dev uses `prisma/dev.db`;
   **online is live on Turso** — group `mazo` in `aws-us-east-1`, so it sits
   beside Vercel's functions and leaves `fwc_2026`'s group alone. **Two
@@ -220,6 +245,11 @@ prisma/schema.prisma Partida and Asiento. State is the engine's own JSON.
 components/tema.tsx  Light / dark / follow the phone.
 lib/mano.ts          Arranging your hand: order, sorting, pinned bloques,
                      latched sort. A comfort, never a rule.
+lib/guia.ts          The next move in one line, derived and pure — plus the
+                     absent/sí/no setting that lets it silence itself once.
+components/reglas.tsx  «Cómo se juega»: the rules on one screen, illustrated
+                     with real cards. Rendered by the page and the overlay.
+app/como-se-juega/   The rules as a page, for reading before sitting down.
 app/pruebas/         The page that makes the engine visible.
 __tests__/           Tests, including engine/helpers.ts for scripted rondas.
 ```
@@ -263,6 +293,18 @@ across rondas — an arrangement, a selection, a hint — will keep matching aft
 the cards are gone and has to be dropped when the ronda changes.
 
 ## What comes next
+
+**Nothing is scheduled.** Every numbered phase is done and Milestone 4 closed
+with Phase 45. `roadmap.md`'s *After* list is what is left, and it is
+deliberately unordered: a second game on the same platform (the real test of
+whether the engine is as separate as it claims), a service worker so the app
+itself opens with no network, replays from seed and move list, and private
+leaderboards among friends. The pattern of the last three milestones says the
+next list will come from playing rather than from here — Phases 26–28, 40–43
+and 44 were each written after a real game, and each displaced whatever was
+scheduled.
+
+*Everything below is the record of how the project got here.*
 
 **Online play, reprioritized — and there is no solo mode.** The roadmap's
 Milestone 3 is now "Playable together": Phases 30–38 unify the game behind
