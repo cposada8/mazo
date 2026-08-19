@@ -24,7 +24,15 @@ import {
 } from '@/lib/engine'
 import { type Relato, relatar } from '@/lib/relato'
 import { prisma } from './db'
-import { asientoDe } from './partidas'
+import { asientoConEstado, asientoDe } from './partidas'
+
+/**
+ * How stale a seat's last signal may get before the next read refreshes it
+ * (Phase 44). Polling is every half second while somebody else plays, and
+ * presence is a question the panel asks in minutes — so it is written once in
+ * a while rather than once a poll.
+ */
+const MS_ENTRE_SENALES = 30_000
 
 /** Everything one browser needs to draw the table on its next frame. */
 export type VistaDeMesa = {
@@ -76,6 +84,8 @@ type Fila = {
     esBot: boolean
     bot: string | null
     secreto: string | null
+    retirado: boolean
+    ultimaSenal: Date | null
   }[]
 }
 
@@ -116,11 +126,46 @@ export async function leerMesa(
   if (!fila) return { ok: false, code: 'NO_EXISTE' }
   if (!fila.estado) return { ok: false, code: 'NO_REPARTIDA' }
 
-  const asiento = await asientoDe(fila.id, secreto)
-  if (asiento === null) return { ok: false, code: 'NO_ES_TU_ASIENTO' }
+  const propio = await asientoConEstado(fila.id, secreto)
+  if (propio === null) return { ok: false, code: 'NO_ES_TU_ASIENTO' }
 
+  /*
+   * A seat that left may still look; it may no longer be the clock (Phase 44).
+   * Everybody's poll advancing whatever is due is what makes a table work
+   * without a timer — and it is also what let a phone in a pocket, page still
+   * open, keep bots playing and human clocks running at a table its owner had
+   * walked away from.
+   */
+  if (propio.retirado) {
+    const estado = JSON.parse(fila.estado) as PartidaState
+    return { ok: true, mesa: publicar(fila, estado, propio.indice) }
+  }
+
+  await senalar(fila, propio.indice, ahora)
   const avanzada = await avanzar(fila, ahora)
-  return { ok: true, mesa: publicar(avanzada.fila, avanzada.estado, asiento) }
+  return { ok: true, mesa: publicar(avanzada.fila, avanzada.estado, propio.indice) }
+}
+
+/**
+ * Mark that this seat's browser was heard from (Phase 44, wiring the column
+ * Phase 37 declared and never wrote). It is what lets the panel answer *is
+ * anybody actually there?* instead of guessing from when the table last moved
+ * — a table moves because a bot's time ran out, which is no evidence of a
+ * person at all.
+ */
+async function senalar(fila: Fila, indice: number, ahora: number) {
+  const asiento = fila.asientos.find((a) => a.indice === indice)
+  const ultima = asiento?.ultimaSenal?.getTime() ?? 0
+  if (ahora - ultima < MS_ENTRE_SENALES) return
+
+  await prisma.asiento
+    .updateMany({
+      where: { partidaId: fila.id, indice },
+      data: { ultimaSenal: new Date(ahora) },
+    })
+    .catch(() => {
+      // Presence is a nicety. Failing to record it must never fail a read.
+    })
 }
 
 /**

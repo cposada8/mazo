@@ -239,6 +239,25 @@ export async function asientoDe(
   return asiento?.indice ?? null
 }
 
+/**
+ * The seat, and whether it is still in the game (Phase 44).
+ *
+ * Reading a table you left is harmless — the score is public and so is the
+ * mesa. Driving it is not: a request from a retired seat used to advance
+ * whatever was due, so a phone in a pocket with the page still open kept bots
+ * playing and human clocks running at a table nobody was watching.
+ */
+export async function asientoConEstado(
+  partidaId: string,
+  secreto: string,
+): Promise<{ indice: number; retirado: boolean } | null> {
+  const asiento = await prisma.asiento.findFirst({
+    where: { partidaId, secreto },
+    select: { indice: true, retirado: true },
+  })
+  return asiento ?? null
+}
+
 export async function guardarEstado(
   partidaId: string,
   estado: PartidaState,
@@ -564,10 +583,16 @@ export async function abandonar(opciones: {
     ? { ...estado, ronda: retirarAsiento(estado.ronda, propio.indice) }
     : estado
 
-  // A partida needs two. The last seat standing ends it rather than playing on
-  // alone against nobody.
+  // A partida needs two seats and at least one person. The last seat standing
+  // ends it rather than playing on alone against nobody — and so does the last
+  // *person*, because a table of bots is not a partida, it is a screensaver
+  // nobody is watching (Phase 44). Nine of the thirteen tables still open when
+  // that phase was written were exactly this.
   const quedan = conRetiro.ronda ? asientosActivos(conRetiro.ronda).length : 0
-  const terminada = conRetiro.ronda !== null && quedan < MIN_PLAYERS
+  const gente = fila.asientos.filter(
+    (asiento) => !asiento.esBot && !asiento.retirado && asiento.indice !== propio.indice,
+  ).length
+  const terminada = conRetiro.ronda !== null && (quedan < MIN_PLAYERS || gente === 0)
 
   await prisma.$transaction([
     prisma.asiento.updateMany({
@@ -584,6 +609,74 @@ export async function abandonar(opciones: {
   ])
 
   return { ok: true, enLobby: false }
+}
+
+// ------------------------------------------------------------- limpieza
+
+/** A lobby that was never dealt is rubbish after this long. */
+export const HORAS_DE_LOBBY = 6
+/** A partida nobody has touched for this long is over, whatever it thinks. */
+export const HORAS_DE_SILENCIO = 24
+
+/**
+ * When this instance last swept. A serverless instance is reused, so an
+ * in-memory mark is enough to keep the door from paying for two statements on
+ * every single visit — and losing it on a cold start costs one extra sweep,
+ * which is the cheapest possible way to be wrong.
+ */
+let barridoEn = 0
+const MS_ENTRE_BARRIDOS = 10 * 60_000
+
+/**
+ * Close what nobody came back to (Phase 44).
+ *
+ * Swept rather than scheduled, and swept **by whoever arrives**: a quiet
+ * partida is by definition one nobody is asking about, so the lazy
+ * enforcement the rest of the server runs on — a turn is due, the next
+ * request applies it — can never reach one. The next person through the door
+ * can, and does, at the cost of two statements against a table of dozens.
+ *
+ * A lobby that was never dealt is deleted: there is nothing in it to keep. A
+ * partida that was played is marked `terminada` and kept, because the score
+ * of a real game is worth more than the row it costs.
+ */
+export async function barrer(
+  ahora = Date.now(),
+  /** Ignore the ten-minute guard: the panel's own button, and the tests. */
+  siempre = true,
+): Promise<{ lobbies: number; terminadas: number }> {
+  if (!siempre && ahora - barridoEn < MS_ENTRE_BARRIDOS) {
+    return { lobbies: 0, terminadas: 0 }
+  }
+  barridoEn = ahora
+
+  const sinRepartir = new Date(ahora - HORAS_DE_LOBBY * 3_600_000)
+  const enSilencio = new Date(ahora - HORAS_DE_SILENCIO * 3_600_000)
+
+  const [lobbies, calladas, vacias] = await prisma.$transaction([
+    prisma.partida.deleteMany({
+      where: { fase: 'lobby', actualizadaEn: { lt: sinRepartir } },
+    }),
+    prisma.partida.updateMany({
+      where: { fase: 'jugando', actualizadaEn: { lt: enSilencio } },
+      data: { fase: 'terminada' },
+    }),
+    /*
+     * And the same rule the last person leaving now applies, applied to the
+     * tables that were already like that when it arrived. It is not only
+     * tidiness: silence is measured by when a row was last written, and a tab
+     * left open on a table whose people all left used to keep writing to it —
+     * so those tables were never going to age out on their own. They cannot
+     * write any more (a retired seat is not the clock), but the nine that
+     * existed when this was written would have sat there regardless.
+     */
+    prisma.partida.updateMany({
+      where: { fase: 'jugando', asientos: { none: { esBot: false, retirado: false } } },
+      data: { fase: 'terminada' },
+    }),
+  ])
+
+  return { lobbies: lobbies.count, terminadas: calladas.count + vacias.count }
 }
 
 /**

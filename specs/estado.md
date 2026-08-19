@@ -71,7 +71,26 @@ empty seats), and the better bots moved behind it as Milestone 4.
 | 41 | A turn you can follow: paced narration, and gold on what landed | ✅ |
 | 42 | What it was won with: the final mesa before the score | ✅ |
 | 43 | The white you choose: one slider, every white | ✅ |
-| 44 | Rough edges *(was 40)* | ← **next** |
+| 44 | Which tables are still open: the panel, and tables that close themselves | ✅ |
+| 45 | Rough edges *(was 40, then 44)* | ← **next** |
+
+**Phase 44 came from a suspicion that measuring confirmed, and is done.**
+Thirteen partidas on the live database, all thirteen still `jugando`, none
+ever `terminada`, and nine with no human left in them. Three causes, written
+up in `roadmap.md`: `abandonar` counts seats rather than people, so the last
+human out of a table of bots leaves it "in progress"; nothing ever sweeps;
+and `leerMesa` advances the table for any request naming a seat — including a
+retired one — so a tab left open keeps bots playing to an empty room. **And
+all three Vercel environments shared one Turso database**, which is why dev's
+test partidas sat in the same list as real ones.
+
+**What shipped:** a partida with no people in it ends, a retired seat's poll
+serves the view but drives nothing, six hours deletes an undealt lobby and a
+day closes a silent partida — swept by whoever opens the door, since nobody
+is polling a table nobody is at. `Asiento.ultimaSenal` is finally written
+(once per thirty seconds, not once per poll), and `/panel` lists every table
+with its ages, its seats and who is actually connected, behind
+`CLAVE_DEL_PANEL`. Preview and Development now read `mazo-dev`.
 
 **Phases 40–43 are done, and shipped to dev.** What the list asked for, in
 one line each: your own clock is a ring beside your hand and the arranging
@@ -139,10 +158,13 @@ no code changes. `lib/caras.ts`, `components/caras.tsx`.
   only by merging `dev` into `main`. Nothing else deploys `main`.
 - **Tests:** 544, all green (the run takes ~18s, mostly the soak). `npm run test:run`, `npx tsc --noEmit`, `npm run lint`.
 - **Database:** SQLite via Prisma 7 + libSQL. Local dev uses `prisma/dev.db`;
-  **online is live on Turso** — database `mazo`, in its own group in
-  `aws-us-east-1` so it sits beside Vercel's functions and leaves
-  `fwc_2026`'s group alone. Credentials are in `.env.local` (gitignored) and
-  as encrypted Vercel env vars for all three environments.
+  **online is live on Turso** — group `mazo` in `aws-us-east-1`, so it sits
+  beside Vercel's functions and leaves `fwc_2026`'s group alone. **Two
+  databases in that group, since Phase 44:** `mazo` for Production and
+  `mazo-dev` for Preview and Development. They were one until measuring the
+  abandoned partidas turned up dev's test tables sitting in the same list as
+  real play. Credentials are Vercel env vars per environment; the production
+  ones are also in `.env.turso` (gitignored) for the CLI.
   - After a schema change: `npx prisma db push` for local, then
     `npx prisma migrate diff --from-empty --to-schema prisma/schema.prisma
     --script | turso db shell mazo` for Turso — the Prisma CLI will not take

@@ -17,7 +17,7 @@ tooling. Anything not already proven there needs a justification in this file.
 | Client state | Zustand | Small store for local UI and the solo game session. |
 | Server state | TanStack Query | Only once online play needs polling/refetching. Not before. |
 | Tests | Vitest + Testing Library | The engine is tested with plain Vitest, no DOM. |
-| Database | Prisma + libSQL (Turso) | Same setup as `fwc_2026`: a local SQLite file in dev, Turso in production. |
+| Database | Prisma + libSQL (Turso) | Same setup as `fwc_2026`: a local SQLite file on this machine, and **two** Turso databases — `mazo` for production, `mazo-dev` for preview and Vercel's development environment. One database for everything is what put dev's test partidas in the same list as real play (Phase 44). |
 | Auth | **None** | Dropped deliberately. Nobody wants to create an account to play a card game. Players join a partida with a code and a nickname. How a guest is identified in the database is an open design question — see below. |
 | Hosting | Vercel | Already used and working on mobile and desktop. |
 | Package manager | npm | Matches the existing project. |

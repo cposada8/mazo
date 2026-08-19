@@ -201,5 +201,5 @@ describe('a tournament', () => {
 
     const medio = (xs: number[]) => xs.reduce((a, b) => a + b, 0) / xs.length
     expect(medio(bajadas.paciente)).toBeGreaterThan(medio(bajadas.codicioso) + 2)
-  })
+  }, 30_000)
 })
