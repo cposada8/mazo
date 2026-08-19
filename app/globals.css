@@ -220,14 +220,28 @@
     padding-inline: 7cqw;
     padding-bottom: 1.5cqh;
   }
+  /*
+   * The grupos wrap — in both orientations, since Phase 45. Lying down they
+   * used to be one row that scrolled sideways, which meant that six players
+   * deep into a partida the mesa ran off the right edge and half the table
+   * had to be found before it could be read. Wrapping alone does not fix
+   * that; it is wrapping *plus* the cards shrinking by grupo count
+   * (`escalaDeMesa` in components/mesa.tsx) that makes eighteen grupos fit.
+   *
+   * `overflow-y` stays as a last resort. With the ratios as they are it
+   * should never be reached — the point is that a full mesa is visible, not
+   * that it is reachable.
+   */
   .grupos-en-mesa {
     display: flex;
     height: 100%;
     min-width: 0;
     flex: 1;
+    flex-wrap: wrap;
+    align-content: flex-end;
     align-items: flex-end;
     gap: calc(var(--spacing) * 1);
-    overflow-x: auto;
+    overflow-y: auto;
   }
 
   /*
@@ -289,8 +303,9 @@
    * the middle, hand along the bottom — but two things give way when the box
    * is taller than it is wide: the drawn oval (there is no room for an
    * ellipse, and the arrangement alone reads as a table — cardgames.io's
-   * lesson), and the single scrolling row of grupos, which wraps instead,
-   * because height is the one thing portrait has plenty of.
+   * lesson), and where the grupos settle. They wrap in both orientations
+   * since Phase 45; upright they centre in the lane rather than sitting on
+   * its floor, because height is the one thing portrait has plenty of.
    */
   @container (max-aspect-ratio: 1/1) {
     .ovalo {
@@ -301,11 +316,8 @@
       padding-bottom: 0;
     }
     .grupos-en-mesa {
-      flex-wrap: wrap;
       align-content: center;
       align-items: center;
-      overflow-x: hidden;
-      overflow-y: auto;
     }
   }
 }
