@@ -1778,15 +1778,21 @@ only then move on to the score.
 
 **Done.** The obstacle was the one the phase named, and the fix is the one it
 proposed: `Marcador` carries a picture of the mesa as it stood when the ronda
-closed, plus `cierre` — the ids the closing move put there, which is the
-answer to *con qué*. Both are optional, so a partida saved before they existed
-opens and goes straight to the score, as it always did.
+closed, plus `cierre` — the cards the winner's last turn put there, which is
+the answer to *con qué*. Both are optional, so a partida saved before they
+existed opens and goes straight to the score, as it always did.
 
-- **The diff is taken in `aplicarEnPartida`**, which is the only place that
-  holds both the ronda before the closing move and the one after it.
-  `cerrarRonda` takes the earlier one as an argument and subtracts: what is on
-  the mesa now and was not then is what it was won with. Empty when the winner
-  went out by botando, and the screen says so in words instead.
+- **It is a turn, not a move — and the first attempt got that wrong.** The
+  diff was taken across the closing move, which is exact and useless: going
+  out is usually *bajarse and then botar*, so the move that ends the ronda
+  touches the mesa not at all and the screen marked nothing at all. The owner
+  found it in a real game. What the ronda carries now is `puestas`: the cards
+  the turn in play has put on the mesa, accumulated in `apply` — the one door
+  every move goes through — and **stamped with the turn they belong to rather
+  than cleared when the turn ends**, because the last act of a winning turn is
+  a discard, and a discard advances the count before anyone has looked. At the
+  close, `cerrarRonda` reads it. Empty for tablas, and for a winner who put
+  nothing down on the way out; the screen says so in words instead.
 - **The pause opens on the table.** «Ver el puntaje» is one tap away and
   «Volver a ver la mesa» comes back, so the score is behind the mesa rather
   than instead of it. The snapshot is drawn with `GrupoEnMesa` on the same
@@ -1803,10 +1809,10 @@ when it was taken), so the guard now covers the live view and exempts the
 historial, in writing. What keeps it honest structurally is that the snapshot
 is read from `grupos` and never from `hand` — pinned by its own test.
 
-**Seen working, not only tested:** a ronda closed by ligando in a real
-browser, at 390 × 844. The screen says «Salió poniendo lo que está en
-dorado», the three grupos are on the felt, and the 7♦ that closed it is
-ringed on the trío it joined.
+**Seen working, not only tested:** two closes in a real browser at 390 × 844.
+A ronda closed by ligando rings the 7♦ on the trío it joined; a ronda closed
+by bajarse-and-botar rings all six cards of the two tríos that went down, and
+leaves the escala somebody else laid two turns earlier unmarked.
 
 ### Phase 43 — The white you choose ✅
 The owner tuned the white by night, over a run of commits, and the result is

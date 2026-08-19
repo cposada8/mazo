@@ -85,9 +85,57 @@ describe('the marcador remembers the table', () => {
     expect(resultado.state.historial[0].cierre).toEqual([ultima.id])
   })
 
-  it('names nothing when the winner went out by botando', () => {
-    // The mesa did not change on the closing move: the last card went to the
-    // descarte, and the question «con qué ganó» has a different answer.
+  it('names the whole winning turn — bajarse and then botar', () => {
+    // The case that matters, and the one a first attempt got wrong by
+    // measuring the closing *move*: going out is usually laying the contract
+    // down and throwing what is left, and the move that ends the ronda
+    // touches nothing at all.
+    const trios = [
+      [n('4', 'spades'), n('4', 'hearts'), n('4', 'clubs')],
+      [n('9', 'spades'), n('9', 'hearts'), n('9', 'clubs')],
+      [n('J', 'spades'), n('J', 'hearts'), n('J', 'clubs')],
+    ]
+    const sobra = n('2', 'clubs')
+    const ronda = makeRonda({
+      contrato: CUATRO_TRIOS,
+      jugadores: [
+        { hand: [...trios.flat(), sobra] },
+        { hand: [n('K', 'spades')] },
+      ],
+      numeroDeTurno: 7,
+      fase: 'act',
+    })
+
+    const bajada = aplicarEnPartida(partidaCon(ronda), {
+      type: 'bajarse',
+      propuestas: trios.map((cards) => ({
+        kind: 'trio' as const,
+        rank: cards[0].rank,
+        cardIds: cards.map((card) => card.id),
+      })),
+    })
+    expect(bajada.ok).toBe(true)
+    if (!bajada.ok) return
+
+    const cierre = aplicarEnPartida(bajada.state, {
+      type: 'descartar',
+      cardId: sobra.id,
+    })
+    expect(cierre.ok).toBe(true)
+    if (!cierre.ok) return
+
+    const marcador = cierre.state.historial[0]
+    expect(marcador.ganador).toBe(0)
+    // All nine, not the nothing the discard added.
+    expect([...(marcador.cierre ?? [])].sort()).toEqual(
+      trios.flat().map((card) => card.id).sort(),
+    )
+    // And never the card that went to the descarte: this is the mesa's story.
+    expect(marcador.cierre).not.toContain(sobra.id)
+  })
+
+  it('names nothing when the winning turn put nothing on the mesa', () => {
+    // Bajado on an earlier turn, and this one was only a discard.
     const ultima = n('2', 'clubs')
     const resultado = aplicarEnPartida(partidaCon(aPuntoDeSalir(ultima)), {
       type: 'descartar',

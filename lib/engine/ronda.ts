@@ -64,6 +64,25 @@ export type RondaState = {
    * en tablas (Phase 31), or null while it is still being played.
    */
   readonly ganador: number | 'nadie' | null
+  /**
+   * What the turn in play has put on the mesa, and which turn that was
+   * (Phase 42).
+   *
+   * Kept because the interesting question at the end of a ronda is *what did
+   * the winner put down to go out*, and the answer is a whole turn rather
+   * than a single move: bajarse and then botar leaves the mesa untouched by
+   * the closing move and six cards heavier than it was a moment before.
+   * Accumulated in `apply`, which is the one door every move goes through,
+   * and stamped with the turn it belongs to rather than cleared when the turn
+   * passes — the closing move of a turn is a discard, and it advances the
+   * count before anybody has looked.
+   *
+   * Optional: a ronda saved before this existed simply has nothing to show.
+   */
+  readonly puestas?: {
+    readonly turno: number
+    readonly ids: readonly string[]
+  }
 }
 
 export type Move =
@@ -217,8 +236,12 @@ export function apply(state: RondaState, move: Move): MoveResult {
     )
   }
 
-  const result = applyMove(state, move)
-  if (!result.ok || result.state.ganador !== null) return result
+  const crudo = applyMove(state, move)
+  if (!crudo.ok) return crudo
+
+  // What this move added to the mesa, kept with the rest of its turn's work.
+  const result = { ...crudo, state: conPuestas(state, crudo.state) }
+  if (result.state.ganador !== null) return result
 
   // Going out is running out of cards, however it happened: a hand emptied by
   // ligar — or by a bajada that consumed all thirteen — closes the ronda as
@@ -229,6 +252,38 @@ export function apply(state: RondaState, move: Move): MoveResult {
   }
 
   return result
+}
+
+/** Every card sitting on the mesa, whoever laid it down. */
+export function cartasEnMesa(state: RondaState): readonly string[] {
+  return state.jugadores.flatMap((jugador) =>
+    jugador.grupos.flatMap((grupo) => grupo.cards.map((card) => card.id)),
+  )
+}
+
+/**
+ * Carry the turn's work forward: what was on the mesa before this move, what
+ * is on it now, and the difference added to whatever the same turn had
+ * already put there.
+ *
+ * Stamped with the turn the *move* belonged to — `state`, before it was
+ * applied — because a discard passes the turn, and the last thing a winning
+ * turn does is usually exactly that.
+ */
+function conPuestas(antes: RondaState, despues: RondaState): RondaState {
+  const habia = new Set(cartasEnMesa(antes))
+  const nuevas = cartasEnMesa(despues).filter((id) => !habia.has(id))
+  const previas =
+    antes.puestas?.turno === antes.numeroDeTurno ? antes.puestas.ids : []
+
+  if (nuevas.length === 0 && previas.length === 0) {
+    return despues.puestas ? { ...despues, puestas: undefined } : despues
+  }
+
+  return {
+    ...despues,
+    puestas: { turno: antes.numeroDeTurno, ids: [...previas, ...nuevas] },
+  }
 }
 
 function applyMove(state: RondaState, move: Move): MoveResult {

@@ -78,7 +78,7 @@ one line each: your own clock is a ring beside your hand and the arranging
 controls no longer need a swipe (40); a bot's turn lands in pieces and is
 narrated one line at a time, with everything it puts on the mesa ringed gold
 until the turn passes (41); a won ronda opens on the table it was won on,
-with the closing card marked, and the score a tap behind (42); and one slider
+with everything the winner's last turn put down marked, and the score a tap behind (42); and one slider
 moves every white in the app — text, pips, slabs, borders — from a single
 `--blanco` (43). Three things worth carrying forward: the server now applies
 a bot's turn move by move and writes with a compare-and-swap; the poll rate
@@ -137,7 +137,7 @@ no code changes. `lib/caras.ts`, `components/caras.tsx`.
   public, no login.
 - **Deploys:** work goes to `dev`, which builds by itself. Production changes
   only by merging `dev` into `main`. Nothing else deploys `main`.
-- **Tests:** 543, all green (the run takes ~17s, mostly the soak). `npm run test:run`, `npx tsc --noEmit`, `npm run lint`.
+- **Tests:** 544, all green (the run takes ~18s, mostly the soak). `npm run test:run`, `npx tsc --noEmit`, `npm run lint`.
 - **Database:** SQLite via Prisma 7 + libSQL. Local dev uses `prisma/dev.db`;
   **online is live on Turso** — database `mazo`, in its own group in
   `aws-us-east-1` so it sits beside Vercel's functions and leaves
