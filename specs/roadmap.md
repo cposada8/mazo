@@ -433,7 +433,7 @@ Three things came out differently than written above:
   20.
 
 Left deliberately undone: animations, real avatars, and any decoration of the
-room beyond a dark ground. Those are Phase 44, and none of them is what made
+room beyond a dark ground. Those are Phase 45, and none of them is what made
 the old screen unreadable.
 
 ### Phase 18 — Room to play ✅
@@ -521,7 +521,7 @@ arrangement — seats across the top, mesa in the middle, hand along the
 bottom — so this phase is a container query on `.cancha`, not a second
 layout. Below 1:1 aspect the oval hides and the grupos wrap into rows
 (portrait's spare dimension is height, so the mesa trades its sideways
-scroll for wrapping — which incidentally previews the fix Phase 44 wants
+scroll for wrapping — which incidentally previews the fix Phase 45 wants
 for the six-player overflow). The rotate-your-phone screen is deleted, the
 manifest orientation loosened to `any`, and rotation mid-turn was verified
 to preserve selection and bloques — nothing unmounts, so nothing is lost.
@@ -1561,7 +1561,8 @@ controls for arranging it are pushed off the edge by a line of text.
 
 Same rule as the two lists before it — what a real game finds outranks new
 machinery — so these go ahead of the rough edges, and **the old Phase 40 is
-now Phase 44.** They are ordered smallest-and-most-unfair first, then the
+now Phase 45, displaced a second time by the phase after them.** They are
+ordered smallest-and-most-unfair first, then the
 two that need design, then the palette last, because a pass over every white
 surface should come after the phases that add surfaces.
 
@@ -1608,7 +1609,7 @@ treated as a spectator's.
   by scrolling sideways to find them. **The row belongs to the hand's
   controls.** Take the instruction out of it. If a hint survives at all it
   belongs where the game already narrates itself — the info strip along the
-  felt — and never in competition with the buttons. Phase 44's hint for new
+  felt — and never in competition with the buttons. Phase 45's hint for new
   players inherits that constraint rather than reopening it.
 
 **Done when:** on a phone held upright, at a real online table: you can tell
@@ -1881,10 +1882,83 @@ same frame. The choice survives navigation and reload.
 
 ---
 
+## Asked for after the list shipped
+
+### Phase 44 — Which tables are still open
+Asked for after a suspicion, and the suspicion was right. **Measured on the
+live database while writing this:** thirteen partidas, **all thirteen still
+`jugando`**, none ever `terminada`, and **nine of them with no human left in
+them at all** — a person pressed Salir, three or five bots stayed, and the
+table has been sitting there since. Two of the nine had been written to
+twelve minutes earlier.
+
+Four things are true, and only the third costs anything:
+
+- **A partida ends when it runs out of *seats*, not out of *people*.**
+  `abandonar` closes a table when fewer than `MIN_PLAYERS` seats are still
+  active, and a bot is an active seat. So the last human leaving a table of
+  three bots leaves a partida that is, by the row's own account, in progress.
+  A table of bots alone is not a partida — Phase 39 even measured that two of
+  them can fail to finish a ronda at all.
+- **Nothing ever deletes anything.** No sweep, no expiry, and `fase` has never
+  once reached `terminada` in production. A code is unique among live
+  partidas, and nothing ever stops being live.
+- **A tab left open keeps a table playing.** `leerMesa` advances whatever is
+  due for *any* request that names a seat at that table — including a seat
+  that retired. So a phone in a pocket with the page still open drives bots
+  and fires human timeouts at a table nobody is watching. That is the one
+  that spends anything: writes, function time, and a game that plays itself
+  out in front of an empty room.
+- **And dev and production are the same table.** There is exactly one Turso
+  database and all three Vercel environments point at it, which is why the
+  list looks the way it does: those thirteen are dev's and production's,
+  mixed. `.env.turso` warns about precisely this hazard for local development
+  and it is true of the deployed dev branch as well.
+
+**The recommendation, and the shape of the phase.** A super user is the right
+instinct and the wrong half to build first: a panel where the owner closes
+tables by hand is a chore, and a chore is a thing that stops being done. So
+the rules come first and the panel comes second — the panel is for *seeing*,
+and for the exceptions.
+
+- **A partida with no human in it is over.** Count people, not seats. The
+  last person out turns off the light.
+- **A retired seat's poll does not advance anything.** It may still read —
+  looking at a table you left is harmless — but it stops being the clock.
+- **A partida nobody has touched in a day is closed**, swept whenever
+  somebody opens the door rather than by a timer: a quiet partida is by
+  definition one nobody is asking about, so lazy enforcement alone can never
+  reach it, and the cheapest thing that does reach it is the next person who
+  arrives. A lobby that was never dealt is deleted outright; a partida that
+  was played is marked `terminada` and kept.
+- **Then the panel.** Every partida with its age, when it was last touched,
+  who is at it — human, bot, or gone — what phase it is in, and a button to
+  close one. Behind a secret held in an environment variable and checked on
+  the server: there are no accounts in this game and there will not be any,
+  so the whole of "super user" is one value the owner knows. Not a role, not
+  a table, not a login.
+- **`Asiento.ultimaSenal` is in the schema and has never been written.**
+  Presence was designed in Phase 37 and left unwired. Wiring it is what lets
+  the panel answer the only question that matters — *is anybody actually
+  there?* — instead of guessing from timestamps.
+
+**One decision belongs to the owner, not to this phase:** whether dev gets its
+own database. It costs one `turso db create` and two environment variables,
+no code, and it is what stops test partidas from ever appearing beside real
+ones again. The alternative — one database, told apart by a column — is more
+code and still one list.
+
+**Done when:** the owner can open one page, see every partida that is still
+open with enough to tell the live ones from the abandoned, and close any of
+them — and the list stays short by itself, because a table whose last person
+left is already closed by the time it is looked at.
+
+---
+
 ## Closing Milestone 4
 
-### Phase 44 — Rough edges
-*Was Phase 40, displaced by the list above.*
+### Phase 45 — Rough edges
+*Was Phase 40, then 44; displaced twice, by two lists from real play.*
 
 A hint for new players and an in-game rules summary. Card animations were
 pulled forward into Phase 22 and the end-of-game screen into Phase 42; what

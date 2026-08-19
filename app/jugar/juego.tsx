@@ -229,7 +229,7 @@ export function Tablero({
             // its own and pushed the arranging controls off the screen, so
             // reaching them meant scrolling sideways (Phase 40). It is gone
             // rather than moved: the felt already narrates every move it could
-            // have explained, and the hint a new player needs is Phase 44's to
+            // have explained, and the hint a new player needs is Phase 45's to
             // design — somewhere that is not this row.
             <div className="flex min-h-5 min-w-0 flex-wrap items-center gap-x-3 gap-y-1 text-xs">
               {aviso && <span className="text-red-600 dark:text-red-400">{aviso}</span>}
