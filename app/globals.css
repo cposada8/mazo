@@ -7,6 +7,15 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  /*
+   * The felt's ink, as utilities: `text-tinta`, `border-linea`, and so on.
+   * The table is dark in both themes, so its ink is not the theme's — but it
+   * is the same white, and it moves with the same control (Phase 43).
+   */
+  --color-tinta: var(--tinta);
+  --color-tinta-suave: var(--tinta-suave);
+  --color-tinta-tenue: var(--tinta-tenue);
+  --color-linea: var(--linea);
   --font-sans: var(--font-sans);
   --font-mono: var(--font-geist-mono);
   --font-heading: var(--font-sans);
@@ -48,7 +57,34 @@
   --radius-4xl: calc(var(--radius) * 2.6);
 }
 
+/*
+ * The white, and everything made of it (Phase 43).
+ *
+ * There used to be no single white to turn: a family of near-whites written
+ * out by hand in `.dark`, plus some thirty literal `stone-*` utilities in the
+ * components. It was tuned by night and came out too dim by day — and the
+ * fix cannot be a theme, because what changes is the room, not the hour.
+ *
+ * So there is one number now. `--blanco` is the lightness of the brightest
+ * ink the game uses; every other white is written as a distance from it, the
+ * way every card size is written as a ratio of `--carta-md`. Turning it up
+ * moves text, card pips, buttons, borders and the marks on the felt together.
+ *
+ * It lives on `<html>` as an inline style written before the first paint, so
+ * the value survives a reload without a flash — the same discipline as the
+ * theme class. The default is the value the owner settled on at night.
+ *
+ * Only the whites: the light theme's near-black text is not made of this, and
+ * neither are the grounds — a dark table stays a dark table however bright
+ * its ink.
+ */
 :root {
+  --blanco: 0.79;
+  --tinta: oklch(var(--blanco) 0 0);
+  --tinta-suave: oklch(calc(var(--blanco) - 0.08) 0 0);
+  --tinta-tenue: oklch(calc(var(--blanco) - 0.24) 0 0);
+  --linea: oklch(calc(var(--blanco) - 0.35) 0 0);
+
   --background: oklch(1 0 0);
   --foreground: oklch(0.145 0 0);
   --card: oklch(1 0 0);
@@ -93,36 +129,36 @@
  */
 .dark {
   --background: oklch(0.145 0 0);
-  --foreground: oklch(0.79 0 0);
+  --foreground: var(--tinta);
   --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.79 0 0);
+  --card-foreground: var(--tinta);
   --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.79 0 0);
-  --primary: oklch(0.62 0 0);
+  --popover-foreground: var(--tinta);
+  --primary: oklch(calc(var(--blanco) - 0.17) 0 0);
   --primary-foreground: oklch(0.16 0 0);
   --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.79 0 0);
+  --secondary-foreground: var(--tinta);
   --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.6 0 0);
+  --muted-foreground: oklch(calc(var(--blanco) - 0.19) 0 0);
   --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.79 0 0);
+  --accent-foreground: var(--tinta);
   --destructive: oklch(0.704 0.191 22.216);
   --border: oklch(1 0 0 / 10%);
   --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
+  --ring: oklch(calc(var(--blanco) - 0.234) 0 0);
   --chart-1: oklch(0.87 0 0);
   --chart-2: oklch(0.556 0 0);
   --chart-3: oklch(0.439 0 0);
   --chart-4: oklch(0.371 0 0);
   --chart-5: oklch(0.269 0 0);
   --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.79 0 0);
+  --sidebar-foreground: var(--tinta);
   --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.79 0 0);
+  --sidebar-primary-foreground: var(--tinta);
   --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.79 0 0);
+  --sidebar-accent-foreground: var(--tinta);
   --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
+  --sidebar-ring: oklch(calc(var(--blanco) - 0.234) 0 0);
 }
 
 @layer base {
@@ -203,8 +239,9 @@
   .cartas-oscuras {
     --carta-fondo: #1c1917;
     --carta-borde: #57534e99;
-    /* Softer than white for the same reason the theme is: read in the dark. */
-    --carta-tinta: #a8a29e;
+    /* Softer than white for the same reason the theme is: read in the dark —
+       and made of the same white, so the slider moves the pips too. */
+    --carta-tinta: var(--tinta-suave);
     --carta-roja: #e06a6a;
     --carta-comodin: #a99bdc;
     --carta-comodin-borde: #8b5cf680;

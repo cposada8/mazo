@@ -13,7 +13,7 @@
  * both land, so nobody has to keep a tab open for the table to advance.
  */
 
-import { movesDelTurno } from '@/lib/bots'
+import { movesDelTurno, tiemposDeMoves } from '@/lib/bots'
 import {
   type Move,
   type PartidaState,
@@ -197,6 +197,15 @@ async function guardar(
  * A loop rather than one turn: three bots in a row and a player who looked
  * away for ten seconds means three turns are due at once, and the table must
  * come back caught up rather than one move at a time.
+ *
+ * **A bot's turn lands in pieces (Phase 41).** It used to be applied whole,
+ * which meant the next poll was handed draw, bajada and discard as one jump —
+ * *de repente el jugador ya botó y cogió*. The browser has always done the
+ * opposite: `tiemposDeMoves` spreads a bot's moves across its seconds so the
+ * turn can be watched. The same division applies here, as deadlines rather
+ * than timers: move *k* of *n* comes due at its share of the allotment, and a
+ * request plays only what is due. The last move still lands at the end of the
+ * allotment, so a turn takes exactly the seconds the lobby said.
  */
 async function avanzar(
   fila: Fila,
@@ -223,14 +232,20 @@ async function avanzar(
 
     const bot = esBot(ronda.turno)
     const plazo = (bot ? fila.segundosBot : fila.segundosPorTurno) * 1000
-    if (ahora - desde < plazo) break
 
     const contratoAntes = estado.indiceContrato
 
     if (bot) {
+      // What is left of this turn, re-decided from where it stands: the bot is
+      // pure, so a turn resumed on a later request plays out exactly as the
+      // one that was interrupted would have.
       const moves = movesDelTurno(estado, botsPorAsiento)
       if (moves.length === 0) break
-      for (const move of moves) {
+      const vencen = tiemposDeMoves(moves.length, plazo)
+
+      let aplicados = 0
+      for (const [indice, move] of moves.entries()) {
+        if (ahora - desde < vencen[indice]) break
         const antes = estado.ronda
         if (!antes) break
         const cuento = relatar(move, antes)
@@ -238,8 +253,21 @@ async function avanzar(
         if (!result.ok) break
         estado = result.state
         if (cuento) relatos.push(cuento)
+        aplicados++
+      }
+
+      if (aplicados === 0) break
+
+      if (aplicados < moves.length) {
+        // Part of a turn. The clock's start line does not move — the turn is
+        // still the one that began at `desde`, and the rest of it comes due
+        // to whoever asks next.
+        if (estado.indiceContrato !== contratoAntes) relatos = []
+        movio = true
+        break
       }
     } else {
+      if (ahora - desde < plazo) break
       // A turn nobody played: draw, throw one at random, pass. The line says
       // so in words — the ring everybody watched empty is the evidence.
       relatos.push({ tipo: 'tiempo', seat: ronda.turno })
@@ -274,15 +302,33 @@ async function avanzar(
     return { fila: actual, estado }
   }
 
-  actual = await prisma.partida.update({
-    where: { id: fila.id },
+  /*
+   * Two people watching means two requests can find the same move due, and
+   * now that a turn lands in pieces there are several times more windows in
+   * which that happens. They compute the same thing — the engine and the bots
+   * are pure — so the danger was never disagreement, it is order: a request
+   * that played one move must not land on top of one that played two, or the
+   * table visibly goes backwards before it catches up again.
+   *
+   * So the write is conditional on the state it was computed from still being
+   * the stored one, and the request that loses reads the winner's answer
+   * rather than overwriting it. No new column: the state is its own version.
+   */
+  const escrito = await prisma.partida.updateMany({
+    where: { id: fila.id, estado: fila.estado },
     data: {
       estado: JSON.stringify(estado),
       relatos: JSON.stringify(relatos),
       turnoDesde: new Date(desde),
       fase: estado.ronda ? 'jugando' : 'terminada',
     },
-    include: INCLUIR,
   })
-  return { fila: actual, estado }
+
+  const fresca = await cargar(fila.codigo)
+  if (!fresca?.estado) return { fila: actual, estado }
+  return {
+    fila: fresca,
+    estado:
+      escrito.count === 0 ? (JSON.parse(fresca.estado) as PartidaState) : estado,
+  }
 }

@@ -10,6 +10,7 @@ import { CATALOGO, type Contrato } from './contratos'
 import { MAX_PLAYERS, MIN_PLAYERS } from './deck'
 import { puntosDeMano } from './puntaje'
 import { createRng } from './random'
+import type { Grupo } from './grupos'
 import {
   type Move,
   type MoveErrorCode,
@@ -46,6 +47,24 @@ export type Marcador = {
   readonly puntos: readonly number[]
   /** The seat that went out, or `'nadie'` for a ronda closed en tablas. */
   readonly ganador: number | 'nadie'
+  /**
+   * The mesa as it stood when the ronda closed, by seat (Phase 42).
+   *
+   * Kept rather than caught: closing a ronda deals the next one in the same
+   * move, so by the time anybody hears about the end, the table they would
+   * want to look at has already been swept. Optional because a partida saved
+   * before this existed has a historial without it, and an old partida must
+   * still open.
+   */
+  readonly mesa?: readonly (readonly Grupo[])[]
+  /**
+   * What the winner's **last turn** put on the mesa — the cards it was won
+   * with. A turn and not the closing move, because going out is usually
+   * bajarse and then botar: the move that ends the ronda touches nothing, and
+   * marking it alone marks nothing at all. Empty for a ronda closed en
+   * tablas, and for a winner who put nothing down on the way out.
+   */
+  readonly cierre?: readonly string[]
 }
 
 export type PartidaState = {
@@ -152,9 +171,16 @@ export function cerrarRonda(state: PartidaState): PartidaState {
   )
 
   const totales = state.totales.map((total, seat) => total + puntos[seat])
+  const mesa = ronda.jugadores.map((jugador) => jugador.grupos)
+  // The ronda carries its turn's work; the winner's last turn is the one that
+  // was being played when it closed. A ronda en tablas closed on a draw that
+  // could not be served, so whatever is recorded belongs to somebody else's
+  // turn and means nothing here.
+  const cierre = ganador === 'nadie' ? [] : (ronda.puestas?.ids ?? [])
+
   const historial = [
     ...state.historial,
-    { contrato: ronda.contrato, puntos, ganador } satisfies Marcador,
+    { contrato: ronda.contrato, puntos, ganador, mesa, cierre } satisfies Marcador,
   ]
   const indiceContrato = state.indiceContrato + 1
 

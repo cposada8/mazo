@@ -15,11 +15,12 @@
  * saw), so the animation it drives is the same animation.
  */
 
-import { useCallback, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   type Card,
   type Marcador,
   type Move,
+  type VistaDeAsiento,
   type VistaDePartida,
   aplicarEnVista,
   isComodin,
@@ -29,6 +30,17 @@ import { useMano } from './useMano'
 
 /** One empty hand, so an absent ronda does not look like a changed one. */
 const VACIA: readonly Card[] = []
+
+/** How long a line of the story holds the strip before the next one is told. */
+const MS_POR_RELATO = 750
+/** With a queue behind it, briskly — the point is order, not ceremony. */
+const MS_AL_ALCANZAR = 300
+/**
+ * Past this many waiting, it is not a turn being watched: it is a reload or a
+ * tab that was away, and replaying it would be telling a story about a table
+ * that has moved on.
+ */
+const MAXIMO_EN_COLA = 5
 
 /**
  * Every move that tapping a grupo could sensibly mean, in the order to try
@@ -112,28 +124,82 @@ export function useMesa(transporte: Transporte) {
   // somebody else's turn.
   const esperando = enJuego && !esTuTurno
 
-  /** The last public thing that happened, for the line under the piles. */
-  const relato = relatos.at(-1) ?? null
+  /**
+   * The story, told one line at a time (Phase 41).
+   *
+   * The log can grow by several at once — a poll that spanned three of a
+   * bot's moves, or a turn that timed out and played itself — and it used to
+   * show only the newest, which is how a turn arrived as *ya botó y cogió*.
+   * So what has been told is counted, and the rest is a queue: one line, then
+   * the next, at a pace a person can follow.
+   *
+   * The queue paces the *telling*, not the game. The view it belongs to has
+   * already moved — the engine had applied every one of these before the
+   * browser heard about them — so the mesa can be a beat ahead of the line
+   * naming the move that changed it. That beat is the price of a story told
+   * in order, and it is cheaper than no story at all.
+   */
+  const [contados, setContados] = useState(relatos.length)
+  /** Which line the card in flight belongs to; see the journey below. */
+  const [ultimoContado, setUltimoContado] = useState(relatos.length)
+  /** When the last line was told, so a lone one is not made to wait for a beat. */
+  const contadoEn = useRef(0)
+
+  // Skipping ahead — both cases below — is not narration, so it takes the
+  // journey counter with it: nothing travels for a line nobody was told.
+  if (contados > relatos.length) {
+    // A new reparto empties the log. Nothing is left to tell: whatever was
+    // still queued belonged to a ronda that is over.
+    setContados(relatos.length)
+    setUltimoContado(relatos.length)
+  } else if (relatos.length - contados > MAXIMO_EN_COLA) {
+    // And a backlog this size is not a turn being played in front of you. It
+    // is a reload, a tab that was away, or a stretch of the game that ran
+    // while nobody was asking — Phase 22's instinct, kept for the case it was
+    // right about: land where the table is now rather than replaying it.
+    setContados(relatos.length)
+    setUltimoContado(relatos.length)
+  }
+
+  const porContar = relatos.length - contados
+
+  useEffect(() => {
+    if (porContar <= 0) return
+
+    // Told at once when the table is quiet, briskly when there is a queue:
+    // waiting out a full beat before the first line would put a lag on your
+    // own moves, which land the instant you make them.
+    const ritmo = porContar > 1 ? MS_AL_ALCANZAR : MS_POR_RELATO
+    const espera = Math.max(0, ritmo - (Date.now() - contadoEn.current))
+
+    const cuenta = setTimeout(() => {
+      contadoEn.current = Date.now()
+      setContados((contadas) => contadas + 1)
+    }, espera)
+
+    return () => clearTimeout(cuenta)
+  }, [porContar])
+
+  /** The line under the piles: the last one told, not the last one to arrive. */
+  const relato = contados > 0 ? (relatos[contados - 1] ?? null) : null
 
   /**
    * The card travelling across the table right now.
    *
-   * Derived from the log growing, not recorded when a move is sent: that way
-   * a move somebody else made animates too, which is the whole point once
-   * there is somebody else.
+   * Fired by a line being *told* rather than by the log growing, so it keeps
+   * step with the story even when three moves arrived together. Derived
+   * during render for the same reason the pause is: the card must be in
+   * flight on the very frame its line goes up.
    */
   const [viaje, setViaje] = useState<Viaje | null>(null)
-  const [cuantosRelatos, setCuantosRelatos] = useState(0)
-  const [proximoViaje, setProximoViaje] = useState(1)
-  if (cuantosRelatos !== relatos.length) {
-    setCuantosRelatos(relatos.length)
-    // Only the newest one travels: catching up on several at once — a poll
-    // that spanned a whole bot turn — should land the table where it is now,
-    // not replay the last few seconds.
-    const ultimo = relatos.length > cuantosRelatos ? relatos.at(-1) : undefined
-    const trip = ultimo ? viajeDeRelato(ultimo, proximoViaje) : null
+  const [viajes, setViajes] = useState(0)
+  if (ultimoContado !== contados) {
+    setUltimoContado(contados)
+    // Only forward: a log that shrank took its journeys with it.
+    const dicho = contados > ultimoContado ? relatos[contados - 1] : undefined
+    const trip = dicho ? viajeDeRelato(dicho, viajes + 1) : null
     if (trip) {
-      setProximoViaje(proximoViaje + 1)
+      setViajes(viajes + 1)
       setViaje(trip)
     }
   }
@@ -158,6 +224,53 @@ export function useMesa(transporte: Transporte) {
       setRecienRobada(null)
     }
   }
+
+  /**
+   * What this turn has put on the mesa, for the table to mark in gold
+   * (Phase 41).
+   *
+   * Derived from the mesa and not from the log: `agrega` names its cards the
+   * way a person says them — «J♥» — and `bajada` does not name them at all,
+   * while a grupo's cards carry ids and the view carries the grupos. It is
+   * public information either way, so both homes derive it identically and
+   * nothing is revealed that watching would not have shown.
+   *
+   * The base it is measured against is the mesa **as it stood at the previous
+   * look**, taken at each turn change rather than at each view. Usually those
+   * are the same thing and the marks simply clear when the turn passes. They
+   * differ in exactly the case worth caring about: when a whole turn arrives
+   * in one poll, the turn number and the new cards land together, and taking
+   * the base from the look before keeps that turn's work visible instead of
+   * erasing it in the same frame it appeared.
+   */
+  const enMesa = useMemo(() => idsEnMesa(ronda), [ronda])
+  /**
+   * The mesa as one comparable value. A poll hands over a freshly parsed view
+   * every time, so two identical mesas arrive as different objects — kept as
+   * a key rather than a reference, what is remembered is what changed rather
+   * than what was re-read.
+   */
+  const claveDeMesa = useMemo(() => [...enMesa].sort().join('|'), [enMesa])
+  const claveDeTurno =
+    ronda && ronda.ganador === null
+      ? `${vista?.indiceContrato}:${ronda.numeroDeTurno}`
+      : 'nada'
+
+  const [marca, setMarca] = useState({
+    turno: claveDeTurno,
+    base: claveDeMesa,
+    antes: claveDeMesa,
+  })
+  if (marca.turno !== claveDeTurno) {
+    setMarca({ turno: claveDeTurno, base: marca.antes, antes: claveDeMesa })
+  } else if (marca.antes !== claveDeMesa) {
+    setMarca({ ...marca, antes: claveDeMesa })
+  }
+
+  const doradas = useMemo(() => {
+    const base = new Set(marca.base ? marca.base.split('|') : [])
+    return new Set([...enMesa].filter((id) => !base.has(id)))
+  }, [enMesa, marca.base])
 
   /**
    * Whether you may put cards on the mesa at all right now. Bajado, and not
@@ -282,6 +395,7 @@ export function useMesa(transporte: Transporte) {
     historia: relatos,
     viaje,
     recienRobada,
+    doradas,
     reloj: {
       segundos: transporte.segundosDelTurno,
       transcurrido: transporte.transcurrido,
@@ -303,6 +417,18 @@ export function useMesa(transporte: Transporte) {
     agregarA,
     descartar,
   }
+}
+
+/** Every card sitting on the mesa right now, whoever laid it down. */
+function idsEnMesa(ronda: VistaDeAsiento | null): ReadonlySet<string> {
+  const ids = new Set<string>()
+  if (!ronda) return ids
+  for (const jugador of ronda.jugadores) {
+    for (const grupo of jugador.grupos) {
+      for (const card of grupo.cards) ids.add(card.id)
+    }
+  }
+  return ids
 }
 
 /** The trip a public move implies, if it moved a card anyone could follow. */

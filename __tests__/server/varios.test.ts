@@ -125,7 +125,20 @@ describe('three people, one code', () => {
         const mesa = await juego.leerMesa(partida.codigo, quien.secreto, ahora)
         if (!mesa.ok) throw new Error(mesa.code)
 
-        const serializada = JSON.stringify(mesa.mesa)
+        /*
+         * The *live* payload, which is where a hand could leak from. The
+         * historial is excluded on purpose since Phase 42: it carries a
+         * picture of the mesa each finished ronda ended on, and a card id is
+         * per-deal — `J-hearts#0` names the first J♥ in every reparto — so a
+         * card that was face up on the mesa last ronda shares its id with
+         * whoever holds that card now. Nothing about this ronda is revealed
+         * by a photograph of the last one, and everything in the photograph
+         * was face up when it was taken.
+         */
+        const serializada = JSON.stringify({
+          ...mesa.mesa,
+          vista: { ...mesa.mesa.vista, historial: [] },
+        })
         const propia = new Set(
           mesa.mesa.vista.ronda?.mano.map((card) => card.id) ?? [],
         )

@@ -13,7 +13,8 @@ import {
 } from 'lucide-react'
 import { Carta } from '@/components/carta'
 import { Marcador } from '@/components/marcador'
-import { Mesa, nombrePorDefecto } from '@/components/mesa'
+import { ControlDeBlanco } from '@/components/blanco'
+import { GrupoEnMesa, Mesa, nombrePorDefecto } from '@/components/mesa'
 import {
   alternarPantallaCompleta,
   hayPantallaCompleta,
@@ -142,7 +143,7 @@ export function Tablero({
     setCartasOscuras(oscuras)
   }
 
-  const { partida, vista: ronda, esTuTurno, esperando, aviso, resumen } = juego
+  const { partida, vista: ronda, esTuTurno, aviso, resumen } = juego
 
   // The faces this ronda's comodines wear — dealt from the seed, like the
   // cards, so a replayed partida replays its comodines too.
@@ -166,6 +167,9 @@ export function Tablero({
         nombres={nombresEnMesa}
         asiento={asiento}
         seAcabo={juego.seAcabo}
+        cartasOscuras={cartasOscuras}
+        seed={seed}
+        galeriaDeComodines={galeriaDeComodines}
         onSiguiente={juego.siguiente}
         onSalir={onSalir}
       />
@@ -220,26 +224,29 @@ export function Tablero({
           accionesDeMano={<AccionesDeMano juego={juego} />}
           acciones={<Controles juego={juego} />}
           sobreLaMano={
-            <div className="flex min-h-5 flex-wrap items-center gap-x-3 gap-y-1 text-xs">
-              {aviso ? (
-                <span className="text-red-600 dark:text-red-400">{aviso}</span>
-              ) : (
-                <Instruccion
-                  esTuTurno={esTuTurno}
-                  esperando={esperando}
-                  fase={ronda.fase}
-                  turno={ronda.turno}
-                  nombres={nombresEnMesa}
-                  yaBajado={juego.yaBajado}
-                  mesaAbierta={juego.mesaAbierta}
-                />
-              )}
+            // What used to lead this row was a line of instructions — «Toca
+            // el mazo o el descarte para robar.» Upright it filled the row on
+            // its own and pushed the arranging controls off the screen, so
+            // reaching them meant scrolling sideways (Phase 40). It is gone
+            // rather than moved: the felt already narrates every move it could
+            // have explained, and the hint a new player needs is Phase 44's to
+            // design — somewhere that is not this row.
+            <div className="flex min-h-5 min-w-0 flex-wrap items-center gap-x-3 gap-y-1 text-xs">
+              {aviso && <span className="text-red-600 dark:text-red-400">{aviso}</span>}
               <Apartadas juego={juego} mano={ronda.mano} />
             </div>
           }
           seleccionadas={new Set(juego.seleccion)}
           resaltada={juego.recienRobada ?? undefined}
-          onCarta={esTuTurno ? juego.alternarCarta : undefined}
+          doradas={juego.doradas}
+          onCarta={
+            // Selecting is not a move: it touches nothing the referee judges,
+            // so it works whether or not the turn is yours (Phase 40). Waiting
+            // is when there is time to think, and the hand used to go rigid
+            // for exactly that stretch — everything that arranges it needs
+            // cards selected first.
+            juego.alternarCarta
+          }
           onRobar={esTuTurno && ronda.fase === 'draw' ? juego.robar : undefined}
           onGrupo={esTuTurno && ronda.fase === 'act' ? juego.agregarA : undefined}
         />
@@ -255,7 +262,7 @@ export function Tablero({
           onClick={() => setVerMenu(true)}
           aria-label="Menú de la partida"
           aria-expanded={verMenu}
-          className="absolute top-1.5 left-1.5 z-20 rounded-md border border-stone-600/60 bg-stone-900/80 p-1.5 text-stone-400"
+          className="absolute top-1.5 left-1.5 z-20 rounded-md border border-linea/60 bg-stone-900/80 p-1.5 text-tinta-suave"
         >
           <Menu className="size-4" aria-hidden />
         </button>
@@ -367,6 +374,19 @@ function MenuDePartida({
         </div>
 
         <div className="mt-3 flex flex-col gap-2">
+          {/*
+            The brightness of the white, reachable from the table (Phase 43).
+            It is the same control the header carries and the same number
+            behind it — but the room you notice it in is this one, with the
+            felt filling the screen.
+          */}
+          <p className="text-muted-foreground text-xs tracking-wide uppercase">
+            Brillo del blanco
+          </p>
+          <ControlDeBlanco etiqueta="Brillo del blanco" className="px-1 py-1" />
+        </div>
+
+        <div className="mt-3 flex flex-col gap-2">
           <p className="text-muted-foreground text-xs tracking-wide uppercase">
             La baraja
           </p>
@@ -375,13 +395,13 @@ function MenuDePartida({
               nombre="Claras"
               activo={!cartasOscuras}
               onClick={() => onCartasOscuras(false)}
-              carta="border-stone-500 bg-stone-400 text-stone-900"
+              carta="border-linea bg-stone-400 text-stone-900"
             />
             <BotonDeBaraja
               nombre="Oscuras"
               activo={cartasOscuras}
               onClick={() => onCartasOscuras(true)}
-              carta="border-stone-600 bg-stone-900 text-stone-400"
+              carta="border-linea bg-stone-900 text-tinta-suave"
             />
           </div>
         </div>
@@ -567,41 +587,6 @@ function Apartadas({
   )
 }
 
-function Instruccion({
-  esTuTurno,
-  esperando,
-  fase,
-  turno,
-  nombres,
-  yaBajado,
-  mesaAbierta,
-}: {
-  esTuTurno: boolean
-  esperando: boolean
-  fase: 'draw' | 'act'
-  turno: number
-  nombres: readonly string[]
-  yaBajado: boolean
-  mesaAbierta: boolean
-}) {
-  if (!esTuTurno) {
-    const quien = nombres[turno] ?? nombrePorDefecto(turno)
-    return (
-      <span className="text-muted-foreground">
-        {esperando ? `Juega ${quien}…` : 'Esperando…'}
-      </span>
-    )
-  }
-
-  if (fase === 'draw') return <>Toca el mazo o el descarte para robar.</>
-
-  // What you may actually do depends on the mesa, and saying otherwise sends
-  // people tapping at grupos the engine is going to refuse.
-  if (!yaBajado) return <>Arma tus grupos para bajarte, o bota una carta.</>
-  if (!mesaAbierta) return <>Ya te bajaste. Bota una carta para terminar el turno.</>
-  return <>Pon cartas en la mesa y bota una para terminar.</>
-}
-
 /**
  * Arranging your hand. Always available — it changes nothing about the game, so
  * there is no reason to lock it to your turn.
@@ -766,6 +751,9 @@ function FinDeRonda({
   nombres,
   asiento,
   seAcabo,
+  cartasOscuras,
+  seed,
+  galeriaDeComodines,
   onSiguiente,
   onSalir,
 }: {
@@ -775,12 +763,42 @@ function FinDeRonda({
   /** Which seat is reading this — «¿ganaste?» has no answer without it. */
   asiento: number
   seAcabo: boolean
+  /** The deck in use, so the snapshot is dealt from the same one as the table. */
+  cartasOscuras: boolean
+  seed: string
+  galeriaDeComodines: readonly string[]
   onSiguiente: () => void
   onSalir: () => void
 }) {
   const ganaste = resumen.ganador === asiento
   const tablas = resumen.ganador === 'nadie'
   const tuyos = resumen.puntos[asiento]
+
+  /**
+   * The mesa comes first, and the score after it (Phase 42). A ronda used to
+   * end straight onto the scoreboard, so nobody ever saw the table that had
+   * just been won — least of all the grupo the last card went to. A partida
+   * saved before the snapshot existed has no mesa to show and goes straight
+   * to the score, as it always did.
+   */
+  const [paso, setPaso] = useState<'mesa' | 'puntaje'>(
+    resumen.mesa ? 'mesa' : 'puntaje',
+  )
+
+  if (paso === 'mesa' && resumen.mesa) {
+    return (
+      <MesaFinal
+        resumen={resumen}
+        nombres={nombres}
+        asiento={asiento}
+        cartasOscuras={cartasOscuras}
+        seed={seed}
+        reparto={partida.historial.length - 1}
+        galeriaDeComodines={galeriaDeComodines}
+        onSeguir={() => setPaso('puntaje')}
+      />
+    )
+  }
 
   return (
     <main className="mx-auto flex w-full max-w-md flex-1 flex-col justify-center gap-8 px-6 py-12">
@@ -820,6 +838,15 @@ function FinDeRonda({
         >
           {seAcabo ? 'Ver el resultado' : 'Siguiente reparto'}
         </button>
+        {resumen.mesa && (
+          <button
+            type="button"
+            onClick={() => setPaso('mesa')}
+            className="text-muted-foreground self-center text-xs underline"
+          >
+            Volver a ver la mesa
+          </button>
+        )}
         <button
           type="button"
           onClick={onSalir}
@@ -829,6 +856,104 @@ function FinDeRonda({
         </button>
       </div>
     </main>
+  )
+}
+
+/**
+ * The mesa as the ronda left it, with the cards that closed it marked.
+ *
+ * Drawn from the snapshot the engine keeps rather than from a live ronda:
+ * there is no live ronda to draw: the next one was dealt in the same move.
+ * The grupos are unlabelled here for the same reason they are unlabelled on
+ * the felt — once it is down it belongs to the table — and the gold answers
+ * the question ownership would not: *which one did the last card go to?*
+ */
+function MesaFinal({
+  resumen,
+  nombres,
+  asiento,
+  cartasOscuras,
+  seed,
+  reparto,
+  galeriaDeComodines,
+  onSeguir,
+}: {
+  resumen: MarcadorDeRonda
+  nombres: readonly string[]
+  asiento: number
+  cartasOscuras: boolean
+  seed: string
+  /** Which ronda this was, for the faces its comodines wore. */
+  reparto: number
+  galeriaDeComodines: readonly string[]
+  onSeguir: () => void
+}) {
+  // The faces of the ronda that just ended, not of the one already dealt
+  // behind it: a snapshot should look like the table it is a picture of.
+  const caras = useMemo(
+    () => carasDeRonda({ imagenes: galeriaDeComodines, seed, ronda: reparto }),
+    [galeriaDeComodines, seed, reparto],
+  )
+
+  const cierre = new Set(resumen.cierre ?? [])
+  const grupos = (resumen.mesa ?? []).flatMap((suyos, seat) =>
+    suyos.map((grupo, indice) => ({ grupo, seat, indice })),
+  )
+  const tablas = resumen.ganador === 'nadie'
+  const ganaste = resumen.ganador === asiento
+
+  return (
+    <CarasDeComodinProvider value={caras}>
+      <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col justify-center gap-6 px-4 py-8">
+        <div className="flex flex-col gap-1">
+          <p className="text-muted-foreground text-xs tracking-wide uppercase">
+            {resumen.contrato.nombre}
+          </p>
+          <h1 className="text-3xl font-semibold tracking-tight">
+            {tablas
+              ? 'Tablas: nadie ganó'
+              : ganaste
+                ? '¡Ganaste la ronda!'
+                : `Ganó ${nombres[resumen.ganador as number]}`}
+          </h1>
+          <p className="text-muted-foreground text-sm">
+            {tablas
+              ? 'Así quedó la mesa cuando se agotó el mazo.'
+              : cierre.size > 0
+                ? 'Salió poniendo lo que está en dorado.'
+                : 'Salió botando su última carta; la mesa quedó así.'}
+          </p>
+        </div>
+
+        {/* The same felt the table has, so the snapshot reads as the table
+            and not as a report about it. */}
+        <div
+          className={cn(
+            'flex max-h-[55vh] flex-wrap items-start justify-center gap-2 overflow-y-auto rounded-xl bg-stone-950 p-3',
+            cartasOscuras && 'cartas-oscuras',
+          )}
+        >
+          {grupos.length === 0 ? (
+            <span className="py-6 text-sm text-tinta-tenue">
+              Nadie alcanzó a bajarse.
+            </span>
+          ) : (
+            grupos.map(({ grupo, seat, indice }) => (
+              <GrupoEnMesa key={`${seat}-${indice}`} grupo={grupo} doradas={cierre} />
+            ))
+          )}
+        </div>
+
+        <button
+          type="button"
+          onClick={onSeguir}
+          autoFocus
+          className="bg-primary text-primary-foreground rounded-md px-4 py-3.5 text-sm font-medium"
+        >
+          Ver el puntaje
+        </button>
+      </main>
+    </CarasDeComodinProvider>
   )
 }
 

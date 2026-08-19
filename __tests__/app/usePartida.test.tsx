@@ -273,18 +273,24 @@ describe('the drawn card is marked', () => {
 })
 
 describe('the public story', () => {
-  it('accumulates relatos as moves land', () => {
+  it('accumulates relatos as moves land', async () => {
     const { result } = montar()
 
     act(() => result.current.robar('descarte'))
     act(() => result.current.alternarCarta(result.current.disponibles[0].id))
     act(() => result.current.descartar())
 
+    // The log itself is immediate: it is the record, and the record is the
+    // engine's.
     expect(result.current.historia.map((r) => r.tipo)).toEqual([
       'descarte',
       'bota',
     ])
-    expect(result.current.relato?.tipo).toBe('bota')
+
+    // The *line* is told rather than displayed (Phase 41): two moves that
+    // landed in the same instant are narrated one after the other, so the
+    // strip catches up on the next beat rather than skipping the first.
+    await waitFor(() => expect(result.current.relato?.tipo).toBe('bota'))
   })
 })
 

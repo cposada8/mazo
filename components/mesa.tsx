@@ -55,29 +55,46 @@ export function nombrePorDefecto(seat: number): string {
 export function GrupoEnMesa({
   grupo,
   onClick,
+  doradas,
 }: {
   grupo: Grupo
   onClick?: () => void
+  /**
+   * Cards this turn put here, marked until the turn is over (Phase 41). A
+   * grupo grows in silence otherwise: the card that joined it looks exactly
+   * like the ones that were there all along.
+   */
+  doradas?: ReadonlySet<string>
 }) {
   const contenido = (
     <div className="flex flex-col gap-0.5">
-      <span className="text-[calc(var(--texto-mesa,0.75rem)*0.85)] font-medium tracking-wide text-stone-300/80 uppercase">
+      <span className="text-[calc(var(--texto-mesa,0.75rem)*0.85)] font-medium tracking-wide text-tinta/80 uppercase">
         {tituloDeGrupo(grupo)}
       </span>
       <div className="flex">
-        {grupo.cards.map((card, index) => (
-          <Carta
-            key={card.id}
-            card={card}
-            size="xs"
-            className="-ml-[0.9em] first:ml-0"
-            represents={
-              grupo.kind === 'escala' && isComodin(card)
-                ? escalaRankAt(grupo as Escala, index)
-                : undefined
-            }
-          />
-        ))}
+        {grupo.cards.map((card, index) => {
+          const nueva = doradas?.has(card.id) ?? false
+
+          return (
+            <Carta
+              key={card.id}
+              card={card}
+              size="xs"
+              className={cn(
+                '-ml-[0.9em] first:ml-0',
+                // Raised as well as ringed: the fan overlaps to the right, so
+                // a ring on any card but the last would be painted over by
+                // its neighbour.
+                nueva && 'relative z-10 ring-[1.5px] ring-amber-400',
+              )}
+              represents={
+                grupo.kind === 'escala' && isComodin(card)
+                  ? escalaRankAt(grupo as Escala, index)
+                  : undefined
+              }
+            />
+          )
+        })}
       </div>
     </div>
   )
@@ -88,7 +105,7 @@ export function GrupoEnMesa({
     <button
       type="button"
       onClick={onClick}
-      className="shrink-0 rounded-md border border-transparent p-1 text-left transition-colors hover:border-stone-400/40 hover:bg-white/5"
+      className="shrink-0 rounded-md border border-transparent p-1 text-left transition-colors hover:border-tinta-suave/40 hover:bg-tinta/5"
     >
       {contenido}
     </button>
@@ -128,6 +145,52 @@ export type Reloj = {
    * it; false at a table alone with bots, which hurries nobody.
    */
   readonly propio?: boolean
+}
+
+/**
+ * The countdown as a ring: a full track, and an arc that empties as the
+ * turn's time runs out.
+ *
+ * One component for both places it is drawn — around the ficha of whoever is
+ * up, and beside your own hand (Phase 40) — so your own clock and everybody
+ * else's can never drift into showing different amounts of the same turn.
+ * Mount it with `key={reloj.clave}`: restarting the animation is remounting,
+ * and no JavaScript runs per frame.
+ */
+export function AnilloDeReloj({
+  reloj,
+  className,
+}: {
+  reloj: Reloj
+  className?: string
+}) {
+  return (
+    <svg aria-hidden viewBox="0 0 40 40" className={cn('-rotate-90', className)}>
+      <circle
+        cx="20"
+        cy="20"
+        r="17.5"
+        fill="none"
+        strokeWidth="3.5"
+        className="stroke-amber-600/20"
+      />
+      <circle
+        cx="20"
+        cy="20"
+        r="17.5"
+        fill="none"
+        strokeWidth="3.5"
+        strokeLinecap="round"
+        className="reloj-arco stroke-amber-600"
+        style={{
+          animationDuration: `${reloj.segundos}s`,
+          // A negative delay starts the animation partway through, which is
+          // exactly "this turn began a while ago".
+          animationDelay: `-${reloj.transcurrido ?? 0}s`,
+        }}
+      />
+    </svg>
+  )
 }
 
 export function Asiento({
@@ -173,36 +236,7 @@ export function Asiento({
         {/* The countdown is drawn on the player, where the turn already is:
             a full track, and an arc that empties as the time runs out. */}
         {esSuTurno && reloj && (
-          <svg
-            key={reloj.clave}
-            aria-hidden
-            viewBox="0 0 40 40"
-            className="absolute -inset-1 -rotate-90"
-          >
-            <circle
-              cx="20"
-              cy="20"
-              r="17.5"
-              fill="none"
-              strokeWidth="3.5"
-              className="stroke-amber-600/20"
-            />
-            <circle
-              cx="20"
-              cy="20"
-              r="17.5"
-              fill="none"
-              strokeWidth="3.5"
-              strokeLinecap="round"
-              className="reloj-arco stroke-amber-600"
-              style={{
-                animationDuration: `${reloj.segundos}s`,
-                // A negative delay starts the animation partway through,
-                // which is exactly "this turn began a while ago".
-                animationDelay: `-${reloj.transcurrido ?? 0}s`,
-              }}
-            />
-          </svg>
+          <AnilloDeReloj key={reloj.clave} reloj={reloj} className="absolute -inset-1" />
         )}
         <div
           className={cn(
@@ -212,16 +246,16 @@ export function Asiento({
                   'border-amber-600 bg-amber-600 text-amber-950',
                   !reloj && 'ring-4 ring-amber-600/30',
                 )
-              : 'border-stone-500/40 bg-stone-900 text-stone-400',
+              : 'border-linea/60 bg-stone-900 text-tinta-suave',
           )}
         >
           {inicial(nombre)}
         </div>
       </div>
 
-      <span className="max-w-full truncate text-[var(--texto-mesa,0.75rem)] leading-tight font-medium text-stone-400">
+      <span className="max-w-full truncate text-[var(--texto-mesa,0.75rem)] leading-tight font-medium text-tinta-suave">
         {nombre}
-        <span className="text-stone-400">
+        <span className="text-tinta-suave">
           {' '}
           · {jugador.cartas}
           {jugador.bajadoEnTurno !== null && ' · bajado'}
@@ -254,9 +288,9 @@ export function Pilas({
 }) {
   const arriba = state.descarte.at(-1)
   const activo = Boolean(onRobar)
-  const estiloPila = activo ? 'ring-2 ring-stone-400/60 ring-offset-2 ring-offset-stone-950' : ''
+  const estiloPila = activo ? 'ring-2 ring-tinta-suave/60 ring-offset-2 ring-offset-stone-950' : ''
   const chip =
-    'absolute -top-1 -right-1 z-10 rounded-full bg-stone-800 px-1 text-[calc(var(--texto-mesa,0.75rem)*0.9)] text-stone-300 tabular-nums ring-1 ring-stone-600/60'
+    'absolute -top-1 -right-1 z-10 rounded-full bg-stone-800 px-1 text-[calc(var(--texto-mesa,0.75rem)*0.9)] text-tinta tabular-nums ring-1 ring-linea/60'
 
   return (
     <div className="flex shrink-0 items-end gap-2">
@@ -281,7 +315,7 @@ export function Pilas({
           {arriba ? (
             <Carta card={arriba} size="sm" className={estiloPila} />
           ) : (
-            <div className="aspect-[8/11] h-[var(--carta-sm,3.5rem)] rounded-md border border-dashed border-stone-500/40" />
+            <div className="aspect-[8/11] h-[var(--carta-sm,3.5rem)] rounded-md border border-dashed border-linea/60" />
           )}
         </button>
         {state.descarte.length > 0 && (
@@ -328,9 +362,11 @@ export function Mano({
   /** Sorting and moving controls, rendered beside the heading. */
   acciones?: React.ReactNode
   /**
-   * What to do and what is set aside, on the same line as the heading. One
-   * line, not two: on a phone lying down, every row costs a card's worth of
-   * height, and the hand is what has to stay readable.
+   * What is set aside, and anything the referee refused, sharing the heading
+   * row. It shares rather than owning one because on a phone lying down every
+   * row costs a card's worth of height — but it is the part that gives way:
+   * it takes the width the heading and the controls do not need, and wraps to
+   * a line of its own only when it cannot fit (Phase 40).
    */
   cabecera?: React.ReactNode
   esTuTurno?: boolean
@@ -349,19 +385,39 @@ export function Mano({
 
   return (
     <div className="flex min-w-0 flex-col">
-      <div className="flex flex-nowrap items-center gap-x-3 overflow-x-auto py-0.5 text-[max(var(--texto-mesa,0.75rem),0.6875rem)] whitespace-nowrap">
-        {cabecera}
-        <h2 className="shrink-0 font-medium">
+      {/*
+        The heading row, and who gets to keep their place in it (Phase 40).
+        Upright there is not enough width for everything, and what used to
+        give way were the arranging controls: they were pushed off the right
+        edge and had to be scrolled into view. So the row wraps instead of
+        scrolling, and the two things that must always be reachable — the
+        hand's own heading, clock and all, and the controls — never shrink.
+        Whatever else is passed in takes the room that is left, and drops to
+        a second line when there is none.
+      */}
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 py-0.5 text-[max(var(--texto-mesa,0.75rem),0.6875rem)]">
+        <h2 className="flex shrink-0 items-center gap-1.5 font-medium whitespace-nowrap">
+          {/* Your own clock, drawn the way everybody else's is (Phase 40).
+              Phase 36 gave it only the draining badge below, which is a wash
+              behind text — legible once you know it is there, and invisible
+              if you do not. The ring is the same countdown in the shape the
+              table already taught you to read. */}
+          {esTuTurno && reloj && (
+            <AnilloDeReloj
+              key={reloj.clave}
+              reloj={reloj}
+              className="size-[1.5em] shrink-0"
+            />
+          )}
           <span
             className={cn(
               'relative overflow-hidden rounded px-1.5 py-0.5',
               esTuTurno && 'bg-amber-600 text-amber-100',
             )}
           >
-            {/* Your own clock, once there is one (Phase 36): the badge
-                empties left to right, the same countdown the ring draws on
-                everybody else. Phase 21 left this deliberately still —
-                nothing hurried a human until other seats were people. */}
+            {/* The badge empties left to right, the same countdown the ring
+                draws — kept from Phase 36, now that it is no longer the only
+                place your own time is shown. */}
             {esTuTurno && reloj && (
               <span
                 key={reloj.clave}
@@ -374,7 +430,7 @@ export function Mano({
               />
             )}
             <span className="relative">Tu mano</span>
-          </span>{' '}
+          </span>
           <span className="text-muted-foreground font-normal tabular-nums">
             {total}
             {puntos !== undefined && (
@@ -386,6 +442,7 @@ export function Mano({
           </span>
         </h2>
         {acciones}
+        {cabecera}
       </div>
 
       <div className="flex items-start gap-3 overflow-x-auto pt-1.5">
@@ -555,6 +612,7 @@ export function Mesa({
   onGrupo,
   seleccionadas,
   resaltada,
+  doradas,
 }: {
   state: VistaDeAsiento
   /** The seat whose hand is shown face up. */
@@ -564,6 +622,8 @@ export function Mesa({
   reloj?: Reloj
   /** The card just drawn into your hand, kept visibly marked. */
   resaltada?: string
+  /** Cards the turn in play has put on the mesa, marked gold (Phase 41). */
+  doradas?: ReadonlySet<string>
   /** Your hand laid out. Defaults to the dealt order, unpinned. */
   secciones?: readonly Seccion[]
   /** What your hand would cost right now. */
@@ -635,7 +695,7 @@ export function Mesa({
 
           <div className="grupos-en-mesa">
             {enMesa.length === 0 ? (
-              <span className="self-center text-[var(--texto-mesa,0.75rem)] text-stone-500">
+              <span className="self-center text-[var(--texto-mesa,0.75rem)] text-tinta-tenue">
                 Nadie se ha bajado todavía.
               </span>
             ) : (
@@ -643,6 +703,7 @@ export function Mesa({
                 <GrupoEnMesa
                   key={`${seat}-${grupoIndex}`}
                   grupo={grupo}
+                  doradas={doradas}
                   onClick={onGrupo ? () => onGrupo(seat, grupoIndex) : undefined}
                 />
               ))
@@ -663,14 +724,14 @@ export function Mesa({
               onClick={onVerHistorial}
               aria-live="polite"
               title="Ver todo lo que ha pasado esta ronda"
-              className="min-w-0 truncate text-left text-[var(--texto-mesa,0.75rem)] text-stone-400 underline decoration-stone-700 decoration-dotted underline-offset-2 hover:text-stone-300"
+              className="min-w-0 truncate text-left text-[var(--texto-mesa,0.75rem)] text-tinta-suave underline decoration-stone-700 decoration-dotted underline-offset-2 hover:text-tinta"
             >
               {relatoLinea}
             </button>
           ) : (
             <span
               aria-live="polite"
-              className="min-w-0 truncate text-[var(--texto-mesa,0.75rem)] text-stone-300"
+              className="min-w-0 truncate text-[var(--texto-mesa,0.75rem)] text-tinta"
             >
               {relatoLinea}
             </span>
@@ -686,7 +747,7 @@ export function Mesa({
               type="button"
               onClick={onVerDescarte}
               title="Ver todas las cartas del descarte"
-              className="flex shrink-0 items-center gap-1 rounded-full border border-stone-600/60 bg-stone-800/80 py-[0.6cqh] pr-2 pl-1.5 text-[var(--texto-mesa,0.75rem)] text-stone-400 hover:bg-stone-700"
+              className="flex shrink-0 items-center gap-1 rounded-full border border-linea/60 bg-stone-800/80 py-[0.6cqh] pr-2 pl-1.5 text-[var(--texto-mesa,0.75rem)] text-tinta-suave hover:bg-stone-700"
             >
               <Layers className="size-[1.1em] shrink-0" aria-hidden />
               <span className="tabular-nums">{state.descarte.length}</span>
@@ -695,7 +756,7 @@ export function Mesa({
           )}
           <span
             aria-hidden
-            className="shrink-0 text-[var(--texto-mesa,0.75rem)] font-semibold tracking-[0.2em] whitespace-nowrap text-stone-100/25 uppercase"
+            className="shrink-0 text-[var(--texto-mesa,0.75rem)] font-semibold tracking-[0.2em] whitespace-nowrap text-tinta/25 uppercase"
           >
             {state.contrato.nombre}
           </span>

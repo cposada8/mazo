@@ -1,6 +1,6 @@
 # Project status — pick up here
 
-Last updated after Phase 38.
+Last updated after Phase 43.
 
 Read this first, then `mission.md` for the why, `carioca-rules.md` for the game,
 `tech-stack.md` for the stack, and `roadmap.md` for what comes next. This file is
@@ -14,7 +14,7 @@ doc is worse than none.
 
 ## Where things stand
 
-Phases 0–33 are done. **Carioca is playable, and it is entered through one
+Phases 0–44 are numbered and 0–43 are done. **Carioca is playable, and it is entered through one
 door.** Open the site on a phone, get dealt an alias, create a partida —
 you host, a short code is dealt, three bots sit down — and play a full
 partida: draw, lay down, unload onto anyone's grupos, discard, and see the
@@ -67,7 +67,35 @@ empty seats), and the better bots moved behind it as Milestone 4.
 | 37 | Absences: reconnection, and leaving on purpose | ✅ |
 | 38 | Real-time transport: measured, polling kept | ✅ — a decision, no code |
 | 39 | Bot personalities | ✅ — **Milestone 4** |
-| 40 | Rough edges | ← **next** |
+| 40 | Your own seat: your clock, arranging off-turn, controls in reach | ✅ |
+| 41 | A turn you can follow: paced narration, and gold on what landed | ✅ |
+| 42 | What it was won with: the final mesa before the score | ✅ |
+| 43 | The white you choose: one slider, every white | ✅ |
+| 44 | Rough edges *(was 40)* | ← **next** |
+
+**Phases 40–43 are done, and shipped to dev.** What the list asked for, in
+one line each: your own clock is a ring beside your hand and the arranging
+controls no longer need a swipe (40); a bot's turn lands in pieces and is
+narrated one line at a time, with everything it puts on the mesa ringed gold
+until the turn passes (41); a won ronda opens on the table it was won on,
+with everything the winner's last turn put down marked, and the score a tap behind (42); and one slider
+moves every white in the app — text, pips, slabs, borders — from a single
+`--blanco` (43). Three things worth carrying forward: the server now applies
+a bot's turn move by move and writes with a compare-and-swap; the poll rate
+follows what you are waiting for (500 ms watching, 1500 ms on your own turn),
+which answered Phase 38's question without a new transport; and `Marcador`
+carries a snapshot of the closing mesa, which is additive and needs no
+migration.
+
+**Phases 40–43 were the list from playing online**, and they displaced the old
+Phase 40 to 44 — the same rule as the two lists before them: what a real game
+finds outranks new machinery. Seven asks in three kinds: the game shows less
+than it knows and moves faster than the eye (41, 42), your own seat is the
+worst-served part of the screen (40), and the white was tuned at night and is
+too dim by day (43). They are ordered smallest-and-most-unfair first, then the
+two that need design, then the palette last, because a pass over every white
+surface belongs after the phases that add surfaces. `roadmap.md` has the
+reasoning and the obstacles already found in the code.
 
 **The table now holds up on a real phone, held either way.** The lanes built
 in Phase 18 survive a 615 × 287 viewport and double as the portrait
@@ -109,7 +137,7 @@ no code changes. `lib/caras.ts`, `components/caras.tsx`.
   public, no login.
 - **Deploys:** work goes to `dev`, which builds by itself. Production changes
   only by merging `dev` into `main`. Nothing else deploys `main`.
-- **Tests:** 501, all green (the run takes ~16s, mostly the soak). `npm run test:run`, `npx tsc --noEmit`, `npm run lint`.
+- **Tests:** 544, all green (the run takes ~18s, mostly the soak). `npm run test:run`, `npx tsc --noEmit`, `npm run lint`.
 - **Database:** SQLite via Prisma 7 + libSQL. Local dev uses `prisma/dev.db`;
   **online is live on Turso** — database `mazo`, in its own group in
   `aws-us-east-1` so it sits beside Vercel's functions and leaves
