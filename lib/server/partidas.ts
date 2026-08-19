@@ -653,7 +653,7 @@ export async function barrer(
   const sinRepartir = new Date(ahora - HORAS_DE_LOBBY * 3_600_000)
   const enSilencio = new Date(ahora - HORAS_DE_SILENCIO * 3_600_000)
 
-  const [lobbies, terminadas] = await prisma.$transaction([
+  const [lobbies, calladas, vacias] = await prisma.$transaction([
     prisma.partida.deleteMany({
       where: { fase: 'lobby', actualizadaEn: { lt: sinRepartir } },
     }),
@@ -661,9 +661,22 @@ export async function barrer(
       where: { fase: 'jugando', actualizadaEn: { lt: enSilencio } },
       data: { fase: 'terminada' },
     }),
+    /*
+     * And the same rule the last person leaving now applies, applied to the
+     * tables that were already like that when it arrived. It is not only
+     * tidiness: silence is measured by when a row was last written, and a tab
+     * left open on a table whose people all left used to keep writing to it —
+     * so those tables were never going to age out on their own. They cannot
+     * write any more (a retired seat is not the clock), but the nine that
+     * existed when this was written would have sat there regardless.
+     */
+    prisma.partida.updateMany({
+      where: { fase: 'jugando', asientos: { none: { esBot: false, retirado: false } } },
+      data: { fase: 'terminada' },
+    }),
   ])
 
-  return { lobbies: lobbies.count, terminadas: terminadas.count }
+  return { lobbies: lobbies.count, terminadas: calladas.count + vacias.count }
 }
 
 /**

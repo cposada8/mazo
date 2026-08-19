@@ -168,6 +168,21 @@ describe('silence closes a table', () => {
     ).toBeNull()
   })
 
+  it('closes a table whose people had already all gone before the rule existed', async () => {
+    // The nine rows that prompted the phase were in exactly this state, and
+    // they were never going to age out: a tab left open kept writing to them,
+    // and silence is measured by the last write.
+    const mesa = await conBots('ya-vacia')
+    await prisma.asiento.updateMany({
+      where: { partida: { codigo: mesa.codigo }, esBot: false },
+      data: { retirado: true },
+    })
+
+    const barrido = await partidas.barrer(Date.now())
+    expect(barrido.terminadas).toBeGreaterThan(0)
+    expect(await faseDe(mesa.codigo)).toBe('terminada')
+  })
+
   it('leaves a table somebody is still playing alone', async () => {
     const mesa = await conBots('reciente')
     const barrido = await partidas.barrer(Date.now())

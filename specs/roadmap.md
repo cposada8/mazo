@@ -1968,7 +1968,16 @@ the owner chose while it was being written.
   a day marks a played partida `terminada` and keeps it, because the score of
   a real game outlives the row it costs. Swept by whoever opens the door,
   which is the only way to reach a partida nobody is asking about — the lazy
-  enforcement everything else runs on cannot, by definition.
+  enforcement everything else runs on cannot, by definition. At most once
+  every ten minutes per instance, since the door is opened far more often than
+  tables go stale.
+- **And the sweep applies the first rule backwards.** Checking what it would
+  do to production turned up a hole: *silence is measured by the last write*,
+  and the zombie tabs were writing. So the nine tables whose people had all
+  left would have sat there for ever, warmed by the very polls that made them
+  a problem. The sweep closes a `jugando` partida with no active person in it
+  regardless of its age — which is the same sentence as the first rule, said
+  about the past.
 - **`ultimaSenal` is written at last.** Declared in Phase 37 and never filled
   in. A read refreshes it at most every thirty seconds, so presence costs one
   write a minute per player rather than one per poll, and the panel can say
