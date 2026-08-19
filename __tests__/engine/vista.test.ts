@@ -20,6 +20,12 @@ import { c, makeRonda, n, play } from './helpers'
  * appears anywhere in a serialized view, whatever shape it hides in.
  */
 describe('a view leaks no hidden card', () => {
+  /*
+   * Three seeds, four hundred moves each, and a full leak check between every
+   * one of them: comfortably the slowest assertion in the suite, and close
+   * enough to the default five seconds that a busy machine used to fail it
+   * (Phase 44). What it measures is coverage, not speed.
+   */
   it('holds across whole bot partidas, every seat, every state', () => {
     for (const seed of ['vista-1', 'vista-2', 'vista-3']) {
       let partida: PartidaState = startPartida({ players: 3, seed })
@@ -34,7 +40,7 @@ describe('a view leaks no hidden card', () => {
         partida = result.state
       }
     }
-  })
+  }, 30_000)
 
   it('never carries the rng state, which predicts the stock', () => {
     const ronda = makeRonda({ jugadores: [{ hand: [n('7', 'spades')] }, { hand: [] }] })

@@ -1884,7 +1884,7 @@ same frame. The choice survives navigation and reload.
 
 ## Asked for after the list shipped
 
-### Phase 44 — Which tables are still open
+### Phase 44 — Which tables are still open ✅
 Asked for after a suspicion, and the suspicion was right. **Measured on the
 live database while writing this:** thirteen partidas, **all thirteen still
 `jugando`**, none ever `terminada`, and **nine of them with no human left in
@@ -1952,6 +1952,39 @@ code and still one list.
 open with enough to tell the live ones from the abandoned, and close any of
 them — and the list stays short by itself, because a table whose last person
 left is already closed by the time it is looked at.
+
+**Done.** Three rules and a page, in that order, plus the environment split
+the owner chose while it was being written.
+
+- **The last person out turns off the light.** `abandonar` counted active
+  seats and a bot is one; it counts people now. Nine of the thirteen tables
+  that prompted the phase were exactly this case.
+- **A seat that left is no longer the clock.** `leerMesa` still serves the
+  view to a retired seat — reading a table you left is harmless — but it
+  advances nothing. Pinned by a test where a bot's two seconds and a person's
+  forty-five are both two minutes overdue and *nothing lands* until a seat
+  that is still there asks.
+- **Silence closes a table.** Six hours deletes a lobby that was never dealt;
+  a day marks a played partida `terminada` and keeps it, because the score of
+  a real game outlives the row it costs. Swept by whoever opens the door,
+  which is the only way to reach a partida nobody is asking about — the lazy
+  enforcement everything else runs on cannot, by definition.
+- **`ultimaSenal` is written at last.** Declared in Phase 37 and never filled
+  in. A read refreshes it at most every thirty seconds, so presence costs one
+  write a minute per player rather than one per poll, and the panel can say
+  *who is actually there* instead of inferring it from a table that moved —
+  which is no evidence of a person at all, since bots move on their own.
+- **And the panel**, at `/panel`, behind `CLAVE_DEL_PANEL`. No variable, no
+  panel: a deployment where nobody chose a key does not have a door. The key
+  itself is the cookie, httpOnly and six hours long, and **every action checks
+  it again** — a Server Action is a POST anybody can send, and the page having
+  rendered is not evidence about the caller.
+
+**Dev got its own database, which was the other half of the mess.** One Turso
+database served all three Vercel environments, so dev's test tables sat in
+the same list as real play — and `mazo-dev` now backs Preview and
+Development. Same group, same region: no new location, no code, two
+environment variables.
 
 ---
 

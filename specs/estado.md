@@ -71,18 +71,26 @@ empty seats), and the better bots moved behind it as Milestone 4.
 | 41 | A turn you can follow: paced narration, and gold on what landed | ✅ |
 | 42 | What it was won with: the final mesa before the score | ✅ |
 | 43 | The white you choose: one slider, every white | ✅ |
-| 44 | Which tables are still open: the panel, and tables that close themselves | ← **next** |
-| 45 | Rough edges *(was 40, then 44)* | |
+| 44 | Which tables are still open: the panel, and tables that close themselves | ✅ |
+| 45 | Rough edges *(was 40, then 44)* | ← **next** |
 
-**Phase 44 is next, and it came from a suspicion that measuring confirmed.**
+**Phase 44 came from a suspicion that measuring confirmed, and is done.**
 Thirteen partidas on the live database, all thirteen still `jugando`, none
 ever `terminada`, and nine with no human left in them. Three causes, written
 up in `roadmap.md`: `abandonar` counts seats rather than people, so the last
 human out of a table of bots leaves it "in progress"; nothing ever sweeps;
 and `leerMesa` advances the table for any request naming a seat — including a
 retired one — so a tab left open keeps bots playing to an empty room. **And
-all three Vercel environments share one Turso database**, which is why dev's
-test partidas sit in the same list as real ones.
+all three Vercel environments shared one Turso database**, which is why dev's
+test partidas sat in the same list as real ones.
+
+**What shipped:** a partida with no people in it ends, a retired seat's poll
+serves the view but drives nothing, six hours deletes an undealt lobby and a
+day closes a silent partida — swept by whoever opens the door, since nobody
+is polling a table nobody is at. `Asiento.ultimaSenal` is finally written
+(once per thirty seconds, not once per poll), and `/panel` lists every table
+with its ages, its seats and who is actually connected, behind
+`CLAVE_DEL_PANEL`. Preview and Development now read `mazo-dev`.
 
 **Phases 40–43 are done, and shipped to dev.** What the list asked for, in
 one line each: your own clock is a ring beside your hand and the arranging
