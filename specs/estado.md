@@ -150,10 +150,13 @@ no code changes. `lib/caras.ts`, `components/caras.tsx`.
   only by merging `dev` into `main`. Nothing else deploys `main`.
 - **Tests:** 544, all green (the run takes ~18s, mostly the soak). `npm run test:run`, `npx tsc --noEmit`, `npm run lint`.
 - **Database:** SQLite via Prisma 7 + libSQL. Local dev uses `prisma/dev.db`;
-  **online is live on Turso** — database `mazo`, in its own group in
-  `aws-us-east-1` so it sits beside Vercel's functions and leaves
-  `fwc_2026`'s group alone. Credentials are in `.env.local` (gitignored) and
-  as encrypted Vercel env vars for all three environments.
+  **online is live on Turso** — group `mazo` in `aws-us-east-1`, so it sits
+  beside Vercel's functions and leaves `fwc_2026`'s group alone. **Two
+  databases in that group, since Phase 44:** `mazo` for Production and
+  `mazo-dev` for Preview and Development. They were one until measuring the
+  abandoned partidas turned up dev's test tables sitting in the same list as
+  real play. Credentials are Vercel env vars per environment; the production
+  ones are also in `.env.turso` (gitignored) for the CLI.
   - After a schema change: `npx prisma db push` for local, then
     `npx prisma migrate diff --from-empty --to-schema prisma/schema.prisma
     --script | turso db shell mazo` for Turso — the Prisma CLI will not take
