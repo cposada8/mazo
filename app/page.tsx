@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { ETIQUETA_DE_VERSION } from "@/lib/version";
 import { BookOpen } from "lucide-react";
 import { AliasEditable } from "@/components/identidad";
 import { Puerta } from "@/components/puerta";
@@ -90,6 +91,7 @@ export default function Home() {
 
       <footer className="text-muted-foreground mt-auto flex flex-col gap-1 text-sm">
         <p>En construcción. Ya se juega; falta que jueguen varios a la vez.</p>
+        <p className="tabular-nums">Mazo {ETIQUETA_DE_VERSION}</p>
         <p>
           Por{" "}
           <a

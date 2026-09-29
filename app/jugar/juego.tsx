@@ -37,6 +37,7 @@ import {
 } from '@/lib/pantalla'
 import { type Relato, contarRelato } from '@/lib/relato'
 import { cn } from '@/lib/utils'
+import { ETIQUETA_DE_VERSION } from '@/lib/version'
 import {
   CONFIG_POR_DEFECTO,
   type Card,
@@ -564,6 +565,11 @@ function MenuDePartida({
               Seguir jugando
             </button>
           </div>
+          {/* Which release is on this phone — the first question when
+              something looks wrong, answerable without leaving the partida. */}
+          <p className="text-muted-foreground text-right text-[10px] tabular-nums">
+            Mazo {ETIQUETA_DE_VERSION}
+          </p>
         </div>
       </div>
     </div>
