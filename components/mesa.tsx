@@ -595,7 +595,10 @@ export function Mano({
           // The row scrolls sideways, and a scrolling box clips upward too —
           // so the lift a selected card makes is room reserved here, not
           // borrowed from the line above, where it used to be cut off.
-          'flex items-start gap-3 overflow-x-auto pt-[calc(var(--carta-md,5rem)*0.16)]',
+          // `px` for the same reason on the sides: the selection ring and
+          // its glow are drawn outside the card, and the scroller would
+          // shave them off the first and last cards.
+          'flex items-start gap-3 overflow-x-auto px-1.5 pt-[calc(var(--carta-md,5rem)*0.16)]',
         )}
         style={
           solape === undefined
@@ -847,7 +850,8 @@ export function Mesa({
   const solape = solapeDeMano({
     cartas: seccionesDeMano.reduce((suma, seccion) => suma + seccion.cards.length, 0),
     bloques: seccionesDeMano.filter((seccion) => seccion.cards.length > 0).length,
-    ancho: anchoDeMano.ancho - 4,
+    // The row's own side padding, and a hair for rounding.
+    ancho: anchoDeMano.ancho - 16,
     alto: anchoDeMano.carta,
     separacion: 12,
   })
@@ -975,7 +979,15 @@ export function Mesa({
         </div>
 
         <div ref={columnaDeMano} className="flex min-w-0 flex-1 justify-center">
-          <div className="flex max-w-full min-w-0 flex-col">
+          {/*
+            The cards alone decide where the hand sits. The line above hangs
+            from their top-left corner and may run past their right edge, so
+            that selecting a card — which adds the moving controls to that
+            line — can never widen the block and slide the whole hand across
+            the table under your finger.
+          */}
+          <div className="relative flex max-w-full min-w-0 flex-col">
+            <div className="absolute bottom-full left-0 w-max max-w-[calc(100cqw-2rem)]">
             <Mano
               soloCabecera
               cabecera={sobreLaMano}
@@ -985,6 +997,7 @@ export function Mesa({
               esTuTurno={esTuTurno}
               reloj={relojDeTuTurno}
             />
+            </div>
             <Mano
               soloCartas
               secciones={seccionesDeMano}
