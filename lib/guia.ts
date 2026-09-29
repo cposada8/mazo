@@ -37,6 +37,12 @@ export type EstadoDeGuia = {
   readonly contratoCompleto: boolean
   /** Whether there is anything on the mesa to ligar onto. */
   readonly hayMesa: boolean
+  /**
+   * The strict bajada (Phase 47): grupos go down at exactly 3 and 4 cards,
+   * so «3 o más» would be advice the referee refuses. Optional — absent is
+   * the libre bajada every table played before the option.
+   */
+  readonly bajadaEstricta?: boolean
 }
 
 /**
@@ -77,7 +83,9 @@ function guiarAntesDeBajarse(estado: EstadoDeGuia): string | null {
     return 'Toca Botar para terminar tu turno.'
   }
 
-  return 'Escoge 3 o más cartas que formen un grupo y toca Armar. Si no puedes, bota una.'
+  return estado.bajadaEstricta
+    ? 'Escoge un trío de 3 cartas o una escala de 4 y toca Armar. Si no puedes, bota una.'
+    : 'Escoge 3 o más cartas que formen un grupo y toca Armar. Si no puedes, bota una.'
 }
 
 /**

@@ -38,6 +38,8 @@ export type VistaDeAsiento = {
   /** The only hand in the whole structure: this seat's own. */
   readonly mano: readonly Card[]
   readonly contrato: Contrato
+  /** The bajada is exactly the contract: 3 per trío, 4 per escala (Phase 47). */
+  readonly bajadaEstricta: boolean
   /** Every seat, this one included, reduced to what everybody can see. */
   readonly jugadores: readonly VistaJugador[]
   /** Cards left in the stock. Their order and faces are secret. */
@@ -60,6 +62,7 @@ export function vistaDeAsiento(
     asiento,
     mano: state.jugadores[asiento].hand,
     contrato: state.contrato,
+    bajadaEstricta: state.bajadaEstricta ?? false,
     jugadores: state.jugadores.map((jugador) => ({
       cartas: jugador.hand.length,
       grupos: jugador.grupos,
@@ -181,6 +184,7 @@ export function aplicarEnVista(
 function rondaImaginada(vista: VistaDeAsiento): RondaState {
   return {
     contrato: vista.contrato,
+    ...(vista.bajadaEstricta ? { bajadaEstricta: true } : {}),
     jugadores: vista.jugadores.map((jugador, seat) => ({
       hand: seat === vista.asiento ? vista.mano : [],
       grupos: jugador.grupos,

@@ -201,3 +201,12 @@ function findDuplicateId(cards: readonly Card[]): string | undefined {
   }
   return undefined
 }
+
+/**
+ * The one size a grupo may have in a strict bajada (Phase 47): a trío of
+ * exactly three, an escala of exactly four — each kind's minimum. Comodines
+ * count toward it like any card.
+ */
+export function tamanoEstricto(kind: Grupo['kind']): number {
+  return kind === 'trio' ? TRIO_MIN_SIZE : ESCALA_MIN_SIZE
+}

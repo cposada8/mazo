@@ -50,6 +50,8 @@ const MS_ENTRE_CONSULTAS = 2000
 /** Seconds per human turn on offer. 45 is the default the owner chose. */
 export const SEGUNDOS_POR_TURNO = [30, 45, 60, 90, 120] as const
 const SEGUNDOS_BOT = [1, 2, 3, 5] as const
+const BAJADAS = ['libre', 'estricta'] as const
+type Bajada = (typeof BAJADAS)[number]
 
 export function Lobby({
   codigo,
@@ -302,6 +304,7 @@ export function Lobby({
           onComodines={(comodines) =>
             ajustar({ config: { ...partida.config, comodines } })
           }
+          onBajada={(bajada) => ajustar({ config: { ...partida.config, bajada } })}
           onSegundosPorTurno={(segundosPorTurno) => ajustar({ segundosPorTurno })}
           onSegundosBot={(segundosBot) => ajustar({ segundosBot })}
           onVerDescarte={(verDescarte) => ajustar({ verDescarte })}
@@ -399,6 +402,7 @@ function Ajustes({
   partida,
   onContrato,
   onComodines,
+  onBajada,
   onSegundosPorTurno,
   onSegundosBot,
   onVerDescarte,
@@ -407,6 +411,7 @@ function Ajustes({
   partida: NonNullable<VistaDeLobby['partida']>
   onContrato: (id: string) => void
   onComodines: (comodines: boolean) => void
+  onBajada: (bajada: Bajada) => void
   onSegundosPorTurno: (segundos: number) => void
   onSegundosBot: (segundos: number) => void
   onVerDescarte: (ver: boolean) => void
@@ -462,6 +467,22 @@ function Ajustes({
         onCambiar={onComodines}
       />
 
+      {/* Phase 47. Two named options rather than a switch: «estricta» off
+          does not say what the other way is, and both are real ways the
+          game is played. */}
+      <Escogencia
+        titulo="Cómo se baja"
+        detalle={
+          (partida.config.bajada ?? 'libre') === 'estricta'
+            ? 'Exactamente 3 cartas por trío y 4 por escala al bajarse. Las demás se ponen después.'
+            : 'Un trío con 3 o más cartas y una escala con 4 o más.'
+        }
+        opciones={BAJADAS}
+        valor={partida.config.bajada ?? 'libre'}
+        etiqueta={(bajada) => (bajada === 'libre' ? 'Libre' : 'Estricta')}
+        onCambiar={onBajada}
+      />
+
       <Escogencia
         titulo="Tiempo por jugada"
         detalle="Si se acaba, se roba del mazo y se bota una carta al azar."
@@ -506,6 +527,7 @@ function ResumenDeAjustes({
       <p>
         {partida.config.contratos.length} repartos ·{' '}
         {partida.config.comodines ? 'con comodines' : 'sin comodines'} ·{' '}
+        {partida.config.bajada === 'estricta' ? 'bajada estricta' : 'bajada libre'} ·{' '}
         {partida.segundosPorTurno} s por jugada
       </p>
     </section>
@@ -541,18 +563,21 @@ function Interruptor({
   )
 }
 
-function Escogencia({
+function Escogencia<T extends string | number>({
   titulo,
   detalle,
   opciones,
   valor,
+  etiqueta = (opcion) => `${opcion}s`,
   onCambiar,
 }: {
   titulo: string
   detalle?: string
-  opciones: readonly number[]
-  valor: number
-  onCambiar: (valor: number) => void
+  opciones: readonly T[]
+  valor: T
+  /** How an option reads on its button. Seconds, unless told otherwise. */
+  etiqueta?: (opcion: T) => string
+  onCambiar: (valor: T) => void
 }) {
   return (
     <div className="flex flex-col gap-2">
@@ -565,6 +590,7 @@ function Escogencia({
             key={opcion}
             type="button"
             onClick={() => onCambiar(opcion)}
+            aria-pressed={opcion === valor}
             className={cn(
               'border-input flex-1 rounded-md border py-2 text-sm tabular-nums transition-colors',
               opcion === valor
@@ -572,7 +598,7 @@ function Escogencia({
                 : 'hover:bg-accent',
             )}
           >
-            {opcion}s
+            {etiqueta(opcion)}
           </button>
         ))}
       </div>

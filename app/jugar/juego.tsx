@@ -62,6 +62,7 @@ export function Juego({
   seed,
   contratos,
   comodines,
+  bajada = 'libre',
   segundosBot: segundosBotInicial,
   bots,
   id,
@@ -72,6 +73,8 @@ export function Juego({
   contratos: readonly Contrato[]
   /** Deal with the four comodines, or with none at all. */
   comodines: boolean
+  /** Exactly the contract when bajándose, or more (Phase 47). */
+  bajada?: 'libre' | 'estricta'
   /** Seconds a bot spends on its whole turn. */
   segundosBot: number
   /** Which bot sits in each seat, by id. A seat left out plays as the default. */
@@ -80,8 +83,11 @@ export function Juego({
   id?: string
 } & Omit<PropsDeTablero, 'juego' | 'segundosBot' | 'onSegundosBot'>) {
   const config = useMemo(
-    () => ({ ...CONFIG_POR_DEFECTO, contratos, comodines }),
-    [contratos, comodines],
+    // Every rule the lobby chose, spelled out: a field left off here is a rule
+    // the local table silently plays by its default instead (Phase 47 found
+    // the bajada missing exactly this way).
+    () => ({ ...CONFIG_POR_DEFECTO, contratos, comodines, bajada }),
+    [contratos, comodines, bajada],
   )
   // Pacing is not a rule (Phase 28): it can be changed mid-partida from the
   // menu, so what the lobby said is only where it starts.
@@ -198,6 +204,7 @@ export function Tablero({
           apartadas: juego.propuestas.length,
           contratoCompleto: juego.contratoCompleto,
           hayMesa: ronda.jugadores.some((jugador) => jugador.grupos.length > 0),
+          bajadaEstricta: ronda.bajadaEstricta,
         })
       : null
 
@@ -430,7 +437,8 @@ function MenuDePartida({
       <div className="bg-background max-h-full w-full max-w-md overflow-y-auto rounded-lg border p-4">
         <p className="text-muted-foreground mb-2 text-xs tracking-wide uppercase">
           {contrato} ·{' '}
-          {partida.config.comodines ? 'con comodines' : 'sin comodines'}
+          {partida.config.comodines ? 'con comodines' : 'sin comodines'} ·{' '}
+          {partida.config.bajada === 'estricta' ? 'bajada estricta' : 'bajada libre'}
         </p>
         <Marcador partida={partida} nombres={nombres} />
 

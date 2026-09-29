@@ -75,6 +75,7 @@ empty seats), and the better bots moved behind it as Milestone 4.
 | 44 | Which tables are still open: the panel, and tables that close themselves | ✅ |
 | 45 | Rough edges: the guía, «Cómo se juega», and a mesa that fits | ✅ — **closes Milestone 4** |
 | 46 | A table worth sitting at: felt, seats on the rim, a measured mesa, the font | ✅ |
+| 47 | La bajada estricta: exactly 3 per trío and 4 per escala, as a lobby choice | ✅ |
 
 **Phase 44 came from a suspicion that measuring confirmed, and is done.**
 Thirteen partidas on the live database, all thirteen still `jugando`, none
@@ -320,8 +321,7 @@ forwards dev to main so dev knows the number it builds on. Vercel deploys
 **Milestone 5 — More ways to play**, asked for by the owner after v1.0.1 and
 ordered by them (`roadmap.md` has the briefs and the open questions):
 
-1. **Phase 47 — La bajada estricta.** A setup option: lay down exactly 3
-   cards per trío and 4 per escala, or freely as today.
+1. ~~Phase 47 — La bajada estricta.~~ ✅ Done, on dev.
 2. **Phase 48 — Las escaleras.** Contracts 9–12: sucia, pintada, color and
    real, thirteen cards won in one move. Retires the Pending section of
    carioca-rules.md.

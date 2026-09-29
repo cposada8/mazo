@@ -166,6 +166,24 @@ When bajándose, a grupo may contain **at most one comodín**.
 | `7 comodín comodín` | no — two comodines |
 | `comodín 4♠ 5♠ 6♠` | yes |
 
+#### The size of a grupo at lay-down: libre or estricta — settled in Phase 47
+
+A per-partida choice made in the lobby, like the contract list and the
+comodines, and never changed mid-game:
+
+| Bajada | A trío goes down with | An escala goes down with |
+| --- | --- | --- |
+| **Libre** (default) | 3 or more cards | 4 or more cards |
+| **Estricta** | exactly 3 cards | exactly 4 cards |
+
+- Only the bajada is strict. From the turn after, cards are added to grupos
+  (the player's own or anyone's) exactly as in the libre game, so a trío laid
+  down as three can grow to five.
+- A comodín counts toward the size: `7 7 comodín` is a trío of three.
+- Under the estricta bajada a whole-hand bajada cannot happen early: with
+  contracts 1–6 the grupos cannot use all 13 cards, so going out always
+  takes a discard or a later turn.
+
 #### After lay-down: more, but never adjacent in an escala
 
 Once a grupo is on the table, further comodines may be added to it, subject to

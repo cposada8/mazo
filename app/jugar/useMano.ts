@@ -31,6 +31,7 @@ import {
   type Propuesta,
   type VistaDeAsiento,
   puntosDeMano,
+  tamanoEstricto,
 } from '@/lib/engine'
 
 export function useMano(options: {
@@ -212,10 +213,20 @@ export function useMano(options: {
       )
       return
     }
+    // The strict bajada (Phase 47), said here and not only by the referee:
+    // a grupo that cannot go down should not be set aside as if it could.
+    if (vista?.bajadaEstricta && propuesta.cardIds.length !== tamanoEstricto(propuesta.kind)) {
+      onAviso(
+        propuesta.kind === 'trio'
+          ? 'Bajada estricta: el trío va con 3 cartas exactas. Las demás se ponen después.'
+          : 'Bajada estricta: la escala va con 4 cartas exactas. Las demás se ponen después.',
+      )
+      return
+    }
     setPropuestas((actual) => [...actual, propuesta])
     setSeleccion([])
     onAviso(null)
-  }, [seleccionadas, onAviso])
+  }, [seleccionadas, onAviso, vista])
 
   const soltarGrupo = useCallback(
     (index: number) => {

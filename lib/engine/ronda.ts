@@ -21,6 +21,7 @@ import {
   type Grupo,
   type Propuesta,
   type Trio,
+  tamanoEstricto,
   validateGrupo,
 } from './grupos'
 import { addToTrio, extendEscala, repositionComodin } from './mesa'
@@ -47,6 +48,12 @@ export const REBARAJADAS_MAX = 2
 
 export type RondaState = {
   readonly contrato: Contrato
+  /**
+   * The bajada must be exactly the contract: three cards per trío, four per
+   * escala (Phase 47). Absent means libre, which is how every ronda saved
+   * before the option existed was played.
+   */
+  readonly bajadaEstricta?: boolean
   readonly jugadores: readonly JugadorState[]
   readonly stock: readonly Card[]
   /** Face up. The last element is the top card, the only one in play. */
@@ -115,6 +122,7 @@ export type MoveErrorCode =
   | 'NO_SE_HA_BAJADO'
   | 'MESA_BLOQUEADA_MISMO_TURNO'
   | 'CONTRATO_NO_COINCIDE'
+  | 'BAJADA_ESTRICTA'
   | 'GRUPO_INVALIDO'
   | 'DESCARTE_VACIO'
   | 'NO_EXISTE_EL_GRUPO'
@@ -136,18 +144,29 @@ export function startRonda(options: {
   contrato: Contrato
   players: number
   comodines?: boolean
+  /** Exactly three cards per trío and four per escala when bajándose (Phase 47). */
+  bajadaEstricta?: boolean
   seed: string | number
   /** Seat that plays first. Rotates between rondas so no seat is always first. */
   empieza?: number
   /** Seats whose players left the partida; they are dealt nothing (Phase 37). */
   retirados?: readonly number[]
 }): RondaState {
-  const { contrato, players, comodines = true, seed, empieza = 0, retirados } = options
+  const {
+    contrato,
+    players,
+    comodines = true,
+    bajadaEstricta = false,
+    seed,
+    empieza = 0,
+    retirados,
+  } = options
   const rng = createRng(seed)
   const dealt = deal(buildDeck({ comodines }), players, rng)
 
   return {
     contrato,
+    ...(bajadaEstricta ? { bajadaEstricta: true } : {}),
     jugadores: dealt.hands.map((hand, seat) => ({
       // A seat that left is dealt nothing again.
       hand: retirados?.includes(seat) ? [] : hand,
@@ -384,6 +403,21 @@ function bajarse(state: RondaState, propuestas: readonly Propuesta[]): MoveResul
       'CONTRATO_NO_COINCIDE',
       `${contrato.nombre} needs ${contrato.trios} trios and ${contrato.escalas} escalas, got ${trios} and ${escalas}`,
     )
+  }
+
+  // The strict bajada (Phase 47): the contract and not a card more. Checked
+  // before the grupos themselves, so the refusal names the rule the player
+  // actually broke rather than a validation detail.
+  if (state.bajadaEstricta) {
+    for (const propuesta of propuestas) {
+      const exacto = tamanoEstricto(propuesta.kind)
+      if (propuesta.cardIds.length !== exacto) {
+        return fail(
+          'BAJADA_ESTRICTA',
+          `strict bajada: a ${propuesta.kind} goes down with exactly ${exacto} cards, got ${propuesta.cardIds.length}`,
+        )
+      }
+    }
   }
 
   const taken = collectCards(

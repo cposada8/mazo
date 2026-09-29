@@ -2144,7 +2144,7 @@ wide and a hand of twelve scrolls. Landscape is how the game is played.
 the strict bajada first, the escalera levels second, the comodín gallery
 last and not a priority.*
 
-### Phase 47 — La bajada estricta
+### Phase 47 — La bajada estricta ✅
 Some tables play that you lay down **exactly** the contract and not a card
 more, and the owner wants to offer it. A per-partida choice on the setup
 screen, beside *con/sin comodines*, with two options:
@@ -2172,6 +2172,22 @@ Settled with the owner (2026-09-28):
 
 Written into carioca-rules.md first, then coded — the rules document is the
 authority, and «any rule discovered to be missing is written there first».
+
+**Done.** `PartidaConfig.bajada` (`'libre'` by default, absent on old
+partidas and read as libre) reaches every ronda as `bajadaEstricta`, and the
+referee refuses an off-size grupo with `BAJADA_ESTRICTA`. The lobby offers
+*Cómo se baja: Libre / Estricta*; the menu and the host's summary say which;
+the guía asks for «un trío de 3 cartas o una escala de 4»; and Armar refuses
+to set aside a grupo of the wrong size with a sentence, before the referee
+ever sees it. The bots needed nothing: they always searched minimum-size
+grupos, and a hundred strict partidas with every personality at the table
+finish with no move refused.
+
+One bug found by playing it rather than by the tests: a table of one person
+and bots is played in the browser (Phase 34), and that path rebuilt the
+config field by field — the strict choice reached the server and was lost
+there, so the table dealt libre. It now passes the rule through, and a test
+pins that path.
 
 ### Phase 48 — Las escaleras
 The contracts past 8, pending since Phase 0 and now defined by the owner:
