@@ -1,3 +1,5 @@
+import Link from "next/link";
+import { BookOpen } from "lucide-react";
 import { AliasEditable } from "@/components/identidad";
 import { Puerta } from "@/components/puerta";
 
@@ -38,6 +40,24 @@ export default function Home() {
             </li>
           ))}
         </ol>
+        {/*
+          The list above is half an explanation on its own — it names the
+          contracts and says nothing about what a trío is. Phase 45 gave it
+          the other half, one tap away and right underneath, where the
+          question is actually being asked.
+        */}
+        <Link
+          href="/como-se-juega"
+          className="border-input hover:bg-accent flex items-center gap-3 rounded-lg border px-4 py-3 transition-colors"
+        >
+          <BookOpen className="size-4 shrink-0" aria-hidden />
+          <span className="flex min-w-0 flex-col gap-0.5">
+            <span className="text-sm font-medium">Cómo se juega</span>
+            <span className="text-muted-foreground text-xs">
+              El turno, los grupos, los comodines y el puntaje
+            </span>
+          </span>
+        </Link>
       </section>
 
       <Puerta />

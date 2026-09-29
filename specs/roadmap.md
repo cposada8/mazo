@@ -1999,7 +1999,7 @@ environment variables.
 
 ## Closing Milestone 4
 
-### Phase 45 — Rough edges
+### Phase 45 — Rough edges ✅
 *Was Phase 40, then 44; displaced twice, by two lists from real play.*
 
 A hint for new players and an in-game rules summary. Card animations were
@@ -2013,6 +2013,65 @@ row: Phase 40 cleared that row for the arranging controls because upright
 they were being pushed off the screen.
 **Done when:** someone who has never played Carioca finishes a bot game without
 asking for help, and a full mesa can be read without scrolling to find it.
+
+**Done.** Three things, and the first of them is the phase's real discovery:
+**«a hint» and «a rules summary» are not two halves of one feature, they are
+two different features for two different moments.** Nobody reads a manual
+before a game, and the moment help is wanted is mid-turn with the cards
+already dealt. So one thing carries the first partida and the other answers
+what is asked afterwards, and neither pretends to be the other.
+
+- **La guía names the next move, and only the next move.** One line — *Roba:
+  toca el mazo o el descarte* → *Escoge 3 o más cartas que formen un grupo y
+  toca Armar* → *Bota una carta para terminar* — derived in `lib/guia.ts`
+  from what the table already knows. Pure, so it is tested without a screen,
+  and so it can never name a disabled button: the case it exists for is the
+  rule a beginner breaks first, *the turn you bajaste the mesa stays shut*,
+  and there the line says to discard rather than pointing at a mesa that
+  would refuse. It says nothing at all on somebody else's turn.
+- **It is on by default and turns itself off after one finished partida** —
+  the owner's choice. The switch in the menu is the last word: the setting is
+  stored absent/sí/no rather than as a boolean, and self-silencing is only
+  allowed to write over *absent*. A person who asked to keep it keeps it.
+- **Where it goes, and what it costs.** Phase 40 forbade the hand's heading
+  row and was right to. It goes in the info strip, in the amber the table
+  already uses for *this is you and it is now*, and while it is up it takes
+  the relato's place — because on your own turn the next move beats a report
+  of the last one, and the relato is one tap away in the historial. The trade
+  is bounded to a first partida by construction.
+- **«Cómo se juega» is one component with two entrances.** The page at
+  `/como-se-juega`, linked from under the contract list on the home screen —
+  which had been naming the contracts and explaining none of them since
+  Phase 14 — and the same content over the felt from the partida's menu.
+  Every shape the game has a word for is drawn as actual `<Carta>`s on the
+  actual felt, including the comodín showing the rango it stands for, because
+  *four or more consecutive cards of the same suit* is a sentence and
+  `4♠ 5♠ 6♠ 7♠` is the thing itself.
+- **In the menu it sits at the bottom, next to the buttons.** Found by
+  opening it: the panel autofocuses «Seguir jugando» and the view goes with
+  it, so on a phone lying down anything at the top of that panel is something
+  you must already know is there. These two are for the person who does not.
+
+**And the mesa fits now.** Phase 17's sideways scroll is gone. The grupos wrap
+in both orientations, and the cards shrink by grupo count in steps —
+`escalaDeMesa`, four ratios of `--carta-md` — with the grupo titles and half
+the padding going at the first step, since the cards say what the title says.
+One knob, the way the whole table has been drawn since Phase 18.
+
+Measured rather than reasoned about, on an 844×390 landscape phone and a
+390×844 upright one:
+
+| Grupos | Ratio | Desborda |
+| --- | --- | --- |
+| 6 — a table of three, unchanged | 0.52 | no |
+| 18 — six players, *tres escalas* | 0.37 | no |
+| 24 — six players, four escalas each | 0.31 | no |
+
+Eighteen is what the default contracts can actually produce; twenty-four is
+past anything contract 8 could ask for, since a trío is three cards and an
+escala four. Neither scrolls in either direction, and the corner of every
+card still carries its rango and its pinta. The final mesa (Phase 42) shrinks
+by the same rule, so the snapshot of a won table fits the screen that took it.
 
 ---
 

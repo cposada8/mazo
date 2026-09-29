@@ -24,7 +24,7 @@
 
 'use client'
 
-import { Layers } from 'lucide-react'
+import { Layers, Lightbulb } from 'lucide-react'
 import { useLayoutEffect, useRef } from 'react'
 import { Carta, CartaBocaAbajo } from '@/components/carta'
 import { asientosRivales } from '@/lib/asientos'
@@ -51,11 +51,43 @@ export function nombrePorDefecto(seat: number): string {
   return `Jugador ${seat + 1}`
 }
 
+/**
+ * How much the mesa shrinks as grupos pile up (Phase 45).
+ *
+ * Six players deep into *tres escalas* is eighteen grupos, and at one fixed
+ * size that is a row running off the right edge — which is what Phase 17 left
+ * behind and called the honest minimum. The answer is not a bigger table, it
+ * is smaller cards: the ratio drops in steps, the grupos wrap, and eighteen
+ * of them land inside a landscape phone's mesa lane with room to spare.
+ *
+ * Steps rather than a continuous formula so the mesa does not resize by a
+ * hair every time somebody ligas a card — it changes size when the table
+ * genuinely got more crowded, and holds still otherwise.
+ *
+ * `compacto` drops the grupo's title («Trío de 7»), which costs a whole line
+ * per grupo. It is the first thing to go and the cheapest: the cards say what
+ * the title says, and at these counts the room matters more than the label.
+ */
+export function escalaDeMesa(grupos: number): {
+  /** Ratio of `--carta-md`. Never above `RATIO_XS`, the uncrowded value. */
+  readonly carta: number
+  readonly compacto: boolean
+} {
+  if (grupos <= 6) return { carta: RATIO_XS, compacto: false }
+  if (grupos <= 12) return { carta: 0.44, compacto: true }
+  if (grupos <= 20) return { carta: 0.37, compacto: true }
+  return { carta: 0.31, compacto: true }
+}
+
+/** What `--carta-xs` is when nothing is crowded. Mirrors `.cancha`. */
+export const RATIO_XS = 0.52
+
 /** One grupo on the table, with each comodín showing the rango it stands for. */
 export function GrupoEnMesa({
   grupo,
   onClick,
   doradas,
+  compacto,
 }: {
   grupo: Grupo
   onClick?: () => void
@@ -65,12 +97,16 @@ export function GrupoEnMesa({
    * like the ones that were there all along.
    */
   doradas?: ReadonlySet<string>
+  /** Drop the title to buy a line back on a crowded mesa (Phase 45). */
+  compacto?: boolean
 }) {
   const contenido = (
     <div className="flex flex-col gap-0.5">
-      <span className="text-[calc(var(--texto-mesa,0.75rem)*0.85)] font-medium tracking-wide text-tinta/80 uppercase">
-        {tituloDeGrupo(grupo)}
-      </span>
+      {!compacto && (
+        <span className="text-[calc(var(--texto-mesa,0.75rem)*0.85)] font-medium tracking-wide text-tinta/80 uppercase">
+          {tituloDeGrupo(grupo)}
+        </span>
+      )}
       <div className="flex">
         {grupo.cards.map((card, index) => {
           const nueva = doradas?.has(card.id) ?? false
@@ -99,13 +135,20 @@ export function GrupoEnMesa({
     </div>
   )
 
-  if (!onClick) return <div className="shrink-0 p-1">{contenido}</div>
+  // The padding gives way with the title: on a crowded mesa four pixels a
+  // side, times twenty grupos, is a row's worth of space spent on nothing.
+  const hueco = compacto ? 'p-0.5' : 'p-1'
+
+  if (!onClick) return <div className={cn('shrink-0', hueco)}>{contenido}</div>
 
   return (
     <button
       type="button"
       onClick={onClick}
-      className="shrink-0 rounded-md border border-transparent p-1 text-left transition-colors hover:border-tinta-suave/40 hover:bg-tinta/5"
+      className={cn(
+        'shrink-0 rounded-md border border-transparent text-left transition-colors hover:border-tinta-suave/40 hover:bg-tinta/5',
+        hueco,
+      )}
     >
       {contenido}
     </button>
@@ -598,6 +641,7 @@ export function Mesa({
   nombres,
   reloj,
   relatoLinea,
+  guia,
   viaje,
   onVerDescarte,
   onVerHistorial,
@@ -637,6 +681,14 @@ export function Mesa({
   sobreLaMano?: React.ReactNode
   /** The last public move in words, for the line under the piles. */
   relatoLinea?: string
+  /**
+   * What to do right now, for a player still learning the game (Phase 45).
+   * When given it takes the relato's place in the strip — while it is your
+   * turn, the next move is the more useful sentence, and the relato is one
+   * tap away in the historial. Null on every turn that is not yours, which is
+   * when the strip goes back to narrating.
+   */
+  guia?: string | null
   /** A drawn card in flight. Rendered once per `clave`. */
   viaje?: Viaje | null
   /** When given, a button in the info strip opens the whole descarte. */
@@ -656,6 +708,8 @@ export function Mesa({
   const enMesa = state.jugadores.flatMap((jugador, seat) =>
     jugador.grupos.map((grupo, grupoIndex) => ({ grupo, seat, grupoIndex })),
   )
+  // How small the mesa has to draw itself to fit whole (Phase 45).
+  const apretada = escalaDeMesa(enMesa.length)
 
   return (
     <div className="cancha relative flex h-full w-full flex-col overflow-hidden bg-stone-950">
@@ -693,7 +747,21 @@ export function Mesa({
         <div className="carril-mesa relative z-10 min-h-0 flex-1">
           <Pilas state={state} onRobar={onRobar} />
 
-          <div className="grupos-en-mesa">
+          {/*
+            The cards shrink instead of the row scrolling. `--carta-xs` is
+            declared on `.cancha` as a ratio of `--carta-md`; overriding it
+            here re-derives it at a smaller ratio, so the whole grupo — cards,
+            corners, the comodín's binding — scales together, exactly as it
+            does when the screen itself changes size.
+          */}
+          <div
+            className="grupos-en-mesa"
+            style={
+              {
+                '--carta-xs': `calc(var(--carta-md) * ${apretada.carta})`,
+              } as React.CSSProperties
+            }
+          >
             {enMesa.length === 0 ? (
               <span className="self-center text-[var(--texto-mesa,0.75rem)] text-tinta-tenue">
                 Nadie se ha bajado todavía.
@@ -704,6 +772,7 @@ export function Mesa({
                   key={`${seat}-${grupoIndex}`}
                   grupo={grupo}
                   doradas={doradas}
+                  compacto={apretada.compacto}
                   onClick={onGrupo ? () => onGrupo(seat, grupoIndex) : undefined}
                 />
               ))
@@ -718,7 +787,22 @@ export function Mesa({
           printed on the felt.
         */}
         <div className="relative z-10 flex shrink-0 items-center justify-between gap-3 px-[7cqw] pb-[0.5cqh]">
-          {onVerHistorial && relatoLinea ? (
+          {guia ? (
+            /*
+              The guide takes the strip while it is your turn (Phase 45), in
+              the amber the table already uses for *this is you, and it is
+              now* — the ring on the ficha, the badge behind «Tu mano». It is
+              text and not a button: it names the move, and the move is made
+              on the table itself.
+            */
+            <span
+              aria-live="polite"
+              className="flex min-w-0 items-center gap-1.5 text-[var(--texto-mesa,0.75rem)] text-amber-500/90"
+            >
+              <Lightbulb className="size-[1.1em] shrink-0" aria-hidden />
+              <span className="min-w-0 truncate">{guia}</span>
+            </span>
+          ) : onVerHistorial && relatoLinea ? (
             <button
               type="button"
               onClick={onVerHistorial}
