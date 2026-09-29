@@ -148,7 +148,7 @@ export function GrupoEnMesa({
                   : grupo.kind === 'escala'
                     ? escalaRankAt(grupo, index)
                     : grupo.kind === 'escalera'
-                      ? rangoDeEscaleraEn(index)
+                      ? rangoDeEscaleraEn(grupo, index)
                       : undefined
               }
             />

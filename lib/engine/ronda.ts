@@ -499,7 +499,12 @@ function bajarEscalera(state: RondaState, propuestas: readonly Propuesta[]): Mov
   )
   if (!check.ok) return fail('GRUPO_INVALIDO', `${check.code}: ${check.detail}`)
 
-  const escalera: Escalera = { kind: 'escalera', tipo, cards: check.cards }
+  const escalera: Escalera = {
+    kind: 'escalera',
+    tipo,
+    cards: check.cards,
+    ...(check.asPrimero ? { asPrimero: true } : {}),
+  }
   return {
     ok: true,
     state: replaceJugador(state, state.turno, {

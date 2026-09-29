@@ -3,13 +3,14 @@
  *
  * An escalera is not a bigger escala. It is every rango exactly once, read in
  * the fixed order 2 → A (not around the ring an escala uses), and laying one
- * down takes the whole hand — so it wins the ronda in the same move. The four
+ * down takes the whole hand — so it wins the ronda in the same move. The A
+ * may sit at either end: after the K (2 → A) or before the 2 (A → K). The four
  * levels differ only in what colour or pinta each card must be:
  *
  * | Tipo | Besides one of every rango |
  * | --- | --- |
  * | sucia | nothing |
- * | pintada | colours alternate along 2 → A; either colour may start |
+ * | pintada | colours alternate along the line; either colour may start |
  * | color | all red (♥ ♦) or all black (♠ ♣) |
  * | real | all one pinta |
  *
@@ -17,6 +18,10 @@
  * other bajada, settled with the owner. Each stands for one missing rango and
  * takes whatever colour or pinta its place calls for — so a comodín never
  * breaks an alternation or a colour, it only fills a gap.
+ *
+ * Which end the A takes only matters to the pintada: thirteen is odd, so the
+ * A matches the 2's colour when it goes last and the K's when it goes first —
+ * which is to say the A of a pintada may be either colour.
  */
 
 import { type Card, type NormalCard, type Rank, type Suit, isComodin } from './cards'
@@ -29,6 +34,14 @@ export const ORDEN_DE_ESCALERA: readonly Rank[] = [
 ]
 
 export const LARGO_DE_ESCALERA = ORDEN_DE_ESCALERA.length // 13
+
+/** The same thirteen with the A before the 2: A, 2, 3 … K. */
+export const ORDEN_CON_AS_PRIMERO: readonly Rank[] = [
+  'A', ...ORDEN_DE_ESCALERA.slice(0, -1),
+]
+
+/** The two lines an escalera can be read along; the A-last one is preferred. */
+const ORDENES: readonly (readonly Rank[])[] = [ORDEN_DE_ESCALERA, ORDEN_CON_AS_PRIMERO]
 
 export const NOMBRE_DE_ESCALERA: Record<TipoDeEscalera, string> = {
   sucia: 'Escalera sucia',
@@ -58,6 +71,8 @@ export type EscaleraCheck =
       readonly ok: true
       /** The cards in escalera order, the comodín in the place it fills. */
       readonly cards: readonly Card[]
+      /** Read A → K rather than 2 → A: only a pintada ever needs it. */
+      readonly asPrimero?: true
     }
   | { readonly ok: false; readonly code: EscaleraErrorCode; readonly detail: string }
 
@@ -71,8 +86,8 @@ const fail = (code: EscaleraErrorCode, detail: string): EscaleraCheck => ({
  * Whether these cards are an escalera of this tipo, and if so, in order.
  *
  * Order in is irrelevant — a hand is whatever order the player arranged it —
- * so the cards are placed by rango, and the one comodín, if any, goes where
- * the missing rango would.
+ * so the cards are placed by rango, and the comodines go where the missing
+ * rangos would. The A goes last (2 → A) unless only first (A → K) works.
  */
 export function ordenarEscalera(
   cards: readonly Card[],
@@ -98,10 +113,28 @@ export function ordenarEscalera(
     return fail('FALTA_RANGO', `missing ${faltan.join(', ')}`)
   }
 
+  let primerFallo: EscaleraCheck | undefined
+  for (const orden of ORDENES) {
+    const check = revisarEnOrden(porRango, comodines, orden, tipo)
+    if (check.ok) {
+      return orden === ORDEN_DE_ESCALERA ? check : { ...check, asPrimero: true }
+    }
+    primerFallo ??= check
+  }
+  return primerFallo!
+}
+
+/** The cards laid along one reading of the escalera, and whether it holds. */
+function revisarEnOrden(
+  porRango: ReadonlyMap<Rank, NormalCard>,
+  comodines: readonly Card[],
+  orden: readonly Rank[],
+  tipo: TipoDeEscalera,
+): EscaleraCheck {
   // Thirteen cards with no rango repeated means exactly one comodín per gap;
   // they are handed out to the gaps in order.
   let siguiente = 0
-  const ordenadas: Card[] = ORDEN_DE_ESCALERA.map(
+  const ordenadas: Card[] = orden.map(
     (rank) => porRango.get(rank) ?? comodines[siguiente++],
   )
 
@@ -159,8 +192,11 @@ export function ordenarEscalera(
 }
 
 /** The rango the card at `posicion` of a laid-down escalera stands for. */
-export function rangoDeEscaleraEn(posicion: number): Rank {
-  return ORDEN_DE_ESCALERA[posicion]
+export function rangoDeEscaleraEn(
+  escalera: { readonly asPrimero?: boolean },
+  posicion: number,
+): Rank {
+  return (escalera.asPrimero ? ORDEN_CON_AS_PRIMERO : ORDEN_DE_ESCALERA)[posicion]
 }
 
 /**
@@ -170,7 +206,8 @@ export function rangoDeEscaleraEn(posicion: number): Rank {
  *
  * For the tipos with a colour rule, every way the escalera could turn out is
  * tried — each pinta for the real, each colour for the color, each starting
- * colour for the pintada — and the best one is the hand's.
+ * colour and each end for the A for the pintada — and the best one is the
+ * hand's.
  */
 export function cubiertasDeEscalera(
   cards: readonly Card[],
@@ -201,11 +238,13 @@ export function cubiertasDeEscalera(
       )
     case 'pintada':
       return Math.max(
-        ...(['rojo', 'negro'] as const).map((base) =>
-          cubre((card) => {
-            const posicion = ORDEN_DE_ESCALERA.indexOf(card.rank)
-            return colorDe(card.suit) === (posicion % 2 === 0 ? base : otro(base))
-          }),
+        ...ORDENES.flatMap((orden) =>
+          (['rojo', 'negro'] as const).map((base) =>
+            cubre((card) => {
+              const posicion = orden.indexOf(card.rank)
+              return colorDe(card.suit) === (posicion % 2 === 0 ? base : otro(base))
+            }),
+          ),
         ),
       )
   }

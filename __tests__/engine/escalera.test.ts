@@ -4,12 +4,14 @@ import {
   type Card,
   type Rank,
   type Suit,
+  ORDEN_CON_AS_PRIMERO,
   ORDEN_DE_ESCALERA,
   apply,
   contratoPorId,
   cubiertasDeEscalera,
   isComodin,
   ordenarEscalera,
+  rangoDeEscaleraEn,
 } from '@/lib/engine'
 import { BOTS, jugarPartida } from '@/lib/bots'
 import { c, ids, makeRonda, n } from './helpers'
@@ -114,6 +116,51 @@ describe('escalera pintada', () => {
     expect(ordenarEscalera(mezclada, 'sucia').ok).toBe(true)
     expect(ordenarEscalera(mezclada, 'pintada').ok).toBe(false)
   })
+
+  it('takes the A in either colour: after the K or before the 2', () => {
+    // 2 red, 3 black … K black: the A goes last when red, first when black.
+    const aRoja = empiezaRojo
+    const aNegra = empiezaRojo.map((card, p) => (p === 12 ? n('A', 'spades') : card))
+
+    const alFinal = ordenarEscalera(barajar(aRoja), 'pintada')
+    expect(alFinal.ok).toBe(true)
+    if (alFinal.ok) {
+      expect(alFinal.asPrimero).toBeUndefined()
+      expect(alFinal.cards.map((card) => (isComodin(card) ? '★' : card.rank))).toEqual(
+        ORDEN_DE_ESCALERA,
+      )
+    }
+
+    const alInicio = ordenarEscalera(barajar(aNegra), 'pintada')
+    expect(alInicio.ok).toBe(true)
+    if (alInicio.ok) {
+      expect(alInicio.asPrimero).toBe(true)
+      expect(alInicio.cards.map((card) => (isComodin(card) ? '★' : card.rank))).toEqual(
+        ORDEN_CON_AS_PRIMERO,
+      )
+      expect(rangoDeEscaleraEn(alInicio, 0)).toBe('A')
+      expect(rangoDeEscaleraEn(alInicio, 1)).toBe('2')
+    }
+  })
+
+  it('still refuses a break that neither end for the A can fix', () => {
+    const aNegra = empiezaRojo.map((card, p) => (p === 12 ? n('A', 'spades') : card))
+    const rota = aNegra.map((card, p) => (p === 1 ? n('3', 'hearts') : card))
+    const check = ordenarEscalera(rota, 'pintada')
+    expect(check.ok).toBe(false)
+    if (!check.ok) expect(check.code).toBe('NO_INTERCALA')
+  })
+
+  it('places a comodín in the right slot when the A goes first', () => {
+    const aNegra = empiezaRojo.map((card, p) => (p === 12 ? n('A', 'spades') : card))
+    // The 5 (slot 3 of 2 → A) becomes a comodín; A → K puts it at slot 4.
+    const check = ordenarEscalera(barajar(conComodin(aNegra, 3)), 'pintada')
+    expect(check.ok).toBe(true)
+    if (check.ok) {
+      expect(isComodin(check.cards[4])).toBe(true)
+      expect(rangoDeEscaleraEn(check, 4)).toBe('5')
+    }
+  })
 })
 
 describe('escalera color', () => {
@@ -213,6 +260,15 @@ describe('cubiertasDeEscalera', () => {
     expect(cubiertasDeEscalera([...doce.slice(0, 11), c(), c()], 'real')).toBe(13)
     // Two of the same rango cover one place.
     expect(cubiertasDeEscalera([n('7', 'hearts'), n('7', 'spades')], 'sucia')).toBe(1)
+  })
+
+  it('counts a pintada A in either colour', () => {
+    // 2 red, 3 black … K black, and an A of each colour: both fit somewhere.
+    const doce = ORDEN_DE_ESCALERA.slice(0, 12).map((rank, p) =>
+      n(rank, p % 2 === 0 ? 'hearts' : 'spades'),
+    )
+    expect(cubiertasDeEscalera([...doce, n('A', 'hearts')], 'pintada')).toBe(13)
+    expect(cubiertasDeEscalera([...doce, n('A', 'clubs')], 'pintada')).toBe(13)
   })
 })
 
