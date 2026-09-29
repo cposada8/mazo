@@ -857,6 +857,17 @@ export function Mesa({
     { id: 'sueltas', cards: [...state.mano], bloqueada: false },
   ]
   const [columnaDeMano, anchoDeMano] = useMedida<HTMLDivElement>()
+  const [bloqueDeMano, anchoDelBloque] = useMedida<HTMLDivElement>()
+  // The line over the hand hangs from the cards' left edge and may run past
+  // their right one — but never past the column's, where the turn's buttons
+  // start. It used to be allowed nearly the whole table, and the grupos set
+  // aside for a bajada grew over «Armar» until the third trío could not be
+  // armed. The cards sit centred in the column, so from their left edge to
+  // the column's right one is half of each width.
+  const anchoSobreLaMano =
+    anchoDeMano.ancho > 0 && anchoDelBloque.ancho > 0
+      ? (anchoDeMano.ancho + anchoDelBloque.ancho) / 2
+      : undefined
   const solape = solapeDeMano({
     cartas: seccionesDeMano.reduce((suma, seccion) => suma + seccion.cards.length, 0),
     bloques: seccionesDeMano.filter((seccion) => seccion.cards.length > 0).length,
@@ -990,8 +1001,11 @@ export function Mesa({
             line — can never widen the block and slide the whole hand across
             the table under your finger.
           */}
-          <div className="relative flex max-w-full min-w-0 flex-col">
-            <div className="absolute bottom-full left-0 w-max max-w-[calc(100cqw-2rem)]">
+          <div ref={bloqueDeMano} className="relative flex max-w-full min-w-0 flex-col">
+            <div
+              className="absolute bottom-full left-0 w-max max-w-[calc(100cqw-2rem)]"
+              style={anchoSobreLaMano ? { maxWidth: anchoSobreLaMano } : undefined}
+            >
             <Mano
               soloCabecera
               cabecera={sobreLaMano}

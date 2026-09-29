@@ -747,7 +747,9 @@ function Apartadas({
   if (juego.propuestas.length === 0) return null
 
   return (
-    <span className="flex items-center gap-2">
+    // Wraps: with three grupos set aside it is wider than the room over the
+    // hand, and it must grow upward rather than over the buttons.
+    <span className="flex flex-wrap items-center gap-2">
       <span className="text-[10px] tracking-wide text-tinta-tenue uppercase">
         Vas a bajar
       </span>
