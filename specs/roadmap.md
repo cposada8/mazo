@@ -2195,8 +2195,14 @@ Settled with the owner (2026-09-28):
 - **An escalera is laid down whole**, all thirteen cards in one move, never
   card by card — and laying it down wins the ronda. The player holds twelve;
   the thirteenth is drawn as always, from the mazo or the descarte.
-- **Validation: every rango from 2 to A is there, none repeated.** Because
-  the thirteen rangos must actually be present, comodines do not stand in.
+- **Validation: every rango from 2 to A is there, none repeated.**
+- **Comodines play, under the rule every bajada already has**
+  (carioca-rules.md, *at most one comodín* when bajándose): an escalera is
+  laid down with **at most one comodín**, standing in for the one rango
+  missing — and in the pintada, color and real, for whatever colour or
+  pinta its place calls for. (Adding comodines to grupos after the bajada
+  stays free, as always; an escalera never gets there, since laying it
+  down ends the ronda.)
 - **Pintada: the colours alternate along 2→A** — red being ♥ and ♦, black
   ♠ and ♣. Either start is valid: 2 red, 3 black, 4 red, 5 black… or 2
   black, 3 red, 4 black, 5 red…
