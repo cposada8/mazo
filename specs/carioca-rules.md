@@ -557,7 +557,8 @@ in that fixed order (not around the ring an escala uses).
 - **Any number of comodines** — the one exception to *at most one comodín*
   at lay-down, settled with the owner after Phase 48 first shipped with one.
   Each stands for one missing rango, in whatever colour or pinta its place
-  calls for.
+  calls for, and **comodines may sit side by side** — the escala's rule
+  against adjacent comodines does not apply to an escalera.
 
 | # | Escalera | Besides the thirteen rangos |
 | --- | --- | --- |
