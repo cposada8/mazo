@@ -2264,7 +2264,18 @@ seat looking at it (`yo`, from the vista's `asiento`) gets an amber tint down
 its column and an amber name; the watch page at `/mesa`, which belongs to no
 seat, highlights nobody.
 
-### Phase 50 — La galería de comodines
+### Phase 50 — Todos o ninguno ✅
+Asked for by the owner on 2026-09-28, next after the tabla por puestos:
+setting up a partida should not take a dozen taps. On the list of repartos,
+**one button turns every reparto on and one turns them all off** — except
+the first, since a partida needs at least one reparto to be dealt.
+
+**Done.** «Todos» and «Ninguno» sit beside the «Los repartos» heading in the
+lobby's ajustes, each greyed out when it would change nothing. «Ninguno»
+leaves *Dos tríos* on; from there the host taps on whichever others they
+want.
+
+### Phase 51 — La galería de comodines
 The comodines wear photos from `public/candidatos/comodines` since Phase 29 —
 the owner's pets among them — and a ronda only ever shows a few. **A small
 screen from the partida's menu that shows every face in the gallery**, so
