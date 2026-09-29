@@ -21,6 +21,7 @@ import {
   type VistaDeAsiento,
 } from '@/lib/engine'
 import { buscarAgrupacion } from './agrupar'
+import { decidirEscalera } from './escalera'
 import { buscarDescarga, ligaDeInmediato, peorCarta } from './evaluar'
 
 export type Perfil = {
@@ -37,6 +38,9 @@ export type Perfil = {
 }
 
 export function decidirConPerfil(vista: VistaDeAsiento, perfil: Perfil): Move {
+  // An escalera ronda has none of the questions a personality answers.
+  if (vista.contrato.escalera) return decidirEscalera(vista, vista.contrato.escalera)
+
   if (vista.fase === 'draw') return decidirRobo(vista, perfil)
 
   if (vista.jugadores[vista.asiento].bajadoEnTurno === null) {

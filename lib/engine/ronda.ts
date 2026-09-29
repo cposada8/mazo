@@ -16,8 +16,10 @@ import {
 } from './cards'
 import { type Contrato } from './contratos'
 import { buildDeck, deal } from './deck'
+import { ordenarEscalera } from './escalera'
 import {
   type Escala,
+  type Escalera,
   type Grupo,
   type Propuesta,
   type Trio,
@@ -395,10 +397,13 @@ function bajarse(state: RondaState, propuestas: readonly Propuesta[]): MoveResul
     return fail('YA_SE_BAJO', 'this player has already laid down this ronda')
   }
 
+  const { contrato } = state
+  if (contrato.escalera) return bajarEscalera(state, propuestas)
+
   const trios = propuestas.filter((p) => p.kind === 'trio').length
   const escalas = propuestas.filter((p) => p.kind === 'escala').length
-  const { contrato } = state
-  if (trios !== contrato.trios || escalas !== contrato.escalas) {
+  const escaleras = propuestas.filter((p) => p.kind === 'escalera').length
+  if (trios !== contrato.trios || escalas !== contrato.escalas || escaleras > 0) {
     return fail(
       'CONTRATO_NO_COINCIDE',
       `${contrato.nombre} needs ${contrato.trios} trios and ${contrato.escalas} escalas, got ${trios} and ${escalas}`,
@@ -429,6 +434,12 @@ function bajarse(state: RondaState, propuestas: readonly Propuesta[]): MoveResul
   const grupos: Grupo[] = []
   for (const propuesta of propuestas) {
     const cards = propuesta.cardIds.map((id) => taken.byId.get(id)!)
+    // Escaleras never reach here: the contract check above sends them to
+    // `bajarEscalera`, and a propuesta of that kind under any other contract
+    // was refused with it.
+    if (propuesta.kind === 'escalera') {
+      return fail('CONTRATO_NO_COINCIDE', 'an escalera is only laid down in its own contract')
+    }
     const grupo: Grupo =
       propuesta.kind === 'trio'
         ? ({ kind: 'trio', rank: propuesta.rank, cards } satisfies Trio)
@@ -456,6 +467,49 @@ function bajarse(state: RondaState, propuestas: readonly Propuesta[]): MoveResul
   }
 }
 
+/**
+ * An escalera contract's bajada (Phase 48): one escalera, the whole hand, in
+ * one move. The hand empties, and `apply` — which already crowns anyone who
+ * empties their hand, however — ends the ronda with this seat as winner. No
+ * discard: there is nothing left to throw.
+ */
+function bajarEscalera(state: RondaState, propuestas: readonly Propuesta[]): MoveResult {
+  const tipo = state.contrato.escalera!
+  const [propuesta] = propuestas
+  if (propuestas.length !== 1 || propuesta.kind !== 'escalera' || propuesta.tipo !== tipo) {
+    return fail(
+      'CONTRATO_NO_COINCIDE',
+      `${state.contrato.nombre} is laid down as one escalera ${tipo}`,
+    )
+  }
+
+  const jugador = state.jugadores[state.turno]
+  const taken = collectCards(jugador.hand, propuesta.cardIds)
+  if (!taken.ok) return taken.error
+  if (taken.rest.length > 0) {
+    return fail(
+      'CONTRATO_NO_COINCIDE',
+      `an escalera takes the whole hand; ${taken.rest.length} cards left out`,
+    )
+  }
+
+  const check = ordenarEscalera(
+    propuesta.cardIds.map((id) => taken.byId.get(id)!),
+    tipo,
+  )
+  if (!check.ok) return fail('GRUPO_INVALIDO', `${check.code}: ${check.detail}`)
+
+  const escalera: Escalera = { kind: 'escalera', tipo, cards: check.cards }
+  return {
+    ok: true,
+    state: replaceJugador(state, state.turno, {
+      hand: [],
+      grupos: [escalera],
+      bajadoEnTurno: state.numeroDeTurno,
+    }),
+  }
+}
+
 // ------------------------------------------------------------------- mesa
 
 function agregar(
@@ -473,6 +527,12 @@ function agregar(
   const taken = collectCards(currentHand(state), move.cardIds)
   if (!taken.ok) return taken.error
   const cards = move.cardIds.map((id) => taken.byId.get(id)!)
+
+  if (target.kind === 'escalera') {
+    // Laying an escalera down ends the ronda, so this is never reached in
+    // play — but the referee does not assume it.
+    return fail('EDICION_INVALIDA', 'an escalera is complete; nothing can be added to it')
+  }
 
   const edited =
     target.kind === 'trio'

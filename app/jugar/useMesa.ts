@@ -24,6 +24,7 @@ import {
   type VistaDePartida,
   aplicarEnVista,
   isComodin,
+  ordenarEscalera,
 } from '@/lib/engine'
 import type { Relato, Viaje } from '@/lib/relato'
 import { useMano } from './useMano'
@@ -319,6 +320,35 @@ export function useMesa(transporte: Transporte) {
   }, [ronda, hand, transporte, limpiar])
 
   /**
+   * An escalera ronda (Phase 48): whether the hand, as it stands, is the
+   * escalera this ronda asks for — and laying all of it down, which wins.
+   * There is nothing to arm or set aside: the escalera is the whole hand.
+   */
+  const tipoDeEscalera = ronda?.contrato.escalera
+  const escaleraLista = useMemo(
+    () =>
+      Boolean(
+        ronda &&
+          tipoDeEscalera &&
+          ronda.fase === 'act' &&
+          ordenarEscalera(ronda.mano, tipoDeEscalera).ok,
+      ),
+    [ronda, tipoDeEscalera],
+  )
+
+  const bajarEscalera = useCallback(() => {
+    if (!ronda || !tipoDeEscalera) return
+    limpiar()
+    transporte.jugar({
+      type: 'bajarse',
+      propuestas: [
+        { kind: 'escalera', tipo: tipoDeEscalera, cardIds: ronda.mano.map((card) => card.id) },
+      ],
+    })
+    hand.terminarTurno()
+  }, [ronda, tipoDeEscalera, hand, transporte, limpiar])
+
+  /**
    * Put the selected cards on a grupo already on the mesa.
    *
    * There is more than one way a card can join a grupo, and the player should
@@ -414,6 +444,8 @@ export function useMesa(transporte: Transporte) {
     siguiente,
     robar,
     bajarse,
+    escaleraLista,
+    bajarEscalera,
     agregarA,
     descartar,
   }

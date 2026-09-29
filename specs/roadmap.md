@@ -2189,7 +2189,7 @@ config field by field — the strict choice reached the server and was lost
 there, so the table dealt libre. It now passes the rule through, and a test
 pins that path.
 
-### Phase 48 — Las escaleras
+### Phase 48 — Las escaleras ✅
 The contracts past 8, pending since Phase 0 and now defined by the owner:
 four levels, **selectable like every other contract**, in this order in the
 catalog after *Cuatro tríos*:
@@ -2230,6 +2230,23 @@ Written into carioca-rules.md (retiring the Pending section), then coded:
 engine validation, the setup screen's list, the bots (at minimum: never
 throw away a card they need, and recognise a complete escalera in hand), and
 the table — an escalera laid down is thirteen cards on the mesa at once.
+
+**Done.** `lib/engine/escalera.ts` validates the four levels
+(`ordenarEscalera`) and places the cards 2 → A with the comodín in the gap;
+`Escalera` is a third kind of grupo, and in an escalera contract the referee
+takes exactly one, the whole hand, and the empty hand wins the ronda through
+the rule that already crowned any emptied hand. Contracts c9–c12 are in the
+catalog, off by default. Every bot plays escalera rondas with one shared
+strategy — how many of the thirteen places the hand covers
+(`cubiertasDeEscalera`), taking the descarte only when it raises that and
+throwing the card whose loss lowers it least. Over 200 bot partidas: sucia
+won 200/200 rondas, pintada 198, color 198, real 174 — the rest en tablas.
+
+On the table, an escalera ronda has no Armar and no Bajarme: one button,
+«Bajar escalera», lit when the hand is one. The guía says «Junta del 2 a la
+A sin repetir», the relato «bajó la escalera y ganó la ronda», and «Cómo se
+juega» has a section on the four levels. carioca-rules.md retires its
+Pending entry for them.
 
 ### Phase 49 — La galería de comodines
 The comodines wear photos from `public/candidatos/comodines` since Phase 29 —

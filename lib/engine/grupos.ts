@@ -20,6 +20,7 @@ import {
   isComodin,
   rankAfter,
 } from './cards'
+import { LARGO_DE_ESCALERA, type TipoDeEscalera, ordenarEscalera } from './escalera'
 
 export const TRIO_MIN_SIZE = 3
 export const ESCALA_MIN_SIZE = 4
@@ -50,7 +51,19 @@ export type Escala = {
   readonly cards: readonly Card[]
 }
 
-export type Grupo = Trio | Escala
+/**
+ * An escalera on the mesa (Phase 48): the thirteen rangos, 2 through A, in
+ * that order, the comodín (if any) in the place it fills. Laying one down
+ * wins the ronda, so an escalera is only ever seen on a mesa that is over.
+ */
+export type Escalera = {
+  readonly kind: 'escalera'
+  readonly tipo: TipoDeEscalera
+  /** In escalera order: slot `i` stands for `ORDEN_DE_ESCALERA[i]`. */
+  readonly cards: readonly Card[]
+}
+
+export type Grupo = Trio | Escala | Escalera
 
 /**
  * A grupo as the player proposes it, before it exists: cards are named by id
@@ -64,6 +77,12 @@ export type Propuesta =
       readonly start: Rank
       readonly cardIds: readonly string[]
     }
+  | {
+      readonly kind: 'escalera'
+      readonly tipo: TipoDeEscalera
+      /** The whole hand, in any order: the engine places them. */
+      readonly cardIds: readonly string[]
+    }
 
 export type GrupoErrorCode =
   | 'TOO_SHORT'
@@ -74,6 +93,7 @@ export type GrupoErrorCode =
   | 'SUIT_MISMATCH'
   | 'TOO_MANY_COMODINES'
   | 'ADJACENT_COMODINES'
+  | 'NOT_AN_ESCALERA'
 
 export type GrupoCheck =
   | { readonly ok: true }
@@ -96,9 +116,17 @@ export function escalaRankAt(escala: Escala, index: number): Rank {
 }
 
 export function validateGrupo(grupo: Grupo, phase: Phase): GrupoCheck {
-  return grupo.kind === 'trio'
-    ? validateTrio(grupo, phase)
-    : validateEscala(grupo, phase)
+  switch (grupo.kind) {
+    case 'trio':
+      return validateTrio(grupo, phase)
+    case 'escala':
+      return validateEscala(grupo, phase)
+    case 'escalera': {
+      // Only ever laid down whole, so there is one phase that matters.
+      const check = ordenarEscalera(grupo.cards, grupo.tipo)
+      return check.ok ? ok : fail('NOT_AN_ESCALERA', `${check.code}: ${check.detail}`)
+    }
+  }
 }
 
 export function validateTrio(trio: Trio, phase: Phase): GrupoCheck {
@@ -208,5 +236,6 @@ function findDuplicateId(cards: readonly Card[]): string | undefined {
  * count toward it like any card.
  */
 export function tamanoEstricto(kind: Grupo['kind']): number {
+  if (kind === 'escalera') return LARGO_DE_ESCALERA
   return kind === 'trio' ? TRIO_MIN_SIZE : ESCALA_MIN_SIZE
 }

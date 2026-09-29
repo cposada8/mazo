@@ -27,6 +27,8 @@ export type Relato =
       readonly tipo: 'bajada'
       readonly seat: number
       readonly grupos: number
+      /** The bajada was an escalera, which is always a win (Phase 48). */
+      readonly escalera?: boolean
       /** The move emptied the hand and closed the ronda (Phase 26). */
       readonly cierra?: boolean
     }
@@ -110,6 +112,7 @@ export function relatar(move: Move, antes: RondaState): Relato | null {
         seat,
         grupos: move.propuestas.length,
         cierra: vacia(consumidas),
+        ...(move.propuestas.some((p) => p.kind === 'escalera') ? { escalera: true } : {}),
       }
     }
     case 'agregar': {
@@ -168,6 +171,11 @@ export function contarRelato(
         ? `Tomaste ${relato.carta} del descarte`
         : `${quien} tomó ${relato.carta} del descarte`
     case 'bajada': {
+      if (relato.escalera) {
+        return esTuyo
+          ? 'Bajaste la escalera y ganaste la ronda'
+          : `${quien} bajó la escalera y ganó la ronda`
+      }
       const cuantos = `${relato.grupos} grupo${relato.grupos === 1 ? '' : 's'}`
       if (relato.cierra) {
         return esTuyo

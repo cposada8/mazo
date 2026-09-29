@@ -205,6 +205,8 @@ export function Tablero({
           contratoCompleto: juego.contratoCompleto,
           hayMesa: ronda.jugadores.some((jugador) => jugador.grupos.length > 0),
           bajadaEstricta: ronda.bajadaEstricta,
+          escalera: Boolean(ronda.contrato.escalera),
+          escaleraLista: juego.escaleraLista,
         })
       : null
 
@@ -867,6 +869,22 @@ function Controles({ juego }: { juego: ReturnType<typeof useMesa> }) {
   if (!ronda || !esTuTurno || ronda.fase !== 'act') return null
 
   const seleccionadas = juego.seleccionadas.length
+
+  // An escalera ronda (Phase 48): no Armar, no Bajarme — the whole hand is
+  // the escalera, and one button lays it down once it is one.
+  if (ronda.contrato.escalera) {
+    return (
+      <div className="flex w-24 flex-col gap-1.5">
+        <Boton onClick={juego.bajarEscalera} disabled={!juego.escaleraLista} principal>
+          Bajar escalera
+        </Boton>
+        <Boton onClick={juego.descartar} disabled={seleccionadas !== 1} principal>
+          Botar
+        </Boton>
+        {seleccionadas > 0 && <Boton onClick={juego.limpiarSeleccion}>Quitar</Boton>}
+      </div>
+    )
+  }
 
   return (
     <div className="flex w-24 flex-col gap-1.5">

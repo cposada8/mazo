@@ -76,6 +76,7 @@ empty seats), and the better bots moved behind it as Milestone 4.
 | 45 | Rough edges: the guía, «Cómo se juega», and a mesa that fits | ✅ — **closes Milestone 4** |
 | 46 | A table worth sitting at: felt, seats on the rim, a measured mesa, the font | ✅ |
 | 47 | La bajada estricta: exactly 3 per trío and 4 per escala, as a lobby choice | ✅ |
+| 48 | Las escaleras: contracts 9–12, sucia, pintada, color and real | ✅ |
 
 **Phase 44 came from a suspicion that measuring confirmed, and is done.**
 Thirteen partidas on the live database, all thirteen still `jugando`, none
@@ -322,9 +323,7 @@ forwards dev to main so dev knows the number it builds on. Vercel deploys
 ordered by them (`roadmap.md` has the briefs and the open questions):
 
 1. ~~Phase 47 — La bajada estricta.~~ ✅ Done, on dev.
-2. **Phase 48 — Las escaleras.** Contracts 9–12: sucia, pintada, color and
-   real, thirteen cards won in one move. Retires the Pending section of
-   carioca-rules.md.
+2. ~~Phase 48 — Las escaleras.~~ ✅ Done, on dev.
 3. **Phase 49 — La galería de comodines.** Every comodín face, from the
    menu. Not a priority.
 

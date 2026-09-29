@@ -43,6 +43,14 @@ export type EstadoDeGuia = {
    * the libre bajada every table played before the option.
    */
   readonly bajadaEstricta?: boolean
+  /**
+   * An escalera ronda (Phase 48): nothing is armed or set aside, the hand is
+   * the escalera — so the lines are about collecting 2 through A, and about
+   * the one button that lays it all down.
+   */
+  readonly escalera?: boolean
+  /** The hand, as it stands, is a complete escalera of this ronda's tipo. */
+  readonly escaleraLista?: boolean
 }
 
 /**
@@ -58,7 +66,15 @@ export function guiar(estado: EstadoDeGuia): string | null {
     return 'Roba: toca el mazo o el descarte.'
   }
 
+  if (estado.escalera) return guiarEscalera(estado)
+
   return estado.yaBajado ? guiarBajado(estado) : guiarAntesDeBajarse(estado)
+}
+
+function guiarEscalera(estado: EstadoDeGuia): string {
+  if (estado.escaleraLista) return 'Ya tienes la escalera: toca Bajar escalera.'
+  if (estado.seleccionadas === 1) return 'Toca Botar para terminar tu turno.'
+  return 'Junta del 2 a la A sin repetir. Bota la carta que menos te sirva.'
 }
 
 /**
