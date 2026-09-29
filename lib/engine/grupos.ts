@@ -53,14 +53,17 @@ export type Escala = {
 
 /**
  * An escalera on the mesa (Phase 48): the thirteen rangos, 2 through A, in
- * that order, the comodín (if any) in the place it fills. Laying one down
+ * that order — or A through K when `asPrimero` — the comodín (if any) in the
+ * place it fills. Laying one down
  * wins the ronda, so an escalera is only ever seen on a mesa that is over.
  */
 export type Escalera = {
   readonly kind: 'escalera'
   readonly tipo: TipoDeEscalera
-  /** In escalera order: slot `i` stands for `ORDEN_DE_ESCALERA[i]`. */
+  /** In escalera order: slot `i` stands for `rangoDeEscaleraEn(this, i)`. */
   readonly cards: readonly Card[]
+  /** The A was laid before the 2 rather than after the K. */
+  readonly asPrimero?: true
 }
 
 export type Grupo = Trio | Escala | Escalera

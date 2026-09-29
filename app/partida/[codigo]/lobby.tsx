@@ -196,6 +196,16 @@ export function Lobby({
     ajustar({ config: { ...partida.config, contratos } satisfies PartidaConfig })
   }
 
+  // Phase 50: all at once. A partida needs at least one reparto, so «ninguno»
+  // leaves the first one on.
+  const todosLosContratos = (todos: boolean) =>
+    ajustar({
+      config: {
+        ...partida.config,
+        contratos: todos ? CATALOGO : CATALOGO.slice(0, 1),
+      } satisfies PartidaConfig,
+    })
+
   return (
     <main className="mx-auto flex w-full max-w-md flex-1 flex-col gap-8 px-6 py-10">
       <header className="flex flex-col gap-3">
@@ -301,6 +311,7 @@ export function Lobby({
         <Ajustes
           partida={partida}
           onContrato={alternarContrato}
+          onTodos={todosLosContratos}
           onComodines={(comodines) =>
             ajustar({ config: { ...partida.config, comodines } })
           }
@@ -398,9 +409,10 @@ function QuienJuega({
   )
 }
 
-function Ajustes({
+export function Ajustes({
   partida,
   onContrato,
+  onTodos,
   onComodines,
   onBajada,
   onSegundosPorTurno,
@@ -410,6 +422,8 @@ function Ajustes({
 }: {
   partida: NonNullable<VistaDeLobby['partida']>
   onContrato: (id: string) => void
+  /** Every reparto on, or only the first — a partida needs at least one. */
+  onTodos: (todos: boolean) => void
   onComodines: (comodines: boolean) => void
   onBajada: (bajada: Bajada) => void
   onSegundosPorTurno: (segundos: number) => void
@@ -418,13 +432,36 @@ function Ajustes({
   onVerHistorial: (ver: boolean) => void
 }) {
   const encendidos = new Set(partida.config.contratos.map((c) => c.id))
+  const todos = CATALOGO.every((contrato) => encendidos.has(contrato.id))
+  const soloElPrimero = encendidos.size === 1 && encendidos.has(CATALOGO[0].id)
 
   return (
     <section className="flex flex-col gap-5">
       <div className="flex flex-col gap-3">
-        <h2 className="text-muted-foreground text-xs font-medium tracking-widest uppercase">
-          Los repartos
-        </h2>
+        <div className="flex items-center justify-between gap-3">
+          <h2 className="text-muted-foreground text-xs font-medium tracking-widest uppercase">
+            Los repartos
+          </h2>
+          <div className="flex gap-1 text-xs">
+            <button
+              type="button"
+              onClick={() => onTodos(true)}
+              disabled={todos}
+              className="hover:bg-accent rounded-md border px-2.5 py-1 transition-colors disabled:opacity-40"
+            >
+              Todos
+            </button>
+            <button
+              type="button"
+              onClick={() => onTodos(false)}
+              disabled={soloElPrimero}
+              title="Deja solo el primero: la partida necesita al menos un reparto"
+              className="hover:bg-accent rounded-md border px-2.5 py-1 transition-colors disabled:opacity-40"
+            >
+              Ninguno
+            </button>
+          </div>
+        </div>
         <ul className="flex flex-col gap-px overflow-hidden rounded-lg border">
           {CATALOGO.map((contrato, i) => {
             const activo = encendidos.has(contrato.id)

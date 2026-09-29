@@ -217,7 +217,8 @@ export function ComoSeJuega({
       <Seccion titulo="Las escaleras">
         <p>
           Los contratos del 9 al 12. Una escalera son <b>las 13 cartas del 2 a
-          la A, sin repetir ninguna</b>. Juegas con 12: cuando robas la que te
+          la A, sin repetir ninguna</b>; la A puede ir al final (después de
+          la K) o al inicio (antes del 2). Juegas con 12: cuando robas la que te
           falta, <b>bajas las 13 de una vez y ganas la ronda</b>. No se arma
           nada antes ni se bota después.
         </p>
@@ -227,7 +228,8 @@ export function ComoSeJuega({
           </li>
           <li>
             <b>Pintada</b>: roja y negra intercaladas del 2 a la A. Puede
-            empezar por cualquiera de los dos colores.
+            empezar por cualquiera de los dos colores, y como la A puede ir
+            en cualquier punta, la A puede ser de cualquier color.
           </li>
           <li>
             <b>Color</b>: todas rojas (♥ ♦) o todas negras (♠ ♣).

@@ -324,7 +324,12 @@ ordered by them (`roadmap.md` has the briefs and the open questions):
 
 1. ~~Phase 47 — La bajada estricta.~~ ✅ Done, on dev.
 2. ~~Phase 48 — Las escaleras.~~ ✅ Done, on dev.
-3. **Phase 49 — La galería de comodines.** Every comodín face, from the
+3. ~~Phase 49 — La tabla por puestos.~~ ✅ Done, on dev. The marcador's
+   columns in standing order, your own column highlighted. Put ahead of
+   the gallery by the owner.
+4. ~~Phase 50 — Todos o ninguno.~~ ✅ Done, on dev. Two buttons on the
+   lobby's list of repartos: every one on, or only the first.
+5. **Phase 51 — La galería de comodines.** Every comodín face, from the
    menu. Not a priority.
 
 Both 47 and 48 are settled with the owner; nothing is waiting on a question.
