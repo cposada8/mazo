@@ -2138,6 +2138,86 @@ wide and a hand of twelve scrolls. Landscape is how the game is played.
 
 ---
 
+## Milestone 5 — More ways to play
+
+*Asked for by the owner on 2026-09-28, after v1.0.1. Ordered by the owner:
+the strict bajada first, the escalera levels second, the comodín gallery
+last and not a priority.*
+
+### Phase 47 — La bajada estricta
+Some tables play that you lay down **exactly** the contract and not a card
+more, and the owner wants to offer it. A per-partida choice on the setup
+screen, beside *con/sin comodines*, with two options:
+
+- **Libre** — how it is played today, and the default: a trío may be laid
+  down with three or more cards and an escala with four or more, and a
+  bajada that runs big enough to use the whole hand goes out on the spot.
+- **Estricta** — each grupo in the bajada has **exactly** its minimum size:
+  **3 cards per trío and 4 per escala**. *Dos tríos* is laid down as six
+  cards, never seven.
+
+Like the contract list, the choice is part of the partida's identity: visible
+in the menu, never changed mid-game, and carried by the server so every seat
+plays under the same rule.
+
+To confirm with the owner before building — the brief covers the bajada
+itself, and these are the edges it does not settle:
+- **Only the bajada, or adding too?** Assumed: only the bajada is strict. On
+  later turns a player adds cards to grupos (theirs or anyone's) exactly as
+  today, so a trío laid down as three can grow to five by agregar.
+- **Comodines count toward the size** — a trío of `7 7 comodín` is three
+  cards. Assumed, since a comodín already stands in as a card everywhere.
+- **The bots** must know the rule: El Codicioso and the personalities build
+  bajadas that are legal under it (a bot that cannot bajarse is worse than a
+  bot that plays badly).
+
+Written into carioca-rules.md first, then coded — the rules document is the
+authority, and «any rule discovered to be missing is written there first».
+
+### Phase 48 — Las escaleras
+The contracts past 8, pending since Phase 0 and now defined by the owner:
+four levels, **selectable like every other contract**, in this order in the
+catalog after *Cuatro tríos*:
+
+| # | Contract | What it takes |
+| --- | --- | --- |
+| 9 | **Escalera sucia** | All thirteen rangos, 2 through A, none repeated. Pinta does not matter. |
+| 10 | **Escalera pintada** | The thirteen rangos, 2 through A, **alternating red and black** card to card. |
+| 11 | **Escalera color** | The thirteen rangos in **one colour**: all red (♥ and ♦) or all black (♠ and ♣). |
+| 12 | **Escalera real** | The thirteen rangos in **a single pinta**. |
+
+An escalera **is won with 13 cards**: a player holding twelve draws the
+thirteenth and lays all of it down at once, which empties the hand and wins
+the ronda — there is no discard and no later turn. That is why these never
+fit the `{trios, escalas}` shape and why the Pending section held them back:
+it is a new kind of contract in the engine, not a new row.
+
+Settled here, from the owner's brief: the four levels, their order, 13 cards,
+2 through A with no rango repeated. To confirm before building:
+- **Comodines**: may a comodín stand in for a missing rango (and in the
+  pintada, for a colour)? If yes, how much of an escalera may be comodines?
+- **Order and the ring**: rangos are a ring in this game (K–A–2 wraps). Is
+  an escalera just the thirteen rangos in any rotation, or must it read
+  2…A? For the pintada the alternation only means something along an order.
+- **Taking from the descarte**: may the thirteenth card be the descarte's
+  top card, as with any other draw? Assumed yes.
+- **Defaults**: off, like *Cuatro tríos* — the players switch them on.
+
+Written into carioca-rules.md (retiring the Pending section), then coded:
+engine validation, the setup screen's list, the bots (at minimum: never
+throw away a card they need, and recognise a complete escalera in hand), and
+the table — an escalera laid down is thirteen cards on the mesa at once.
+
+### Phase 49 — La galería de comodines
+The comodines wear photos from `public/candidatos/comodines` since Phase 29 —
+the owner's pets among them — and a ronda only ever shows a few. **A small
+screen from the partida's menu that shows every face in the gallery**, so
+they can all be seen. Browsing only: it changes nothing about the game, and
+it lives in the menu next to «Cómo se juega», in the same over-the-felt shape.
+Not a priority.
+
+---
+
 ## After
 
 Not scheduled, and not to be started before Milestone 3 — online play:
