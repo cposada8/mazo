@@ -73,6 +73,14 @@ describe('la guía en la mesa', () => {
     expect(screen.getByText('Roba: toca el mazo o el descarte.')).toBeTruthy()
   })
 
+  it('keeps the ronda’s contract where no grupo can cover it (Phase 46)', () => {
+    render(<Pantalla />)
+    // On the menu button, not printed on the felt under the mesa.
+    const menu = screen.getByLabelText(/^Menú de la partida/)
+    expect(menu.textContent).toMatch(/Ronda 1 de \d+/)
+    expect(menu.getAttribute('aria-label')).toMatch(/Ronda 1 de \d+: \S/)
+  })
+
   it('gives the strip back to the relato when it is not your turn', () => {
     render(<Pantalla turno={1} />)
     expect(screen.queryByText(/^Roba:/)).toBeNull()
@@ -81,7 +89,7 @@ describe('la guía en la mesa', () => {
   it('goes away for good from the menu, and the table obeys at once', () => {
     render(<Pantalla />)
 
-    fireEvent.click(screen.getByLabelText('Menú de la partida'))
+    fireEvent.click(screen.getByLabelText(/^Menú de la partida/))
     fireEvent.click(screen.getByRole('checkbox', { name: /Mostrar la guía/ }))
 
     expect(screen.queryByText(/^Roba:/)).toBeNull()
@@ -91,7 +99,7 @@ describe('la guía en la mesa', () => {
   it('opens the rules over the felt, and closes back onto it', () => {
     render(<Pantalla />)
 
-    fireEvent.click(screen.getByLabelText('Menú de la partida'))
+    fireEvent.click(screen.getByLabelText(/^Menú de la partida/))
     fireEvent.click(screen.getByText('Cómo se juega'))
 
     // A fact from the rules screen that appears nowhere else on the table.

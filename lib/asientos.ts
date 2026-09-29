@@ -32,7 +32,7 @@ const DISPOSICION: Record<number, readonly (Lado | number)[]> = {
   2: [67, 33],
   3: ['derecha', 50, 'izquierda'],
   4: ['derecha', 64, 36, 'izquierda'],
-  5: ['derecha', 72, 50, 28, 'izquierda'],
+  5: ['derecha', 69, 50, 31, 'izquierda'],
 }
 
 /** A side seat's centre: in from the edge, halfway down the table zone. */

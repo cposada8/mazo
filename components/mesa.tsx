@@ -894,12 +894,6 @@ export function Mesa({
           and three land at a size worth looking at.
         */}
         <div ref={carril} className="carril-mesa absolute">
-          <span
-            aria-hidden
-            className="pointer-events-none absolute inset-0 flex items-center justify-center text-center text-[clamp(0.875rem,7cqh,1.75rem)] font-bold tracking-[0.3em] whitespace-nowrap text-white/[0.07] uppercase"
-          >
-            {state.contrato.nombre}
-          </span>
 
           <div
             className="grupos-en-mesa relative"
