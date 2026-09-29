@@ -2435,7 +2435,7 @@ shipped. What the memory is for is Phase 56: a card somebody took off the
 descarte is *in their hand*, which is exactly what a bot that imagines the
 other hands needs to know.
 
-### Phase 56 — El Tahúr
+### Phase 56 — El Tahúr ✅
 A bot that simulates. For the three decisions of a turn — take the face-up
 card or not, lay down now or wait, which card to throw — it deals the unseen
 cards to the other hands many times over (consistent with everything the
@@ -2447,10 +2447,65 @@ of one person and bots is played.
 **Done when:** it clearly beats every other bot on the bench, and the owner
 finds it hard to beat at the table.
 
-### Phase 57 — Niveles en la sala
+**Done — for the discard, where measuring said it pays** (`lib/bots/tahur.ts`,
+level *Difícil*). Before each discard it takes the three cards El Calculador
+likes least, imagines the unseen cards dealt a hundred ways
+(`imaginarRonda`: the deck less every seen card — card ids are fixed, so the
+unseen set is exact; comodines or not follows from counting the table; and
+a card somebody took off the descarte goes back into that hand), plays each
+deal to the end of the ronda once per candidate, and throws the one that
+left it the fewest points. In the imagined rondas it plays itself as El
+Calculador and everybody else with a quick policy (`lib/bots/rapido.ts`),
+since they make three moves in four. Drawing, laying down and unloading are
+El Calculador's.
+
+How it got there, all on the bench:
+
+| Version | Tahúr | Calculador | Points (T / C) |
+| --- | --- | --- | --- |
+| 10 deals, draw and discard simulated, full rollouts | 20.5% | 29.5% | 353 / 343 |
+| 100 deals, discard only, full rollouts | 27.3% | 22.7% | 328 / 373 |
+| **100 deals, discard only, quick rivals (shipped)** | **32.2%** | **17.8%** | **334 / 359** |
+
+(Two of each at four seats; 132 partidas for the first and last, 66 for
+the middle.) What decided it was measured offline, on real discards against
+a 300-deal "truth": El Calculador throws a different card from the truth in
+25 of 63 discards and loses 1.4 points each time; ten deals recover almost
+none of that (the noise of a whole ronda swamps it), a hundred recover most.
+Simulating the draw was tried and only added noise.
+
+**What it costs.** A discard takes a median 0.23 s, 0.58 s at the 90th
+percentile, 1.2 s at worst on a laptop (bundled as production bundles it).
+So:
+- **In the browser** a local partida plans bot turns in a Web Worker
+  (`app/jugar/planificador.ts`), the table keeps animating, and the thinking
+  comes off the turn's seconds. This Turbopack copies `new URL('./x.ts',
+  import.meta.url)` as a raw file instead of compiling a worker, so the
+  worker is bundled by esbuild (`npm run bots:worker`, run by `dev` and
+  `build`) into `public/bots.worker.js`; without it, or without Worker
+  support, the plan is made on the page as before.
+- **On the server**, which re-plans a pending bot turn on every request,
+  the Tahúr remembers its last 256 discards by exact situation.
+- **The grouping search** now rules out a contrato the hand cannot meet
+  with a bit-mask count before searching (`podriaCumplir`) — checked equal
+  to the old search on 160,000 hands, and three in four searches skipped.
+- **The bench** splits across processes: `npm run torneo -- --hilos 11`,
+  same numbers as one process.
+
+Not done, and worth knowing: the long soak tests seat only the quick bots;
+El Tahúr has its own short partidas in the suite.
+
+### Phase 57 — Niveles en la sala ✅
 The lobby says how strong each bot is — *Fácil*, *Normal*, *Difícil* — next
 to its name and description, and the default seat is whatever level the
 owner chooses. The old, simple bots can stay as *Fácil*.
+
+**Done.** `Bot.nivel` — `facil`, `normal`, `dificil` — with El Codicioso,
+El Paciente and El Memorioso as *Fácil*, El Calculador as *Normal* and El
+Tahúr as *Difícil*. The lobby's picker groups them under those three names,
+and the line under each seat reads «Difícil · Antes de cada jugada se
+imagina la ronda…». The seat a new bot takes is still El Codicioso, *Fácil*,
+until the owner says which level a table should start with.
 
 ---
 

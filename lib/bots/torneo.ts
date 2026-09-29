@@ -35,6 +35,11 @@ export type OpcionesDeTorneo = {
   readonly asientos: number
   readonly semilla: string
   readonly config?: PartidaConfig
+  /**
+   * Index of the first partida, for a tournament split across processes: each
+   * slice plays its own partidas with the seeds and seating the whole would.
+   */
+  readonly desde?: number
 }
 
 export type ResultadoDeBot = {
@@ -49,12 +54,16 @@ export type ResultadoDeBot = {
   readonly victorias: number
   /** Victorias per seat held; a fair share at a table of n is 1/n. */
   readonly tasaDeVictoria: number
+  /** Final points across every seat held, for merging reports. */
+  readonly puntos: number
   /** Final points per seat held. Lower is better, as at the table. */
   readonly puntosPorAsiento: number
   /** Rondas it closed by going out. */
   readonly rondasGanadas: number
   /** Mean turn of the ronda on which it laid down, when it did. */
   readonly turnoDeBajada: number | null
+  /** How many bajadas that mean is over. */
+  readonly bajadas: number
 }
 
 /** Something a bot did that no player would. Every one is a bug to chase. */
@@ -93,7 +102,7 @@ type Acumulado = {
 }
 
 export function jugarTorneo(opciones: OpcionesDeTorneo): Reporte {
-  const { bots, partidas, asientos, semilla, config } = opciones
+  const { bots, partidas, asientos, semilla, config, desde = 0 } = opciones
 
   const porId = new Map<string, Acumulado>()
   for (const bot of bots) {
@@ -113,7 +122,7 @@ export function jugarTorneo(opciones: OpcionesDeTorneo): Reporte {
   const faltas: Falta[] = []
   let terminadas = 0
 
-  for (let i = 0; i < partidas; i++) {
+  for (let i = desde; i < desde + partidas; i++) {
     // Rotating by the partida's index puts every contender in every seat.
     const mesa = Array.from({ length: asientos }, (_, seat) => bots[(i + seat) % bots.length])
     const semillaDePartida = `${semilla}-${i}`
@@ -146,9 +155,11 @@ export function jugarTorneo(opciones: OpcionesDeTorneo): Reporte {
       asientos: a.asientos,
       victorias: a.victorias,
       tasaDeVictoria: a.asientos ? a.victorias / a.asientos : 0,
+      puntos: a.puntos,
       puntosPorAsiento: a.asientos ? a.puntos / a.asientos : 0,
       rondasGanadas: a.rondasGanadas,
       turnoDeBajada: a.bajadas ? a.sumaDeTurnosDeBajada / a.bajadas : null,
+      bajadas: a.bajadas,
     })),
     faltas,
   }
@@ -249,7 +260,45 @@ export function sinMemoria(bot: Bot): Bot {
   return {
     id: `${bot.id}-sin-memoria`,
     nombre: `${bot.nombre} (sin memoria)`,
+    nivel: bot.nivel,
     descripcion: bot.descripcion,
     decidir: (vista) => bot.decidir(vista),
+  }
+}
+
+/** Several slices of one tournament, added back into one report. */
+export function unirReportes(reportes: readonly Reporte[]): Reporte {
+  const porId = new Map<string, ResultadoDeBot>()
+  for (const reporte of reportes) {
+    for (const bot of reporte.bots) {
+      const antes = porId.get(bot.id)
+      if (!antes) {
+        porId.set(bot.id, bot)
+        continue
+      }
+      const asientos = antes.asientos + bot.asientos
+      const victorias = antes.victorias + bot.victorias
+      const puntos = antes.puntos + bot.puntos
+      const bajadas = antes.bajadas + bot.bajadas
+      const turnos =
+        (antes.turnoDeBajada ?? 0) * antes.bajadas + (bot.turnoDeBajada ?? 0) * bot.bajadas
+      porId.set(bot.id, {
+        ...antes,
+        asientos,
+        victorias,
+        tasaDeVictoria: asientos ? victorias / asientos : 0,
+        puntos,
+        puntosPorAsiento: asientos ? puntos / asientos : 0,
+        rondasGanadas: antes.rondasGanadas + bot.rondasGanadas,
+        turnoDeBajada: bajadas ? turnos / bajadas : null,
+        bajadas,
+      })
+    }
+  }
+  return {
+    partidas: reportes.reduce((total, r) => total + r.partidas, 0),
+    terminadas: reportes.reduce((total, r) => total + r.terminadas, 0),
+    bots: [...porId.values()],
+    faltas: reportes.flatMap((r) => r.faltas),
   }
 }

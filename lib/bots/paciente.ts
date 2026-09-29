@@ -113,6 +113,7 @@ function lastreTrasBajarse(
 export const paciente: Bot = {
   id: 'paciente',
   nombre: 'El Paciente',
+  nivel: 'facil',
   descripcion: 'Aguanta la mano hasta que bajarse le deje poco encima.',
   decidir: decidirPaciente,
 }

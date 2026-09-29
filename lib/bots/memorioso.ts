@@ -201,6 +201,7 @@ function vivasJuntoALaCadena(
 export const memorioso: Bot = {
   id: 'memorioso',
   nombre: 'El Memorioso',
+  nivel: 'facil',
   descripcion: 'Cuenta lo que ya salió y suelta lo que nunca va a completar.',
   decidir: decidirMemorioso,
 }

@@ -182,10 +182,12 @@ describe('the partida carries the choice', () => {
 })
 
 describe('bots under the strict bajada', () => {
-  // Every personality at one table, a hundred partidas: not one move refused.
+  // Every quick bot at one table, a hundred partidas: not one move refused.
+  // El Tahúr thinks too long for a hundred; it has its own strict partida.
+  const rapidos = BOTS.filter((bot) => bot.nivel !== 'dificil')
   const resultados = Array.from({ length: 100 }, (_, i) =>
     jugarPartida({
-      bots: [...BOTS, BOTS[0]],
+      bots: [...rapidos, rapidos[0]],
       seed: `estricta-${i}`,
       config: { ...CONFIG_POR_DEFECTO, bajada: 'estricta' },
     }),

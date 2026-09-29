@@ -8,7 +8,9 @@ import type { VistaDeAsiento } from '@/lib/engine'
  */
 
 describe('jugarTorneo', () => {
-  const opciones = { bots: BOTS, partidas: 12, asientos: 4, semilla: 'banco' }
+  // The quick bots: El Tahúr is measured on the command line, not in the suite.
+  const rapidos = BOTS.filter((bot) => bot.nivel !== 'dificil')
+  const opciones = { bots: rapidos, partidas: 12, asientos: 4, semilla: 'banco' }
 
   it('is repeatable: same options, same report', () => {
     expect(jugarTorneo(opciones)).toEqual(jugarTorneo(opciones))
@@ -20,6 +22,7 @@ describe('jugarTorneo', () => {
     expect(reporte.faltas).toEqual([])
     const asientos = reporte.bots.map((bot) => bot.asientos)
     expect(asientos.reduce((a, b) => a + b)).toBe(48)
+    expect(asientos).toHaveLength(rapidos.length)
     expect(Math.max(...asientos) - Math.min(...asientos)).toBeLessThanOrEqual(1)
     const victorias = reporte.bots.reduce((total, bot) => total + bot.victorias, 0)
     expect(victorias).toBeCloseTo(12)
@@ -36,6 +39,7 @@ describe('jugarTorneo', () => {
     const goloso: Bot = {
       id: 'goloso',
       nombre: 'Goloso',
+      nivel: 'facil',
       descripcion: 'Un bot de prueba.',
       decidir: (vista: VistaDeAsiento) =>
         vista.fase === 'draw' &&
@@ -52,6 +56,7 @@ describe('jugarTorneo', () => {
     const tramposo: Bot = {
       id: 'tramposo',
       nombre: 'Tramposo',
+      nivel: 'facil',
       descripcion: 'Un bot de prueba.',
       decidir: () => ({ type: 'descartar', cardId: 'no-existe' }),
     }

@@ -57,6 +57,8 @@ export function buscarAgrupacion(
       : null
   }
 
+  if (!podriaCumplir(hand, contrato)) return null
+
   const trios = candidatosTrio(hand)
   const escalas = candidatosEscala(hand)
 
@@ -119,6 +121,8 @@ export function todasLasAgrupaciones(
     const una = buscarAgrupacion(hand, contrato)
     return una ? [una] : []
   }
+
+  if (!podriaCumplir(hand, contrato)) return []
 
   const trios = candidatosTrio(hand)
   const escalas = candidatosEscala(hand)
@@ -199,6 +203,67 @@ export function ampliarBajada(
   }
 
   return grupos.map((grupo) => grupo.propuesta)
+}
+
+/**
+ * A quick count that rules out a contrato the hand cannot possibly meet
+ * (Phase 56). Never says no to a hand that can — it only spares the search,
+ * which El Tahúr's imagined rondas run hundreds of thousands of times:
+ *
+ * - a trío takes at least two real cards of its rango, and at most one
+ *   comodín, so each rango gives at most `cartas / 2` tríos, and all of them
+ *   together at most the tríos of three real cards plus one per comodín;
+ * - an escala takes at least three real cards of one pinta inside four
+ *   consecutive rangos, so without such a window there is none.
+ */
+export function podriaCumplir(hand: readonly Card[], contrato: Contrato): boolean {
+  if (hand.length < contrato.trios * TRIO_MIN_SIZE + contrato.escalas * ESCALA_MIN_SIZE) {
+    return false
+  }
+
+  // Plain arrays and bit masks: this runs far more often than anything else.
+  let comodines = 0
+  const porRango = new Array<number>(RANKS.length).fill(0)
+  const mascaras = [0, 0, 0, 0]
+  for (const card of hand) {
+    if (card.kind === 'comodin') {
+      comodines++
+      continue
+    }
+    const indice = INDICE_DE_RANGO[card.rank]
+    porRango[indice]++
+    mascaras[INDICE_DE_PALO[card.suit]] |= 1 << indice
+  }
+
+  if (contrato.trios > 0) {
+    let dePares = 0
+    let deTres = 0
+    for (const cuantas of porRango) {
+      dePares += cuantas >> 1
+      deTres += Math.floor(cuantas / 3)
+    }
+    if (Math.min(dePares, deTres + comodines) < contrato.trios) return false
+  }
+
+  if (contrato.escalas > 0 && !mascaras.some(tieneVentana)) return false
+
+  return true
+}
+
+const INDICE_DE_RANGO = Object.fromEntries(RANKS.map((rank, i) => [rank, i])) as Record<Rank, number>
+const INDICE_DE_PALO = Object.fromEntries(SUITS.map((suit, i) => [suit, i])) as Record<string, number>
+
+/** Three of four consecutive rangos, around the ring, in one pinta's mask. */
+function tieneVentana(mascara: number): boolean {
+  if (mascara === 0) return false
+  const doble = mascara | (mascara << RANKS.length)
+  for (let start = 0; start < RANKS.length; start++) {
+    const ventana = (doble >> start) & 0b1111
+    // Popcount of four bits.
+    const cuantas = (ventana & 1) + ((ventana >> 1) & 1) + ((ventana >> 2) & 1) + ((ventana >> 3) & 1)
+    if (cuantas >= ESCALA_MIN_SIZE - 1) return true
+  }
+  return false
 }
 
 export function puedeBajarse(hand: readonly Card[], contrato: Contrato): boolean {

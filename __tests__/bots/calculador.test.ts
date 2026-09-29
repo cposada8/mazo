@@ -97,7 +97,13 @@ describe('the discard', () => {
 
 describe('at the table', () => {
   it('plays whole partidas with the Fácil bots without a single falta', () => {
-    const reporte = jugarTorneo({ bots: BOTS, partidas: 16, asientos: 4, semilla: 'calculador' })
+    const faciles = BOTS.filter((bot) => bot.nivel === 'facil')
+    const reporte = jugarTorneo({
+      bots: [...faciles, BOTS.find((bot) => bot.id === 'calculador')!],
+      partidas: 16,
+      asientos: 4,
+      semilla: 'calculador',
+    })
     expect(reporte.terminadas).toBe(16)
     expect(reporte.faltas).toEqual([])
   })

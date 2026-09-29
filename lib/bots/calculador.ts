@@ -45,6 +45,7 @@ const MAX_AGRUPACIONES = 48
 export const calculador: Bot = {
   id: 'calculador',
   nombre: 'El Calculador',
+  nivel: 'normal',
   descripcion: 'Escoge la bajada que menos le deja y bota caro cuando la ronda se cierra.',
   decidir: decidirCalculador,
 }
