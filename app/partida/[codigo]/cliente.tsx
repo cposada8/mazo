@@ -112,6 +112,7 @@ function MesaLocal({
       seed={partida.seed!}
       contratos={partida.config.contratos}
       comodines={partida.config.comodines}
+      bajada={partida.config.bajada}
       segundosBot={partida.segundosBot}
       verDescarte={partida.verDescarte}
       verHistorial={partida.verHistorial}

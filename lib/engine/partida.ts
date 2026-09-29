@@ -23,6 +23,15 @@ export type PartidaConfig = {
   /** Enabled contracts, in order. Never empty. */
   readonly contratos: readonly Contrato[]
   readonly comodines: boolean
+  /**
+   * How big a bajada's grupos may be (Phase 47). `'libre'` — as played until
+   * now — lets a trío go down with three cards or more and an escala with
+   * four or more; `'estricta'` asks for exactly three and exactly four.
+   * Only the bajada: adding to grupos afterwards is free either way.
+   * Optional because a partida saved before the option existed has none,
+   * and that partida was played libre.
+   */
+  readonly bajada?: 'libre' | 'estricta'
   /** Subtracted from the ronda winner's score. 0 means they simply score none. */
   readonly bonusGanadorRonda: number
   /**
@@ -36,6 +45,7 @@ export type PartidaConfig = {
 export const CONFIG_POR_DEFECTO: PartidaConfig = {
   contratos: CATALOGO.slice(0, 7),
   comodines: true,
+  bajada: 'libre',
   bonusGanadorRonda: 0,
   empiezaPrimeraRonda: 'aleatorio',
 }
@@ -114,6 +124,7 @@ export function startPartida(options: {
       contrato: config.contratos[0],
       players,
       comodines: config.comodines,
+      bajadaEstricta: config.bajada === 'estricta',
       seed: seedDeRonda(seed, 0),
       empieza: quienAbrePrimero(config.empiezaPrimeraRonda, players, seed),
     }),
@@ -204,6 +215,7 @@ export function cerrarRonda(state: PartidaState): PartidaState {
       contrato: state.config.contratos[indiceContrato],
       players: state.players,
       comodines: state.config.comodines,
+      bajadaEstricta: state.config.bajada === 'estricta',
       seed: seedDeRonda(state.seed, indiceContrato),
       empieza: ganador === 'nadie' ? ronda.turno : ganador,
       // Whoever left stays left: no cards, no turn, for the rest of the

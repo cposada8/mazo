@@ -9,6 +9,7 @@
 export * from './cards'
 export * from './contratos'
 export * from './deck'
+export * from './escalera'
 export * from './escenario'
 export * from './grupos'
 export * from './notacion'

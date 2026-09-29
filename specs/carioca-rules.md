@@ -1,10 +1,8 @@
 # Carioca — Rules
 
-Status: **complete for contracts 1–8.** Everything needed to implement the first
-version of the engine is settled below.
-
-The escalera contracts (9 and beyond) are the one open item, and they are
-deferred on purpose — see *Pending*. Nothing marked *pending* may be implemented.
+Status: **complete for contracts 1–12.** The escalera contracts (9–12) were
+defined by the owner and settled in Phase 48 — see *The escaleras*. Nothing
+marked *pending* may be implemented.
 
 ---
 
@@ -28,7 +26,7 @@ and `escalera` are different things and both translate to "run".
 | **la mesa** | Every grupo laid down by every player. | `mesa` |
 | **trío** | Three or more cards of the same rango. | `trio` |
 | **escala** | Four or more consecutive cards of the same suit. | `escala` |
-| **escalera** | All thirteen ranks, A through K. | `escalera` |
+| **escalera** | The thirteen rangos, 2 through A, none repeated, laid down whole to win (contracts 9–12). | `escalera` |
 | **comodín** | Joker. | `comodin` |
 | **bajarse** | To lay down the contract for the ronda. | `layDown` |
 | **mazo** | The face-down draw pile. Called `stock` in code to avoid colliding with the app's name. | `stock` |
@@ -92,8 +90,8 @@ Consequences of this decision:
 
 - Adding a new contract is adding a row to a catalog, not a change to the engine.
 - Game "modes" (quick, standard, full) are just saved presets over the same list.
-- The 13-card ladder contracts can be added later without touching game logic,
-  provided they fit the same shape — see *pending* below, because they may not.
+- The 13-card escalera contracts did not fit that shape — they are a third kind
+  of grupo, laid down whole — and were added in Phase 48 (*The escaleras*).
 
 **Constraint:** at least one contract must be enabled.
 
@@ -122,10 +120,13 @@ The canonical order, as played by the owner:
 | 6 | Dos escalas y un trío | 2 runs + 1 trio |
 | 7 | Tres escalas | 3 runs |
 | 8 | Cuatro tríos | 4 trios |
-| 9+ | Escalera contracts | pending — see below |
+| 9 | Escalera sucia | the 13 rangos, any pintas |
+| 10 | Escalera pintada | the 13 rangos, red and black alternating |
+| 11 | Escalera color | the 13 rangos, one colour |
+| 12 | Escalera real | the 13 rangos, one pinta |
 
-Contract 8 is the last one expressible as a plain trio/escala count under the
-current rules. Everything past it is a different shape.
+Contract 8 is the last one expressible as a plain trio/escala count. Contracts
+9–12 are the escaleras, a different shape — see *The escaleras*.
 
 ### What an escala is
 
@@ -143,7 +144,8 @@ are valid:
 
 Consequence for the engine: rank order is a ring of 13 positions, not a line.
 Consecutiveness is checked modulo 13. An escala can therefore never exceed 13
-cards, and a 13-card one is an escalera.
+cards. (A 13-card escala is still an escala on the mesa; an *escalera* is a
+contract of its own, read 2 → A.)
 
 ### What a trío is
 
@@ -165,6 +167,24 @@ When bajándose, a grupo may contain **at most one comodín**.
 | `7 7 comodín` | yes — counts as a trío |
 | `7 comodín comodín` | no — two comodines |
 | `comodín 4♠ 5♠ 6♠` | yes |
+
+#### The size of a grupo at lay-down: libre or estricta — settled in Phase 47
+
+A per-partida choice made in the lobby, like the contract list and the
+comodines, and never changed mid-game:
+
+| Bajada | A trío goes down with | An escala goes down with |
+| --- | --- | --- |
+| **Libre** (default) | 3 or more cards | 4 or more cards |
+| **Estricta** | exactly 3 cards | exactly 4 cards |
+
+- Only the bajada is strict. From the turn after, cards are added to grupos
+  (the player's own or anyone's) exactly as in the libre game, so a trío laid
+  down as three can grow to five.
+- A comodín counts toward the size: `7 7 comodín` is a trío of three.
+- Under the estricta bajada a whole-hand bajada cannot happen early: with
+  contracts 1–6 the grupos cannot use all 13 cards, so going out always
+  takes a discard or a later turn.
 
 #### After lay-down: more, but never adjacent in an escala
 
@@ -403,8 +423,8 @@ So contracts 7 and 8 consume the entire hand: laying them down leaves exactly on
 card, which is the discard — **bajarse and going out are the same move** in those
 rondas. (In any contract, a bajada whose grupos run bigger than the minimum can
 consume all 13 cards — and then it goes out on the spot: an empty hand wins
-however it was emptied.) And an escalera needs all 13, which is why the escalera contracts cannot
-follow the normal draw-lay-discard flow at all.
+however it was emptied.) And an escalera needs all 13, which is why the escalera contracts do not
+follow the draw-lay-discard flow: the escalera is laid down whole and wins, with no discard.
 
 ### Scoring
 
@@ -520,19 +540,37 @@ they are cut.
 
 ---
 
+### The escaleras — settled in Phase 48
+
+Contracts 9–12. Defined by the owner; this replaces the *Pending* entry that
+held them back since Phase 0.
+
+An **escalera** is **the thirteen rangos, 2 through A, none repeated**, read
+in that fixed order (not around the ring an escala uses).
+
+- **It is laid down whole**, all thirteen cards in one move — never card by
+  card — and **laying it down wins the ronda** on the spot. The player holds
+  twelve; the thirteenth is drawn as always, from the mazo or the descarte.
+  There is no discard after it and no mesa before it: in an escalera ronda
+  nobody arms grupos, and every turn is draw and discard until someone lays
+  one down (or the ronda closes en tablas).
+- **Any number of comodines** — the one exception to *at most one comodín*
+  at lay-down, settled with the owner after Phase 48 first shipped with one.
+  Each stands for one missing rango, in whatever colour or pinta its place
+  calls for, and **comodines may sit side by side** — the escala's rule
+  against adjacent comodines does not apply to an escalera.
+
+| # | Escalera | Besides the thirteen rangos |
+| --- | --- | --- |
+| 9 | **Sucia** | nothing — pinta does not matter |
+| 10 | **Pintada** | colours alternate along 2 → A — red (♥ ♦) and black (♠ ♣). Either colour may start: `2 red, 3 black, 4 red…` and `2 black, 3 red, 4 black…` are both valid |
+| 11 | **Color** | all red, or all black |
+| 12 | **Real** | all one pinta |
+
+All four are **off by default**, like *Cuatro tríos*: the host switches them
+on in the lobby.
+
 ## Pending
-
-### The escalera contracts (9 and beyond)
-
-From contract 9 onward the requirement is a complete **escalera**: all thirteen
-ranks, A through K. Variants exist — *escalera sucia* (mixed suits) and cleaner
-versions. Laying one down uses every card, so it wins the ronda outright and
-likely bypasses the normal lay-down-then-discard flow. It does not fit the
-`{trios, escalas}` shape.
-
-**Deliberately deferred.** Excluded from the first implementation. The `Contrato`
-type must not be designed in a way that makes escaleras impossible to add later,
-but no attempt is made to model them yet.
 
 ### Tablas: the ronda nobody wins — settled in Phase 31
 

@@ -128,7 +128,9 @@ export function ComoSeJuega({
         <p>
           Al bajarte, cada grupo lleva <b>un comodín como máximo</b>. Los grupos
           pueden ser más grandes que el mínimo — bajarte con un trío de cuatro
-          es legal y descarga una carta más.
+          es legal y descarga una carta más. Salvo con <b>bajada estricta</b>,
+          si el host la escogió: ahí cada trío baja con 3 cartas exactas y cada
+          escala con 4, y las demás se ponen en turnos siguientes.
         </p>
         <p className="text-muted-foreground">
           Ojo con esto: <b>el turno en que te bajas, la mesa queda cerrada</b>,
@@ -209,6 +211,47 @@ export function ComoSeJuega({
           Quien salió no suma nada. Los totales se acumulan ronda tras ronda, y
           al final <b>gana el de menos puntos</b>. Si hay empate, ganan todos
           los empatados.
+        </p>
+      </Seccion>
+
+      <Seccion titulo="Las escaleras">
+        <p>
+          Los contratos del 9 al 12. Una escalera son <b>las 13 cartas del 2 a
+          la A, sin repetir ninguna</b>. Juegas con 12: cuando robas la que te
+          falta, <b>bajas las 13 de una vez y ganas la ronda</b>. No se arma
+          nada antes ni se bota después.
+        </p>
+        <ul className="flex flex-col gap-1.5">
+          <li>
+            <b>Sucia</b>: la pinta no importa.
+          </li>
+          <li>
+            <b>Pintada</b>: roja y negra intercaladas del 2 a la A. Puede
+            empezar por cualquiera de los dos colores.
+          </li>
+          <li>
+            <b>Color</b>: todas rojas (♥ ♦) o todas negras (♠ ♣).
+          </li>
+          <li>
+            <b>Real</b>: todas de la misma pinta.
+          </li>
+        </ul>
+        <Muestra
+          cartas={[
+            n('2', 'hearts', 'p'),
+            n('3', 'spades', 'p'),
+            n('4', 'diamonds', 'p'),
+            n('5', 'clubs', 'p'),
+            comodin('p'),
+            n('7', 'spades', 'p'),
+          ]}
+          representa={{ 4: '6' }}
+          pie="Pintada: 2 rojo, 3 negro, 4 rojo… hasta el A"
+        />
+        <p className="text-muted-foreground">
+          Aquí sirven <b>todos los comodines que tengas</b>, no solo uno: cada
+          uno toma el lugar de una carta que falta, del color o la pinta que
+          ese lugar pida.
         </p>
       </Seccion>
 

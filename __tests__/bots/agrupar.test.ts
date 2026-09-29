@@ -94,7 +94,9 @@ describe('buscarAgrupacion', () => {
       const grupo =
         propuesta.kind === 'trio'
           ? ({ kind: 'trio', rank: propuesta.rank, cards } as const)
-          : ({
+          : propuesta.kind === 'escalera'
+            ? ({ kind: 'escalera', tipo: propuesta.tipo, cards } as const)
+            : ({
               kind: 'escala',
               suit: propuesta.suit,
               start: propuesta.start,

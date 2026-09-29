@@ -62,6 +62,7 @@ export function Juego({
   seed,
   contratos,
   comodines,
+  bajada = 'libre',
   segundosBot: segundosBotInicial,
   bots,
   id,
@@ -72,6 +73,8 @@ export function Juego({
   contratos: readonly Contrato[]
   /** Deal with the four comodines, or with none at all. */
   comodines: boolean
+  /** Exactly the contract when bajándose, or more (Phase 47). */
+  bajada?: 'libre' | 'estricta'
   /** Seconds a bot spends on its whole turn. */
   segundosBot: number
   /** Which bot sits in each seat, by id. A seat left out plays as the default. */
@@ -80,8 +83,11 @@ export function Juego({
   id?: string
 } & Omit<PropsDeTablero, 'juego' | 'segundosBot' | 'onSegundosBot'>) {
   const config = useMemo(
-    () => ({ ...CONFIG_POR_DEFECTO, contratos, comodines }),
-    [contratos, comodines],
+    // Every rule the lobby chose, spelled out: a field left off here is a rule
+    // the local table silently plays by its default instead (Phase 47 found
+    // the bajada missing exactly this way).
+    () => ({ ...CONFIG_POR_DEFECTO, contratos, comodines, bajada }),
+    [contratos, comodines, bajada],
   )
   // Pacing is not a rule (Phase 28): it can be changed mid-partida from the
   // menu, so what the lobby said is only where it starts.
@@ -198,6 +204,9 @@ export function Tablero({
           apartadas: juego.propuestas.length,
           contratoCompleto: juego.contratoCompleto,
           hayMesa: ronda.jugadores.some((jugador) => jugador.grupos.length > 0),
+          bajadaEstricta: ronda.bajadaEstricta,
+          escalera: Boolean(ronda.contrato.escalera),
+          escaleraLista: juego.escaleraLista,
         })
       : null
 
@@ -430,7 +439,8 @@ function MenuDePartida({
       <div className="bg-background max-h-full w-full max-w-md overflow-y-auto rounded-lg border p-4">
         <p className="text-muted-foreground mb-2 text-xs tracking-wide uppercase">
           {contrato} ·{' '}
-          {partida.config.comodines ? 'con comodines' : 'sin comodines'}
+          {partida.config.comodines ? 'con comodines' : 'sin comodines'} ·{' '}
+          {partida.config.bajada === 'estricta' ? 'bajada estricta' : 'bajada libre'}
         </p>
         <Marcador partida={partida} nombres={nombres} />
 
@@ -859,6 +869,22 @@ function Controles({ juego }: { juego: ReturnType<typeof useMesa> }) {
   if (!ronda || !esTuTurno || ronda.fase !== 'act') return null
 
   const seleccionadas = juego.seleccionadas.length
+
+  // An escalera ronda (Phase 48): no Armar, no Bajarme — the whole hand is
+  // the escalera, and one button lays it down once it is one.
+  if (ronda.contrato.escalera) {
+    return (
+      <div className="flex w-24 flex-col gap-1.5">
+        <Boton onClick={juego.bajarEscalera} disabled={!juego.escaleraLista} principal>
+          Bajar escalera
+        </Boton>
+        <Boton onClick={juego.descartar} disabled={seleccionadas !== 1} principal>
+          Botar
+        </Boton>
+        {seleccionadas > 0 && <Boton onClick={juego.limpiarSeleccion}>Quitar</Boton>}
+      </div>
+    )
+  }
 
   return (
     <div className="flex w-24 flex-col gap-1.5">

@@ -75,6 +75,8 @@ empty seats), and the better bots moved behind it as Milestone 4.
 | 44 | Which tables are still open: the panel, and tables that close themselves | ✅ |
 | 45 | Rough edges: the guía, «Cómo se juega», and a mesa that fits | ✅ — **closes Milestone 4** |
 | 46 | A table worth sitting at: felt, seats on the rim, a measured mesa, the font | ✅ |
+| 47 | La bajada estricta: exactly 3 per trío and 4 per escala, as a lobby choice | ✅ |
+| 48 | Las escaleras: contracts 9–12, sucia, pintada, color and real | ✅ |
 
 **Phase 44 came from a suspicion that measuring confirmed, and is done.**
 Thirteen partidas on the live database, all thirteen still `jugando`, none
@@ -317,15 +319,16 @@ forwards dev to main so dev knows the number it builds on. Vercel deploys
 
 ## What comes next
 
-**Nothing is scheduled.** Every numbered phase is done and Milestone 4 closed
-with Phase 45. `roadmap.md`'s *After* list is what is left, and it is
-deliberately unordered: a second game on the same platform (the real test of
-whether the engine is as separate as it claims), a service worker so the app
-itself opens with no network, replays from seed and move list, and private
-leaderboards among friends. The pattern of the last three milestones says the
-next list will come from playing rather than from here — Phases 26–28, 40–43
-and 44 were each written after a real game, and each displaced whatever was
-scheduled.
+**Milestone 5 — More ways to play**, asked for by the owner after v1.0.1 and
+ordered by them (`roadmap.md` has the briefs and the open questions):
+
+1. ~~Phase 47 — La bajada estricta.~~ ✅ Done, on dev.
+2. ~~Phase 48 — Las escaleras.~~ ✅ Done, on dev.
+3. **Phase 49 — La galería de comodines.** Every comodín face, from the
+   menu. Not a priority.
+
+Both 47 and 48 are settled with the owner; nothing is waiting on a question.
+The *After* list in `roadmap.md` stays unordered behind them.
 
 *Everything below is the record of how the project got here.*
 

@@ -26,6 +26,7 @@ import {
   type Grupo,
   type Phase,
   type Propuesta,
+  ordenarEscalera,
   validateGrupo,
 } from '@/lib/engine'
 
@@ -48,6 +49,13 @@ export function buscarAgrupacion(
   hand: readonly Card[],
   contrato: Contrato,
 ): Propuesta[] | null {
+  // An escalera is the whole hand or nothing (Phase 48).
+  if (contrato.escalera) {
+    return ordenarEscalera(hand, contrato.escalera).ok
+      ? [{ kind: 'escalera', tipo: contrato.escalera, cardIds: hand.map((card) => card.id) }]
+      : null
+  }
+
   const trios = candidatosTrio(hand)
   const escalas = candidatosEscala(hand)
 
@@ -205,12 +213,14 @@ function validaComo(
   const grupo: Grupo =
     propuesta.kind === 'trio'
       ? { kind: 'trio', rank: propuesta.rank, cards: ordenadas }
-      : {
-          kind: 'escala',
-          suit: propuesta.suit,
-          start: propuesta.start,
-          cards: ordenadas,
-        }
+      : propuesta.kind === 'escalera'
+        ? { kind: 'escalera', tipo: propuesta.tipo, cards: ordenadas }
+        : {
+            kind: 'escala',
+            suit: propuesta.suit,
+            start: propuesta.start,
+            cards: ordenadas,
+          }
 
   return validateGrupo(grupo, phase).ok
 }

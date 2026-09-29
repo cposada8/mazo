@@ -37,6 +37,20 @@ export type EstadoDeGuia = {
   readonly contratoCompleto: boolean
   /** Whether there is anything on the mesa to ligar onto. */
   readonly hayMesa: boolean
+  /**
+   * The strict bajada (Phase 47): grupos go down at exactly 3 and 4 cards,
+   * so «3 o más» would be advice the referee refuses. Optional — absent is
+   * the libre bajada every table played before the option.
+   */
+  readonly bajadaEstricta?: boolean
+  /**
+   * An escalera ronda (Phase 48): nothing is armed or set aside, the hand is
+   * the escalera — so the lines are about collecting 2 through A, and about
+   * the one button that lays it all down.
+   */
+  readonly escalera?: boolean
+  /** The hand, as it stands, is a complete escalera of this ronda's tipo. */
+  readonly escaleraLista?: boolean
 }
 
 /**
@@ -52,7 +66,15 @@ export function guiar(estado: EstadoDeGuia): string | null {
     return 'Roba: toca el mazo o el descarte.'
   }
 
+  if (estado.escalera) return guiarEscalera(estado)
+
   return estado.yaBajado ? guiarBajado(estado) : guiarAntesDeBajarse(estado)
+}
+
+function guiarEscalera(estado: EstadoDeGuia): string {
+  if (estado.escaleraLista) return 'Ya tienes la escalera: toca Bajar escalera.'
+  if (estado.seleccionadas === 1) return 'Toca Botar para terminar tu turno.'
+  return 'Junta del 2 a la A sin repetir. Bota la carta que menos te sirva.'
 }
 
 /**
@@ -77,7 +99,9 @@ function guiarAntesDeBajarse(estado: EstadoDeGuia): string | null {
     return 'Toca Botar para terminar tu turno.'
   }
 
-  return 'Escoge 3 o más cartas que formen un grupo y toca Armar. Si no puedes, bota una.'
+  return estado.bajadaEstricta
+    ? 'Escoge un trío de 3 cartas o una escala de 4 y toca Armar. Si no puedes, bota una.'
+    : 'Escoge 3 o más cartas que formen un grupo y toca Armar. Si no puedes, bota una.'
 }
 
 /**

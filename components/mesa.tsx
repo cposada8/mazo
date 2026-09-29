@@ -36,12 +36,13 @@ import {
 } from '@/lib/ajuste-de-mesa'
 import { type Lado, asientosRivales, hayLados } from '@/lib/asientos'
 import {
-  type Escala,
   type Grupo,
   type VistaDeAsiento,
   type VistaJugador,
+  NOMBRE_DE_ESCALERA,
   escalaRankAt,
   isComodin,
+  rangoDeEscaleraEn,
 } from '@/lib/engine'
 import type { Seccion } from '@/lib/mano'
 import type { PuntoDeViaje, Viaje } from '@/lib/relato'
@@ -142,9 +143,13 @@ export function GrupoEnMesa({
                 nueva && 'relative z-10 ring-[1.5px] ring-amber-400',
               )}
               represents={
-                grupo.kind === 'escala' && isComodin(card)
-                  ? escalaRankAt(grupo as Escala, index)
-                  : undefined
+                !isComodin(card)
+                  ? undefined
+                  : grupo.kind === 'escala'
+                    ? escalaRankAt(grupo, index)
+                    : grupo.kind === 'escalera'
+                      ? rangoDeEscaleraEn(index)
+                      : undefined
               }
             />
           )
@@ -175,9 +180,14 @@ export function GrupoEnMesa({
 }
 
 function tituloDeGrupo(grupo: Grupo): string {
-  return grupo.kind === 'trio'
-    ? `Trío de ${grupo.rank}`
-    : `Escala de ${SIMBOLO_DE_PALO[grupo.suit]}`
+  switch (grupo.kind) {
+    case 'trio':
+      return `Trío de ${grupo.rank}`
+    case 'escala':
+      return `Escala de ${SIMBOLO_DE_PALO[grupo.suit]}`
+    case 'escalera':
+      return NOMBRE_DE_ESCALERA[grupo.tipo]
+  }
 }
 
 /**
