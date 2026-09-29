@@ -2110,9 +2110,17 @@ What changed:
   where you draw — mazo, descarte, and «Ver» for the descarte right above
   the pile it opens, never on it; your hand, with its count and the
   arranging controls on the hand's own top-left corner; and the turn's
-  buttons under the right thumb, grey until they can be pressed. The guía
-  and the relato are the table's voice: one pill centred on the felt right
-  above the hand. Rivals' names dropped a size.
+  buttons under the right thumb, grey until they can be pressed. Rivals'
+  names dropped a size.
+- **Second look, second round:** «Tu mano» on an orange slab was the
+  loudest thing on the table and said nothing, so the hand's line is quiet
+  now — «Tu turno» only when it is, and «13 cartas · 138 pts» in grey. The
+  guía and relato moved from a centred pill to a small note in the
+  bottom-left margin. A selected card used to be cut off by the line above
+  it (the hand's row scrolls sideways, and a scroller clips upward too); the
+  lift is now room reserved in the row. And the hand fans tighter as it
+  grows (`solapeDeMano`), so thirteen cards fit instead of scrolling —
+  never past the point where a card's corner stops showing.
 - **Card backs look printed**, and a selected card lifts with a blue ring
   (gold stays «new»).
 

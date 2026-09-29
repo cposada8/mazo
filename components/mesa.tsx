@@ -27,7 +27,13 @@
 import { Check, Layers, Lightbulb } from 'lucide-react'
 import { useLayoutEffect, useRef, useState } from 'react'
 import { Carta, CartaBocaAbajo } from '@/components/carta'
-import { ASOMA, HUECO, PROPORCION_DE_CARTA, alturaDeCartaEnMesa } from '@/lib/ajuste-de-mesa'
+import {
+  ASOMA,
+  HUECO,
+  PROPORCION_DE_CARTA,
+  alturaDeCartaEnMesa,
+  solapeDeMano,
+} from '@/lib/ajuste-de-mesa'
 import { type Lado, asientosRivales, hayLados } from '@/lib/asientos'
 import {
   type Escala,
@@ -472,6 +478,7 @@ export function Mano({
   reloj,
   soloCabecera,
   soloCartas,
+  solape,
 }: {
   /**
    * Draw only the heading line, or only the cards (Phase 46). The table puts
@@ -480,6 +487,8 @@ export function Mano({
    */
   soloCabecera?: boolean
   soloCartas?: boolean
+  /** How much each card hides of the one before, in pixels (Phase 46). */
+  solape?: number
   /** Pinned bloques first, then the loose cards. */
   secciones: readonly Seccion[]
   /** What the hand would cost if the ronda ended now. */
@@ -531,44 +540,42 @@ export function Mano({
         Whatever else is passed in takes the room that is left, and drops to
         a second line when there is none.
       */
-      <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 py-0.5 text-[max(var(--texto-mesa,0.75rem),0.6875rem)]">
-        <h2 className="flex shrink-0 items-center gap-1.5 font-medium whitespace-nowrap">
-          {/* Your own clock, drawn the way everybody else's is (Phase 40).
-              Phase 36 gave it only the draining badge below, which is a wash
-              behind text — legible once you know it is there, and invisible
-              if you do not. The ring is the same countdown in the shape the
-              table already taught you to read. */}
+      <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[calc(var(--texto-mesa,0.75rem)*0.9)]">
+        <h2 className="flex shrink-0 items-center gap-1.5 whitespace-nowrap">
+          {/*
+            Quiet unless it is your turn (Phase 46). «Tu mano» on an orange
+            slab said the one thing nobody needs told — whose cards these
+            are — louder than anything else on the table. What is worth a
+            badge is *now*: «Tu turno», with the clock, and only then.
+          */}
           {esTuTurno && reloj && (
             <AnilloDeReloj
               key={reloj.clave}
               reloj={reloj}
-              className="size-[1.5em] shrink-0"
+              className="size-[1.4em] shrink-0"
             />
           )}
-          <span
-            className={cn(
-              'relative overflow-hidden rounded-full px-2 py-0.5 text-tinta',
-              esTuTurno ? 'bg-amber-500 text-amber-950' : 'bg-black/45',
-            )}
-          >
-            {/* The badge empties left to right, the same countdown the ring
-                draws — kept from Phase 36, now that it is no longer the only
-                place your own time is shown. */}
-            {esTuTurno && reloj && (
-              <span
-                key={reloj.clave}
-                aria-hidden
-                className="badge-agota absolute inset-0 bg-amber-300/60"
-                style={{
-                  animationDuration: `${reloj.segundos}s`,
-                  animationDelay: `-${reloj.transcurrido ?? 0}s`,
-                }}
-              />
-            )}
-            <span className="relative">Tu mano</span>
-          </span>
-          <span className="font-normal text-tinta-tenue tabular-nums">
-            {total}
+          {esTuTurno && (
+            <span className="relative overflow-hidden rounded-full bg-amber-500 px-1.5 py-px text-[0.92em] font-semibold text-amber-950">
+              {/* The badge empties left to right, the same countdown the
+                  ring draws (Phase 36). */}
+              {reloj && (
+                <span
+                  key={reloj.clave}
+                  aria-hidden
+                  className="badge-agota absolute inset-0 bg-amber-300/60"
+                  style={{
+                    animationDuration: `${reloj.segundos}s`,
+                    animationDelay: `-${reloj.transcurrido ?? 0}s`,
+                  }}
+                />
+              )}
+              <span className="relative">Tu turno</span>
+            </span>
+          )}
+          <span className="text-tinta-tenue tabular-nums">
+            <span className="sr-only">Tu mano: </span>
+            {total} {total === 1 ? 'carta' : 'cartas'}
             {puntos !== undefined && (
               <span title="Lo que costaría esta mano si la ronda terminara ahora">
                 {' '}
@@ -585,8 +592,16 @@ export function Mano({
       {!soloCabecera && (
       <div
         className={cn(
-          'flex items-start gap-3 overflow-x-auto pt-2',
+          // The row scrolls sideways, and a scrolling box clips upward too —
+          // so the lift a selected card makes is room reserved here, not
+          // borrowed from the line above, where it used to be cut off.
+          'flex items-start gap-3 overflow-x-auto pt-[calc(var(--carta-md,5rem)*0.16)]',
         )}
+        style={
+          solape === undefined
+            ? undefined
+            : ({ '--solape-mano': `${solape}px` } as React.CSSProperties)
+        }
       >
         {secciones.map((seccion) => {
           const indice = posicionFijada.get(seccion.id) ?? -1
@@ -600,7 +615,7 @@ export function Mano({
                 overlap scales with the card so the visible slice is always
                 the corner plus a finger's worth.
               */}
-              <div className="flex w-max pl-[calc(var(--carta-md,5rem)*0.34)]">
+              <div className="flex w-max pl-[var(--solape-mano,calc(var(--carta-md,5rem)*0.34))]">
                 {seccion.cards.map((card) => {
                   const elegida = seleccionadas?.has(card.id) ?? false
                   const nueva = resaltada === card.id
@@ -616,7 +631,7 @@ export function Mano({
                         'shadow-[-2px_2px_6px_rgba(0,0,0,0.45)]',
                         nueva && 'ring-2 ring-amber-400',
                         elegida &&
-                          '-translate-y-[18%] ring-2 ring-sky-300 shadow-[0_0_12px_rgba(125,211,252,0.6)]',
+                          '-translate-y-[calc(var(--carta-md,5rem)*0.14)] ring-2 ring-sky-300 shadow-[0_0_12px_rgba(125,211,252,0.6)]',
                       )}
                     />
                   )
@@ -632,14 +647,14 @@ export function Mano({
                       type="button"
                       onClick={() => onCarta(card.id)}
                       aria-pressed={elegida}
-                      className="-ml-[calc(var(--carta-md,5rem)*0.34)] shrink-0"
+                      className="-ml-[var(--solape-mano,calc(var(--carta-md,5rem)*0.34))] shrink-0"
                     >
                       {carta}
                     </button>
                   ) : (
                     <div
                       key={card.id}
-                      className="-ml-[calc(var(--carta-md,5rem)*0.34)] shrink-0"
+                      className="-ml-[var(--solape-mano,calc(var(--carta-md,5rem)*0.34))] shrink-0"
                     >
                       {carta}
                     </div>
@@ -824,6 +839,19 @@ export function Mesa({
     maximo: Math.max(22, medida.maxima),
   })
 
+  // Your hand fans tighter as it grows, so it fits instead of scrolling.
+  const seccionesDeMano = secciones ?? [
+    { id: 'sueltas', cards: [...state.mano], bloqueada: false },
+  ]
+  const [columnaDeMano, anchoDeMano] = useMedida<HTMLDivElement>()
+  const solape = solapeDeMano({
+    cartas: seccionesDeMano.reduce((suma, seccion) => suma + seccion.cards.length, 0),
+    bloques: seccionesDeMano.filter((seccion) => seccion.cards.length > 0).length,
+    ancho: anchoDeMano.ancho - 4,
+    alto: anchoDeMano.carta,
+    separacion: 12,
+  })
+
   return (
     <div
       className={cn(
@@ -904,12 +932,13 @@ export function Mesa({
         cards lie on the felt's near edge, which is where a hand is held.
       */}
       {/*
-        The table's voice (Phase 46): what to do now, or what just happened,
-        in one pill on the felt right above your hand. It is the table
-        talking — about the piles, the mesa and the rivals as much as about
-        your cards — so it belongs to the felt, centred, and to no cluster.
+        The table's voice (Phase 46): what to do now, or what just happened.
+        A note in the margin — small, bottom-left, over your piles — and not
+        a banner across the middle of the felt, where the eye is busy with
+        the mesa. The owner's call, after a pill in the centre «ensucia la
+        vista».
       */}
-      <div className="linea-relato pointer-events-none absolute inset-x-0 flex justify-center px-[16cqw]">
+      <div className="linea-relato pointer-events-none absolute left-[3cqw] flex max-w-[34cqw] items-end">
         <Relato guia={guia} relatoLinea={relatoLinea} onVerHistorial={onVerHistorial} />
       </div>
 
@@ -945,14 +974,12 @@ export function Mesa({
           <Pilas state={state} onRobar={onRobar} />
         </div>
 
-        <div className="flex min-w-0 flex-1 justify-center">
+        <div ref={columnaDeMano} className="flex min-w-0 flex-1 justify-center">
           <div className="flex max-w-full min-w-0 flex-col">
             <Mano
               soloCabecera
               cabecera={sobreLaMano}
-              secciones={
-                secciones ?? [{ id: 'sueltas', cards: [...state.mano], bloqueada: false }]
-              }
+              secciones={seccionesDeMano}
               puntos={puntos}
               acciones={accionesDeMano}
               esTuTurno={esTuTurno}
@@ -960,13 +987,12 @@ export function Mesa({
             />
             <Mano
               soloCartas
-              secciones={
-                secciones ?? [{ id: 'sueltas', cards: [...state.mano], bloqueada: false }]
-              }
+              secciones={seccionesDeMano}
               seleccionadas={seleccionadas}
               resaltada={resaltada}
               onCarta={onCarta}
               onSoltar={onSoltar}
+              solape={anchoDeMano.carta ? solape : undefined}
             />
           </div>
         </div>
@@ -992,7 +1018,7 @@ function Relato({
   onVerHistorial?: () => void
 }) {
   const texto =
-    'pointer-events-auto max-w-full min-w-0 truncate rounded-full bg-black/50 px-3 py-[0.2rem] text-center text-[var(--texto-mesa,0.75rem)] ring-1 ring-white/10'
+    'pointer-events-auto line-clamp-2 min-w-0 text-left text-[calc(var(--texto-mesa,0.75rem)*0.88)] leading-snug [text-shadow:0_1px_2px_rgba(0,0,0,0.6)]'
 
   if (guia) {
     // In the amber the table uses for *this is you, and it is now*. Text and
@@ -1000,10 +1026,10 @@ function Relato({
     return (
       <span
         aria-live="polite"
-        className={cn(texto, 'flex items-center gap-1.5 font-medium text-amber-300 ring-amber-400/30')}
+        className={cn(texto, 'font-medium text-amber-300')}
       >
-        <Lightbulb className="size-[1.1em] shrink-0" aria-hidden />
-        <span className="min-w-0 truncate">{guia}</span>
+        <Lightbulb className="mr-1 inline size-[1.1em] align-[-0.2em]" aria-hidden />
+        {guia}
       </span>
     )
   }
@@ -1017,7 +1043,7 @@ function Relato({
         title="Ver todo lo que ha pasado esta ronda"
         className={cn(
           texto,
-          'text-tinta-suave hover:bg-black/65 hover:text-tinta',
+          'text-tinta-tenue hover:text-tinta',
         )}
       >
         {relatoLinea}
@@ -1028,7 +1054,7 @@ function Relato({
   if (!relatoLinea) return null
 
   return (
-    <span aria-live="polite" className={cn(texto, 'text-tinta-suave')}>
+    <span aria-live="polite" className={cn(texto, 'text-tinta-tenue')}>
       {relatoLinea}
     </span>
   )
@@ -1042,18 +1068,23 @@ function Relato({
  */
 function useMedida<T extends HTMLElement>() {
   const ref = useRef<T>(null)
-  const [medida, setMedida] = useState({ ancho: 0, alto: 0, maxima: 0 })
+  const [medida, setMedida] = useState({ ancho: 0, alto: 0, maxima: 0, carta: 0 })
 
   useLayoutEffect(() => {
     const el = ref.current
     if (!el || typeof ResizeObserver === 'undefined') return
 
     const medir = () => {
-      const maxima = parseFloat(getComputedStyle(el).getPropertyValue('--carta-mesa-max'))
+      const estilo = getComputedStyle(el)
+      const px = (nombre: string) => {
+        const valor = parseFloat(estilo.getPropertyValue(nombre))
+        return Number.isFinite(valor) ? valor : 0
+      }
       setMedida({
         ancho: el.clientWidth,
         alto: el.clientHeight,
-        maxima: Number.isFinite(maxima) ? maxima : 0,
+        maxima: px('--carta-mesa-max'),
+        carta: px('--carta-md-px'),
       })
     }
     medir()

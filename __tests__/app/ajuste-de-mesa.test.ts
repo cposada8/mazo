@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { alturaDeCartaEnMesa, anchoDeGrupo, cabe } from '@/lib/ajuste-de-mesa'
+import { alturaDeCartaEnMesa, anchoDeGrupo, cabe, solapeDeMano } from '@/lib/ajuste-de-mesa'
 import { iniciales } from '@/components/mesa'
 
 /**
@@ -80,5 +80,27 @@ describe('iniciales', () => {
   it('takes one letter from a single-word alias', () => {
     expect(iniciales('lordcepm')).toBe('L')
     expect(iniciales('  ')).toBe('?')
+  })
+})
+
+describe('solapeDeMano', () => {
+  // A hand card 92 px tall, as on a phone lying down in fullscreen.
+  const ALTO = 92
+  const base = { bloques: 1, alto: ALTO, separacion: 12 }
+
+  it('keeps the usual fan when the hand fits', () => {
+    expect(solapeDeMano({ ...base, cartas: 6, ancho: 500 })).toBeCloseTo(ALTO * 0.34)
+  })
+
+  it('fans tighter until thirteen cards fit the width', () => {
+    const solape = solapeDeMano({ ...base, cartas: 13, ancho: 420 })
+    const carta = ALTO * (8 / 11)
+    expect(solape).toBeGreaterThan(ALTO * 0.34)
+    expect(carta + 12 * (carta - solape)).toBeLessThanOrEqual(420.01)
+  })
+
+  it('never hides a card past its corner', () => {
+    const carta = ALTO * (8 / 11)
+    expect(solapeDeMano({ ...base, cartas: 40, ancho: 300 })).toBeCloseTo(carta - ALTO * 0.3)
   })
 })

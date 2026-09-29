@@ -183,6 +183,12 @@
   inherits: true;
   initial-value: 0px;
 }
+/* A hand card's height, computed the same way, for fanning the hand. */
+@property --carta-md-px {
+  syntax: "<length>";
+  inherits: true;
+  initial-value: 0px;
+}
 
 /*
  * The one scale the table is drawn in.
@@ -213,6 +219,7 @@
     --carta-xs: calc(var(--carta-md) * 0.52);
     /* The mesa's cards never grow past this, however empty the table is. */
     --carta-mesa-max: calc(var(--carta-md) * 0.72);
+    --carta-md-px: var(--carta-md);
     --ficha: clamp(1.625rem, 10.5cqh, 2.625rem);
     /* Seat names, pile counts, the relato: legible, never dominant. */
     --texto-mesa: clamp(0.625rem, 3.9cqh, 0.8125rem);
@@ -224,10 +231,10 @@
      * line is a fixed rem height rather than a share of the screen, because
      * it holds buttons and those are sized for a finger, not for the view.
      */
-    --linea-mano: 1.75rem;
-    --zona-mano: calc(var(--carta-md) + var(--linea-mano) + 0.5rem + 1.5cqh);
-    /* The table's voice, one pill tall, right above your hand. */
-    --linea-relato: calc(var(--texto-mesa) * 1.4 + 0.5rem);
+    --linea-mano: 1.5rem;
+    --zona-mano: calc(var(--carta-md) * 1.16 + var(--linea-mano) + 1.5cqh);
+    /* The table's voice: two short lines of small type, above your piles. */
+    --linea-relato: calc(var(--texto-mesa) * 2.4 + 0.25rem);
     /* The far edge's seats: a ficha and a name under it. */
     --banda-arriba: calc(var(--ficha) + var(--texto-mesa) * 1.5 + 1.35rem);
   }

@@ -764,14 +764,14 @@ function AccionesDeMano({ juego }: { juego: ReturnType<typeof useMesa> }) {
             etiqueta="Mover las cartas seleccionadas a la izquierda"
             sinBorde
           >
-            <ArrowLeft className="size-4" aria-hidden />
+            <ArrowLeft className="size-3.5" aria-hidden />
           </BotonDeMano>
           <BotonDeMano
             onClick={() => juego.moverCartas('derecha')}
             etiqueta="Mover las cartas seleccionadas a la derecha"
             sinBorde
           >
-            <ArrowRight className="size-4" aria-hidden />
+            <ArrowRight className="size-3.5" aria-hidden />
           </BotonDeMano>
         </div>
       )}
@@ -781,7 +781,7 @@ function AccionesDeMano({ juego }: { juego: ReturnType<typeof useMesa> }) {
           onClick={juego.fijarSeleccion}
           etiqueta="Fijar: deja estas cartas juntas, acomodar no las mueve"
         >
-          <Lock className="size-4" aria-hidden />
+          <Lock className="size-3.5" aria-hidden />
         </BotonDeMano>
       )}
 
@@ -790,14 +790,14 @@ function AccionesDeMano({ juego }: { juego: ReturnType<typeof useMesa> }) {
         etiqueta="Acomodar por pintas — mantenlo presionado y lo que robes se acomoda solo"
         activo={juego.acomodoActivo === 'pintas'}
       >
-        <Spade className="size-4" aria-hidden />
+        <Spade className="size-3.5" aria-hidden />
       </BotonDeMano>
       <BotonDeMano
         onClick={() => juego.acomodarMano('numeros')}
         etiqueta="Acomodar por números — mantenlo presionado y lo que robes se acomoda solo"
         activo={juego.acomodoActivo === 'numeros'}
       >
-        <ArrowUp01 className="size-4" aria-hidden />
+        <ArrowUp01 className="size-3.5" aria-hidden />
       </BotonDeMano>
     </div>
   )
@@ -825,7 +825,7 @@ function BotonDeMano({
       title={etiqueta}
       aria-pressed={activo}
       className={cn(
-        'p-1.5 text-tinta-suave transition-colors',
+        'p-[0.3rem] text-tinta-suave transition-colors',
         !sinBorde && 'rounded-full ring-1 ring-white/10',
         activo ? 'bg-amber-400 text-amber-950' : 'bg-black/45 hover:bg-black/60',
       )}

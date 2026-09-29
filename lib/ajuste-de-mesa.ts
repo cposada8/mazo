@@ -82,3 +82,41 @@ export function alturaDeCartaEnMesa({
   }
   return minimo
 }
+
+/**
+ * How much each card in your hand hides of the one before it, in pixels, so
+ * the whole hand fits the width it has (Phase 46).
+ *
+ * A hand used to overlap by a fixed amount and scroll when it ran out of
+ * room, so thirteen cards on a phone lying down hid the last three off the
+ * right edge. A card table fans tighter instead: the overlap grows until the
+ * hand fits — but never past the point where a card's corner, its whole
+ * identity in a fan, stops showing. Past that, the row scrolls again.
+ */
+export function solapeDeMano({
+  cartas,
+  bloques,
+  ancho,
+  alto,
+  separacion,
+}: {
+  /** Cards in the hand, all bloques together. */
+  cartas: number
+  /** How many separate runs the hand is drawn in (pinned bloques + loose). */
+  bloques: number
+  /** The width the hand may use, in pixels. */
+  ancho: number
+  /** A hand card's height, in pixels. */
+  alto: number
+  /** The gap between bloques, in pixels. */
+  separacion: number
+}): number {
+  const carta = alto * PROPORCION_DE_CARTA
+  const holgado = alto * 0.34
+  const apretado = carta - alto * 0.3
+  const pasos = cartas - bloques
+  if (ancho <= 0 || alto <= 0 || pasos <= 0) return holgado
+
+  const visible = (ancho - bloques * carta - (bloques - 1) * separacion) / pasos
+  return Math.min(apretado, Math.max(holgado, carta - visible))
+}
