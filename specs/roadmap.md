@@ -2160,13 +2160,12 @@ Like the contract list, the choice is part of the partida's identity: visible
 in the menu, never changed mid-game, and carried by the server so every seat
 plays under the same rule.
 
-To confirm with the owner before building — the brief covers the bajada
-itself, and these are the edges it does not settle:
-- **Only the bajada, or adding too?** Assumed: only the bajada is strict. On
-  later turns a player adds cards to grupos (theirs or anyone's) exactly as
-  today, so a trío laid down as three can grow to five by agregar.
+Settled with the owner (2026-09-28):
+- **Only the bajada is strict.** On later turns a player adds cards to
+  grupos (theirs or anyone's) exactly as today, so a trío laid down as three
+  can grow to five by agregar.
 - **Comodines count toward the size** — a trío of `7 7 comodín` is three
-  cards. Assumed, since a comodín already stands in as a card everywhere.
+  cards.
 - **The bots** must know the rule: El Codicioso and the personalities build
   bajadas that are legal under it (a bot that cannot bajarse is worse than a
   bot that plays badly).
@@ -2192,15 +2191,17 @@ the ronda — there is no discard and no later turn. That is why these never
 fit the `{trios, escalas}` shape and why the Pending section held them back:
 it is a new kind of contract in the engine, not a new row.
 
-Settled here, from the owner's brief: the four levels, their order, 13 cards,
-2 through A with no rango repeated. To confirm before building:
-- **Comodines**: may a comodín stand in for a missing rango (and in the
-  pintada, for a colour)? If yes, how much of an escalera may be comodines?
-- **Order and the ring**: rangos are a ring in this game (K–A–2 wraps). Is
-  an escalera just the thirteen rangos in any rotation, or must it read
-  2…A? For the pintada the alternation only means something along an order.
-- **Taking from the descarte**: may the thirteenth card be the descarte's
-  top card, as with any other draw? Assumed yes.
+Settled with the owner (2026-09-28):
+- **An escalera is laid down whole**, all thirteen cards in one move, never
+  card by card — and laying it down wins the ronda. The player holds twelve;
+  the thirteenth is drawn as always, from the mazo or the descarte.
+- **Validation: every rango from 2 to A is there, none repeated.** Because
+  the thirteen rangos must actually be present, comodines do not stand in.
+- **Pintada: the colours alternate along 2→A** — red being ♥ and ♦, black
+  ♠ and ♣. Either start is valid: 2 red, 3 black, 4 red, 5 black… or 2
+  black, 3 red, 4 black, 5 red…
+- **Color**: all thirteen red, or all thirteen black. **Real**: all thirteen
+  of one pinta.
 - **Defaults**: off, like *Cuatro tríos* — the players switch them on.
 
 Written into carioca-rules.md (retiring the Pending section), then coded:

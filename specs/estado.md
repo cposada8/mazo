@@ -328,7 +328,7 @@ ordered by them (`roadmap.md` has the briefs and the open questions):
 3. **Phase 49 — La galería de comodines.** Every comodín face, from the
    menu. Not a priority.
 
-Each of 47 and 48 carries questions to settle with the owner before any code.
+Both 47 and 48 are settled with the owner; nothing is waiting on a question.
 The *After* list in `roadmap.md` stays unordered behind them.
 
 *Everything below is the record of how the project got here.*
