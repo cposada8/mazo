@@ -325,3 +325,50 @@ describe('discarding once bajado', () => {
     }
   })
 })
+
+describe('a bajado bot takes the face-up card only to put it down', () => {
+  /**
+   * Found by the owner at the table: a bot already down took a card off the
+   * descarte and kept it, as if still collecting. The old check asked only
+   * whether the card fit somewhere; the turn then unloaded card by card and
+   * the new one lost its place. Both ways it happened, pinned here.
+   */
+  const escalaDeCorazones = {
+    kind: 'escala' as const,
+    suit: 'hearts' as const,
+    start: '5' as const,
+    cards: [n('5', 'hearts'), n('6', 'hearts'), n('7', 'hearts'), n('8', 'hearts')],
+  }
+  const mesa = (mano: Card[], arriba: Card) =>
+    makeRonda({
+      jugadores: [
+        { hand: mano, grupos: [], bajadoEnTurno: 1 },
+        { hand: [n('A', 'spades'), n('3', 'clubs')], grupos: [escalaDeCorazones], bajadoEnTurno: 1 },
+      ],
+      numeroDeTurno: 3,
+      discard: [arriba],
+    })
+
+  it('leaves it when a card already in hand would take the same place', () => {
+    // A 4♥ in hand and a second 4♥ face up: only one of them goes on the escala.
+    expect(decidir(mesa([n('4', 'hearts'), n('K', 'clubs')], n('4', 'hearts')))).toEqual({
+      type: 'robar',
+      de: 'stock',
+    })
+  })
+
+  it('leaves it when it would be the card left over for the discard', () => {
+    // 9♥ in hand fits first, and then the 4♥ is all there is to throw.
+    expect(decidir(mesa([n('9', 'hearts')], n('4', 'hearts')))).toEqual({
+      type: 'robar',
+      de: 'stock',
+    })
+  })
+
+  it('still takes it when it goes down with room to spare', () => {
+    expect(decidir(mesa([n('K', 'clubs'), n('2', 'clubs')], n('4', 'hearts')))).toEqual({
+      type: 'robar',
+      de: 'descarte',
+    })
+  })
+})

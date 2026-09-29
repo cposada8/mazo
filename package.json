@@ -1,16 +1,18 @@
 {
   "name": "mazo",
-  "version": "1.2.0",
+  "version": "1.3.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
-    "build": "prisma generate && next build",
+    "dev": "npm run bots:worker && next dev",
+    "build": "prisma generate && npm run bots:worker && next build",
+    "bots:worker": "esbuild app/jugar/bots.worker.ts --bundle --format=iife --minify --alias:@=. --outfile=public/bots.worker.js --log-level=warning",
     "postinstall": "prisma generate",
     "start": "next start",
     "lint": "eslint",
     "test": "vitest",
     "test:run": "vitest run",
-    "publicar": "bash scripts/publicar.sh"
+    "publicar": "bash scripts/publicar.sh",
+    "torneo": "tsx scripts/torneo.ts"
   },
   "dependencies": {
     "@base-ui/react": "^1.7.0",
@@ -38,10 +40,12 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "@vitejs/plugin-react": "^6.0.5",
+    "esbuild": "^0.28.2",
     "eslint": "^9",
     "eslint-config-next": "16.3.1",
     "jsdom": "^29.1.1",
     "tailwindcss": "^4",
+    "tsx": "^4.23.15",
     "typescript": "^5",
     "vitest": "^4.1.10"
   }

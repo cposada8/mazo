@@ -13,7 +13,7 @@
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { movesDelTurno, tiemposDeMoves } from '@/lib/bots'
+import { tiemposDeMoves } from '@/lib/bots'
 import {
   type Move,
   type PartidaConfig,
@@ -23,6 +23,7 @@ import {
   vistaDePartida,
 } from '@/lib/engine'
 import { type Relato, relatar } from '@/lib/relato'
+import { planearTurno } from './planificador'
 import { useMesa } from './useMesa'
 
 /** How long a bot's whole turn takes if the setup screen said nothing. */
@@ -137,6 +138,12 @@ export function usePartida(options: {
     partidaRef.current = partida
   }, [partida])
 
+  // The bots' memory of the ronda (Phase 55), read when a turn starts.
+  const relatosRef = useRef(relatos)
+  useEffect(() => {
+    relatosRef.current = relatos
+  }, [relatos])
+
   const mesa = useMesa({
     vista,
     relatos,
@@ -158,14 +165,24 @@ export function usePartida(options: {
     // coming back to a table that had moved on without you.
     if (resumen) return
 
-    const moves = movesDelTurno(estado, botsRef.current)
-    const tiempos = tiemposDeMoves(moves.length, segundosBot * 1000)
+    // Planned off the page when the browser can (Phase 56): El Tahúr thinks
+    // for a noticeable moment, and the table should not freeze while it does.
+    // The thinking is part of the turn: what it took comes off the seconds
+    // the moves are spread over, so a turn still lasts what the lobby said.
+    let ids: ReturnType<typeof setTimeout>[] = []
+    const empezo = Date.now()
+    const cancelar = planearTurno(estado, botsRef.current, relatosRef.current, (moves) => {
+      const restante = Math.max(segundosBot * 1000 - (Date.now() - empezo), 0)
+      const tiempos = tiemposDeMoves(moves.length, restante)
+      ids = moves.map((move, i) =>
+        setTimeout(() => setPartida((antes) => aplicar(antes, move)), tiempos[i]),
+      )
+    })
 
-    const ids = moves.map((move, i) =>
-      setTimeout(() => setPartida((antes) => aplicar(antes, move)), tiempos[i]),
-    )
-
-    return () => ids.forEach(clearTimeout)
+    return () => {
+      cancelar()
+      ids.forEach(clearTimeout)
+    }
   }, [claveDeTurno, resumen, segundosBot, aplicar])
 
   return {

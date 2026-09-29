@@ -46,6 +46,7 @@ const PERFIL: Perfil = {
 export const codicioso: Bot = {
   id: 'codicioso',
   nombre: 'El Codicioso',
+  nivel: 'facil',
   descripcion: 'Se baja apenas puede y suelta todo lo que la mesa le acepte.',
   decidir: decidirCodicioso,
 }

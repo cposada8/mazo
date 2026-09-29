@@ -2285,6 +2285,230 @@ Not a priority.
 
 ---
 
+## Milestone 6 — Bots de más nivel
+
+*Asked for by the owner on 2026-09-28: «los actuales son bastante
+estúpidos, quiero bots de más nivel».*
+
+Settled with the owner (2026-09-28):
+- **The order below stands**, 52 through 57, and comes before the comodín
+  gallery (Phase 51, still not a priority).
+- **Today's bots stay as they are, as the *Fácil* level.** The improved
+  play is **new bots, selectable at a higher level** — not an upgrade of El
+  Codicioso, El Paciente and El Memorioso. So the Phase 39 rule (a
+  personality is a difference of strategy, never of competence) now holds
+  *within* a level: the stronger floor is shared by the new bots, and the
+  old floor stays under the old ones. Bug fixes like Phase 52 still go to
+  every bot — a bot doing what no player would is not a level.
+
+What the code shows today, beyond the bug that opened this milestone:
+
+- **The bajada is the first one found, not the best one.** `buscarAgrupacion`
+  stops at the first grouping that satisfies the contrato, whatever it leaves
+  in hand — and it will spend a comodín where a natural card would do.
+- **Points only break ties.** The discard throws the least *useful* card;
+  what it costs to be caught holding a K or an A only matters between equals,
+  and nothing scales that with how close the ronda is to ending.
+- **A discard never asks who it feeds.** Only the next seat can take it, and
+  when that seat is bajado a card that fits the mesa is a gift.
+- **No memory across turns**: who took what off the descarte, and what they
+  let pass, is public in the relatos and unused.
+
+### Phase 52 — Tomar solo lo que se baja ✅
+The owner, at the table: a bot already bajado took a card off the descarte
+that did it no good, as if still building grupos in hand. The draw asked
+only whether the card *fits* somewhere on the mesa; the turn then unloads
+card by card, so another card in hand could take the same slot (two 4♥, one
+escala), or the new card could be the one left over when the turn must end
+in a discard. It kept it or threw it straight back.
+
+**Done.** `ligaDeInmediato` now plays the rest of the turn against the
+view — take it, unload as the bot will — and says yes only if the card ends
+on the mesa. Over ~900 bot partidas of 2–5 seats, libre and estricta, with
+and without comodines: 17 such draws in 5,515 before, 0 in 5,307 after.
+
+### Phase 53 — El banco de pruebas ✅
+Before making bots stronger, a way to tell that they are. `npm run torneo`
+plays N seeded partidas with seats rotated and reports, per bot, wins,
+points per seat, turn of bajada and rondas that stall — plus the invariants
+this milestone keeps finding by hand (no refused move, no bajado bot keeping
+a descarte card). Every later phase states its result against it.
+
+**Done.** `jugarTorneo` (`lib/bots/torneo.ts`) is pure and seeded; `npm run
+torneo -- --bots a,b --partidas N --asientos n --estricta --sin-comodines`
+prints the table and exits non-zero on any falta. A win shared by a tie is
+split, so the victorias add up to the partidas finished. The baseline — the
+*Fácil* level, 600 partidas each, default contracts:
+
+| Seats | El Memorioso | El Codicioso | El Paciente | Fair share | Faltas |
+| --- | --- | --- | --- | --- | --- |
+| 3 | 38.2% | 32.6% | 28.9% | 33.3% | 2 atascos |
+| 4 | 29.9% | 27.6% | 17.5% | 25.0% | none |
+| 5 | 23.3% | 21.5% | 15.3% | 20.0% | none |
+
+At two seats 76 of 600 bot-only partidas stall — the loop Phase 39 left
+open on purpose, since a table always has its host at it. Estricta and
+libre give identical numbers, and that is correct: these bots only ever lay
+down minimum-size grupos, which both rules accept.
+
+### Phase 54 — Un piso más alto ✅
+Shared competence for the new, higher-level bots (the owner's decision: the
+three current bots stay as they are, as *Fácil*):
+- **The best bajada, not the first**: among the groupings the hand allows,
+  the one that leaves the lightest, most placeable hand — natural cards
+  before a comodín.
+- **Points in the discard, under pressure**: dumping expensive cards weighs
+  more as the ronda closes — someone bajado and nearly empty, the stock thin,
+  the rebarajadas spent.
+- **No gifts**: never throw a card that fits the mesa when the next seat is
+  bajado, unless nothing else can go.
+- **The comodín economy**: when 50 points in hand outweigh what holding it
+  buys.
+
+**Done when:** the new floor beats the old one clearly on the bench (the old
+bots kept as a reference opponent), with nothing stalling.
+
+**Done — as a new bot, El Calculador** (`lib/bots/calculador.ts`), seatable
+from the lobby today; its level label arrives with Phase 57. The *Fácil*
+bots are untouched: `buscarAgrupacion` still returns the first grouping,
+and the new search (`todasLasAgrupaciones`, `ampliarBajada`) sits beside it.
+
+- **The best bajada.** Every grouping is compared by what it leaves: played
+  against the view, clock nudged a turn, a leftover that fits the mesa costs
+  a tenth of its points and one that does not costs all of them. Under libre
+  each grouping is first grown with every card its grupos take — and a
+  bajada that empties the hand goes out on the spot.
+- **Points in the discard, under pressure.** Worth in hand is use (progress
+  before bajarse, reach on the mesa after) less points × *presión*, which
+  starts at 0.15 and rises with being bajado, someone else bajado, someone
+  bajado with three cards or fewer, and a thin or rebuilt stock.
+- **No gifts.** A card the next seat, bajado, could put down on its turn is
+  kept unless nothing else can go.
+- **The draw** keeps the *Fácil* bar and adds one case: the card that lets
+  it lay down this very turn. The comodín is still never thrown — measuring
+  says there is more to gain elsewhere first.
+
+On the bench, 600 partidas at four seats, two Calculadores against two
+Memoriosos (the strongest *Fácil*): **33.3% of wins against 16.8%**, 348
+points per seat against 414; 32.3% against 17.8% under estricta. With all
+four bots at the table it wins 41.5% at three seats (fair share 33.3%),
+33.0% at four (25%) and 25.4% at five (20%), and nothing stalls that did
+not stall before. Taking each piece out in turn says where the strength
+is: without points in the discard it drops to 26.2%; without the gift rule
+to 31.8%; with the first bajada instead of the best to 32.6%; without the
+pressure scaling to 32.8%. Points were the big miss.
+
+### Phase 55 — La memoria de la mesa ✅
+The relatos become the bots' second input — public by construction, so
+reading them is not peeking. From them, a running picture of every seat:
+what it took off the descarte, what it let pass, how many cards it holds.
+Two plays fall out directly: **do not throw the next seat what it is
+collecting**, and **do not chase what the previous seat is about to throw**.
+El Memorioso grows into this, or a new bot carries it.
+
+**Done — the memory, and a measured no on using it for defence.**
+`Bot.decidir(vista, relatos?)` now receives the ronda's relatos in all three
+places a bot plays: the server's loop, the browser's (a ref, so the turn is
+not rescheduled on every relato) and the bench. `leerMemoria`
+(`lib/bots/memoria.ts`) turns them into, per other seat, the cards it took
+off the descarte, let pass, and threw — a pass worked out from order: a
+draw from the mazo while a known card lies face up. A bot's own relatos are
+left out on purpose: the server can resume a half-played bot turn, and
+nothing the turn adds may change what it decides.
+
+Then measured, El Calculador against itself fed no relatos (1,600 seats
+each, four at a table), holding back what the next seat was seen collecting:
+
+| Weight of the next seat's interest | With memory | Without |
+| --- | --- | --- |
+| 0.3 | 24.7% | 25.3% |
+| 1 | 23.0% | 27.0% |
+| 3 | 21.8% | 28.2% |
+
+**Denying the next seat makes the bot worse**, and more so the harder it
+denies: a card kept to starve the next seat is points kept in hand and a
+hand that moves slower, and the next seat can always draw from the mazo.
+Counting cards the way El Memorioso does was tried on the same bot too, and
+changed nothing (32.6% against the strongest *Fácil*, 33.3% without). So
+El Calculador does not read the relatos, and the defensive heuristic is not
+shipped. What the memory is for is Phase 56: a card somebody took off the
+descarte is *in their hand*, which is exactly what a bot that imagines the
+other hands needs to know.
+
+### Phase 56 — El Tahúr ✅
+A bot that simulates. For the three decisions of a turn — take the face-up
+card or not, lay down now or wait, which card to throw — it deals the unseen
+cards to the other hands many times over (consistent with everything the
+seat knows) and plays each deal out quickly, keeping the choice that costs
+least on average. The engine is pure and fast enough for it; the budget is
+the bot's thinking time, and it must fit in the browser too, where a table
+of one person and bots is played.
+
+**Done when:** it clearly beats every other bot on the bench, and the owner
+finds it hard to beat at the table.
+
+**Done — for the discard, where measuring said it pays** (`lib/bots/tahur.ts`,
+level *Difícil*). Before each discard it takes the three cards El Calculador
+likes least, imagines the unseen cards dealt a hundred ways
+(`imaginarRonda`: the deck less every seen card — card ids are fixed, so the
+unseen set is exact; comodines or not follows from counting the table; and
+a card somebody took off the descarte goes back into that hand), plays each
+deal to the end of the ronda once per candidate, and throws the one that
+left it the fewest points. In the imagined rondas it plays itself as El
+Calculador and everybody else with a quick policy (`lib/bots/rapido.ts`),
+since they make three moves in four. Drawing, laying down and unloading are
+El Calculador's.
+
+How it got there, all on the bench:
+
+| Version | Tahúr | Calculador | Points (T / C) |
+| --- | --- | --- | --- |
+| 10 deals, draw and discard simulated, full rollouts | 20.5% | 29.5% | 353 / 343 |
+| 100 deals, discard only, full rollouts | 27.3% | 22.7% | 328 / 373 |
+| **100 deals, discard only, quick rivals (shipped)** | **32.2%** | **17.8%** | **334 / 359** |
+
+(Two of each at four seats; 132 partidas for the first and last, 66 for
+the middle.) What decided it was measured offline, on real discards against
+a 300-deal "truth": El Calculador throws a different card from the truth in
+25 of 63 discards and loses 1.4 points each time; ten deals recover almost
+none of that (the noise of a whole ronda swamps it), a hundred recover most.
+Simulating the draw was tried and only added noise.
+
+**What it costs.** A discard takes a median 0.23 s, 0.58 s at the 90th
+percentile, 1.2 s at worst on a laptop (bundled as production bundles it).
+So:
+- **In the browser** a local partida plans bot turns in a Web Worker
+  (`app/jugar/planificador.ts`), the table keeps animating, and the thinking
+  comes off the turn's seconds. This Turbopack copies `new URL('./x.ts',
+  import.meta.url)` as a raw file instead of compiling a worker, so the
+  worker is bundled by esbuild (`npm run bots:worker`, run by `dev` and
+  `build`) into `public/bots.worker.js`; without it, or without Worker
+  support, the plan is made on the page as before.
+- **On the server**, which re-plans a pending bot turn on every request,
+  the Tahúr remembers its last 256 discards by exact situation.
+- **The grouping search** now rules out a contrato the hand cannot meet
+  with a bit-mask count before searching (`podriaCumplir`) — checked equal
+  to the old search on 160,000 hands, and three in four searches skipped.
+- **The bench** splits across processes: `npm run torneo -- --hilos 11`,
+  same numbers as one process.
+
+Not done, and worth knowing: the long soak tests seat only the quick bots;
+El Tahúr has its own short partidas in the suite.
+
+### Phase 57 — Niveles en la sala ✅
+The lobby says how strong each bot is — *Fácil*, *Normal*, *Difícil* — next
+to its name and description, and the default seat is whatever level the
+owner chooses. The old, simple bots can stay as *Fácil*.
+
+**Done.** `Bot.nivel` — `facil`, `normal`, `dificil` — with El Codicioso,
+El Paciente and El Memorioso as *Fácil*, El Calculador as *Normal* and El
+Tahúr as *Difícil*. The lobby's picker groups them under those three names,
+and the line under each seat reads «Difícil · Antes de cada jugada se
+imagina la ronda…». The seat a new bot takes is still El Codicioso, *Fácil*,
+until the owner says which level a table should start with.
+
+---
+
 ## After
 
 Not scheduled, and not to be started before Milestone 3 — online play:

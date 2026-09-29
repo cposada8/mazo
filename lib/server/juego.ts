@@ -284,7 +284,7 @@ async function avanzar(
       // What is left of this turn, re-decided from where it stands: the bot is
       // pure, so a turn resumed on a later request plays out exactly as the
       // one that was interrupted would have.
-      const moves = movesDelTurno(estado, botsPorAsiento)
+      const moves = movesDelTurno(estado, botsPorAsiento, relatos)
       if (moves.length === 0) break
       const vencen = tiemposDeMoves(moves.length, plazo)
 

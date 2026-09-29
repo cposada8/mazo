@@ -332,6 +332,25 @@ ordered by them (`roadmap.md` has the briefs and the open questions):
 5. **Phase 51 — La galería de comodines.** Every comodín face, from the
    menu. Not a priority.
 
+**Milestone 6 — Bots de más nivel**, asked for by the owner on 2026-09-28
+(`roadmap.md` has the phases). The owner settled it: this order, today's
+bots stay as the *Fácil* level, the stronger play comes as new bots:
+
+1. ~~Phase 52 — Tomar solo lo que se baja.~~ ✅ Done, on dev: a bajado bot
+   no longer takes a descarte card it will not put down.
+2. ~~Phase 53 — El banco de pruebas.~~ ✅ Done, on dev: `npm run torneo`.
+3. ~~Phase 54 — Un piso más alto.~~ ✅ Done, on dev: El Calculador, the
+   first bot above *Fácil* — 33% of wins against the best *Fácil*'s 17%.
+4. ~~Phase 55 — La memoria de la mesa.~~ ✅ Done, on dev: bots receive the
+   relatos everywhere; denying the next seat was measured and hurts.
+5. ~~Phase 56 — El Tahúr.~~ ✅ Done, on dev: simulates each discard a
+   hundred ways; 32% of wins against El Calculador's 18%.
+6. ~~Phase 57 — Niveles en la sala.~~ ✅ Done, on dev: Fácil / Normal /
+   Difícil in the lobby's picker. The default seat is still Fácil.
+
+**Milestone 6 is done.** Open: which level a new bot seat starts at (the
+owner's call), and the comodín gallery (Phase 51), not a priority.
+
 Both 47 and 48 are settled with the owner; nothing is waiting on a question.
 The *After* list in `roadmap.md` stays unordered behind them.
 

@@ -12,6 +12,8 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Bundled by `npm run bots:worker` (Phase 56).
+    "public/bots.worker.js",
   ]),
 ]);
 

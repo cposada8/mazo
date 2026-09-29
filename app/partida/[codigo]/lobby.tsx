@@ -26,7 +26,7 @@ import {
 import Link from 'next/link'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useIdentidad } from '@/components/identidad'
-import { BOTS, BOT_POR_DEFECTO, botPorId } from '@/lib/bots'
+import { BOTS, BOT_POR_DEFECTO, NOMBRE_DE_NIVEL, type Nivel, botPorId } from '@/lib/bots'
 import {
   CATALOGO,
   MAX_PLAYERS,
@@ -367,6 +367,8 @@ export function Lobby({
  * else reads the same two lines without the picker: knowing who you are up
  * against is not a privilege of the host.
  */
+const NIVELES: readonly Nivel[] = ['facil', 'normal', 'dificil']
+
 function QuienJuega({
   bot,
   puedeElegir,
@@ -388,11 +390,18 @@ function QuienJuega({
             aria-label={`Quién juega en este asiento, ahora ${quien.nombre}`}
             className="focus-visible:ring-ring w-full appearance-none truncate rounded-sm bg-transparent pr-5 focus-visible:ring-2 focus-visible:outline-none"
           >
-            {BOTS.map((otro) => (
-              <option key={otro.id} value={otro.id}>
-                {otro.nombre}
-              </option>
-            ))}
+            {/* Grouped by level (Phase 57), easiest first. */}
+            {NIVELES.filter((nivel) => BOTS.some((otro) => otro.nivel === nivel)).map(
+              (nivel) => (
+                <optgroup key={nivel} label={NOMBRE_DE_NIVEL[nivel]}>
+                  {BOTS.filter((otro) => otro.nivel === nivel).map((otro) => (
+                    <option key={otro.id} value={otro.id}>
+                      {otro.nombre}
+                    </option>
+                  ))}
+                </optgroup>
+              ),
+            )}
           </select>
           <ChevronDown
             className="text-muted-foreground pointer-events-none absolute right-0 size-3.5"
@@ -403,7 +412,7 @@ function QuienJuega({
         <span className="truncate">{quien.nombre}</span>
       )}
       <span className="text-muted-foreground truncate text-xs">
-        {quien.descripcion}
+        <span className="font-medium">{NOMBRE_DE_NIVEL[quien.nivel]}</span> · {quien.descripcion}
       </span>
     </span>
   )

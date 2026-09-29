@@ -29,6 +29,7 @@ import {
   cyclicDistance,
   isComodin,
   rankAfter,
+  aplicarEnVista,
   probarEnMesa,
   puntosDeCarta,
 } from '@/lib/engine'
@@ -120,15 +121,35 @@ export function buscarDescarga(vista: VistaDeAsiento): Move | null {
   return null
 }
 
-/** Whether the descarte's top card could be placed on the mesa this very turn. */
+/** More unloads than a hand can hold; a stop against a trial that loops. */
+const MAX_DESCARGAS = 40
+
+/**
+ * Whether taking the descarte's top card ends with it on the mesa this very
+ * turn — asked by playing the turn out, not by asking whether it fits.
+ *
+ * "It fits somewhere" was the old question and it was not enough: the unloads
+ * go card by card, so another card in hand could take the very slot the new
+ * one was taken for, or the new one could be all that is left when the turn
+ * has to end in a discard. Either way the bot took a card it then kept or
+ * threw straight back, which reads at the table as a bot still collecting
+ * after it has bajado. Every unload depends only on the view and the hand,
+ * so the trial here is the turn the bot will really play.
+ */
 export function ligaDeInmediato(vista: VistaDeAsiento, arriba: Card): boolean {
-  const trasTomarla: VistaDeAsiento = {
-    ...vista,
-    fase: 'act',
-    mano: [...vista.mano, arriba],
-    descarte: vista.descarte.slice(0, -1),
+  const tomada = aplicarEnVista(vista, { type: 'robar', de: 'descarte' })
+  if (!tomada.ok) return false
+
+  let actual = tomada.vista
+  for (let i = 0; i < MAX_DESCARGAS; i++) {
+    if (!actual.mano.some((card) => card.id === arriba.id)) return true
+    const descarga = buscarDescarga(actual)
+    if (!descarga) return false
+    const siguiente = aplicarEnVista(actual, descarga)
+    if (!siguiente.ok) return false
+    actual = siguiente.vista
   }
-  return ligaEnAlgunGrupo(trasTomarla, arriba) !== null
+  return false
 }
 
 /**

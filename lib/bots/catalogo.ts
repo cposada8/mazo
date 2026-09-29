@@ -7,11 +7,13 @@
  */
 
 import { type Bot } from './bot'
+import { calculador } from './calculador'
 import { codicioso } from './codicioso'
 import { memorioso } from './memorioso'
 import { paciente } from './paciente'
+import { tahur } from './tahur'
 
-export const BOTS: readonly Bot[] = [codicioso, paciente, memorioso]
+export const BOTS: readonly Bot[] = [codicioso, paciente, memorioso, calculador, tahur]
 
 /** What sits down when nobody chose: the one every other bot is measured against. */
 export const BOT_POR_DEFECTO = codicioso

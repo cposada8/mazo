@@ -17,6 +17,7 @@ import {
   type Card,
   type Rank,
   isComodin,
+  puntosDeCarta,
   rankAfter,
 } from '@/lib/engine'
 import {
@@ -55,6 +56,8 @@ export function buscarAgrupacion(
       ? [{ kind: 'escalera', tipo: contrato.escalera, cardIds: hand.map((card) => card.id) }]
       : null
   }
+
+  if (!podriaCumplir(hand, contrato)) return null
 
   const trios = candidatosTrio(hand)
   const escalas = candidatosEscala(hand)
@@ -98,6 +101,169 @@ export function buscarAgrupacion(
   if (cartasUsadas >= hand.length) return null
 
   return elegidas.map((candidato) => candidato.propuesta)
+}
+
+/**
+ * Every grouping that satisfies the contrato, up to `max` of them (Phase 54).
+ *
+ * `buscarAgrupacion` stops at the first one, and the *Fácil* bots keep it that
+ * way on purpose. A stronger bot wants to compare: the same hand can often
+ * meet the contrato several ways, and they leave very different hands behind.
+ * Minimum-size grupos only, like the first search — growing them is a
+ * separate step (`ampliarBajada`), because the strict bajada forbids it.
+ */
+export function todasLasAgrupaciones(
+  hand: readonly Card[],
+  contrato: Contrato,
+  max = 64,
+): Propuesta[][] {
+  if (contrato.escalera) {
+    const una = buscarAgrupacion(hand, contrato)
+    return una ? [una] : []
+  }
+
+  if (!podriaCumplir(hand, contrato)) return []
+
+  const trios = candidatosTrio(hand)
+  const escalas = candidatosEscala(hand)
+  if (trios.length < contrato.trios || escalas.length < contrato.escalas) return []
+
+  const encontradas: Propuesta[][] = []
+  const elegidas: Candidato[] = []
+  const usadas = new Set<string>()
+
+  const elegir = (restanTrios: number, restanEscalas: number, desde: number): void => {
+    if (encontradas.length >= max) return
+    if (restanTrios === 0 && restanEscalas === 0) {
+      encontradas.push(elegidas.map((candidato) => candidato.propuesta))
+      return
+    }
+
+    const pool = restanTrios > 0 ? trios : escalas
+    for (let i = desde; i < pool.length; i++) {
+      const candidato = pool[i]
+      if (chocaCon(candidato, usadas)) continue
+
+      elegidas.push(candidato)
+      for (const id of candidato.ids) usadas.add(id)
+
+      if (restanTrios > 0) {
+        elegir(restanTrios - 1, restanEscalas, restanTrios - 1 > 0 ? i + 1 : 0)
+      } else {
+        elegir(0, restanEscalas - 1, i + 1)
+      }
+
+      elegidas.pop()
+      for (const id of candidato.ids) usadas.delete(id)
+    }
+  }
+
+  elegir(contrato.trios, contrato.escalas, 0)
+  return encontradas
+}
+
+/**
+ * The same bajada with every card that can join its grupos added in (Phase
+ * 54) — for the libre bajada, where a trío may go down with four cards and an
+ * escala with six. What goes down now is points out of hand this turn, when
+ * the mesa is still closed to agregar; and a bajada that takes the whole hand
+ * goes out on the spot.
+ */
+export function ampliarBajada(
+  propuestas: readonly Propuesta[],
+  hand: readonly Card[],
+): Propuesta[] {
+  const porId = new Map(hand.map((card) => [card.id, card]))
+  const grupos = propuestas.map((propuesta) => ({
+    propuesta,
+    cards: propuesta.cardIds.map((id) => porId.get(id)!),
+  }))
+  const usadas = new Set(propuestas.flatMap((propuesta) => propuesta.cardIds))
+
+  // The heaviest first: if two cards compete for one place, keep the cheap one.
+  const restantes = hand
+    .filter((card) => !usadas.has(card.id))
+    .sort((a, b) => puntosDeCarta(b) - puntosDeCarta(a))
+
+  let cambio = true
+  while (cambio) {
+    cambio = false
+    for (const card of restantes) {
+      if (usadas.has(card.id)) continue
+      for (const grupo of grupos) {
+        const ampliado = armarGrupo([...grupo.cards, card], 'layDown')
+        if (!ampliado || ampliado.kind !== grupo.propuesta.kind) continue
+        grupo.propuesta = ampliado
+        grupo.cards = [...grupo.cards, card]
+        usadas.add(card.id)
+        cambio = true
+        break
+      }
+    }
+  }
+
+  return grupos.map((grupo) => grupo.propuesta)
+}
+
+/**
+ * A quick count that rules out a contrato the hand cannot possibly meet
+ * (Phase 56). Never says no to a hand that can — it only spares the search,
+ * which El Tahúr's imagined rondas run hundreds of thousands of times:
+ *
+ * - a trío takes at least two real cards of its rango, and at most one
+ *   comodín, so each rango gives at most `cartas / 2` tríos, and all of them
+ *   together at most the tríos of three real cards plus one per comodín;
+ * - an escala takes at least three real cards of one pinta inside four
+ *   consecutive rangos, so without such a window there is none.
+ */
+export function podriaCumplir(hand: readonly Card[], contrato: Contrato): boolean {
+  if (hand.length < contrato.trios * TRIO_MIN_SIZE + contrato.escalas * ESCALA_MIN_SIZE) {
+    return false
+  }
+
+  // Plain arrays and bit masks: this runs far more often than anything else.
+  let comodines = 0
+  const porRango = new Array<number>(RANKS.length).fill(0)
+  const mascaras = [0, 0, 0, 0]
+  for (const card of hand) {
+    if (card.kind === 'comodin') {
+      comodines++
+      continue
+    }
+    const indice = INDICE_DE_RANGO[card.rank]
+    porRango[indice]++
+    mascaras[INDICE_DE_PALO[card.suit]] |= 1 << indice
+  }
+
+  if (contrato.trios > 0) {
+    let dePares = 0
+    let deTres = 0
+    for (const cuantas of porRango) {
+      dePares += cuantas >> 1
+      deTres += Math.floor(cuantas / 3)
+    }
+    if (Math.min(dePares, deTres + comodines) < contrato.trios) return false
+  }
+
+  if (contrato.escalas > 0 && !mascaras.some(tieneVentana)) return false
+
+  return true
+}
+
+const INDICE_DE_RANGO = Object.fromEntries(RANKS.map((rank, i) => [rank, i])) as Record<Rank, number>
+const INDICE_DE_PALO = Object.fromEntries(SUITS.map((suit, i) => [suit, i])) as Record<string, number>
+
+/** Three of four consecutive rangos, around the ring, in one pinta's mask. */
+function tieneVentana(mascara: number): boolean {
+  if (mascara === 0) return false
+  const doble = mascara | (mascara << RANKS.length)
+  for (let start = 0; start < RANKS.length; start++) {
+    const ventana = (doble >> start) & 0b1111
+    // Popcount of four bits.
+    const cuantas = (ventana & 1) + ((ventana >> 1) & 1) + ((ventana >> 2) & 1) + ((ventana >> 3) & 1)
+    if (cuantas >= ESCALA_MIN_SIZE - 1) return true
+  }
+  return false
 }
 
 export function puedeBajarse(hand: readonly Card[], contrato: Contrato): boolean {
