@@ -2246,7 +2246,25 @@ A sin repetir», the relato «bajó la escalera y ganó la ronda», and «Cómo 
 juega» has a section on the four levels. carioca-rules.md retires its
 Pending entry for them.
 
-### Phase 49 — La galería de comodines
+### Phase 49 — La tabla por puestos ✅
+Asked for by the owner on 2026-09-28 and put **ahead of the gallery**: the
+scoreboard (*el marcador*) should read as a ranking, not a seating chart.
+
+- **The columns go in standing order**: whoever is winning — fewest points —
+  is the first column, second place the second, and so on. If you are in
+  third, you are the third column. Ties keep seat order and share a puesto.
+- **Your own column is picked out**, from your own app: every seat sees the
+  same order, and each sees itself highlighted.
+
+**Done.** `Marcador` orders its columns with `columnasPorPuesto` (fewest
+points first, ties in seat order, 1°, 1°, 3° for a tie) and puts the puesto
+above each name once a ronda has ended — before that there is nothing to
+rank, so the order is the seats'. Every row follows its player's column. The
+seat looking at it (`yo`, from the vista's `asiento`) gets an amber tint down
+its column and an amber name; the watch page at `/mesa`, which belongs to no
+seat, highlights nobody.
+
+### Phase 50 — La galería de comodines
 The comodines wear photos from `public/candidatos/comodines` since Phase 29 —
 the owner's pets among them — and a ronda only ever shows a few. **A small
 screen from the partida's menu that shows every face in the gallery**, so

@@ -442,7 +442,7 @@ function MenuDePartida({
           {partida.config.comodines ? 'con comodines' : 'sin comodines'} ·{' '}
           {partida.config.bajada === 'estricta' ? 'bajada estricta' : 'bajada libre'}
         </p>
-        <Marcador partida={partida} nombres={nombres} />
+        <Marcador partida={partida} nombres={nombres} yo={partida.asiento} />
 
         <div className="mt-4 flex flex-col gap-2">
           <p className="text-muted-foreground text-xs tracking-wide uppercase">
@@ -1035,6 +1035,7 @@ function FinDeRonda({
         nombres={nombres}
         destacar={partida.historial.length - 1}
         siguiente
+        yo={partida.asiento}
       />
 
       <div className="flex flex-col gap-2">
@@ -1212,7 +1213,7 @@ function FinDePartida({
         </p>
       </div>
 
-      <Marcador partida={partida} nombres={nombres} />
+      <Marcador partida={partida} nombres={nombres} yo={partida.asiento} />
 
       <div className="flex flex-col gap-2">
         <button
