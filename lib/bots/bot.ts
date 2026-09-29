@@ -10,6 +10,7 @@
  */
 
 import { type Move, type VistaDeAsiento } from '@/lib/engine'
+import type { Relato } from '@/lib/relato'
 
 export type Bot = {
   /** Stable across releases: it is stored with the partida. */
@@ -17,6 +18,10 @@ export type Bot = {
   readonly nombre: string
   /** One line, shown where the host seats it. Said as a player would say it. */
   readonly descripcion: string
-  /** One legal move for the seat whose turn it is, decided from its view. */
-  decidir(vista: VistaDeAsiento): Move
+  /**
+   * One legal move for the seat whose turn it is, decided from its view — and,
+   * for a bot that remembers (Phase 55), the ronda's relatos: what everybody
+   * at the table watched happen. A bot that ignores them plays as before.
+   */
+  decidir(vista: VistaDeAsiento, relatos?: readonly Relato[]): Move
 }

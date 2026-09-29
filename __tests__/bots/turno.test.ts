@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { movesDelTurno, tiemposDeMoves } from '@/lib/bots'
+import { codicioso, movesDelTurno, tiemposDeMoves } from '@/lib/bots'
 import { aplicarEnPartida, startPartida } from '@/lib/engine'
 
 /**
@@ -95,6 +95,28 @@ describe('tiemposDeMoves', () => {
     const tiempos = tiemposDeMoves(7, 3000)
     for (let i = 1; i < tiempos.length; i++) {
       expect(tiempos[i]).toBeGreaterThan(tiempos[i - 1])
+    }
+  })
+})
+
+describe('the relatos reach the bot (Phase 55)', () => {
+  it('hands the ronda relatos to the bot deciding the turn', () => {
+    const partida = startPartida({ players: 2, seed: 'relatos' })
+    const vistos: unknown[] = []
+    // El Codicioso, listened in on: the catalog is the only way to seat a bot.
+    const espiado = codicioso as { decidir: typeof codicioso.decidir }
+    const original = espiado.decidir
+    espiado.decidir = (vista, relatos) => {
+      vistos.push(relatos)
+      return original(vista)
+    }
+    try {
+      const relatos = [{ tipo: 'mazo' as const, seat: 1 }]
+      movesDelTurno(partida, ['codicioso', 'codicioso'], relatos)
+      expect(vistos.length).toBeGreaterThan(0)
+      expect(vistos.every((r) => r === relatos)).toBe(true)
+    } finally {
+      espiado.decidir = original
     }
   })
 })

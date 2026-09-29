@@ -23,6 +23,7 @@ import {
   startPartida,
   vistaDeAsiento,
 } from '@/lib/engine'
+import { type Relato, relatar } from '@/lib/relato'
 import type { Bot } from './bot'
 import { TOPE_DE_MOVIMIENTOS_POR_TURNO, TOPE_DE_TURNOS_POR_RONDA } from './mesa'
 
@@ -165,6 +166,8 @@ function jugarUna(
   porId: Map<string, Acumulado>,
 ): { partida: PartidaState; terminada: boolean } {
   let partida = startPartida({ players: mesa.length, seed: semilla, config })
+  // The ronda's relatos, fed to the bots the way both homes feed them.
+  let relatos: Relato[] = []
 
   while (partida.ronda) {
     const ronda = partida.ronda
@@ -192,7 +195,7 @@ function jugarUna(
       }
 
       const vista = vistaDeAsiento(actual, seat)
-      const move = bot.decidir(vista)
+      const move = bot.decidir(vista, relatos)
       if (yaBajado && move.type === 'robar' && move.de === 'descarte') {
         // Forced when the stock is gone and the descarte is all there is.
         const forzada = vista.stock === 0 && vista.descarte.length <= 1
@@ -205,12 +208,15 @@ function jugarUna(
         acumulado.sumaDeTurnosDeBajada += turno
       }
 
+      const cuento = relatar(move, actual)
       const result = aplicarEnPartida(partida, move)
       if (!result.ok) {
         faltas.push({ tipo: 'RECHAZO', bot: bot.id, semilla, code: result.code, move })
         return { partida, terminada: false }
       }
       partida = result.state
+      if (partida.indiceContrato !== contrato) relatos = []
+      else if (cuento) relatos = [...relatos, cuento]
     }
 
     if (tomada) {
@@ -233,4 +239,17 @@ function jugarUna(
   }
 
   return { partida, terminada: true }
+}
+
+/**
+ * The same bot without its memory: fed no relatos, it plays as it would have
+ * before Phase 55. For measuring what remembering is worth.
+ */
+export function sinMemoria(bot: Bot): Bot {
+  return {
+    id: `${bot.id}-sin-memoria`,
+    nombre: `${bot.nombre} (sin memoria)`,
+    descripcion: bot.descripcion,
+    decidir: (vista) => bot.decidir(vista),
+  }
 }

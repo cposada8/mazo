@@ -5,12 +5,13 @@
  *   npm run torneo -- --bots codicioso,paciente      # just these, rotated
  *   npm run torneo -- --partidas 1000 --asientos 3
  *   npm run torneo -- --estricta --sin-comodines --semilla otra
+ *   npm run torneo -- --bots calculador,calculador-sin-memoria
  *
  * Same options, same numbers: the partidas are seeded.
  */
 
 import { parseArgs } from 'node:util'
-import { BOTS, botPorId, jugarTorneo } from '@/lib/bots'
+import { BOTS, botPorId, jugarTorneo, sinMemoria } from '@/lib/bots'
 import { CONFIG_POR_DEFECTO, type PartidaConfig } from '@/lib/engine'
 
 const { values } = parseArgs({
@@ -24,14 +25,19 @@ const { values } = parseArgs({
   },
 })
 
+// `calculador-sin-memoria` is El Calculador fed no relatos (Phase 55).
+const SUFIJO = '-sin-memoria'
 const ids = values.bots?.split(',').map((id) => id.trim()).filter(Boolean)
-for (const id of ids ?? []) {
+const base = (id: string) => (id.endsWith(SUFIJO) ? id.slice(0, -SUFIJO.length) : id)
+for (const id of (ids ?? []).map(base)) {
   if (!BOTS.some((bot) => bot.id === id)) {
     console.error(`No hay un bot «${id}». Los que hay: ${BOTS.map((bot) => bot.id).join(', ')}`)
     process.exit(1)
   }
 }
-const bots = ids ? ids.map((id) => botPorId(id)) : BOTS
+const bots = ids
+  ? ids.map((id) => (id.endsWith(SUFIJO) ? sinMemoria(botPorId(base(id))) : botPorId(id)))
+  : BOTS
 
 const config: PartidaConfig = {
   ...CONFIG_POR_DEFECTO,

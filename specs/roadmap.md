@@ -2398,13 +2398,42 @@ is: without points in the discard it drops to 26.2%; without the gift rule
 to 31.8%; with the first bajada instead of the best to 32.6%; without the
 pressure scaling to 32.8%. Points were the big miss.
 
-### Phase 55 — La memoria de la mesa
+### Phase 55 — La memoria de la mesa ✅
 The relatos become the bots' second input — public by construction, so
 reading them is not peeking. From them, a running picture of every seat:
 what it took off the descarte, what it let pass, how many cards it holds.
 Two plays fall out directly: **do not throw the next seat what it is
 collecting**, and **do not chase what the previous seat is about to throw**.
 El Memorioso grows into this, or a new bot carries it.
+
+**Done — the memory, and a measured no on using it for defence.**
+`Bot.decidir(vista, relatos?)` now receives the ronda's relatos in all three
+places a bot plays: the server's loop, the browser's (a ref, so the turn is
+not rescheduled on every relato) and the bench. `leerMemoria`
+(`lib/bots/memoria.ts`) turns them into, per other seat, the cards it took
+off the descarte, let pass, and threw — a pass worked out from order: a
+draw from the mazo while a known card lies face up. A bot's own relatos are
+left out on purpose: the server can resume a half-played bot turn, and
+nothing the turn adds may change what it decides.
+
+Then measured, El Calculador against itself fed no relatos (1,600 seats
+each, four at a table), holding back what the next seat was seen collecting:
+
+| Weight of the next seat's interest | With memory | Without |
+| --- | --- | --- |
+| 0.3 | 24.7% | 25.3% |
+| 1 | 23.0% | 27.0% |
+| 3 | 21.8% | 28.2% |
+
+**Denying the next seat makes the bot worse**, and more so the harder it
+denies: a card kept to starve the next seat is points kept in hand and a
+hand that moves slower, and the next seat can always draw from the mazo.
+Counting cards the way El Memorioso does was tried on the same bot too, and
+changed nothing (32.6% against the strongest *Fácil*, 33.3% without). So
+El Calculador does not read the relatos, and the defensive heuristic is not
+shipped. What the memory is for is Phase 56: a card somebody took off the
+descarte is *in their hand*, which is exactly what a bot that imagines the
+other hands needs to know.
 
 ### Phase 56 — El Tahúr
 A bot that simulates. For the three decisions of a turn — take the face-up

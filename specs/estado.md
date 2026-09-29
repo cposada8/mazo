@@ -341,7 +341,8 @@ bots stay as the *Fácil* level, the stronger play comes as new bots:
 2. ~~Phase 53 — El banco de pruebas.~~ ✅ Done, on dev: `npm run torneo`.
 3. ~~Phase 54 — Un piso más alto.~~ ✅ Done, on dev: El Calculador, the
    first bot above *Fácil* — 33% of wins against the best *Fácil*'s 17%.
-4. **Phase 55 — La memoria de la mesa.** The relatos as the bots' memory.
+4. ~~Phase 55 — La memoria de la mesa.~~ ✅ Done, on dev: bots receive the
+   relatos everywhere; denying the next seat was measured and hurts.
 5. **Phase 56 — El Tahúr.** A bot that simulates.
 6. **Phase 57 — Niveles en la sala.** Fácil / Normal / Difícil.
 

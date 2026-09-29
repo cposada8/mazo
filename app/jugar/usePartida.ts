@@ -137,6 +137,12 @@ export function usePartida(options: {
     partidaRef.current = partida
   }, [partida])
 
+  // The bots' memory of the ronda (Phase 55), read when a turn starts.
+  const relatosRef = useRef(relatos)
+  useEffect(() => {
+    relatosRef.current = relatos
+  }, [relatos])
+
   const mesa = useMesa({
     vista,
     relatos,
@@ -158,7 +164,7 @@ export function usePartida(options: {
     // coming back to a table that had moved on without you.
     if (resumen) return
 
-    const moves = movesDelTurno(estado, botsRef.current)
+    const moves = movesDelTurno(estado, botsRef.current, relatosRef.current)
     const tiempos = tiemposDeMoves(moves.length, segundosBot * 1000)
 
     const ids = moves.map((move, i) =>

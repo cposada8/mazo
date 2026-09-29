@@ -14,6 +14,10 @@
  * - **No gifts.** Only the next seat can take a discard; when that seat is
  *   bajado, a card that fits the mesa is a card it puts down.
  *
+ * It is handed the ronda's relatos like every bot since Phase 55 and does not
+ * read them: holding back what the next seat was seen collecting was measured
+ * and made it weaker (roadmap, Phase 55).
+ *
  * Everything it knows is in its seat's view, like every other bot.
  */
 

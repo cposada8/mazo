@@ -15,6 +15,7 @@ import {
   aplicarEnPartida,
   vistaDeAsiento,
 } from '@/lib/engine'
+import type { Relato } from '@/lib/relato'
 import { botPorId } from './catalogo'
 
 /** More moves than any legal turn can hold; a stop against a looping bot. */
@@ -31,6 +32,11 @@ const MAX_MOVES_POR_TURNO = 40
 export function movesDelTurno(
   partida: PartidaState,
   botsPorAsiento?: readonly (string | null | undefined)[],
+  /**
+   * The ronda's relatos as the turn starts (Phase 55). A bot reads only other
+   * seats' relatos, so the ones this turn adds would change nothing.
+   */
+  relatos: readonly Relato[] = [],
 ): Move[] {
   const ronda = partida.ronda
   if (!ronda || ronda.ganador !== null) return []
@@ -48,7 +54,7 @@ export function movesDelTurno(
     if (estado.historial.length !== partida.historial.length) break
 
     // The runner holds the full state; the bot only ever sees its view.
-    const move = bot.decidir(vistaDeAsiento(actual, seat))
+    const move = bot.decidir(vistaDeAsiento(actual, seat), relatos)
     const result = aplicarEnPartida(estado, move)
     if (!result.ok) break
 
