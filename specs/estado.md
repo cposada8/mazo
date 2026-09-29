@@ -332,6 +332,18 @@ ordered by them (`roadmap.md` has the briefs and the open questions):
 5. **Phase 51 — La galería de comodines.** Every comodín face, from the
    menu. Not a priority.
 
+**Milestone 6 — Bots de más nivel**, asked for by the owner on 2026-09-28
+(`roadmap.md` has the proposal; the owner sets the order):
+
+1. ~~Phase 52 — Tomar solo lo que se baja.~~ ✅ Done, on dev: a bajado bot
+   no longer takes a descarte card it will not put down.
+2. **Phase 53 — El banco de pruebas.** A tournament command to measure bots.
+3. **Phase 54 — Un piso más alto.** Best bajada, points under pressure, no
+   gifts to the next seat, the comodín economy.
+4. **Phase 55 — La memoria de la mesa.** The relatos as the bots' memory.
+5. **Phase 56 — El Tahúr.** A bot that simulates.
+6. **Phase 57 — Niveles en la sala.** Fácil / Normal / Difícil.
+
 Both 47 and 48 are settled with the owner; nothing is waiting on a question.
 The *After* list in `roadmap.md` stays unordered behind them.
 

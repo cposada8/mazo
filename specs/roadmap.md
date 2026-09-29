@@ -2285,6 +2285,90 @@ Not a priority.
 
 ---
 
+## Milestone 6 — Bots de más nivel
+
+*Asked for by the owner on 2026-09-28: «los actuales son bastante
+estúpidos, quiero bots de más nivel». Proposed order below; the owner sets
+it. The design rule from Phase 39 stands — a personality is a difference of
+strategy, never of competence — so what makes every bot less foolish goes
+into the shared floor, and only what is genuinely a style becomes a bot.*
+
+What the code shows today, beyond the bug that opened this milestone:
+
+- **The bajada is the first one found, not the best one.** `buscarAgrupacion`
+  stops at the first grouping that satisfies the contrato, whatever it leaves
+  in hand — and it will spend a comodín where a natural card would do.
+- **Points only break ties.** The discard throws the least *useful* card;
+  what it costs to be caught holding a K or an A only matters between equals,
+  and nothing scales that with how close the ronda is to ending.
+- **A discard never asks who it feeds.** Only the next seat can take it, and
+  when that seat is bajado a card that fits the mesa is a gift.
+- **No memory across turns**: who took what off the descarte, and what they
+  let pass, is public in the relatos and unused.
+
+### Phase 52 — Tomar solo lo que se baja ✅
+The owner, at the table: a bot already bajado took a card off the descarte
+that did it no good, as if still building grupos in hand. The draw asked
+only whether the card *fits* somewhere on the mesa; the turn then unloads
+card by card, so another card in hand could take the same slot (two 4♥, one
+escala), or the new card could be the one left over when the turn must end
+in a discard. It kept it or threw it straight back.
+
+**Done.** `ligaDeInmediato` now plays the rest of the turn against the
+view — take it, unload as the bot will — and says yes only if the card ends
+on the mesa. Over ~900 bot partidas of 2–5 seats, libre and estricta, with
+and without comodines: 17 such draws in 5,515 before, 0 in 5,307 after.
+
+### Phase 53 — El banco de pruebas
+Before making bots stronger, a way to tell that they are. `npm run torneo`
+plays N seeded partidas with seats rotated and reports, per bot, wins,
+points per seat, turn of bajada and rondas that stall — plus the invariants
+this milestone keeps finding by hand (no refused move, no bajado bot keeping
+a descarte card). Every later phase states its result against it.
+
+### Phase 54 — Un piso más alto
+Shared competence, so all three current bots improve together:
+- **The best bajada, not the first**: among the groupings the hand allows,
+  the one that leaves the lightest, most placeable hand — natural cards
+  before a comodín.
+- **Points in the discard, under pressure**: dumping expensive cards weighs
+  more as the ronda closes — someone bajado and nearly empty, the stock thin,
+  the rebarajadas spent.
+- **No gifts**: never throw a card that fits the mesa when the next seat is
+  bajado, unless nothing else can go.
+- **The comodín economy**: when 50 points in hand outweigh what holding it
+  buys.
+
+**Done when:** the new floor beats the old one clearly on the bench (the old
+bots kept as a reference opponent), with nothing stalling.
+
+### Phase 55 — La memoria de la mesa
+The relatos become the bots' second input — public by construction, so
+reading them is not peeking. From them, a running picture of every seat:
+what it took off the descarte, what it let pass, how many cards it holds.
+Two plays fall out directly: **do not throw the next seat what it is
+collecting**, and **do not chase what the previous seat is about to throw**.
+El Memorioso grows into this, or a new bot carries it.
+
+### Phase 56 — El Tahúr
+A bot that simulates. For the three decisions of a turn — take the face-up
+card or not, lay down now or wait, which card to throw — it deals the unseen
+cards to the other hands many times over (consistent with everything the
+seat knows) and plays each deal out quickly, keeping the choice that costs
+least on average. The engine is pure and fast enough for it; the budget is
+the bot's thinking time, and it must fit in the browser too, where a table
+of one person and bots is played.
+
+**Done when:** it clearly beats every other bot on the bench, and the owner
+finds it hard to beat at the table.
+
+### Phase 57 — Niveles en la sala
+The lobby says how strong each bot is — *Fácil*, *Normal*, *Difícil* — next
+to its name and description, and the default seat is whatever level the
+owner chooses. The old, simple bots can stay as *Fácil*.
+
+---
+
 ## After
 
 Not scheduled, and not to be started before Milestone 3 — online play:
