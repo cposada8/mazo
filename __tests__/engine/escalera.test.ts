@@ -19,9 +19,9 @@ import { c, ids, makeRonda, n } from './helpers'
  *
  * The thirteen rangos, 2 through A, none repeated, laid down whole to win.
  * Sucia: pinta does not matter. Pintada: red and black alternate along 2 → A,
- * either colour first. Color: all red or all black. Real: one pinta. At most
- * one comodín, standing for the missing rango in whatever colour its place
- * needs.
+ * either colour first. Color: all red or all black. Real: one pinta. Any
+ * number of comodines, each standing for a missing rango in whatever colour
+ * its place needs.
  */
 
 const ROJO: readonly Suit[] = ['hearts', 'diamonds']
@@ -72,11 +72,16 @@ describe('escalera sucia', () => {
     if (check.ok) expect(isComodin(check.cards[5])).toBe(true)
   })
 
-  it('refuses two comodines at lay-down', () => {
+  it('takes as many comodines as there are gaps — not only one', () => {
+    // The owner's rule for escaleras: every comodín in hand may play.
     const dos = conComodin(conComodin(mezclada, 5), 9)
-    const check = ordenarEscalera(dos, 'sucia')
-    expect(check.ok).toBe(false)
-    if (!check.ok) expect(check.code).toBe('COMODINES')
+    const check = ordenarEscalera(barajar(dos), 'sucia')
+    expect(check.ok).toBe(true)
+    if (check.ok) {
+      expect(isComodin(check.cards[5])).toBe(true)
+      expect(isComodin(check.cards[9])).toBe(true)
+    }
+    expect(ordenarEscalera(conComodin(conComodin(conComodin(mezclada, 0), 6), 12), 'sucia').ok).toBe(true)
   })
 })
 
@@ -97,9 +102,11 @@ describe('escalera pintada', () => {
     if (!check.ok) expect(check.code).toBe('NO_INTERCALA')
   })
 
-  it('lets the comodín be whatever colour its place needs', () => {
+  it('lets each comodín be whatever colour its place needs', () => {
     expect(ordenarEscalera(conComodin(empiezaRojo, 0), 'pintada').ok).toBe(true)
     expect(ordenarEscalera(conComodin(empiezaNegro, 7), 'pintada').ok).toBe(true)
+    // Two, side by side: one red place and one black place.
+    expect(ordenarEscalera(conComodin(conComodin(empiezaRojo, 3), 4), 'pintada').ok).toBe(true)
   })
 
   it('is not a sucia: mixed colours without alternation fail', () => {
@@ -203,6 +210,7 @@ describe('cubiertasDeEscalera', () => {
     const doce = escalera(() => 'hearts').slice(0, 12)
     expect(cubiertasDeEscalera(doce, 'real')).toBe(12)
     expect(cubiertasDeEscalera([...doce, c()], 'real')).toBe(13)
+    expect(cubiertasDeEscalera([...doce.slice(0, 11), c(), c()], 'real')).toBe(13)
     // Two of the same rango cover one place.
     expect(cubiertasDeEscalera([n('7', 'hearts'), n('7', 'spades')], 'sucia')).toBe(1)
   })

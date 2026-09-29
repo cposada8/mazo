@@ -13,9 +13,10 @@
  * | color | all red (♥ ♦) or all black (♠ ♣) |
  * | real | all one pinta |
  *
- * At most one comodín, as in every bajada (carioca-rules.md). It stands for
- * the one rango missing, and takes whatever colour or pinta its place calls
- * for — so it never breaks an alternation or a colour, it only fills a gap.
+ * Any number of comodines — the exception to the one-per-grupo rule of every
+ * other bajada, settled with the owner. Each stands for one missing rango and
+ * takes whatever colour or pinta its place calls for — so a comodín never
+ * breaks an alternation or a colour, it only fills a gap.
  */
 
 import { type Card, type NormalCard, type Rank, type Suit, isComodin } from './cards'
@@ -46,7 +47,6 @@ const otro = (color: Color): Color => (color === 'rojo' ? 'negro' : 'rojo')
 
 export type EscaleraErrorCode =
   | 'LARGO'
-  | 'COMODINES'
   | 'RANGO_REPETIDO'
   | 'FALTA_RANGO'
   | 'NO_INTERCALA'
@@ -83,9 +83,6 @@ export function ordenarEscalera(
   }
 
   const comodines = cards.filter(isComodin)
-  if (comodines.length > 1) {
-    return fail('COMODINES', `at most one comodín at lay-down, got ${comodines.length}`)
-  }
 
   const porRango = new Map<Rank, NormalCard>()
   for (const card of cards) {
@@ -101,8 +98,11 @@ export function ordenarEscalera(
     return fail('FALTA_RANGO', `missing ${faltan.join(', ')}`)
   }
 
+  // Thirteen cards with no rango repeated means exactly one comodín per gap;
+  // they are handed out to the gaps in order.
+  let siguiente = 0
   const ordenadas: Card[] = ORDEN_DE_ESCALERA.map(
-    (rank) => porRango.get(rank) ?? comodines[0],
+    (rank) => porRango.get(rank) ?? comodines[siguiente++],
   )
 
   const reales = ordenadas
@@ -110,6 +110,9 @@ export function ordenarEscalera(
     .filter((entrada): entrada is { card: NormalCard; posicion: number } =>
       !isComodin(entrada.card),
     )
+
+  // Nothing real to hold a colour against: every tipo is satisfied.
+  if (reales.length === 0) return { ok: true, cards: ordenadas }
 
   switch (tipo) {
     case 'sucia':
@@ -163,7 +166,7 @@ export function rangoDeEscaleraEn(posicion: number): Rank {
 /**
  * How many of the thirteen places a hand already covers, for the best
  * escalera of this tipo it could still become — the measure a player (or a
- * bot) is trying to push to 13. A comodín covers one place.
+ * bot) is trying to push to 13. Each comodín covers one place.
  *
  * For the tipos with a colour rule, every way the escalera could turn out is
  * tried — each pinta for the real, each colour for the color, each starting
@@ -173,7 +176,7 @@ export function cubiertasDeEscalera(
   cards: readonly Card[],
   tipo: TipoDeEscalera,
 ): number {
-  const comodin = cards.some(isComodin) ? 1 : 0
+  const comodin = cards.filter(isComodin).length
   const reales = cards.filter((card): card is NormalCard => !isComodin(card))
 
   const cubre = (sirve: (card: NormalCard) => boolean) => {

@@ -554,8 +554,10 @@ in that fixed order (not around the ring an escala uses).
   There is no discard after it and no mesa before it: in an escalera ronda
   nobody arms grupos, and every turn is draw and discard until someone lays
   one down (or the ronda closes en tablas).
-- **At most one comodín**, the rule every bajada already has. It stands for
-  the one rango missing, in whatever colour or pinta its place calls for.
+- **Any number of comodines** — the one exception to *at most one comodín*
+  at lay-down, settled with the owner after Phase 48 first shipped with one.
+  Each stands for one missing rango, in whatever colour or pinta its place
+  calls for.
 
 | # | Escalera | Besides the thirteen rangos |
 | --- | --- | --- |

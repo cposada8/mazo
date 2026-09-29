@@ -249,8 +249,9 @@ export function ComoSeJuega({
           pie="Pintada: 2 rojo, 3 negro, 4 rojo… hasta el A"
         />
         <p className="text-muted-foreground">
-          Se puede usar <b>un comodín</b>: toma el lugar de la carta que falta,
-          del color o la pinta que ese lugar pida.
+          Aquí sirven <b>todos los comodines que tengas</b>, no solo uno: cada
+          uno toma el lugar de una carta que falta, del color o la pinta que
+          ese lugar pida.
         </p>
       </Seccion>
 
