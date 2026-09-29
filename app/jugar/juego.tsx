@@ -890,13 +890,17 @@ function Boton({
       onClick={onClick}
       disabled={disabled}
       className={cn(
-        'rounded-full px-3 py-[0.45rem] text-xs font-semibold shadow-[0_2px_6px_rgba(0,0,0,0.45)] transition-[opacity,transform] active:scale-95 disabled:opacity-40 disabled:shadow-none',
+        'rounded-full px-3 py-[0.45rem] text-xs font-semibold shadow-[0_2px_6px_rgba(0,0,0,0.45)] transition-[opacity,transform] active:scale-95 disabled:shadow-none',
         // The turn's moves are the one thing on the table meant to be
         // pressed, and they look it: amber and raised, like the chips of
         // the game rather than like a form's buttons (Phase 46).
-        principal
-          ? 'bg-linear-to-b from-amber-300 to-amber-500 text-amber-950'
-          : 'bg-stone-900/85 text-tinta ring-1 ring-white/15',
+        // Not yet possible reads as grey, not as a faded amber: a dimmed
+        // gold looks like a mistake rather than like «not yet».
+        disabled
+          ? 'bg-stone-900/70 text-tinta-tenue ring-1 ring-white/10'
+          : principal
+            ? 'bg-linear-to-b from-amber-300 to-amber-500 text-amber-950'
+            : 'bg-stone-900/85 text-tinta ring-1 ring-white/15',
       )}
     >
       {children}

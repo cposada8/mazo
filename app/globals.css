@@ -226,6 +226,8 @@
      */
     --linea-mano: 1.75rem;
     --zona-mano: calc(var(--carta-md) + var(--linea-mano) + 0.5rem + 1.5cqh);
+    /* The table's voice, one pill tall, right above your hand. */
+    --linea-relato: calc(var(--texto-mesa) * 1.4 + 0.5rem);
     /* The far edge's seats: a ficha and a name under it. */
     --banda-arriba: calc(var(--ficha) + var(--texto-mesa) * 1.5 + 1.35rem);
   }
@@ -267,6 +269,10 @@
   .zona-mano {
     height: var(--zona-mano);
   }
+  .linea-relato {
+    bottom: var(--zona-mano);
+    height: var(--linea-relato);
+  }
 
   /*
    * The mesa is whatever the seats leave free: below the far edge's row of
@@ -276,7 +282,7 @@
    */
   .carril-mesa {
     top: var(--banda-arriba);
-    bottom: 0.25rem;
+    bottom: calc(var(--linea-relato) + 0.25rem);
     left: 5cqw;
     right: 5cqw;
   }

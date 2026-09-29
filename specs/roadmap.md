@@ -2105,10 +2105,14 @@ What changed:
   grupo fits, wrapped. Phase 45's step table stays only for the final-mesa
   snapshot. No titles on the live mesa: the cards say what they said. The
   contract name is printed faintly on the felt behind the grupos.
-- **Your side has no panel.** Piles on the left — drawing is your move, so
-  they are under your hand — the hand centred on the felt's near edge, and
-  the turn's buttons under the right thumb, amber and raised. The guía and
-  the relato share the one line above the hand, which retires the info strip.
+- **Your side has no panel, and three clusters instead** (revised after
+  the owner's first look on the phone, which found the controls scattered):
+  where you draw — mazo, descarte, and «Ver» for the descarte right above
+  the pile it opens, never on it; your hand, with its count and the
+  arranging controls on the hand's own top-left corner; and the turn's
+  buttons under the right thumb, grey until they can be pressed. The guía
+  and the relato are the table's voice: one pill centred on the felt right
+  above the hand. Rivals' names dropped a size.
 - **Card backs look printed**, and a selected card lifts with a blue ring
   (gold stays «new»).
 

@@ -340,7 +340,7 @@ export function Asiento({
 
       <span
         className={cn(
-          'max-w-full rounded-full px-[0.45rem] py-[0.1rem] text-center text-[var(--texto-mesa,0.75rem)] leading-tight font-medium',
+          'max-w-full rounded-full px-[0.45rem] py-[0.1rem] text-center text-[calc(var(--texto-mesa,0.75rem)*0.82)] leading-tight font-medium',
           lateral ? 'line-clamp-2 rounded-[0.6rem] px-[0.3rem] text-balance' : 'truncate',
           esSuTurno ? 'bg-amber-400 text-amber-950' : 'bg-black/55 text-tinta-suave',
         )}
@@ -586,10 +586,6 @@ export function Mano({
       <div
         className={cn(
           'flex items-start gap-3 overflow-x-auto pt-2',
-          // On the table the hand sits centred on its edge, the way it is
-          // held; `safe` keeps a hand wider than the screen scrollable from
-          // its first card rather than cut off on the left.
-          soloCartas && 'justify-center-safe',
         )}
       >
         {secciones.map((seccion) => {
@@ -907,19 +903,50 @@ export function Mesa({
         turn's buttons under the right thumb. No panel of its own — the
         cards lie on the felt's near edge, which is where a hand is held.
       */}
+      {/*
+        The table's voice (Phase 46): what to do now, or what just happened,
+        in one pill on the felt right above your hand. It is the table
+        talking — about the piles, the mesa and the rivals as much as about
+        your cards — so it belongs to the felt, centred, and to no cluster.
+      */}
+      <div className="linea-relato pointer-events-none absolute inset-x-0 flex justify-center px-[16cqw]">
+        <Relato guia={guia} relatoLinea={relatoLinea} onVerHistorial={onVerHistorial} />
+      </div>
+
+      {/*
+        Your side of the table, in three clusters, each holding what belongs
+        to it (Phase 46):
+        - where you draw: the mazo, the descarte, and the peek at the
+          descarte right above the pile it opens — above it, not on it, so
+          reaching for a look never draws a card;
+        - your hand, with its count and the arranging controls sitting on
+          the hand's own top-left corner, however wide the hand is;
+        - the turn's buttons, under the right thumb.
+      */}
       <div
         data-destino={asiento}
         className="zona-mano absolute inset-x-0 bottom-0 flex items-end gap-[2.5cqw] px-[2.5cqw] pb-[1.5cqh]"
       >
-        <div className="flex min-w-0 flex-1 flex-col">
-          {/*
-            One line over the hand for everything said in words: your count
-            and the arranging controls on the left, and on the right what to
-            do now — or what just happened — with the peek at the descarte.
-            It used to be a strip of its own along the felt (Phase 40–45);
-            here it costs no height the hand was not already spending.
-          */}
-          <div className="flex min-w-0 items-center gap-2">
+        <div className="flex shrink-0 flex-col items-end gap-1">
+          {onVerDescarte && state.descarte.length > 0 && (
+            <button
+              type="button"
+              onClick={onVerDescarte}
+              title="Ver todas las cartas del descarte"
+              className="flex items-center gap-1 rounded-full bg-black/45 py-0.5 pr-2 pl-1.5 text-[var(--texto-mesa,0.75rem)] text-tinta-suave ring-1 ring-white/10 hover:bg-black/60"
+            >
+              <Layers className="size-[1.1em] shrink-0" aria-hidden />
+              <span>Ver</span>
+              <span className="sr-only">
+                las {state.descarte.length} cartas del descarte
+              </span>
+            </button>
+          )}
+          <Pilas state={state} onRobar={onRobar} />
+        </div>
+
+        <div className="flex min-w-0 flex-1 justify-center">
+          <div className="flex max-w-full min-w-0 flex-col">
             <Mano
               soloCabecera
               cabecera={sobreLaMano}
@@ -931,27 +958,6 @@ export function Mesa({
               esTuTurno={esTuTurno}
               reloj={relojDeTuTurno}
             />
-            <Relato
-              guia={guia}
-              relatoLinea={relatoLinea}
-              onVerHistorial={onVerHistorial}
-            />
-            {onVerDescarte && state.descarte.length > 0 && (
-              <button
-                type="button"
-                onClick={onVerDescarte}
-                title="Ver todas las cartas del descarte"
-                className="flex shrink-0 items-center gap-1 rounded-full bg-black/45 py-0.5 pr-2 pl-1.5 text-[var(--texto-mesa,0.75rem)] text-tinta-suave ring-1 ring-white/10 hover:bg-black/60"
-              >
-                <Layers className="size-[1.1em] shrink-0" aria-hidden />
-                <span className="tabular-nums">{state.descarte.length}</span>
-                <span className="sr-only">cartas en el descarte, ver todas</span>
-              </button>
-            )}
-          </div>
-
-          <div className="flex min-w-0 items-end gap-[2.5cqw]">
-            <Pilas state={state} onRobar={onRobar} />
             <Mano
               soloCartas
               secciones={
@@ -985,7 +991,8 @@ function Relato({
   relatoLinea?: string
   onVerHistorial?: () => void
 }) {
-  const texto = 'min-w-0 flex-1 truncate text-right text-[var(--texto-mesa,0.75rem)]'
+  const texto =
+    'pointer-events-auto max-w-full min-w-0 truncate rounded-full bg-black/50 px-3 py-[0.2rem] text-center text-[var(--texto-mesa,0.75rem)] ring-1 ring-white/10'
 
   if (guia) {
     // In the amber the table uses for *this is you, and it is now*. Text and
@@ -993,7 +1000,7 @@ function Relato({
     return (
       <span
         aria-live="polite"
-        className={cn(texto, 'flex items-center justify-end gap-1.5 font-medium text-amber-300')}
+        className={cn(texto, 'flex items-center gap-1.5 font-medium text-amber-300 ring-amber-400/30')}
       >
         <Lightbulb className="size-[1.1em] shrink-0" aria-hidden />
         <span className="min-w-0 truncate">{guia}</span>
@@ -1010,13 +1017,15 @@ function Relato({
         title="Ver todo lo que ha pasado esta ronda"
         className={cn(
           texto,
-          'text-tinta-suave underline decoration-white/25 decoration-dotted underline-offset-2 hover:text-tinta',
+          'text-tinta-suave hover:bg-black/65 hover:text-tinta',
         )}
       >
         {relatoLinea}
       </button>
     )
   }
+
+  if (!relatoLinea) return null
 
   return (
     <span aria-live="polite" className={cn(texto, 'text-tinta-suave')}>
