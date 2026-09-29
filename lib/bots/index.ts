@@ -13,6 +13,7 @@
 
 export * from './agrupar'
 export * from './bot'
+export * from './calculador'
 export * from './catalogo'
 export * from './codicioso'
 export * from './evaluar'

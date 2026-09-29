@@ -2351,8 +2351,9 @@ open on purpose, since a table always has its host at it. Estricta and
 libre give identical numbers, and that is correct: these bots only ever lay
 down minimum-size grupos, which both rules accept.
 
-### Phase 54 — Un piso más alto
-Shared competence, so all three current bots improve together:
+### Phase 54 — Un piso más alto ✅
+Shared competence for the new, higher-level bots (the owner's decision: the
+three current bots stay as they are, as *Fácil*):
 - **The best bajada, not the first**: among the groupings the hand allows,
   the one that leaves the lightest, most placeable hand — natural cards
   before a comodín.
@@ -2366,6 +2367,36 @@ Shared competence, so all three current bots improve together:
 
 **Done when:** the new floor beats the old one clearly on the bench (the old
 bots kept as a reference opponent), with nothing stalling.
+
+**Done — as a new bot, El Calculador** (`lib/bots/calculador.ts`), seatable
+from the lobby today; its level label arrives with Phase 57. The *Fácil*
+bots are untouched: `buscarAgrupacion` still returns the first grouping,
+and the new search (`todasLasAgrupaciones`, `ampliarBajada`) sits beside it.
+
+- **The best bajada.** Every grouping is compared by what it leaves: played
+  against the view, clock nudged a turn, a leftover that fits the mesa costs
+  a tenth of its points and one that does not costs all of them. Under libre
+  each grouping is first grown with every card its grupos take — and a
+  bajada that empties the hand goes out on the spot.
+- **Points in the discard, under pressure.** Worth in hand is use (progress
+  before bajarse, reach on the mesa after) less points × *presión*, which
+  starts at 0.15 and rises with being bajado, someone else bajado, someone
+  bajado with three cards or fewer, and a thin or rebuilt stock.
+- **No gifts.** A card the next seat, bajado, could put down on its turn is
+  kept unless nothing else can go.
+- **The draw** keeps the *Fácil* bar and adds one case: the card that lets
+  it lay down this very turn. The comodín is still never thrown — measuring
+  says there is more to gain elsewhere first.
+
+On the bench, 600 partidas at four seats, two Calculadores against two
+Memoriosos (the strongest *Fácil*): **33.3% of wins against 16.8%**, 348
+points per seat against 414; 32.3% against 17.8% under estricta. With all
+four bots at the table it wins 41.5% at three seats (fair share 33.3%),
+33.0% at four (25%) and 25.4% at five (20%), and nothing stalls that did
+not stall before. Taking each piece out in turn says where the strength
+is: without points in the discard it drops to 26.2%; without the gift rule
+to 31.8%; with the first bajada instead of the best to 32.6%; without the
+pressure scaling to 32.8%. Points were the big miss.
 
 ### Phase 55 — La memoria de la mesa
 The relatos become the bots' second input — public by construction, so

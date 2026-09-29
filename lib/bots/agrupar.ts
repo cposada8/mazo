@@ -17,6 +17,7 @@ import {
   type Card,
   type Rank,
   isComodin,
+  puntosDeCarta,
   rankAfter,
 } from '@/lib/engine'
 import {
@@ -98,6 +99,106 @@ export function buscarAgrupacion(
   if (cartasUsadas >= hand.length) return null
 
   return elegidas.map((candidato) => candidato.propuesta)
+}
+
+/**
+ * Every grouping that satisfies the contrato, up to `max` of them (Phase 54).
+ *
+ * `buscarAgrupacion` stops at the first one, and the *Fácil* bots keep it that
+ * way on purpose. A stronger bot wants to compare: the same hand can often
+ * meet the contrato several ways, and they leave very different hands behind.
+ * Minimum-size grupos only, like the first search — growing them is a
+ * separate step (`ampliarBajada`), because the strict bajada forbids it.
+ */
+export function todasLasAgrupaciones(
+  hand: readonly Card[],
+  contrato: Contrato,
+  max = 64,
+): Propuesta[][] {
+  if (contrato.escalera) {
+    const una = buscarAgrupacion(hand, contrato)
+    return una ? [una] : []
+  }
+
+  const trios = candidatosTrio(hand)
+  const escalas = candidatosEscala(hand)
+  if (trios.length < contrato.trios || escalas.length < contrato.escalas) return []
+
+  const encontradas: Propuesta[][] = []
+  const elegidas: Candidato[] = []
+  const usadas = new Set<string>()
+
+  const elegir = (restanTrios: number, restanEscalas: number, desde: number): void => {
+    if (encontradas.length >= max) return
+    if (restanTrios === 0 && restanEscalas === 0) {
+      encontradas.push(elegidas.map((candidato) => candidato.propuesta))
+      return
+    }
+
+    const pool = restanTrios > 0 ? trios : escalas
+    for (let i = desde; i < pool.length; i++) {
+      const candidato = pool[i]
+      if (chocaCon(candidato, usadas)) continue
+
+      elegidas.push(candidato)
+      for (const id of candidato.ids) usadas.add(id)
+
+      if (restanTrios > 0) {
+        elegir(restanTrios - 1, restanEscalas, restanTrios - 1 > 0 ? i + 1 : 0)
+      } else {
+        elegir(0, restanEscalas - 1, i + 1)
+      }
+
+      elegidas.pop()
+      for (const id of candidato.ids) usadas.delete(id)
+    }
+  }
+
+  elegir(contrato.trios, contrato.escalas, 0)
+  return encontradas
+}
+
+/**
+ * The same bajada with every card that can join its grupos added in (Phase
+ * 54) — for the libre bajada, where a trío may go down with four cards and an
+ * escala with six. What goes down now is points out of hand this turn, when
+ * the mesa is still closed to agregar; and a bajada that takes the whole hand
+ * goes out on the spot.
+ */
+export function ampliarBajada(
+  propuestas: readonly Propuesta[],
+  hand: readonly Card[],
+): Propuesta[] {
+  const porId = new Map(hand.map((card) => [card.id, card]))
+  const grupos = propuestas.map((propuesta) => ({
+    propuesta,
+    cards: propuesta.cardIds.map((id) => porId.get(id)!),
+  }))
+  const usadas = new Set(propuestas.flatMap((propuesta) => propuesta.cardIds))
+
+  // The heaviest first: if two cards compete for one place, keep the cheap one.
+  const restantes = hand
+    .filter((card) => !usadas.has(card.id))
+    .sort((a, b) => puntosDeCarta(b) - puntosDeCarta(a))
+
+  let cambio = true
+  while (cambio) {
+    cambio = false
+    for (const card of restantes) {
+      if (usadas.has(card.id)) continue
+      for (const grupo of grupos) {
+        const ampliado = armarGrupo([...grupo.cards, card], 'layDown')
+        if (!ampliado || ampliado.kind !== grupo.propuesta.kind) continue
+        grupo.propuesta = ampliado
+        grupo.cards = [...grupo.cards, card]
+        usadas.add(card.id)
+        cambio = true
+        break
+      }
+    }
+  }
+
+  return grupos.map((grupo) => grupo.propuesta)
 }
 
 export function puedeBajarse(hand: readonly Card[], contrato: Contrato): boolean {
