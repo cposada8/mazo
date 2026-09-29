@@ -74,6 +74,7 @@ empty seats), and the better bots moved behind it as Milestone 4.
 | 43 | The white you choose: one slider, every white | ✅ |
 | 44 | Which tables are still open: the panel, and tables that close themselves | ✅ |
 | 45 | Rough edges: the guía, «Cómo se juega», and a mesa that fits | ✅ — **closes Milestone 4** |
+| 46 | A table worth sitting at: felt, seats on the rim, a measured mesa, the font | ✅ |
 
 **Phase 44 came from a suspicion that measuring confirmed, and is done.**
 Thirteen partidas on the live database, all thirteen still `jugando`, none

@@ -187,7 +187,7 @@ export function CartaBocaAbajo({
     <div
       className={cn(
         TAMANOS[size],
-        'aspect-[8/11] shrink-0 rounded-md border border-red-950/80 bg-linear-to-br from-red-900 to-red-950 shadow-sm',
+        'dorso aspect-[8/11] shrink-0 rounded-md shadow-sm',
         className,
       )}
       aria-label="Carta boca abajo"

@@ -256,7 +256,7 @@ export function Tablero({
           historial — deal from the same deck as the table. */}
       <div
         className={cn(
-          'relative h-full bg-stone-950 pt-[env(safe-area-inset-top)] pr-[env(safe-area-inset-right)] pb-[env(safe-area-inset-bottom)] pl-[env(safe-area-inset-left)]',
+          'relative h-full bg-[#0b0908] pt-[env(safe-area-inset-top)] pr-[env(safe-area-inset-right)] pb-[env(safe-area-inset-bottom)] pl-[env(safe-area-inset-left)]',
           cartasOscuras && 'cartas-oscuras',
         )}
       >
@@ -288,7 +288,7 @@ export function Tablero({
             // have explained, and the hint a new player needs is Phase 45's to
             // design — somewhere that is not this row.
             <div className="flex min-h-5 min-w-0 flex-wrap items-center gap-x-3 gap-y-1 text-xs">
-              {aviso && <span className="text-red-600 dark:text-red-400">{aviso}</span>}
+              {aviso && <span className="font-medium text-red-400">{aviso}</span>}
               <Apartadas juego={juego} mano={ronda.mano} />
             </div>
           }
@@ -318,7 +318,7 @@ export function Tablero({
           onClick={() => setVerMenu(true)}
           aria-label="Menú de la partida"
           aria-expanded={verMenu}
-          className="absolute top-1.5 left-1.5 z-20 rounded-md border border-linea/60 bg-stone-900/80 p-1.5 text-tinta-suave"
+          className="absolute top-[calc(env(safe-area-inset-top)+0.375rem)] left-[calc(env(safe-area-inset-left)+0.375rem)] z-20 rounded-full bg-black/55 p-2 text-tinta-suave shadow-[0_2px_6px_rgba(0,0,0,0.5)] ring-1 ring-white/10"
         >
           <Menu className="size-4" aria-hidden />
         </button>
@@ -723,7 +723,7 @@ function Apartadas({
 
   return (
     <span className="flex items-center gap-2">
-      <span className="text-muted-foreground text-[10px] tracking-wide uppercase">
+      <span className="text-[10px] tracking-wide text-tinta-tenue uppercase">
         Vas a bajar
       </span>
       {juego.propuestas.map((propuesta, index) => (
@@ -732,12 +732,12 @@ function Apartadas({
           type="button"
           onClick={() => juego.soltarGrupo(index)}
           title="Quitar este grupo"
-          className="hover:bg-accent flex items-center gap-1 rounded border px-1 py-0.5"
+          className="flex items-center gap-1 rounded-md bg-black/40 px-1 py-0.5 ring-1 ring-white/10 hover:bg-black/60"
         >
           {cartasDe(propuesta, mano).map((card) => (
             <Carta key={card.id} card={card} size="xs" className="-ml-1 first:ml-0" />
           ))}
-          <span className="text-muted-foreground text-[10px]">✕</span>
+          <span className="text-[10px] text-tinta-tenue">✕</span>
         </button>
       ))}
     </span>
@@ -758,7 +758,7 @@ function AccionesDeMano({ juego }: { juego: ReturnType<typeof useMesa> }) {
   return (
     <div className="flex shrink-0 items-center gap-1.5">
       {haySeleccion && (
-        <div className="flex gap-px overflow-hidden rounded-md border">
+        <div className="flex gap-px overflow-hidden rounded-full ring-1 ring-white/10">
           <BotonDeMano
             onClick={() => juego.moverCartas('izquierda')}
             etiqueta="Mover las cartas seleccionadas a la izquierda"
@@ -824,11 +824,11 @@ function BotonDeMano({
       aria-label={etiqueta}
       title={etiqueta}
       aria-pressed={activo}
-      className={`p-1.5 ${sinBorde ? '' : 'rounded-md border'} ${
-        activo
-          ? 'bg-primary text-primary-foreground border-transparent'
-          : 'bg-card hover:bg-accent'
-      }`}
+      className={cn(
+        'p-1.5 text-tinta-suave transition-colors',
+        !sinBorde && 'rounded-full ring-1 ring-white/10',
+        activo ? 'bg-amber-400 text-amber-950' : 'bg-black/45 hover:bg-black/60',
+      )}
     >
       {children}
     </button>
@@ -846,7 +846,7 @@ function Controles({ juego }: { juego: ReturnType<typeof useMesa> }) {
   const seleccionadas = juego.seleccionadas.length
 
   return (
-    <div className="flex w-28 flex-col gap-1">
+    <div className="flex w-24 flex-col gap-1.5">
       {!juego.yaBajado && (
         <>
           <Boton onClick={juego.apartarGrupo} disabled={seleccionadas < 3}>
@@ -889,9 +889,15 @@ function Boton({
       type="button"
       onClick={onClick}
       disabled={disabled}
-      className={`rounded-md border px-2 py-1.5 text-xs font-medium transition-colors disabled:opacity-40 ${
-        principal ? 'bg-primary text-primary-foreground border-transparent' : 'bg-card'
-      }`}
+      className={cn(
+        'rounded-full px-3 py-[0.45rem] text-xs font-semibold shadow-[0_2px_6px_rgba(0,0,0,0.45)] transition-[opacity,transform] active:scale-95 disabled:opacity-40 disabled:shadow-none',
+        // The turn's moves are the one thing on the table meant to be
+        // pressed, and they look it: amber and raised, like the chips of
+        // the game rather than like a form's buttons (Phase 46).
+        principal
+          ? 'bg-linear-to-b from-amber-300 to-amber-500 text-amber-950'
+          : 'bg-stone-900/85 text-tinta ring-1 ring-white/15',
+      )}
     >
       {children}
     </button>

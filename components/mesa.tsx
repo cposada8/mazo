@@ -6,11 +6,11 @@
  * `onGrupo` and the piles, hand and grupos become tappable; leave them out and
  * the same components render a game you are only watching.
  *
- * **Lanes.** The screen is split into three bands that cannot collide: the
- * seats own the top strip, the mesa — piles and grupos — owns the middle, and
- * your hand owns the bottom. Nothing is absolutely positioned against the
- * whole table any more; a seat can only be placed inside the seat band, so a
- * short screen squeezes the bands rather than printing one on top of another.
+ * **A table, not a form (Phase 46).** A felt with a rail, the rivals seated
+ * on its rim — the far edge and, from four players up, the two sides — the
+ * mesa in the space they leave, and your piles, hand and buttons across the
+ * near edge. The mesa's box is measured and its cards sized to fit it whole,
+ * so seats and grupos never share a pixel however full the table gets.
  *
  * **Fluid.** Sizes come from the `.cancha` scale (globals.css): everything is
  * derived from the height actually available, so the same layout is
@@ -24,10 +24,11 @@
 
 'use client'
 
-import { Layers, Lightbulb } from 'lucide-react'
-import { useLayoutEffect, useRef } from 'react'
+import { Check, Layers, Lightbulb } from 'lucide-react'
+import { useLayoutEffect, useRef, useState } from 'react'
 import { Carta, CartaBocaAbajo } from '@/components/carta'
-import { asientosRivales } from '@/lib/asientos'
+import { ASOMA, HUECO, PROPORCION_DE_CARTA, alturaDeCartaEnMesa } from '@/lib/ajuste-de-mesa'
+import { type Lado, asientosRivales, hayLados } from '@/lib/asientos'
 import {
   type Escala,
   type Grupo,
@@ -88,6 +89,7 @@ export function GrupoEnMesa({
   onClick,
   doradas,
   compacto,
+  ajustado,
 }: {
   grupo: Grupo
   onClick?: () => void
@@ -99,10 +101,18 @@ export function GrupoEnMesa({
   doradas?: ReadonlySet<string>
   /** Drop the title to buy a line back on a crowded mesa (Phase 45). */
   compacto?: boolean
+  /**
+   * Drawn to the exact geometry the live mesa was measured with (Phase 46):
+   * no title, no padding, and each card showing only its corner past the one
+   * before — `ASOMA` of its height, the number `alturaDeCartaEnMesa` packs
+   * with. A grupo that is wider on screen than on paper is a grupo that
+   * overflows.
+   */
+  ajustado?: boolean
 }) {
   const contenido = (
     <div className="flex flex-col gap-0.5">
-      {!compacto && (
+      {!compacto && !ajustado && (
         <span className="text-[calc(var(--texto-mesa,0.75rem)*0.85)] font-medium tracking-wide text-tinta/80 uppercase">
           {tituloDeGrupo(grupo)}
         </span>
@@ -117,7 +127,9 @@ export function GrupoEnMesa({
               card={card}
               size="xs"
               className={cn(
-                '-ml-[0.9em] first:ml-0',
+                ajustado
+                  ? 'shadow-[0_1px_3px_rgba(0,0,0,0.45)] not-first:-ml-[calc(var(--carta-xs)*var(--solapa))]'
+                  : '-ml-[0.9em] first:ml-0',
                 // Raised as well as ringed: the fan overlaps to the right, so
                 // a ring on any card but the last would be painted over by
                 // its neighbour.
@@ -137,7 +149,7 @@ export function GrupoEnMesa({
 
   // The padding gives way with the title: on a crowded mesa four pixels a
   // side, times twenty grupos, is a row's worth of space spent on nothing.
-  const hueco = compacto ? 'p-0.5' : 'p-1'
+  const hueco = ajustado ? '' : compacto ? 'p-0.5' : 'p-1'
 
   if (!onClick) return <div className={cn('shrink-0', hueco)}>{contenido}</div>
 
@@ -146,7 +158,8 @@ export function GrupoEnMesa({
       type="button"
       onClick={onClick}
       className={cn(
-        'shrink-0 rounded-md border border-transparent text-left transition-colors hover:border-tinta-suave/40 hover:bg-tinta/5',
+        'shrink-0 rounded-md text-left transition-[outline-color] outline-2 outline-offset-2 outline-transparent hover:outline-amber-300/60',
+        !ajustado && 'border border-transparent hover:border-tinta-suave/40 hover:bg-tinta/5',
         hueco,
       )}
     >
@@ -162,14 +175,8 @@ function tituloDeGrupo(grupo: Grupo): string {
 }
 
 /**
- * A player on the far side of the table.
- *
- * The turn is drawn *on the player* — a ring around their ficha — rather than
- * announced somewhere else on the screen, and how many cards they hold is
- * shown as cards, because a fan of five and a fan of twelve are different at a
- * glance in a way that "5" and "12" are not. The exact number rides along on
- * the name line, one line, because on a short screen every line costs a card's
- * worth of height.
+ * A turn's clock, as the table draws it. The turn is drawn *on the player* —
+ * a ring around their ficha — rather than announced somewhere else.
  */
 export type Reloj = {
   /** How long the seat in play gets for its whole turn. */
@@ -244,72 +251,143 @@ export function Asiento({
   y,
   reloj,
   seat,
+  lado = 'arriba',
 }: {
   jugador: VistaJugador
   nombre: string
   esSuTurno: boolean
-  /** Percent of the seat band. `y` anchors the seat's top edge. */
+  /** Percent of the table zone. `y` anchors the top of the ficha. */
   x: number
   y: number
+  /**
+   * A side seat is narrower than one on the far edge — its width comes out
+   * of the mesa's — so its name may take two lines instead of one wide one.
+   */
+  lado?: Lado
   /** When given, the turn ring drains instead of merely glowing. */
   reloj?: Reloj
   /** Engine seat number; marks this element as a travel destination. */
   seat?: number
 }) {
+  const bajado = jugador.bajadoEnTurno !== null
+  const lateral = lado !== 'arriba'
+
+  // A side seat is pinned by its edge, so however wide the name it never
+  // hangs off the screen; one on the far edge is centred on its `x`.
+  const posicion: React.CSSProperties = lateral
+    ? {
+        [lado === 'izquierda' ? 'left' : 'right']: '1cqw',
+        top: `${y}%`,
+      }
+    : { left: `${x}%`, top: `calc(${y}% + 0.55rem)` }
+
   return (
     <div
       data-destino={seat}
-      className="absolute flex max-w-[26cqw] -translate-x-1/2 flex-col items-center gap-[0.6cqh]"
-      style={{ left: `${x}%`, top: `${y}%` }}
+      className={cn(
+        'absolute z-10 flex flex-col items-center gap-[0.2rem]',
+        lateral ? 'w-[var(--ancho-lado)] -translate-y-1/2' : 'w-[var(--ancho-asiento)] -translate-x-1/2',
+      )}
+      style={posicion}
     >
-      {/* The fan: sized by font so the backs and their overlap scale together. */}
-      <div className="flex items-end justify-center text-[clamp(0.7rem,5cqh,1.1rem)]">
-        {/* Backs, so a card count is something you see rather than read. The
-            fan is drawn from the number alone: an opponent's cards are not
-            ours to hold, and since Phase 34 they never arrive. */}
-        {Array.from({ length: jugador.cartas }, (_, i) => (
-          <CartaBocaAbajo
-            key={i}
-            className="-ml-[0.55em] h-[1em] w-[0.72em] rounded-[2px] border-0 shadow-none ring-1 ring-black/60 first:ml-0"
-          />
-        ))}
-      </div>
-
+      {/*
+        A player is a ficha — a coloured disc with their initials — and two
+        small badges on it: how many cards they hold, and a tick once they
+        are down (Phase 46). The fan of backs this replaced was a smear of
+        red at the sizes a phone allows, and «· 12 · bajado» spelled out on
+        the name line is what ran five names into one another.
+      */}
       <div className="relative">
-        {/* The countdown is drawn on the player, where the turn already is:
-            a full track, and an arc that empties as the time runs out. */}
         {esSuTurno && reloj && (
-          <AnilloDeReloj key={reloj.clave} reloj={reloj} className="absolute -inset-1" />
+          <AnilloDeReloj
+            key={reloj.clave}
+            reloj={reloj}
+            className="absolute -inset-[0.3rem] size-[calc(100%+0.6rem)]"
+          />
         )}
         <div
           className={cn(
-            'flex size-[var(--ficha,2rem)] items-center justify-center rounded-full border text-[calc(var(--ficha,2rem)*0.45)] font-semibold transition-shadow',
+            'flex size-[var(--ficha,2rem)] items-center justify-center rounded-full text-[calc(var(--ficha,2rem)*0.38)] font-semibold tracking-tight text-white/90 shadow-[0_2px_6px_rgba(0,0,0,0.5)] ring-2 transition-shadow',
             esSuTurno
-              ? cn(
-                  'border-amber-600 bg-amber-600 text-amber-950',
-                  !reloj && 'ring-4 ring-amber-600/30',
-                )
-              : 'border-linea/60 bg-stone-900 text-tinta-suave',
+              ? cn('ring-amber-400', !reloj && 'shadow-[0_0_14px_rgba(251,191,36,0.55)]')
+              : 'ring-black/35',
           )}
+          style={{ background: colorDeAsiento(seat ?? 0) }}
         >
-          {inicial(nombre)}
+          {iniciales(nombre)}
         </div>
+
+        {/* The hand, counted: one card back and the number, on the ficha's
+            corner where a glance already lands. */}
+        <span
+          title={`${jugador.cartas} cartas en la mano`}
+          className="absolute -right-[0.55rem] -bottom-[0.2rem] flex items-center gap-[0.15rem] rounded-full bg-stone-950/90 py-px pr-[0.3rem] pl-[0.2rem] text-[calc(var(--texto-mesa,0.75rem)*0.92)] leading-none font-semibold text-tinta tabular-nums ring-1 ring-white/10"
+        >
+          <span aria-hidden className="dorso-mini h-[0.85em] w-[0.6em] rounded-[1.5px]" />
+          {jugador.cartas}
+        </span>
+
+        {bajado && (
+          <span
+            title="Ya se bajó"
+            className="absolute -top-[0.2rem] -right-[0.3rem] flex size-[1.05rem] items-center justify-center rounded-full bg-emerald-500 text-emerald-950 ring-2 ring-stone-950"
+          >
+            <Check className="size-[0.7rem]" strokeWidth={3.5} aria-hidden />
+            <span className="sr-only">bajado</span>
+          </span>
+        )}
       </div>
 
-      <span className="max-w-full truncate text-[var(--texto-mesa,0.75rem)] leading-tight font-medium text-tinta-suave">
+      <span
+        className={cn(
+          'max-w-full rounded-full px-[0.45rem] py-[0.1rem] text-center text-[var(--texto-mesa,0.75rem)] leading-tight font-medium',
+          lateral ? 'line-clamp-2 rounded-[0.6rem] px-[0.3rem] text-balance' : 'truncate',
+          esSuTurno ? 'bg-amber-400 text-amber-950' : 'bg-black/55 text-tinta-suave',
+        )}
+      >
         {nombre}
-        <span className="text-tinta-suave">
-          {' '}
-          · {jugador.cartas}
-          {jugador.bajadoEnTurno !== null && ' · bajado'}
-        </span>
       </span>
     </div>
   )
 }
 
-const inicial = (nombre: string): string =>
-  [...nombre.trim()][0]?.toUpperCase() ?? '?'
+/**
+ * The initials on a ficha. «El Codicioso 3» is «C3», not «E»: when every bot
+ * starts with the same article, the first letter is the one letter that
+ * tells nobody apart.
+ */
+export function iniciales(nombre: string): string {
+  const palabras = nombre
+    .trim()
+    .split(/\s+/)
+    .filter((palabra) => palabra && !ARTICULOS.has(palabra.toLowerCase()))
+  if (palabras.length === 0) return '?'
+
+  const primera = [...palabras[0]][0]?.toUpperCase() ?? '?'
+  const ultima = palabras.at(-1) ?? ''
+  return palabras.length > 1 && /^\d+$/.test(ultima) ? `${primera}${ultima}` : primera
+}
+
+const ARTICULOS = new Set(['el', 'la', 'los', 'las'])
+
+/**
+ * One colour per seat, so a player is recognised by their disc before their
+ * name is read. Deep and a little muted: they sit on a dark felt at night,
+ * and none of them is amber, which is reserved for whoever is up.
+ */
+const COLORES_DE_ASIENTO = [
+  ['#64748b', '#334155'],
+  ['#6366f1', '#3730a3'],
+  ['#0891b2', '#155e75'],
+  ['#db2777', '#9d174d'],
+  ['#7c3aed', '#5b21b6'],
+  ['#0d9488', '#115e59'],
+] as const
+
+export function colorDeAsiento(seat: number): string {
+  const [claro, oscuro] = COLORES_DE_ASIENTO[seat % COLORES_DE_ASIENTO.length]
+  return `linear-gradient(145deg, ${claro}, ${oscuro})`
+}
 
 /**
  * The two piles. Each wears its count as a small chip — a line of text under
@@ -331,9 +409,14 @@ export function Pilas({
 }) {
   const arriba = state.descarte.at(-1)
   const activo = Boolean(onRobar)
-  const estiloPila = activo ? 'ring-2 ring-tinta-suave/60 ring-offset-2 ring-offset-stone-950' : ''
+  // Your draw is the one moment the piles are the next move, so that is when
+  // they glow — in the amber that means *you, now* everywhere on the table.
+  const estiloPila = cn(
+    'shadow-[0_2px_6px_rgba(0,0,0,0.5)]',
+    activo && 'ring-2 ring-amber-400 shadow-[0_0_14px_rgba(251,191,36,0.5)]',
+  )
   const chip =
-    'absolute -top-1 -right-1 z-10 rounded-full bg-stone-800 px-1 text-[calc(var(--texto-mesa,0.75rem)*0.9)] text-tinta tabular-nums ring-1 ring-linea/60'
+    'absolute -top-1.5 -right-1.5 z-10 min-w-[1.4em] rounded-full bg-stone-950/90 px-1 text-center text-[calc(var(--texto-mesa,0.75rem)*0.9)] leading-[1.5] font-semibold text-tinta tabular-nums ring-1 ring-white/15'
 
   return (
     <div className="flex shrink-0 items-end gap-2">
@@ -358,7 +441,7 @@ export function Pilas({
           {arriba ? (
             <Carta card={arriba} size="sm" className={estiloPila} />
           ) : (
-            <div className="aspect-[8/11] h-[var(--carta-sm,3.5rem)] rounded-md border border-dashed border-linea/60" />
+            <div className="aspect-[8/11] h-[var(--carta-sm,3.5rem)] rounded-md border border-dashed border-white/25" />
           )}
         </button>
         {state.descarte.length > 0 && (
@@ -387,7 +470,16 @@ export function Mano({
   cabecera,
   esTuTurno,
   reloj,
+  soloCabecera,
+  soloCartas,
 }: {
+  /**
+   * Draw only the heading line, or only the cards (Phase 46). The table puts
+   * the piles beside your cards and the words above both, so it asks for the
+   * two halves separately; anywhere else, the whole hand is one piece.
+   */
+  soloCabecera?: boolean
+  soloCartas?: boolean
   /** Pinned bloques first, then the loose cards. */
   secciones: readonly Seccion[]
   /** What the hand would cost if the ronda ended now. */
@@ -427,8 +519,9 @@ export function Mano({
   )
 
   return (
-    <div className="flex min-w-0 flex-col">
-      {/*
+    <div className={cn('flex min-w-0 flex-col', soloCartas && 'flex-1', soloCabecera && 'shrink-0')}>
+      {!soloCartas && (
+      /*
         The heading row, and who gets to keep their place in it (Phase 40).
         Upright there is not enough width for everything, and what used to
         give way were the arranging controls: they were pushed off the right
@@ -437,7 +530,7 @@ export function Mano({
         hand's own heading, clock and all, and the controls — never shrink.
         Whatever else is passed in takes the room that is left, and drops to
         a second line when there is none.
-      */}
+      */
       <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 py-0.5 text-[max(var(--texto-mesa,0.75rem),0.6875rem)]">
         <h2 className="flex shrink-0 items-center gap-1.5 font-medium whitespace-nowrap">
           {/* Your own clock, drawn the way everybody else's is (Phase 40).
@@ -454,8 +547,8 @@ export function Mano({
           )}
           <span
             className={cn(
-              'relative overflow-hidden rounded px-1.5 py-0.5',
-              esTuTurno && 'bg-amber-600 text-amber-100',
+              'relative overflow-hidden rounded-full px-2 py-0.5 text-tinta',
+              esTuTurno ? 'bg-amber-500 text-amber-950' : 'bg-black/45',
             )}
           >
             {/* The badge empties left to right, the same countdown the ring
@@ -465,7 +558,7 @@ export function Mano({
               <span
                 key={reloj.clave}
                 aria-hidden
-                className="badge-agota absolute inset-0 bg-amber-700/45"
+                className="badge-agota absolute inset-0 bg-amber-300/60"
                 style={{
                   animationDuration: `${reloj.segundos}s`,
                   animationDelay: `-${reloj.transcurrido ?? 0}s`,
@@ -474,7 +567,7 @@ export function Mano({
             )}
             <span className="relative">Tu mano</span>
           </span>
-          <span className="text-muted-foreground font-normal tabular-nums">
+          <span className="font-normal text-tinta-tenue tabular-nums">
             {total}
             {puntos !== undefined && (
               <span title="Lo que costaría esta mano si la ronda terminara ahora">
@@ -487,8 +580,18 @@ export function Mano({
         {acciones}
         {cabecera}
       </div>
+      )}
 
-      <div className="flex items-start gap-3 overflow-x-auto pt-1.5">
+      {!soloCabecera && (
+      <div
+        className={cn(
+          'flex items-start gap-3 overflow-x-auto pt-2',
+          // On the table the hand sits centred on its edge, the way it is
+          // held; `safe` keeps a hand wider than the screen scrollable from
+          // its first card rather than cut off on the left.
+          soloCartas && 'justify-center-safe',
+        )}
+      >
         {secciones.map((seccion) => {
           const indice = posicionFijada.get(seccion.id) ?? -1
 
@@ -514,10 +617,10 @@ export function Mano({
                         // nothing raised — enough to find it after a latched
                         // sort files it into place, quiet enough to ignore.
                         // Selection wins when both apply.
-                        nueva &&
-                          'ring-offset-background ring-[1.5px] ring-amber-400 ring-offset-1',
+                        'shadow-[-2px_2px_6px_rgba(0,0,0,0.45)]',
+                        nueva && 'ring-2 ring-amber-400',
                         elegida &&
-                          'ring-foreground ring-offset-background -translate-y-2 ring-2 ring-offset-2',
+                          '-translate-y-[18%] ring-2 ring-sky-300 shadow-[0_0_12px_rgba(125,211,252,0.6)]',
                       )}
                     />
                   )
@@ -553,7 +656,7 @@ export function Mano({
                   type="button"
                   onClick={onSoltar ? () => onSoltar(indice) : undefined}
                   disabled={!onSoltar}
-                  className="text-muted-foreground enabled:hover:text-foreground ml-3 text-[calc(var(--texto-mesa,0.75rem)*0.8)] tracking-wide uppercase"
+                  className="ml-3 text-[calc(var(--texto-mesa,0.75rem)*0.8)] tracking-wide text-tinta-tenue uppercase enabled:hover:text-tinta"
                 >
                   🔒 fijo{onSoltar && ' · soltar'}
                 </button>
@@ -562,6 +665,7 @@ export function Mano({
           )
         })}
       </div>
+      )}
     </div>
   )
 }
@@ -703,176 +807,251 @@ export function Mesa({
   const relojDeTuTurno = esTuTurno && reloj?.propio ? reloj : undefined
 
   const rivales = asientosRivales(state.jugadores.length, asiento)
+  const lados = hayLados(state.jugadores.length)
 
   // Every grupo on the table, from every player. Laid down is laid down.
   const enMesa = state.jugadores.flatMap((jugador, seat) =>
     jugador.grupos.map((grupo, grupoIndex) => ({ grupo, seat, grupoIndex })),
   )
-  // How small the mesa has to draw itself to fit whole (Phase 45).
-  const apretada = escalaDeMesa(enMesa.length)
+
+  // The mesa is measured, and the cards drawn at the largest height at which
+  // every grupo fits it (Phase 46).
+  const [carril, medida] = useMedida<HTMLDivElement>()
+  const alturaDeCarta = alturaDeCartaEnMesa({
+    grupos: enMesa.map(({ grupo }) => grupo.cards.length),
+    // A couple of pixels short of the box: the browser rounds sub-pixel
+    // widths its own way, and a row that fits to the hundredth on paper
+    // wraps on screen.
+    ancho: medida.ancho - 3,
+    alto: medida.alto - 3,
+    minimo: 22,
+    maximo: Math.max(22, medida.maxima),
+  })
 
   return (
-    <div className="cancha relative flex h-full w-full flex-col overflow-hidden bg-stone-950">
+    <div
+      className={cn(
+        'cancha relative h-full w-full overflow-hidden bg-[radial-gradient(ellipse_at_50%_35%,#2b211c_0%,#15100d_60%,#0b0908_100%)]',
+        lados && 'con-lados',
+      )}
+    >
       {/*
-        The table: felt behind, then two lanes on top of it — seats, then the
-        mesa — and an info strip along the felt's bottom edge. The room around
-        the felt is dark in both themes: a card table is a lit thing in a dim
-        room, and it is the surround, not the felt, that does the decorating.
+        The felt (Phase 46): a lit table in a dim room, with a rail around it.
+        Everything else is placed over it — the seats on its rim, the mesa in
+        its middle, your hand across its near edge the way cards lie on a real
+        table — rather than cut into bands that each draw their own box.
       */}
-      <div className="relative flex min-h-0 flex-1 flex-col">
-        <div
-          aria-hidden
-          className="ovalo absolute inset-x-[2%] top-[6%] bottom-[3%] rounded-[50%] border border-red-800/80 bg-stone-900 shadow-[inset_0_0_80px_rgba(0,0,0,0.55)]"
-        />
+      <div aria-hidden className="fieltro absolute" />
 
-        {/* Seat lane: the opponents' strip, and nothing else may enter it. */}
-        <div className="relative z-10 h-[var(--banda-asientos,42%)] shrink-0">
-          {rivales.map(({ seat, x, y }) => (
-            <Asiento
-              key={seat}
-              seat={seat}
-              jugador={state.jugadores[seat]}
-              nombre={nombreDe(seat)}
-              esSuTurno={state.turno === seat && state.ganador === null}
-              x={x}
-              y={y}
-              reloj={reloj}
-            />
-          ))}
-        </div>
+      {/* The table zone: everything above your hand. Seats and mesa are
+          placed in it, never in the hand's strip. */}
+      <div className="zona-mesa absolute inset-x-0 top-0">
+        {rivales.map(({ seat, x, y, lado }) => (
+          <Asiento
+            key={seat}
+            seat={seat}
+            jugador={state.jugadores[seat]}
+            nombre={nombreDe(seat)}
+            esSuTurno={state.turno === seat && state.ganador === null}
+            x={x}
+            y={y}
+            lado={lado}
+            reloj={reloj}
+          />
+        ))}
 
-        {/* Mesa lane: piles on the left, everyone's grupos scrolling beside.
-            Bottom-aligned — toward the viewer, and away from the seat band's
-            edge, where the lowest seats live. */}
-        <div className="carril-mesa relative z-10 min-h-0 flex-1">
-          <Pilas state={state} onRobar={onRobar} />
+        {/*
+          The mesa. Its box is what the seats leave free, it is measured, and
+          the cards are sized to it — so eighteen grupos land inside it whole,
+          and three land at a size worth looking at.
+        */}
+        <div ref={carril} className="carril-mesa absolute">
+          <span
+            aria-hidden
+            className="pointer-events-none absolute inset-0 flex items-center justify-center text-center text-[clamp(0.875rem,7cqh,1.75rem)] font-bold tracking-[0.3em] whitespace-nowrap text-white/[0.07] uppercase"
+          >
+            {state.contrato.nombre}
+          </span>
 
-          {/*
-            The cards shrink instead of the row scrolling. `--carta-xs` is
-            declared on `.cancha` as a ratio of `--carta-md`; overriding it
-            here re-derives it at a smaller ratio, so the whole grupo — cards,
-            corners, the comodín's binding — scales together, exactly as it
-            does when the screen itself changes size.
-          */}
           <div
-            className="grupos-en-mesa"
+            className="grupos-en-mesa relative"
             style={
               {
-                '--carta-xs': `calc(var(--carta-md) * ${apretada.carta})`,
+                '--carta-xs': `${alturaDeCarta}px`,
+                '--solapa': PROPORCION_DE_CARTA - ASOMA,
+                gap: `${alturaDeCarta * HUECO}px`,
               } as React.CSSProperties
             }
           >
             {enMesa.length === 0 ? (
-              <span className="self-center text-[var(--texto-mesa,0.75rem)] text-tinta-tenue">
-                Nadie se ha bajado todavía.
-              </span>
+              <span className="sr-only">Nadie se ha bajado todavía.</span>
             ) : (
               enMesa.map(({ grupo, seat, grupoIndex }) => (
                 <GrupoEnMesa
                   key={`${seat}-${grupoIndex}`}
                   grupo={grupo}
                   doradas={doradas}
-                  compacto={apretada.compacto}
+                  ajustado
                   onClick={onGrupo ? () => onGrupo(seat, grupoIndex) : undefined}
                 />
               ))
             )}
           </div>
         </div>
-
-        {/*
-          The info strip: what just happened on the left — in words, and only
-          words everybody is entitled to — then the peek at the descarte, and
-          the contract on the right, the way a table has its house name
-          printed on the felt.
-        */}
-        <div className="relative z-10 flex shrink-0 items-center justify-between gap-3 px-[7cqw] pb-[0.5cqh]">
-          {guia ? (
-            /*
-              The guide takes the strip while it is your turn (Phase 45), in
-              the amber the table already uses for *this is you, and it is
-              now* — the ring on the ficha, the badge behind «Tu mano». It is
-              text and not a button: it names the move, and the move is made
-              on the table itself.
-            */
-            <span
-              aria-live="polite"
-              className="flex min-w-0 items-center gap-1.5 text-[var(--texto-mesa,0.75rem)] text-amber-500/90"
-            >
-              <Lightbulb className="size-[1.1em] shrink-0" aria-hidden />
-              <span className="min-w-0 truncate">{guia}</span>
-            </span>
-          ) : onVerHistorial && relatoLinea ? (
-            <button
-              type="button"
-              onClick={onVerHistorial}
-              aria-live="polite"
-              title="Ver todo lo que ha pasado esta ronda"
-              className="min-w-0 truncate text-left text-[var(--texto-mesa,0.75rem)] text-tinta-suave underline decoration-stone-700 decoration-dotted underline-offset-2 hover:text-tinta"
-            >
-              {relatoLinea}
-            </button>
-          ) : (
-            <span
-              aria-live="polite"
-              className="min-w-0 truncate text-[var(--texto-mesa,0.75rem)] text-tinta"
-            >
-              {relatoLinea}
-            </span>
-          )}
-          {/*
-            Browsing the descarte lives here, not on the pile. It is something
-            you reach for *while deciding whether to draw from it*, so a
-            target overlapping the draw button turns a peek into a move that
-            cannot be taken back.
-          */}
-          {onVerDescarte && state.descarte.length > 0 && (
-            <button
-              type="button"
-              onClick={onVerDescarte}
-              title="Ver todas las cartas del descarte"
-              className="flex shrink-0 items-center gap-1 rounded-full border border-linea/60 bg-stone-800/80 py-[0.6cqh] pr-2 pl-1.5 text-[var(--texto-mesa,0.75rem)] text-tinta-suave hover:bg-stone-700"
-            >
-              <Layers className="size-[1.1em] shrink-0" aria-hidden />
-              <span className="tabular-nums">{state.descarte.length}</span>
-              <span className="sr-only">cartas en el descarte, ver todas</span>
-            </button>
-          )}
-          <span
-            aria-hidden
-            className="shrink-0 text-[var(--texto-mesa,0.75rem)] font-semibold tracking-[0.2em] whitespace-nowrap text-tinta/25 uppercase"
-          >
-            {state.contrato.nombre}
-          </span>
-        </div>
       </div>
 
       {viaje && <CartaViajera key={viaje.clave} viaje={viaje} />}
 
-      {/* Your side of the table. */}
+      {/*
+        Your side of the table: the piles on the left, your hand, and the
+        turn's buttons under the right thumb. No panel of its own — the
+        cards lie on the felt's near edge, which is where a hand is held.
+      */}
       <div
         data-destino={asiento}
-        className="bg-background/95 flex shrink-0 items-end gap-3 border-t px-3 pt-0.5 pb-1 backdrop-blur"
+        className="zona-mano absolute inset-x-0 bottom-0 flex items-end gap-[2.5cqw] px-[2.5cqw] pb-[1.5cqh]"
       >
         <div className="flex min-w-0 flex-1 flex-col">
-          <Mano
-            cabecera={sobreLaMano}
-            secciones={
-              secciones ?? [{ id: 'sueltas', cards: [...state.mano], bloqueada: false }]
-            }
-            puntos={puntos}
-            seleccionadas={seleccionadas}
-            resaltada={resaltada}
-            onCarta={onCarta}
-            onSoltar={onSoltar}
-            acciones={accionesDeMano}
-            esTuTurno={esTuTurno}
-            reloj={relojDeTuTurno}
-          />
+          {/*
+            One line over the hand for everything said in words: your count
+            and the arranging controls on the left, and on the right what to
+            do now — or what just happened — with the peek at the descarte.
+            It used to be a strip of its own along the felt (Phase 40–45);
+            here it costs no height the hand was not already spending.
+          */}
+          <div className="flex min-w-0 items-center gap-2">
+            <Mano
+              soloCabecera
+              cabecera={sobreLaMano}
+              secciones={
+                secciones ?? [{ id: 'sueltas', cards: [...state.mano], bloqueada: false }]
+              }
+              puntos={puntos}
+              acciones={accionesDeMano}
+              esTuTurno={esTuTurno}
+              reloj={relojDeTuTurno}
+            />
+            <Relato
+              guia={guia}
+              relatoLinea={relatoLinea}
+              onVerHistorial={onVerHistorial}
+            />
+            {onVerDescarte && state.descarte.length > 0 && (
+              <button
+                type="button"
+                onClick={onVerDescarte}
+                title="Ver todas las cartas del descarte"
+                className="flex shrink-0 items-center gap-1 rounded-full bg-black/45 py-0.5 pr-2 pl-1.5 text-[var(--texto-mesa,0.75rem)] text-tinta-suave ring-1 ring-white/10 hover:bg-black/60"
+              >
+                <Layers className="size-[1.1em] shrink-0" aria-hidden />
+                <span className="tabular-nums">{state.descarte.length}</span>
+                <span className="sr-only">cartas en el descarte, ver todas</span>
+              </button>
+            )}
+          </div>
+
+          <div className="flex min-w-0 items-end gap-[2.5cqw]">
+            <Pilas state={state} onRobar={onRobar} />
+            <Mano
+              soloCartas
+              secciones={
+                secciones ?? [{ id: 'sueltas', cards: [...state.mano], bloqueada: false }]
+              }
+              seleccionadas={seleccionadas}
+              resaltada={resaltada}
+              onCarta={onCarta}
+              onSoltar={onSoltar}
+            />
+          </div>
         </div>
 
-        {acciones && <div className="shrink-0 pb-1">{acciones}</div>}
+        {acciones && <div className="shrink-0">{acciones}</div>}
       </div>
     </div>
   )
+}
+
+/**
+ * The line over your hand that talks: the guide while it is your turn
+ * (Phase 45), and otherwise the last public move, which opens the ronda's
+ * whole story when the partida keeps one.
+ */
+function Relato({
+  guia,
+  relatoLinea,
+  onVerHistorial,
+}: {
+  guia?: string | null
+  relatoLinea?: string
+  onVerHistorial?: () => void
+}) {
+  const texto = 'min-w-0 flex-1 truncate text-right text-[var(--texto-mesa,0.75rem)]'
+
+  if (guia) {
+    // In the amber the table uses for *this is you, and it is now*. Text and
+    // not a button: it names the move, and the move is made on the table.
+    return (
+      <span
+        aria-live="polite"
+        className={cn(texto, 'flex items-center justify-end gap-1.5 font-medium text-amber-300')}
+      >
+        <Lightbulb className="size-[1.1em] shrink-0" aria-hidden />
+        <span className="min-w-0 truncate">{guia}</span>
+      </span>
+    )
+  }
+
+  if (onVerHistorial && relatoLinea) {
+    return (
+      <button
+        type="button"
+        onClick={onVerHistorial}
+        aria-live="polite"
+        title="Ver todo lo que ha pasado esta ronda"
+        className={cn(
+          texto,
+          'text-tinta-suave underline decoration-white/25 decoration-dotted underline-offset-2 hover:text-tinta',
+        )}
+      >
+        {relatoLinea}
+      </button>
+    )
+  }
+
+  return (
+    <span aria-live="polite" className={cn(texto, 'text-tinta-suave')}>
+      {relatoLinea}
+    </span>
+  )
+}
+
+/**
+ * The size of an element, kept current. The mesa needs its own box in
+ * pixels to know how large its cards can be; `maxima` is the uncrowded card
+ * height, read from the `.cancha` scale so the mesa never draws cards bigger
+ * than the design allows just because it has room.
+ */
+function useMedida<T extends HTMLElement>() {
+  const ref = useRef<T>(null)
+  const [medida, setMedida] = useState({ ancho: 0, alto: 0, maxima: 0 })
+
+  useLayoutEffect(() => {
+    const el = ref.current
+    if (!el || typeof ResizeObserver === 'undefined') return
+
+    const medir = () => {
+      const maxima = parseFloat(getComputedStyle(el).getPropertyValue('--carta-mesa-max'))
+      setMedida({
+        ancho: el.clientWidth,
+        alto: el.clientHeight,
+        maxima: Number.isFinite(maxima) ? maxima : 0,
+      })
+    }
+    medir()
+    const observador = new ResizeObserver(medir)
+    observador.observe(el)
+    return () => observador.disconnect()
+  }, [])
+
+  return [ref, medida] as const
 }

@@ -2073,6 +2073,57 @@ escala four. Neither scrolls in either direction, and the corner of every
 card still carries its rango and its pinta. The final mesa (Phase 42) shrinks
 by the same rule, so the snapshot of a won table fits the screen that took it.
 
+### Phase 46 — A table worth sitting at ✅
+*From real play: a six-player partida on a phone lying down, and the owner's
+screenshot next to a poker table from Plato. «Se ve pobre, se ve barato, se
+ve feo.»*
+
+The screenshot showed what Phase 45's measurements had missed, because they
+were taken on an 844×390 box and the phone had a browser bar: 720×287.
+
+- **Five names in one row ran into each other**, every ficha said «E», and
+  the fans of backs were smears of red.
+- **The mesa overflowed upward**: `align-content: flex-end` on an
+  overflowing box pushes the first row out of the top, where no scroll can
+  reach it — under the seats' names.
+- **The whole app was in Times.** `--font-sans: var(--font-sans)` in the
+  theme block referred to itself, so Geist never applied and every browser
+  fell back to its serif. The single largest reason it looked cheap.
+
+What changed:
+
+- **A felt and a rail.** Green baize lit from the middle, a wooden rail with
+  a brass line, a dim room around it. The table is dark in both themes, as it
+  always was; now it is also a table.
+- **Rivals sit on the rim.** The far edge and, from four players up, the two
+  sides (`lib/asientos.ts`): the next player on your right, the one before
+  you on your left. A seat is a ficha in the seat's own colour, with the
+  initials that tell bots apart («C3», not «E»), a badge counting their hand,
+  a tick once they are down, and the name in a pill underneath.
+- **The mesa is measured, not guessed.** `lib/ajuste-de-mesa.ts` takes the
+  lane's size in pixels and returns the largest card height at which every
+  grupo fits, wrapped. Phase 45's step table stays only for the final-mesa
+  snapshot. No titles on the live mesa: the cards say what they said. The
+  contract name is printed faintly on the felt behind the grupos.
+- **Your side has no panel.** Piles on the left — drawing is your move, so
+  they are under your hand — the hand centred on the felt's near edge, and
+  the turn's buttons under the right thumb, amber and raised. The guía and
+  the relato share the one line above the hand, which retires the info strip.
+- **Card backs look printed**, and a selected card lifts with a blue ring
+  (gold stays «new»).
+
+Measured on /mesa/llena, the visor this phase added (a bot partida frozen at
+its most crowded, `?grupos=3` for the eighteen-grupo table):
+
+| Screen | Grupos | Card height | Desborda |
+| --- | --- | --- | --- |
+| 720×287, lying down with the browser bar | 18 | 30 px | no |
+| 720×287 | 8 | 46 px | no |
+| 390×760, upright | 18 | 46 px | no |
+
+Upright works but is second-class: the far edge's names truncate at 390
+wide and a hand of twelve scrolls. Landscape is how the game is played.
+
 ---
 
 ## After
