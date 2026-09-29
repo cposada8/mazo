@@ -16,9 +16,9 @@
   --color-tinta-suave: var(--tinta-suave);
   --color-tinta-tenue: var(--tinta-tenue);
   --color-linea: var(--linea);
-  --font-sans: var(--font-sans);
+  --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
-  --font-heading: var(--font-sans);
+  --font-heading: var(--font-geist-sans);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -174,6 +174,23 @@
 }
 
 /*
+ * The mesa's largest card, registered so that it *computes* (Phase 46): an
+ * unregistered custom property reads back from getComputedStyle as the text
+ * of its formula, and the mesa needs it in pixels to size its cards.
+ */
+@property --carta-mesa-max {
+  syntax: "<length>";
+  inherits: true;
+  initial-value: 0px;
+}
+/* A hand card's height, computed the same way, for fanning the hand. */
+@property --carta-md-px {
+  syntax: "<length>";
+  inherits: true;
+  initial-value: 0px;
+}
+
+/*
  * The one scale the table is drawn in.
  *
  * `.cancha` is the game's root box: a size container, so everything inside can
@@ -190,58 +207,133 @@
 @layer components {
   .cancha {
     container-type: size;
-    --carta-md: clamp(3rem, 26cqh, 5.75rem);
-    --carta-sm: calc(var(--carta-md) * 0.62);
+  }
+  /*
+   * The scale is declared on the table's children, not on `.cancha` itself:
+   * a container's own units and queries refer to the box *around* it, so
+   * only inside it do `cqh` and the upright override below mean this table.
+   */
+  .cancha > * {
+    --carta-md: clamp(3rem, 25cqh, 6rem);
+    --carta-sm: calc(var(--carta-md) * 0.74);
     --carta-xs: calc(var(--carta-md) * 0.52);
-    --ficha: clamp(1.375rem, 8cqh, 2.25rem);
-    /* Seat names, pile counts, grupo titles: legible, never dominant. */
-    --texto-mesa: clamp(0.5625rem, 3.8cqh, 0.75rem);
+    /* The mesa's cards never grow past this, however empty the table is. */
+    --carta-mesa-max: calc(var(--carta-md) * 0.72);
+    --carta-md-px: var(--carta-md);
+    --ficha: clamp(1.625rem, 10.5cqh, 2.625rem);
+    /* Seat names, pile counts, the relato: legible, never dominant. */
+    --texto-mesa: clamp(0.625rem, 3.9cqh, 0.8125rem);
+    /* A seat on the far edge, and a narrower one at the sides. */
+    --ancho-asiento: clamp(5rem, 17cqw, 8rem);
+    --ancho-lado: clamp(4.5rem, 14.5cqw, 6.5rem);
     /*
-     * The seat band's height. Clamped rather than a percentage: a seat's
-     * contents are clamped too, so on a tall (portrait) screen a percentage
-     * would open a dead strip between the seats and the mesa.
+     * Your strip along the bottom: one line of words, then the hand. The
+     * line is a fixed rem height rather than a share of the screen, because
+     * it holds buttons and those are sized for a finger, not for the view.
      */
-    --banda-asientos: clamp(3.75rem, 22.5cqh, 5.5rem);
+    --linea-mano: 1.5rem;
+    --zona-mano: calc(var(--carta-md) * 1.16 + var(--linea-mano) + 1.5cqh);
+    /* The table's voice: two short lines of small type, above your piles. */
+    --linea-relato: calc(var(--texto-mesa) * 2.4 + 0.25rem);
+    /* The far edge's seats: a ficha and a name under it. */
+    --banda-arriba: calc(var(--ficha) + var(--texto-mesa) * 1.5 + 1.35rem);
   }
 
   /*
-   * The mesa lane and the grupos inside it are styled here, not with
-   * utilities: the portrait rules below must win, and a Tailwind utility
-   * would outrank them from the utilities layer.
-   *
-   * Lying down: everything bottom-aligned — toward the viewer, and away from
-   * the seat band's edge, where the lowest seats live — with the grupos in
-   * one sideways-scrolling row.
+   * The felt (Phase 46). A green baize under a lamp — lighter at the middle,
+   * falling off to the rail — and a wooden rail with a thin brass line on
+   * its inner edge. Deep rather than bright: this is played at night, and
+   * the felt is the largest thing on the screen.
+   */
+  .fieltro {
+    inset: 1.5cqh 1.5cqw calc(var(--zona-mano) * 0.42) 1.5cqw;
+    border-radius: 18cqh / 30cqh;
+    background:
+      radial-gradient(ellipse 70% 65% at 50% 42%, oklch(0.46 0.085 158) 0%, oklch(0.36 0.075 160) 55%, oklch(0.27 0.06 162) 100%);
+    box-shadow:
+      inset 0 0 0 1px oklch(0.72 0.09 80 / 0.55),
+      inset 0 0 40px rgba(0, 0, 0, 0.45),
+      0 0 0 max(4px, 1.3cqh) #3a2418,
+      0 0 0 calc(max(4px, 1.3cqh) + 1px) #1a0f0a,
+      0 10px 30px rgba(0, 0, 0, 0.7);
+  }
+  /* The felt's grain: two faint crossing hatches, enough to read as cloth. */
+  .fieltro::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    opacity: 0.06;
+    background-image:
+      repeating-linear-gradient(45deg, #fff 0 1px, transparent 1px 3px),
+      repeating-linear-gradient(-45deg, #000 0 1px, transparent 1px 3px);
+    pointer-events: none;
+  }
+
+  .zona-mesa {
+    bottom: var(--zona-mano);
+  }
+  .zona-mano {
+    height: var(--zona-mano);
+  }
+  .linea-relato {
+    bottom: var(--zona-mano);
+    height: var(--linea-relato);
+  }
+
+  /*
+   * The mesa is whatever the seats leave free: below the far edge's row of
+   * fichas and, when there are side seats, in from both sides. It is a box
+   * with a size, measured by the component, and the cards fit themselves to
+   * it — which is what the step table of Phase 45 only approximated.
    */
   .carril-mesa {
-    display: flex;
-    align-items: flex-end;
-    gap: calc(var(--spacing) * 3);
-    padding-inline: 7cqw;
-    padding-bottom: 1.5cqh;
+    top: var(--banda-arriba);
+    bottom: calc(var(--linea-relato) + 0.25rem);
+    left: 5cqw;
+    right: 5cqw;
   }
+  .con-lados .carril-mesa {
+    left: calc(var(--ancho-lado) + 2.5cqw);
+    right: calc(var(--ancho-lado) + 2.5cqw);
+  }
+
   /*
-   * The grupos wrap — in both orientations, since Phase 45. Lying down they
-   * used to be one row that scrolled sideways, which meant that six players
-   * deep into a partida the mesa ran off the right edge and half the table
-   * had to be found before it could be read. Wrapping alone does not fix
-   * that; it is wrapping *plus* the cards shrinking by grupo count
-   * (`escalaDeMesa` in components/mesa.tsx) that makes eighteen grupos fit.
-   *
-   * `overflow-y` stays as a last resort. With the ratios as they are it
-   * should never be reached — the point is that a full mesa is visible, not
-   * that it is reachable.
+   * The grupos wrap, centred in the box both ways. `overflow-y` stays as the
+   * last resort for a mesa that would need cards smaller than a finger can
+   * read — the fitting keeps it from being reached at any real count.
    */
   .grupos-en-mesa {
     display: flex;
     height: 100%;
-    min-width: 0;
-    flex: 1;
+    width: 100%;
     flex-wrap: wrap;
-    align-content: flex-end;
-    align-items: flex-end;
-    gap: calc(var(--spacing) * 1);
+    align-content: safe center;
+    align-items: center;
+    justify-content: center;
     overflow-y: auto;
+  }
+
+  /*
+   * A card back (Phase 46): a white margin, a red field and a fine lattice,
+   * the way a printed deck's back is — a flat red slab reads as a sticker.
+   */
+  .dorso {
+    background:
+      repeating-linear-gradient(45deg, rgba(255, 255, 255, 0.13) 0 1px, transparent 1px 5px),
+      repeating-linear-gradient(-45deg, rgba(255, 255, 255, 0.13) 0 1px, transparent 1px 5px),
+      linear-gradient(135deg, #b91c1c, #7f1d1d);
+    box-shadow:
+      inset 0 0 0 max(2px, 0.07em) #e7e2d6,
+      inset 0 0 0 calc(max(2px, 0.07em) + 1px) rgba(0, 0, 0, 0.25),
+      0 1px 3px rgba(0, 0, 0, 0.45);
+    border: 1px solid rgba(0, 0, 0, 0.35);
+  }
+
+  /* A card back in miniature, for the count on a ficha. */
+  .dorso-mini {
+    background: linear-gradient(135deg, #b91c1c, #7f1d1d);
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.35);
   }
 
   /*
@@ -299,25 +391,19 @@
   }
 
   /*
-   * Standing up. The same lanes work upright — seats across the top, mesa in
-   * the middle, hand along the bottom — but two things give way when the box
-   * is taller than it is wide: the drawn oval (there is no room for an
-   * ellipse, and the arrangement alone reads as a table — cardgames.io's
-   * lesson), and where the grupos settle. They wrap in both orientations
-   * since Phase 45; upright they centre in the lane rather than sitting on
-   * its floor, because height is the one thing portrait has plenty of.
+   * Standing up. The felt goes rectangular — there is no room for an oval's
+   * curves — and the rest holds: seats on the rim, the mesa in the middle,
+   * your hand across the bottom.
    */
   @container (max-aspect-ratio: 1/1) {
-    .ovalo {
-      display: none;
+    .cancha > * {
+      --carta-md: clamp(3rem, 11cqh, 5.5rem);
+      --ficha: clamp(1.75rem, 5cqh, 2.625rem);
+      --texto-mesa: clamp(0.6875rem, 1.8cqh, 0.8125rem);
+      --ancho-asiento: clamp(4rem, 20cqw, 6rem);
     }
-    .carril-mesa {
-      align-items: center;
-      padding-bottom: 0;
-    }
-    .grupos-en-mesa {
-      align-content: center;
-      align-items: center;
+    .fieltro {
+      border-radius: 1.5rem;
     }
   }
 }

@@ -83,19 +83,12 @@ describe('a full mesa on the table', () => {
     expect(grupos(container).className).not.toContain('overflow-x')
   })
 
-  it('shrinks the cards once the table crowds, and not before', () => {
-    const tranquila = render(<Mesa state={mesaCon(1)} asiento={0} />)
-    expect(grupos(tranquila.container).style.getPropertyValue('--carta-xs')).toContain(
-      '0.52',
-    )
-    cleanup()
-
-    // Eighteen grupos: six seats, three escalas each — the worst case the
-    // default contracts can produce.
-    const llena = render(<Mesa state={mesaCon(3)} asiento={0} />)
-    expect(grupos(llena.container).style.getPropertyValue('--carta-xs')).toContain(
-      '0.37',
-    )
+  it('sizes the cards in pixels from the measured lane (Phase 46)', () => {
+    // jsdom measures nothing, so the lane reads as empty and the mesa falls
+    // back to its uncrowded size; the fitting itself is pinned in
+    // ajuste-de-mesa.test.ts, where the geometry can be checked.
+    const { container } = render(<Mesa state={mesaCon(3)} asiento={0} />)
+    expect(grupos(container).style.getPropertyValue('--carta-xs')).toMatch(/^\d+(\.\d+)?px$/)
   })
 
   it('keeps every grupo on the felt, whatever the count', () => {
@@ -106,12 +99,10 @@ describe('a full mesa on the table', () => {
     expect(container.querySelectorAll('.grupos-en-mesa > *')).toHaveLength(18)
   })
 
-  it('drops the grupo titles when crowded and keeps them when not', () => {
+  it('draws no grupo titles on the live mesa, crowded or not (Phase 46)', () => {
+    // The cards say what «Escala de ♠» said, and a title is a whole line of
+    // height per grupo — the table's scarcest thing.
     render(<Mesa state={mesaCon(1)} asiento={0} />)
-    expect(screen.getAllByText(/^Escala de/).length).toBe(6)
-    cleanup()
-
-    render(<Mesa state={mesaCon(3)} asiento={0} />)
     expect(screen.queryByText(/^Escala de/)).toBeNull()
   })
 })
