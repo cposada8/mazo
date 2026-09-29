@@ -2288,10 +2288,18 @@ Not a priority.
 ## Milestone 6 — Bots de más nivel
 
 *Asked for by the owner on 2026-09-28: «los actuales son bastante
-estúpidos, quiero bots de más nivel». Proposed order below; the owner sets
-it. The design rule from Phase 39 stands — a personality is a difference of
-strategy, never of competence — so what makes every bot less foolish goes
-into the shared floor, and only what is genuinely a style becomes a bot.*
+estúpidos, quiero bots de más nivel».*
+
+Settled with the owner (2026-09-28):
+- **The order below stands**, 52 through 57, and comes before the comodín
+  gallery (Phase 51, still not a priority).
+- **Today's bots stay as they are, as the *Fácil* level.** The improved
+  play is **new bots, selectable at a higher level** — not an upgrade of El
+  Codicioso, El Paciente and El Memorioso. So the Phase 39 rule (a
+  personality is a difference of strategy, never of competence) now holds
+  *within* a level: the stronger floor is shared by the new bots, and the
+  old floor stays under the old ones. Bug fixes like Phase 52 still go to
+  every bot — a bot doing what no player would is not a level.
 
 What the code shows today, beyond the bug that opened this milestone:
 
@@ -2319,12 +2327,29 @@ view — take it, unload as the bot will — and says yes only if the card ends
 on the mesa. Over ~900 bot partidas of 2–5 seats, libre and estricta, with
 and without comodines: 17 such draws in 5,515 before, 0 in 5,307 after.
 
-### Phase 53 — El banco de pruebas
+### Phase 53 — El banco de pruebas ✅
 Before making bots stronger, a way to tell that they are. `npm run torneo`
 plays N seeded partidas with seats rotated and reports, per bot, wins,
 points per seat, turn of bajada and rondas that stall — plus the invariants
 this milestone keeps finding by hand (no refused move, no bajado bot keeping
 a descarte card). Every later phase states its result against it.
+
+**Done.** `jugarTorneo` (`lib/bots/torneo.ts`) is pure and seeded; `npm run
+torneo -- --bots a,b --partidas N --asientos n --estricta --sin-comodines`
+prints the table and exits non-zero on any falta. A win shared by a tie is
+split, so the victorias add up to the partidas finished. The baseline — the
+*Fácil* level, 600 partidas each, default contracts:
+
+| Seats | El Memorioso | El Codicioso | El Paciente | Fair share | Faltas |
+| --- | --- | --- | --- | --- | --- |
+| 3 | 38.2% | 32.6% | 28.9% | 33.3% | 2 atascos |
+| 4 | 29.9% | 27.6% | 17.5% | 25.0% | none |
+| 5 | 23.3% | 21.5% | 15.3% | 20.0% | none |
+
+At two seats 76 of 600 bot-only partidas stall — the loop Phase 39 left
+open on purpose, since a table always has its host at it. Estricta and
+libre give identical numbers, and that is correct: these bots only ever lay
+down minimum-size grupos, which both rules accept.
 
 ### Phase 54 — Un piso más alto
 Shared competence, so all three current bots improve together:

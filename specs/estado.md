@@ -333,11 +333,12 @@ ordered by them (`roadmap.md` has the briefs and the open questions):
    menu. Not a priority.
 
 **Milestone 6 — Bots de más nivel**, asked for by the owner on 2026-09-28
-(`roadmap.md` has the proposal; the owner sets the order):
+(`roadmap.md` has the phases). The owner settled it: this order, today's
+bots stay as the *Fácil* level, the stronger play comes as new bots:
 
 1. ~~Phase 52 — Tomar solo lo que se baja.~~ ✅ Done, on dev: a bajado bot
    no longer takes a descarte card it will not put down.
-2. **Phase 53 — El banco de pruebas.** A tournament command to measure bots.
+2. ~~Phase 53 — El banco de pruebas.~~ ✅ Done, on dev: `npm run torneo`.
 3. **Phase 54 — Un piso más alto.** Best bajada, points under pressure, no
    gifts to the next seat, the comodín economy.
 4. **Phase 55 — La memoria de la mesa.** The relatos as the bots' memory.

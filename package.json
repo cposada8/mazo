@@ -10,7 +10,8 @@
     "lint": "eslint",
     "test": "vitest",
     "test:run": "vitest run",
-    "publicar": "bash scripts/publicar.sh"
+    "publicar": "bash scripts/publicar.sh",
+    "torneo": "tsx scripts/torneo.ts"
   },
   "dependencies": {
     "@base-ui/react": "^1.7.0",
@@ -42,6 +43,7 @@
     "eslint-config-next": "16.3.1",
     "jsdom": "^29.1.1",
     "tailwindcss": "^4",
+    "tsx": "^4.23.15",
     "typescript": "^5",
     "vitest": "^4.1.10"
   }
