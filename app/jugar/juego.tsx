@@ -37,6 +37,7 @@ import {
 } from '@/lib/pantalla'
 import { type Relato, contarRelato } from '@/lib/relato'
 import { cn } from '@/lib/utils'
+import { ETIQUETA_DE_VERSION } from '@/lib/version'
 import {
   CONFIG_POR_DEFECTO,
   type Card,
@@ -308,19 +309,28 @@ export function Tablero({
         />
 
         {/*
-          One small button, not a row: the top-left corner borders the seat
-          band, and a strip of controls up there is exactly the kind of
-          neighbour the lanes exist to forbid. Everything it used to say —
-          contract, marcador, seed, salir — lives behind it.
+          The menu, wearing the ronda's contract (Phase 46). The contract
+          used to be printed on the felt behind the mesa, which is exactly
+          where the grupos pile up — so the one thing a player needs to know
+          all ronda long went under the cards. Here it cannot be covered, and
+          tapping it opens the menu, where the marcador is.
         */}
         <button
           type="button"
           onClick={() => setVerMenu(true)}
-          aria-label="Menú de la partida"
+          aria-label={`Menú de la partida. Ronda ${partida.indiceContrato + 1} de ${partida.config.contratos.length}: ${ronda.contrato.nombre}`}
           aria-expanded={verMenu}
-          className="absolute top-[calc(env(safe-area-inset-top)+0.375rem)] left-[calc(env(safe-area-inset-left)+0.375rem)] z-20 rounded-full bg-black/55 p-2 text-tinta-suave shadow-[0_2px_6px_rgba(0,0,0,0.5)] ring-1 ring-white/10"
+          className="absolute top-[calc(env(safe-area-inset-top)+0.375rem)] left-[calc(env(safe-area-inset-left)+0.375rem)] z-20 flex max-w-[max(8rem,calc(22cqw-0.75rem))] items-center gap-2 rounded-2xl bg-black/55 py-1.5 pr-3 pl-2 text-left text-tinta-suave shadow-[0_2px_6px_rgba(0,0,0,0.5)] ring-1 ring-white/10"
         >
-          <Menu className="size-4" aria-hidden />
+          <Menu className="size-4 shrink-0" aria-hidden />
+          <span className="flex min-w-0 flex-col leading-tight">
+            <span className="text-[9px] tracking-wide text-tinta-tenue uppercase tabular-nums">
+              Ronda {partida.indiceContrato + 1} de {partida.config.contratos.length}
+            </span>
+            <span className="text-[11px] font-semibold text-tinta">
+              {ronda.contrato.nombre}
+            </span>
+          </span>
         </button>
 
         {verMenu && (
@@ -564,6 +574,11 @@ function MenuDePartida({
               Seguir jugando
             </button>
           </div>
+          {/* Which release is on this phone — the first question when
+              something looks wrong, answerable without leaving the partida. */}
+          <p className="text-muted-foreground text-right text-[10px] tabular-nums">
+            Mazo {ETIQUETA_DE_VERSION}
+          </p>
         </div>
       </div>
     </div>

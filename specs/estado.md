@@ -293,6 +293,28 @@ And a trap: **a card id names a card in the deck, not a card in this ronda.**
 across rondas — an arrangement, a selection, a hint — will keep matching after
 the cards are gone and has to be dropped when the ronda changes.
 
+## Versions and releasing
+
+**The version counts production releases, and nothing else.** It lives in
+`package.json`, starts at **1.0.0**, and moves only when dev goes to
+production — never on a push to dev. The app shows it at the foot of the
+home page and in the partida's menu: `v1.2.0` in production, `v1.2.0 · dev`
+on any other build (dev, previews, local), meaning *the last release plus
+whatever is being tried on top of it* (`lib/version.ts`).
+
+Releasing is one command, from a clean tree:
+
+```
+npm run publicar            # 1.2.0 -> 1.3.0, the usual release
+npm run publicar -- patch   # 1.2.0 -> 1.2.1, a small fix
+npm run publicar -- major   # 1.2.0 -> 2.0.0
+```
+
+`scripts/publicar.sh` checks dev (tests, lint, build), merges it into
+`main`, bumps the version in the merge, tags it `vX.Y.Z`, pushes, and fast-
+forwards dev to main so dev knows the number it builds on. Vercel deploys
+`main` to production on push.
+
 ## What comes next
 
 **Nothing is scheduled.** Every numbered phase is done and Milestone 4 closed
