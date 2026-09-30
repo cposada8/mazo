@@ -2761,21 +2761,27 @@ Dropping between two runs to start a new bloque came next, as Phase 66.
 The owner, 2026-09-30: dragging should also **make** a bloque, not only fill
 one.
 
-The gap between two runs is 12 px — three seams in it (end of one run, a
-new bloque, start of the next) would be too fine for a finger. So while a
-card is up, **empty places open**: a dashed «+ 🔒» the width of half a card
-in front of every run, and after the last bloque when there is no loose run.
-Dropped on one, what is carried becomes a bloque of its own there.
+First built as dashed places that opened **in the row**, in front of every
+run, while a card was up. The owner, trying it: the places widened a hand
+that had already fanned itself to fit, and the row overflowed into a
+scrollbar. Their call: **the new bloque's target goes above the hand**, not
+in line with it.
+
+So while a card is up, **a lock appears over the hand**, straight above the
+card that was picked up (kept within the row's ends), 0.85 of a card over
+the row. Carried up to it and let go, what is carried becomes a bloque of
+its own, after the other bloques. The lock lights blue when the finger is on
+it — blue, like the seam, because both say «here» — and the seam's line
+hides meanwhile. Nothing in the row moves when a card lifts, so the seams go
+back to being measured at the moment of lifting.
+
 `Destino` gained `{ nuevoBloqueAntesDe }`, named by the first card of the
-bloque it goes in front of (null: after them all), read before anything
-moves, so a new bloque can take the place of the one the drag empties.
+bloque it goes in front of, read before anything moves; the lock always
+passes null, after them all.
 
-Opening the places moves the cards, so the seams are measured **after**
-they open — once, in a layout effect on each pick-up — never during the
-drag. The lock button stays.
-
-**Done.** Measured in the browser: one card, and a selection of two, each
-made a new bloque, before the loose run and before the first bloque.
+**Done.** In the browser: lifting a card leaves the row's width alone, a
+drop on the lock makes a bloque of the carried card, and a drop at a seam
+still lands between cards.
 
 ### Phase 67 — Lo que se movió se ve dónde quedó ✅
 The owner, 2026-09-30: after a drag it is easy to lose track of what moved.

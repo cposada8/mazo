@@ -24,8 +24,8 @@
 
 'use client'
 
-import { Check, Layers, Lightbulb } from 'lucide-react'
-import { Fragment, useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { Check, Layers, Lightbulb, Lock } from 'lucide-react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { type Arrastre, useArrastre } from '@/components/arrastre'
 import { Carta, CartaBocaAbajo } from '@/components/carta'
 import {
@@ -680,14 +680,7 @@ export function Mano({
           const indice = posicionFijada.get(seccion.id) ?? -1
 
           return (
-            <Fragment key={seccion.id}>
-            {arrastre && (
-              <LugarNuevo
-                ancla={seccion.bloqueada ? seccion.cards[0].id : null}
-                destino={arrastre.destino}
-              />
-            )}
-            <div data-seccion={seccion.id} className="flex shrink-0 flex-col gap-0.5">
+            <div key={seccion.id} data-seccion={seccion.id} className="flex shrink-0 flex-col gap-0.5">
               {/*
                 The fan is tight on purpose: each card only shows its left
                 edge, and since Phase 25 that edge carries the whole identity
@@ -769,21 +762,13 @@ export function Mano({
                 </button>
               )}
             </div>
-            </Fragment>
           )
         })}
-
-        {/* With no loose run left, the place after the last bloque. */}
-        {arrastre && !secciones.some((seccion) => !seccion.bloqueada) && (
-          <LugarNuevo ancla={null} destino={arrastre.destino} />
-        )}
 
         {arrastre && (
           <>
             {/* Where it will land: a seam of light between two cards. */}
-            {arrastre.marca !== null &&
-              arrastre.destino &&
-              !('nuevoBloqueAntesDe' in arrastre.destino) && (
+            {arrastre.marca !== null && (
                 <span
                   aria-hidden
                   className="pointer-events-none absolute z-10 h-[var(--carta-md,5rem)] w-1 -translate-x-1/2 rounded-full bg-sky-300 shadow-[0_0_10px_rgba(125,211,252,0.9)]"
@@ -795,40 +780,6 @@ export function Mano({
         )}
       </div>
       )}
-    </div>
-  )
-}
-
-/**
- * An empty place between two runs, open only while a card is up (Phase 66).
- * Dropped here, what is carried becomes a bloque of its own, pinned, in this
- * spot — the lock button's job, done by hand. Wide enough for a finger: the
- * gap the runs normally keep is not.
- */
-function LugarNuevo({
-  ancla,
-  destino,
-}: {
-  /** The first card of the bloque it sits in front of; null for after them all. */
-  ancla: string | null
-  destino: Destino | null
-}) {
-  const elegido =
-    destino !== null && 'nuevoBloqueAntesDe' in destino && destino.nuevoBloqueAntesDe === ancla
-
-  return (
-    <div
-      aria-hidden
-      data-nuevo={ancla ?? ''}
-      className={cn(
-        'flex h-[var(--carta-md,5rem)] w-[calc(var(--carta-md,5rem)*0.5)] shrink-0 flex-col items-center justify-center gap-0.5 rounded-md border-2 border-dashed text-[calc(var(--texto-mesa,0.75rem)*0.8)]',
-        elegido
-          ? 'border-sky-300 bg-sky-300/15 text-sky-200'
-          : 'border-white/20 text-tinta-tenue',
-      )}
-    >
-      <span className="text-[1.6em] leading-none">+</span>
-      <span>🔒</span>
     </div>
   )
 }
@@ -852,17 +803,38 @@ function EnElAire({
 }) {
   const marco = useRef<HTMLDivElement>(null)
   const cartas = useRef<HTMLDivElement>(null)
+  const candado = useRef<HTMLDivElement>(null)
+  const { candado: donde } = arrastre
 
   useLayoutEffect(() => {
-    if (!marco.current || !cartas.current) return
+    if (!marco.current || !cartas.current || !candado.current) return
     const origen = marco.current.getBoundingClientRect()
     cartas.current.style.transform = `translate(${arrastre.x - origen.left}px, ${arrastre.y - origen.top}px)`
-  }, [arrastre.x, arrastre.y])
+    candado.current.style.transform = `translate(${donde.x - donde.tamano / 2 - origen.left}px, ${donde.y - donde.tamano / 2 - origen.top}px)`
+  }, [arrastre.x, arrastre.y, donde])
 
   const porId = new Map(secciones.flatMap((seccion) => seccion.cards).map((card) => [card.id, card]))
+  const alCandado = 'nuevoBloqueAntesDe' in arrastre.destino
 
   return (
     <div ref={marco} aria-hidden className="pointer-events-none fixed top-0 left-0 z-50 size-0">
+      {/*
+        The lock over the hand (Phase 66): carried up to it and let go, the
+        cards become a bloque of their own. Over the row rather than in it,
+        so opening it widens nothing.
+      */}
+      <div
+        ref={candado}
+        className={cn(
+          'absolute top-0 left-0 flex items-center justify-center rounded-full border-2 border-dashed',
+          alCandado
+            ? 'scale-110 border-sky-300 bg-sky-400/25 text-sky-100 shadow-[0_0_16px_rgba(125,211,252,0.8)]'
+            : 'border-white/40 bg-black/45 text-tinta-suave',
+        )}
+        style={{ width: donde.tamano, height: donde.tamano }}
+      >
+        <Lock className="size-[45%]" />
+      </div>
       <div ref={cartas} className="relative">
         {arrastre.llevadas.map((id, indice) => {
           const card = porId.get(id)
