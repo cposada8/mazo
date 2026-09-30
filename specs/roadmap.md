@@ -2275,13 +2275,9 @@ lobby's ajustes, each greyed out when it would change nothing. «Ninguno»
 leaves *Dos tríos* on; from there the host taps on whichever others they
 want.
 
-### Phase 51 — La galería de comodines
-The comodines wear photos from `public/candidatos/comodines` since Phase 29 —
-the owner's pets among them — and a ronda only ever shows a few. **A small
-screen from the partida's menu that shows every face in the gallery**, so
-they can all be seen. Browsing only: it changes nothing about the game, and
-it lives in the menu next to «Cómo se juega», in the same over-the-felt shape.
-Not a priority.
+### ~~Phase 51 — La galería de comodines~~ → *After*
+Moved to the *After* list by the owner, 2026-09-30: a screen from the
+partida's menu showing every comodín face in the gallery. Not scheduled.
 
 ---
 
@@ -2614,6 +2610,96 @@ from where it is and still on the pile.
 
 ---
 
+## Asked for after v1.4.1
+
+*The owner, 2026-09-30, after playing v1.4.1. In this order: the home page
+and the way to the panel first, dragging cards last as the most involved.
+The comodín gallery (Phase 51) moved to the *After* list.*
+
+### Phase 61 — La portada al día ✅
+The home page (`app/page.tsx`) was written before most of what the game is
+now, and says things that are no longer true:
+
+- **The contracts go.** It lists seven, hard-coded; the catalog has twelve
+  (`lib/engine/contratos.ts`, the escaleras since Phase 48), and which ones
+  a partida plays is the host's choice in the lobby — there is no one list
+  to show. The owner: remove them all. «Cómo se juega» stays, as the one
+  link that explains the game.
+- **The door comes first.** Creating or joining a partida is what somebody
+  opens the app to do, and today it sits under the contracts.
+- **The footer stops saying what is not so.** «Falta que jueguen varios a la
+  vez» — they have since Milestone 3.
+- **La mesa and the banco de pruebas** (`/mesa`, `/pruebas`), under
+  «También», are tools from building the engine — a bots-only partida
+  stepped move by move, and seeded deals with grupo validation. They mean
+  nothing to a player. They leave the home page and are linked from the
+  panel instead — proposed, and taken while the owner had not yet said;
+  easy to put back.
+
+Done when the home page names nothing the game no longer does, and the first
+thing on it is the way into a partida.
+
+**Done.** Header, then the door, then two quiet links: «Cómo se juega» (whose
+own contracts section reads the catalog, so it cannot go stale) and the
+panel. The footer keeps the version and the byline. La mesa and the banco de
+pruebas sit at the bottom of the panel, under «Herramientas».
+
+### Phase 62 — Del inicio al panel y de vuelta ✅
+The home page and the panel (`app/panel`) do not know about each other: the
+panel is reached only by typing its address, and has no way back.
+
+- **The panel gets a way home** — on the key screen and on the list alike.
+- **The home page gets a button to the panel, visible to everyone** (the
+  owner, 2026-09-30). The panel keeps its key; a visitor who follows the
+  button meets the key screen and its way home. Quiet, not competing with
+  the door — it belongs with the secondary links, not beside «Crear».
+
+Done when the panel can be reached from the home page and left back to it
+without typing an address.
+
+**Done.** «Panel» under «Cómo se juega» on the home page; «‹ Mazo» at the top
+of every panel screen — the key, the list, and a deployment with no panel.
+
+### Phase 63 — Acomodar arrastrando
+Arranging the hand today is select, then tap an arrow once per place
+(`moverCartas`, `app/jugar/useMano.ts`). The owner wants to **touch a card
+and drag it** to where it goes.
+
+The state is already shaped for it: the loose cards' order is `orden`, and a
+drag is one more way of writing it — the card is dropped, the position it
+fell at is computed, `orden` is rewritten from the hand **as displayed**
+(the same rule `moverCartas` follows, so the card just drawn is not lost).
+Nothing leaves the hand, so it needs no engine, no server and no network,
+and works the same in both homes. Pointer events, no library.
+
+What has to be got right is the gesture, not the state:
+
+- **A tap still selects.** A drag must not; a press that moves past a few
+  pixels is a drag.
+- **The row already scrolls sideways** (`overflow-x-auto` in `Mano`,
+  `components/mesa.tsx`), and on a phone a sideways swipe is already
+  «move my hand». Proposed: **press and hold (~250 ms) to lift** the card,
+  then drag; a swipe without the hold keeps scrolling.
+- **The fan is tight** — only each card's left edge shows — so the drop
+  position comes from the cards' measured positions, not from what is under
+  the finger. While dragging, the neighbours open a gap where it will land.
+- **A latched sort is released** by a drag, as the arrows already do; left
+  on, it would file the card straight back.
+- **Pinned bloques stay out of it** at first: only loose cards drag. Dragging
+  into and out of a bloque can come later.
+- The arrows stay, as the other way to do it.
+
+- **Dragging a selected card carries the whole selection** with it,
+  gathered where it is dropped in the order it sat in — handy for building
+  an escala. Dragging a card that is not selected carries only that card and
+  leaves the selection alone. (The owner, 2026-09-30.)
+
+Done when, on a phone lying down and on a laptop, a loose card — or the
+selection it belongs to — can be held, carried and dropped anywhere in the
+loose run, a tap still selects, and a swipe still scrolls the hand.
+
+---
+
 ## After
 
 Not scheduled, and not to be started before Milestone 3 — online play:
@@ -2625,3 +2711,8 @@ Not scheduled, and not to be started before Milestone 3 — online play:
   forward into Phase 18, for the screen space rather than for the install.
 - Replays from seed and move list.
 - Private leaderboards among friends.
+- The comodín gallery (was Phase 51): the comodines wear photos from
+  `public/candidatos/comodines` since Phase 29 — the owner's pets among them
+  — and a ronda only ever shows a few. A small screen from the partida's
+  menu, next to «Cómo se juega» and in the same over-the-felt shape, showing
+  every face. Browsing only; it changes nothing about the game.

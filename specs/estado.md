@@ -329,7 +329,7 @@ ordered by them (`roadmap.md` has the briefs and the open questions):
    the gallery by the owner.
 4. ~~Phase 50 — Todos o ninguno.~~ ✅ Done, on dev. Two buttons on the
    lobby's list of repartos: every one on, or only the first.
-5. **Phase 51 — La galería de comodines.** Every comodín face, from the
+5. ~~Phase 51 — La galería de comodines.~~ Moved to *After*. Every comodín face, from the
    menu. Not a priority.
 
 **Milestone 6 — Bots de más nivel**, asked for by the owner on 2026-09-28
@@ -361,7 +361,17 @@ bots stay as the *Fácil* level, the stronger play comes as new bots:
 3. ~~Phase 60 — La carta sale de donde estaba.~~ ✅ Done, on dev: a card in
    the air has left where it was; only its landing waits.
 
-The comodín gallery (Phase 51) stays behind them, not a priority.
+**Next, asked for after v1.4.1** (`roadmap.md` has the briefs), in the
+owner's order:
+
+1. ~~Phase 61 — La portada al día.~~ ✅ Done, on dev: no contracts, the door
+   first, the footer true; la mesa and the banco de pruebas moved to the
+   panel.
+2. ~~Phase 62 — Del inicio al panel y de vuelta.~~ ✅ Done, on dev.
+3. **Phase 63 — Acomodar arrastrando.** Hold a loose card and drag it; a
+   selected card carries the whole selection.
+
+The comodín gallery (was Phase 51) moved to the *After* list.
 
 Both 47 and 48 are settled with the owner; nothing is waiting on a question.
 The *After* list in `roadmap.md` stays unordered behind them.
