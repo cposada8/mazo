@@ -2509,6 +2509,50 @@ until the owner says which level a table should start with.
 
 ---
 
+## Asked for after v1.3.0
+
+*The owner, 2026-09-30, after playing v1.3.0. Both are about the table
+showing a move the way it happened; neither changes a rule. Listed in the
+order the owner gave them. The comodín gallery (Phase 51) stays behind them,
+not a priority.*
+
+### Phase 58 — Lo que llega a la mesa se ve llegar
+Laying down and adding to a grupo happen **instantly**: the grupos simply
+appear on the felt, and a card added to somebody's escala is just there.
+Only drawing and throwing travel today — `viajeDeRelato` (`app/jugar/
+useMesa.ts`) makes a trip for `mazo`, `descarte` and `bota` and returns
+null for `bajada`, `agrega` and `comodin`. So:
+
+- **A bajada** travels: the grupos go from the player's seat to their place
+  on the mesa, card by card or grupo by grupo, in the same public way the
+  rest of the table moves.
+- **An agregar** travels from the player's seat to the grupo that received
+  it, and **a comodín freed** travels back to the hand that freed it, with
+  the card that replaced it travelling in.
+- The landing is visible: the grupo that just grew is marked the way a new
+  grupo already is on a closed mesa (Phase 42's ring), so the eye finds it.
+
+Open with the owner: how long each trip takes when several land in one turn
+(a bajada of three grupos followed by two agregars) — played one after
+another, the turn's seconds can run out before the story does.
+
+### Phase 59 — Primero el viaje, después la carta
+Playing against bots with little thinking time, **the thrown card appears
+on the descarte before the animation of throwing it**. The cause is in how
+the trip is drawn: `CartaViajera` animates *after* the state has already
+moved («the table catching the eye up»), and the descarte pile draws from
+the state. The relatos are told at a steady pace, so when a bot's moves land
+close together the telling falls behind, and the pile shows each card before
+its trip has been told — a card lands, and then a copy of it flies in.
+
+The fix is to hold the piles (and, with Phase 58, the mesa) to what has been
+*told*, not to what has *happened*: a card joins the descarte when its trip
+ends. The state stays the truth; what is drawn waits for the story. Done
+when, at the shortest bot time, every thrown card flies first and lands
+second, for bots and people alike, in both homes.
+
+---
+
 ## After
 
 Not scheduled, and not to be started before Milestone 3 — online play:

@@ -348,8 +348,18 @@ bots stay as the *Fácil* level, the stronger play comes as new bots:
 6. ~~Phase 57 — Niveles en la sala.~~ ✅ Done, on dev: Fácil / Normal /
    Difícil in the lobby's picker. The default seat is still Fácil.
 
-**Milestone 6 is done.** Open: which level a new bot seat starts at (the
-owner's call), and the comodín gallery (Phase 51), not a priority.
+**Milestone 6 is done**, released as v1.3.0. A new bot seat starts at
+*Fácil* (El Codicioso) — the owner's decision, 2026-09-29.
+
+**Next, asked for after v1.3.0** (`roadmap.md` has the briefs):
+
+1. **Phase 58 — Lo que llega a la mesa se ve llegar.** Bajadas and agregars
+   travel onto the mesa instead of appearing.
+2. **Phase 59 — Primero el viaje, después la carta.** With quick bots the
+   thrown card shows on the descarte before its trip; the piles should wait
+   for the story.
+
+The comodín gallery (Phase 51) stays behind them, not a priority.
 
 Both 47 and 48 are settled with the owner; nothing is waiting on a question.
 The *After* list in `roadmap.md` stays unordered behind them.
