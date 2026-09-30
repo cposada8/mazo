@@ -2810,6 +2810,22 @@ They want it marked where it landed — Phase 67's green — and not selected.
 and a selection of two each land green and unselected, and a tap straight
 after a drop still selects.
 
+### Phase 69 — Las pilas esperan la carta ✅
+The owner, 2026-09-30, on v1.5.0: when a bot throws, **the mazo and the
+descarte glow amber before the thrown card arrives** — as if the card on the
+pile were the one to draw, when it is the one underneath.
+
+The glow is «your draw, now», and it read the state: a bot's throw hands
+the turn over at once, while the table (Phase 59) still shows the pile from
+before, with the card in the air. So `useMesa` now says `contando` — some
+move has happened that the table has not finished showing — and the piles
+neither glow nor draw until it is false.
+
+**Done.** Measured in the browser, three bots, sampling every 40 ms through
+their turns: 7 samples with the piles glowing under a flying card before
+the change, none after; the glow comes on the sample after the last flight.
+Tested in `mesa-contada.test.tsx`.
+
 ---
 
 ## After

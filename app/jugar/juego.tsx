@@ -320,7 +320,11 @@ export function Tablero({
           // Tapping anywhere else on the table lets go of what you picked
           // (Phase 64), the way a hand relaxes when you look away from it.
           onFondo={juego.seleccion.length > 0 ? juego.limpiarSeleccion : undefined}
-          onRobar={esTuTurno && ronda.fase === 'draw' ? juego.robar : undefined}
+          // Not while the throw that handed you the turn is still flying
+          // (Phase 69): the pile under it is not the one you would draw from.
+          onRobar={
+            esTuTurno && ronda.fase === 'draw' && !juego.contando ? juego.robar : undefined
+          }
           onGrupo={esTuTurno && ronda.fase === 'act' ? juego.agregarA : undefined}
         />
 

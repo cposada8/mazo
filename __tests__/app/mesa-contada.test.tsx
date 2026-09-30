@@ -196,3 +196,39 @@ describe('a bajada flies to the mesa', () => {
     expect([...(result.current.mesaContada?.ocultas ?? [])]).toEqual([escala.cards[4].id])
   })
 })
+
+describe('your draw waits for the throw that handed you the turn (Phase 69)', () => {
+  beforeEach(() => vi.useFakeTimers())
+  afterEach(() => vi.useRealTimers())
+
+  it('is still telling while the card flies, and done once it lands', () => {
+    const nueve = n('9', 'diamonds')
+    const antes = vistaDe(
+      makeRonda({ jugadores: [{ hand: manoPropia() }, { hand: [n('J', 'hearts'), n('3', 'clubs')] }], discard: [nueve], turno: 1, fase: 'act' }),
+    )
+    const despues = vistaDe(
+      makeRonda({
+        jugadores: [{ hand: manoPropia() }, { hand: [n('3', 'clubs')] }],
+        discard: [nueve, n('J', 'hearts')],
+        turno: 0,
+      }),
+    )
+    const { result, rerender } = renderHook(
+      ({ vista, relatos }: { vista: VistaDePartida; relatos: Relato[] }) =>
+        useMesa(transporte(vista, relatos)),
+      { initialProps: { vista: antes, relatos: [] as Relato[] } },
+    )
+    expect(result.current.contando).toBe(false)
+
+    // The state already says it is your turn to draw…
+    rerender({ vista: despues, relatos: [{ tipo: 'bota', seat: 1, carta: 'J♥' }] })
+    expect(result.current.esTuTurno).toBe(true)
+    // …but the J♥ has not reached the pile, so the table is not done.
+    expect(result.current.contando).toBe(true)
+    act(() => void vi.advanceTimersByTime(0))
+    expect(result.current.contando).toBe(true)
+
+    act(() => void vi.advanceTimersByTime(MS_DE_VIAJE))
+    expect(result.current.contando).toBe(false)
+  })
+})

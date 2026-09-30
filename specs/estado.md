@@ -384,6 +384,11 @@ owner's order:
 8. ~~Phase 68 — Lo arrastrado se suelta.~~ ✅ Done, on dev: what a drag
    carried is deselected on landing, marked green instead.
 
+Released as v1.5.0. Then, from playing it:
+
+9. ~~Phase 69 — Las pilas esperan la carta.~~ ✅ Done, on dev: the piles
+   glow for your draw only once the throw that handed you the turn lands.
+
 The comodín gallery (was Phase 51) moved to the *After* list.
 
 Both 47 and 48 are settled with the owner; nothing is waiting on a question.
