@@ -259,6 +259,23 @@ describe('llevar — dragging cards to a seam (Phases 63 and 65)', () => {
       expect(r.bloques).toEqual([['p', 'r'], ['t']])
     })
 
+    it('makes a bloque of its own in front of another (Phase 66)', () => {
+      const r = llevar(['a', 'b'], bloques, ['b', 'q'], { nuevoBloqueAntesDe: 's' })
+      expect(r.orden).toEqual(['a'])
+      expect(r.bloques).toEqual([['p', 'r'], ['b', 'q'], ['s', 't']])
+    })
+
+    it('makes a bloque of its own after the others, for null', () => {
+      const r = llevar(['a', 'b'], bloques, ['a'], { nuevoBloqueAntesDe: null })
+      expect(r.bloques).toEqual([['p', 'q', 'r'], ['s', 't'], ['a']])
+    })
+
+    it('makes a new bloque in front of the one it empties', () => {
+      const r = llevar(['a', 'b'], bloques, ['s', 't', 'a'], { nuevoBloqueAntesDe: 's' })
+      expect(r.orden).toEqual(['b'])
+      expect(r.bloques).toEqual([['p', 'q', 'r'], ['s', 't', 'a']])
+    })
+
     it('lets a bloque emptied by the move disappear', () => {
       const r = llevar(['a', 'b'], bloques, ['s', 't'], { antesDe: 'b' })
       expect(r.orden).toEqual(['a', 's', 't', 'b'])

@@ -25,7 +25,7 @@
 'use client'
 
 import { Check, Layers, Lightbulb } from 'lucide-react'
-import { useLayoutEffect, useRef, useState } from 'react'
+import { Fragment, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { type Arrastre, useArrastre } from '@/components/arrastre'
 import { Carta, CartaBocaAbajo } from '@/components/carta'
 import {
@@ -556,18 +556,36 @@ export function Mano({
   const total = secciones.reduce((suma, seccion) => suma + seccion.cards.length, 0)
 
   const fila = useRef<HTMLDivElement>(null)
+  // The same rule `llevarCartas` applies: a selected card brings every
+  // selected card with it, wherever it sits; any other card travels alone.
+  const llevadasDe = (cardId: string) => {
+    const todas = secciones.flatMap((seccion) => seccion.cards)
+    return seleccionadas?.has(cardId)
+      ? todas.filter((card) => seleccionadas.has(card.id)).map((card) => card.id)
+      : [cardId]
+  }
+  /**
+   * What the last drag carried, marked where it landed (Phase 67) until the
+   * next touch anywhere. A card dropped into a tight fan is easy to lose,
+   * and losing it is the whole point of having moved it undone.
+   */
+  const [movidas, setMovidas] = useState<ReadonlySet<string>>(new Set())
   const { arrastre, empezar } = useArrastre({
     fila,
-    // The same rule `llevarCartas` applies: a selected card brings every
-    // selected card with it, wherever it sits; any other card travels alone.
-    llevadasDe: (cardId) => {
-      const todas = secciones.flatMap((seccion) => seccion.cards)
-      return seleccionadas?.has(cardId)
-        ? todas.filter((card) => seleccionadas.has(card.id)).map((card) => card.id)
-        : [cardId]
-    },
-    onSoltar: onLlevar,
+    llevadasDe,
+    onSoltar: onLlevar
+      ? (cardId, destino) => {
+          setMovidas(new Set(llevadasDe(cardId)))
+          onLlevar(cardId, destino)
+        }
+      : undefined,
   })
+  useEffect(() => {
+    if (movidas.size === 0) return
+    const olvidar = () => setMovidas(new Set())
+    window.addEventListener('pointerdown', olvidar, { capture: true })
+    return () => window.removeEventListener('pointerdown', olvidar, { capture: true })
+  }, [movidas])
   const llevadas = new Set(arrastre?.llevadas)
 
   // Which pinned bloque each section is, counted among the pinned ones only —
@@ -662,7 +680,14 @@ export function Mano({
           const indice = posicionFijada.get(seccion.id) ?? -1
 
           return (
-            <div key={seccion.id} data-seccion={seccion.id} className="flex shrink-0 flex-col gap-0.5">
+            <Fragment key={seccion.id}>
+            {arrastre && (
+              <LugarNuevo
+                ancla={seccion.bloqueada ? seccion.cards[0].id : null}
+                destino={arrastre.destino}
+              />
+            )}
+            <div data-seccion={seccion.id} className="flex shrink-0 flex-col gap-0.5">
               {/*
                 The fan is tight on purpose: each card only shows its left
                 edge, and since Phase 25 that edge carries the whole identity
@@ -688,6 +713,10 @@ export function Mano({
                         nueva && 'ring-2 ring-amber-400',
                         elegida &&
                           '-translate-y-[calc(var(--carta-md,5rem)*0.14)] ring-2 ring-sky-300 shadow-[0_0_12px_rgba(125,211,252,0.6)]',
+                        // Just landed: green, over the selection's blue, so
+                        // the eye finds where the drag put it.
+                        movidas.has(card.id) &&
+                          'ring-2 ring-emerald-400 shadow-[0_0_12px_rgba(52,211,153,0.65)]',
                         // In the air: what is left behind is the gap it
                         // came from, faintly.
                         llevadas.has(card.id) && 'opacity-30',
@@ -740,22 +769,66 @@ export function Mano({
                 </button>
               )}
             </div>
+            </Fragment>
           )
         })}
+
+        {/* With no loose run left, the place after the last bloque. */}
+        {arrastre && !secciones.some((seccion) => !seccion.bloqueada) && (
+          <LugarNuevo ancla={null} destino={arrastre.destino} />
+        )}
 
         {arrastre && (
           <>
             {/* Where it will land: a seam of light between two cards. */}
-            <span
-              aria-hidden
-              className="pointer-events-none absolute z-10 h-[var(--carta-md,5rem)] w-1 -translate-x-1/2 rounded-full bg-sky-300 shadow-[0_0_10px_rgba(125,211,252,0.9)]"
-              style={{ left: arrastre.marca, top: 'calc(var(--carta-md,5rem) * 0.16)' }}
-            />
+            {arrastre.marca !== null &&
+              arrastre.destino &&
+              !('nuevoBloqueAntesDe' in arrastre.destino) && (
+                <span
+                  aria-hidden
+                  className="pointer-events-none absolute z-10 h-[var(--carta-md,5rem)] w-1 -translate-x-1/2 rounded-full bg-sky-300 shadow-[0_0_10px_rgba(125,211,252,0.9)]"
+                  style={{ left: arrastre.marca, top: 'calc(var(--carta-md,5rem) * 0.16)' }}
+                />
+              )}
             <EnElAire arrastre={arrastre} secciones={secciones} />
           </>
         )}
       </div>
       )}
+    </div>
+  )
+}
+
+/**
+ * An empty place between two runs, open only while a card is up (Phase 66).
+ * Dropped here, what is carried becomes a bloque of its own, pinned, in this
+ * spot — the lock button's job, done by hand. Wide enough for a finger: the
+ * gap the runs normally keep is not.
+ */
+function LugarNuevo({
+  ancla,
+  destino,
+}: {
+  /** The first card of the bloque it sits in front of; null for after them all. */
+  ancla: string | null
+  destino: Destino | null
+}) {
+  const elegido =
+    destino !== null && 'nuevoBloqueAntesDe' in destino && destino.nuevoBloqueAntesDe === ancla
+
+  return (
+    <div
+      aria-hidden
+      data-nuevo={ancla ?? ''}
+      className={cn(
+        'flex h-[var(--carta-md,5rem)] w-[calc(var(--carta-md,5rem)*0.5)] shrink-0 flex-col items-center justify-center gap-0.5 rounded-md border-2 border-dashed text-[calc(var(--texto-mesa,0.75rem)*0.8)]',
+        elegido
+          ? 'border-sky-300 bg-sky-300/15 text-sky-200'
+          : 'border-white/20 text-tinta-tenue',
+      )}
+    >
+      <span className="text-[1.6em] leading-none">+</span>
+      <span>🔒</span>
     </div>
   )
 }
@@ -798,7 +871,7 @@ function EnElAire({
               <div key={id} className="absolute top-0" style={{ left: indice * arrastre.paso }}>
                 <Carta
                   card={card}
-                  className="-translate-y-[calc(var(--carta-md,5rem)*0.45)] scale-105 ring-2 ring-sky-300 shadow-[-4px_8px_16px_rgba(0,0,0,0.55)]"
+                  className="-translate-y-[calc(var(--carta-md,5rem)*0.7)] scale-105 ring-2 ring-sky-300 shadow-[-4px_8px_16px_rgba(0,0,0,0.55)]"
                 />
               </div>
             )

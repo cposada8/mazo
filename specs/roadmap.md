@@ -2755,8 +2755,38 @@ it never ordered the bloques, and a drop into one leaves it standing.
 
 **Done.** Measured in the browser: a card moved inside its bloque, from one
 bloque to the end of another, and from a bloque back among the loose cards.
-Not done, and not asked for: dropping between two runs to start a new
-bloque — pinning stays the lock button's job.
+Dropping between two runs to start a new bloque came next, as Phase 66.
+
+### Phase 66 — Un grupo nuevo, arrastrando ✅
+The owner, 2026-09-30: dragging should also **make** a bloque, not only fill
+one.
+
+The gap between two runs is 12 px — three seams in it (end of one run, a
+new bloque, start of the next) would be too fine for a finger. So while a
+card is up, **empty places open**: a dashed «+ 🔒» the width of half a card
+in front of every run, and after the last bloque when there is no loose run.
+Dropped on one, what is carried becomes a bloque of its own there.
+`Destino` gained `{ nuevoBloqueAntesDe }`, named by the first card of the
+bloque it goes in front of (null: after them all), read before anything
+moves, so a new bloque can take the place of the one the drag empties.
+
+Opening the places moves the cards, so the seams are measured **after**
+they open — once, in a layout effect on each pick-up — never during the
+drag. The lock button stays.
+
+**Done.** Measured in the browser: one card, and a selection of two, each
+made a new bloque, before the loose run and before the first bloque.
+
+### Phase 67 — Lo que se movió se ve dónde quedó ✅
+The owner, 2026-09-30: after a drag it is easy to lose track of what moved.
+
+The cards a drag carried stay ringed **green** where they landed — green,
+because blue is the selection and gold the card just drawn — until the next
+touch anywhere on the screen. The ghost also rides higher (0.7 of a card),
+so the seam or the new place it is aimed at is not hidden under it.
+
+**Done.** In the browser: both cards of a dragged selection green on
+landing, and neither after one tap on the felt.
 
 ---
 

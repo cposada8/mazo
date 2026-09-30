@@ -17,14 +17,17 @@
  *   and the card follows it until it is let go.
  *
  * Any card can be carried, pinned or loose, and dropped at any seam: inside
- * its own bloque, in another one, or among the loose cards.
+ * its own bloque, in another one, or among the loose cards — or into one of
+ * the empty places that open between the runs while a card is up, which
+ * makes a bloque of its own (Phase 66).
  *
- * Where it will land is worked out against where the cards sat **when it was
- * picked up**, not where they are drawn now, so nothing on screen can move
- * the target out from under the finger.
+ * Where it will land is worked out against where everything sat **once the
+ * card was up** and those places had opened — measured once, not while
+ * dragging, so nothing on screen can move the target out from under the
+ * finger.
  */
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import type { Destino } from '@/lib/mano'
 
 /** How long a finger holds a card still before it lifts. */
@@ -48,10 +51,10 @@ export type Arrastre = {
   cardId: string
   /** Every card being carried, in the order they sat. */
   llevadas: readonly string[]
-  /** Where they would land. */
-  destino: Destino
+  /** Where they would land; null until the row has been measured. */
+  destino: Destino | null
   /** Where the mark of the landing goes, in the row's coordinates. */
-  marca: number
+  marca: number | null
   /** Where the carried cards are drawn, in the viewport. */
   x: number
   y: number
@@ -73,6 +76,8 @@ type Gesto = {
   agarre: { dx: number; dy: number }
   paso: number
   destino: Destino | null
+  /** The finger's last position across the row, for the first measure. */
+  ultimaX: number
 }
 
 export function useArrastre({
@@ -83,7 +88,9 @@ export function useArrastre({
   /**
    * The scrolling row. Each card in it carries `data-arrastrable={id}` and
    * sits inside an element with `data-seccion`: one per bloque, and one for
-   * the loose run.
+   * the loose run. While a card is up, the places for a new bloque carry
+   * `data-nuevo` — the first card of the bloque they sit in front of, or
+   * empty for after them all.
    */
   fila: React.RefObject<HTMLElement | null>
   /** What picking up this card carries, in the order they sit. */
@@ -91,6 +98,8 @@ export function useArrastre({
   onSoltar?: (cardId: string, destino: Destino) => void
 }) {
   const [arrastre, setArrastre] = useState<Arrastre | null>(null)
+  /** Counts pick-ups: each one asks for the row to be measured once. */
+  const [levantadas, setLevantadas] = useState(0)
   const gesto = useRef<Gesto | null>(null)
   const quitar = useRef<(() => void) | null>(null)
 
@@ -127,11 +136,7 @@ export function useArrastre({
     if (!g || !el || g.levantada) return
     g.reloj = null
 
-    const caja = el.getBoundingClientRect()
-    const x = (r: DOMRect) => r.left - caja.left + el.scrollLeft
     const llevadas = llevadasDeRef.current(g.cardId)
-    const elegidas = new Set(llevadas)
-
     const secciones = Array.from(el.querySelectorAll<HTMLElement>('[data-seccion]')).map(
       (seccion) =>
         Array.from(seccion.querySelectorAll<HTMLElement>('[data-arrastrable]')).map(
@@ -141,18 +146,6 @@ export function useArrastre({
     const propia = secciones.flat().find((carta) => carta.id === g.cardId)
     if (!propia) return
 
-    // In front of every card that stays, and after the last of each run.
-    // A run the drag empties offers no seam: nothing would be left to say
-    // where in it they went.
-    g.costuras = secciones.flatMap((cartas) => {
-      const quedan = cartas.filter((carta) => !elegidas.has(carta.id))
-      const ultima = quedan.at(-1)
-      if (!ultima) return []
-      return [
-        ...quedan.map((carta) => ({ x: x(carta.r), destino: { antesDe: carta.id } })),
-        { x: x(ultima.r) + ultima.r.width, destino: { despuesDe: ultima.id } },
-      ]
-    })
     const vecinas = secciones.find((cartas) => cartas.length > 1)
     g.paso = vecinas ? vecinas[1].r.left - vecinas[0].r.left : propia.r.width
     g.llevadas = llevadas
@@ -162,25 +155,73 @@ export function useArrastre({
       dx: g.x0 - propia.r.left + llevadas.indexOf(g.cardId) * g.paso,
       dy: g.y0 - propia.r.top,
     }
-
-    const costura = cercana(g, g.x0)
-    // Carrying every card in the hand leaves nowhere to put them.
-    if (!costura) return
     g.levantada = true
-    g.destino = costura.destino
+    g.ultimaX = g.x0
 
     // A small knock under the finger: it has been picked up.
     if (!g.raton) navigator.vibrate?.(8)
     setArrastre({
       cardId: g.cardId,
       llevadas,
-      destino: costura.destino,
-      marca: costura.x,
+      destino: null,
+      marca: null,
       x: g.x0 - g.agarre.dx,
       y: g.y0 - g.agarre.dy,
       paso: g.paso,
     })
+    setLevantadas((n) => n + 1)
   }
+
+  /**
+   * The seams, measured once the card is up and the places for a new bloque
+   * have opened: in front of every card that stays and after the last of each
+   * run — a run the drag empties offers none, nothing would be left to say
+   * where in it they went — and the middle of each new place.
+   */
+  useLayoutEffect(() => {
+    const g = gesto.current
+    const el = fila.current
+    if (!g?.levantada || !el) return
+
+    const caja = el.getBoundingClientRect()
+    const x = (r: DOMRect) => r.left - caja.left + el.scrollLeft
+    const elegidas = new Set(g.llevadas)
+
+    const enCartas = Array.from(el.querySelectorAll<HTMLElement>('[data-seccion]')).flatMap(
+      (seccion) => {
+        const quedan = Array.from(
+          seccion.querySelectorAll<HTMLElement>('[data-arrastrable]'),
+        ).filter((carta) => !elegidas.has(carta.dataset.arrastrable ?? ''))
+        const ultima = quedan.at(-1)
+        if (!ultima) return []
+        const r = ultima.getBoundingClientRect()
+        return [
+          ...quedan.map((carta) => ({
+            x: x(carta.getBoundingClientRect()),
+            destino: { antesDe: carta.dataset.arrastrable ?? '' },
+          })),
+          { x: x(r) + r.width, destino: { despuesDe: ultima.dataset.arrastrable ?? '' } },
+        ]
+      },
+    )
+    const enNuevos = Array.from(el.querySelectorAll<HTMLElement>('[data-nuevo]')).map(
+      (lugar) => {
+        const r = lugar.getBoundingClientRect()
+        return {
+          x: x(r) + r.width / 2,
+          destino: { nuevoBloqueAntesDe: lugar.dataset.nuevo || null },
+        }
+      },
+    )
+    g.costuras = [...enCartas, ...enNuevos]
+
+    const costura = cercana(g, g.ultimaX)
+    if (!costura) return
+    g.destino = costura.destino
+    setArrastre((actual) => actual && { ...actual, destino: costura.destino, marca: costura.x })
+    // Measured on each pick-up, and only then.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [levantadas])
 
   const empezar = (evento: React.PointerEvent<HTMLElement>, cardId: string) => {
     if (!onSoltarRef.current || gesto.current) return
@@ -201,6 +242,7 @@ export function useArrastre({
       agarre: { dx: 0, dy: 0 },
       paso: 0,
       destino: null,
+      ultimaX: evento.clientX,
     }
     gesto.current = g
     if (!raton) g.reloj = setTimeout(levantar, MS_PARA_LEVANTAR)
@@ -219,6 +261,7 @@ export function useArrastre({
       }
 
       if (recorrido > tolerancia) g.movida = true
+      g.ultimaX = e.clientX
 
       const el = fila.current
       if (el) {
@@ -228,13 +271,12 @@ export function useArrastre({
       }
 
       const costura = cercana(g, e.clientX)
-      if (!costura) return
-      g.destino = costura.destino
+      if (costura) g.destino = costura.destino
       setArrastre((actual) =>
         actual && {
           ...actual,
-          destino: costura.destino,
-          marca: costura.x,
+          destino: costura?.destino ?? actual.destino,
+          marca: costura?.x ?? actual.marca,
           x: e.clientX - g.agarre.dx,
           y: e.clientY - g.agarre.dy,
         },
@@ -302,5 +344,5 @@ function tragarClick() {
   }
   window.addEventListener('click', tragar, { capture: true, once: true })
   // A release that makes no click must not leave the next real tap eaten.
-  setTimeout(() => window.removeEventListener('click', tragar, { capture: true }), 400)
+  setTimeout(() => window.removeEventListener('click', tragar, { capture: true }), 100)
 }

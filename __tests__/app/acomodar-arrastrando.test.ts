@@ -122,3 +122,18 @@ describe('llevarCartas', () => {
     expect(escrita(result)).toEqual(['K♦', '9♣', '2♠', '5♥', '7♠'])
   })
 })
+
+describe('a bloque made by dragging (Phase 66)', () => {
+  it('pins what is carried into a bloque of its own, and keeps the sort', () => {
+    const { result } = montar()
+    act(() => result.current.acomodarMano('numeros'))
+    act(() => result.current.alternarCarta(id('K♦')))
+    act(() => result.current.alternarCarta(id('5♥')))
+    act(() => result.current.llevarCartas(id('K♦'), { nuevoBloqueAntesDe: null }))
+
+    expect(result.current.secciones[0]).toMatchObject({ bloqueada: true })
+    expect(result.current.secciones[0].cards.map(describeCard)).toEqual(['5♥', 'K♦'])
+    expect(escrita(result)).toEqual(['5♥', 'K♦', '2♠', '7♠', '9♣'])
+    expect(result.current.acomodoActivo).toBe('numeros')
+  })
+})

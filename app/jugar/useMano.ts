@@ -220,8 +220,10 @@ export function useMano(options: {
 
       setOrden(nuevo.orden)
       setBloques(nuevo.bloques)
-      const ancla = 'antesDe' in destino ? destino.antesDe : destino.despuesDe
-      if (sueltas.includes(ancla)) setAcomodoActivo(null)
+      // A new bloque leaves the loose run's order alone, so the sort stays.
+      const ancla =
+        'antesDe' in destino ? destino.antesDe : 'despuesDe' in destino ? destino.despuesDe : null
+      if (ancla !== null && sueltas.includes(ancla)) setAcomodoActivo(null)
     },
     [mano, secciones, bloques, seleccion],
   )

@@ -376,6 +376,11 @@ owner's order:
 5. ~~Phase 65 — Arrastrar entre bloques.~~ ✅ Done, on dev: pinned cards
    drag too — within a bloque, between bloques, and in and out of the loose
    run.
+6. ~~Phase 66 — Un grupo nuevo, arrastrando.~~ ✅ Done, on dev: empty
+   places open between the runs while a card is up; dropped there, it is a
+   new bloque.
+7. ~~Phase 67 — Lo que se movió se ve dónde quedó.~~ ✅ Done, on dev: what a
+   drag carried stays green until the next touch.
 
 The comodín gallery (was Phase 51) moved to the *After* list.
 
