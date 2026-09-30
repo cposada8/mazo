@@ -240,8 +240,8 @@ export function useMesa(transporte: Transporte) {
    */
   const aterrizados = enVuelo ?? contados
   const mesaContada = useMemo(
-    () => (ronda ? rebobinar(ronda, relatos.slice(aterrizados)) : null),
-    [ronda, relatos, aterrizados],
+    () => (ronda ? rebobinar(ronda, relatos.slice(aterrizados), enVuelo !== null) : null),
+    [ronda, relatos, aterrizados, enVuelo],
   )
 
   /**

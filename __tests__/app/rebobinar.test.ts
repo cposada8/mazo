@@ -93,6 +93,60 @@ describe('rebobinar', () => {
   })
 })
 
+describe('the move in the air (Phase 60)', () => {
+  it('shows a card taken off the descarte gone from the pile while it flies', () => {
+    const vista = mesa()
+    // The seat took the J♥: the state has it in their hand, off the pile.
+    const tomada = { ...vista, descarte: vista.descarte.slice(0, -1) }
+    const relato: Relato = { tipo: 'descarte', seat: 1, carta: 'J♥' }
+
+    const enVuelo = rebobinar(tomada, [relato], true).vista
+    expect(enVuelo.descarte.map(describeCard)).toEqual(['9♦'])
+    // Not in the hand yet either: it is in the air.
+    expect(enVuelo.jugadores[1].cartas).toBe(tomada.jugadores[1].cartas - 1)
+
+    // Still queued, it has not left the pile at all.
+    expect(rebobinar(tomada, [relato]).vista.descarte.map(describeCard)).toEqual(['9♦', 'J♥'])
+  })
+
+  it('takes a drawn card off the stock at take-off, and into the hand on landing', () => {
+    const vista = mesa()
+    const enVuelo = rebobinar(vista, [{ tipo: 'mazo', seat: 0 }], true).vista
+    expect(enVuelo.stock).toBe(vista.stock)
+    expect(enVuelo.jugadores[0].cartas).toBe(vista.jugadores[0].cartas - 1)
+  })
+
+  it('takes a thrown card out of the hand at take-off, and onto the pile on landing', () => {
+    const vista = mesa()
+    const enVuelo = rebobinar(vista, [{ tipo: 'bota', seat: 1, carta: 'J♥' }], true).vista
+    expect(enVuelo.descarte.map(describeCard)).toEqual(['9♦'])
+    expect(enVuelo.jugadores[1].cartas).toBe(vista.jugadores[1].cartas)
+  })
+
+  it('keeps a bajada off the mesa and out of the hand while it flies', () => {
+    const vista = mesa()
+    const { vista: enVuelo, ocultas } = rebobinar(vista, [{ tipo: 'bajada', seat: 1, grupos: 2 }], true)
+    expect(ocultas.size).toBe(8)
+    expect(enVuelo.jugadores[1].cartas).toBe(vista.jugadores[1].cartas)
+  })
+
+  it('holds back only the first move: the ones queued behind it are undone whole', () => {
+    const vista = mesa()
+    const { vista: contada } = rebobinar(
+      vista,
+      [
+        { tipo: 'mazo', seat: 1 },
+        { tipo: 'bota', seat: 1, carta: 'J♥' },
+      ],
+      true,
+    )
+    expect(contada.descarte.map(describeCard)).toEqual(['9♦'])
+    expect(contada.stock).toBe(vista.stock)
+    // +1 back from the throw, −1 for the draw still in the air.
+    expect(contada.jugadores[1].cartas).toBe(vista.jugadores[1].cartas)
+  })
+})
+
 describe('cartaDeTexto', () => {
   it('reads a comodín the way a relato names it', () => {
     // describeCard says «comodin»; the old reader only knew «★» and «**», so a

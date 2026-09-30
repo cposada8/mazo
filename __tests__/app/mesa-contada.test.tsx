@@ -81,6 +81,47 @@ describe('the descarte waits for the card to land', () => {
   })
 })
 
+describe('a card taken off the descarte is never in two places (Phase 60)', () => {
+  beforeEach(() => vi.useFakeTimers())
+  afterEach(() => vi.useRealTimers())
+
+  it('leaves the pile as its flight to the hand starts', () => {
+    const nueve = n('9', 'diamonds')
+    const jota = n('J', 'hearts')
+    const antes = vistaDe(
+      makeRonda({ jugadores: [{ hand: manoPropia() }, { hand: [n('3', 'clubs')] }], discard: [nueve, jota] }),
+    )
+    const despues = vistaDe(
+      makeRonda({
+        jugadores: [{ hand: manoPropia() }, { hand: [n('3', 'clubs'), jota] }],
+        discard: [nueve],
+        fase: 'act',
+        turno: 1,
+      }),
+    )
+    const { result, rerender } = renderHook(
+      ({ vista, relatos }: { vista: VistaDePartida; relatos: Relato[] }) =>
+        useMesa(transporte(vista, relatos)),
+      { initialProps: { vista: antes, relatos: [] as Relato[] } },
+    )
+
+    rerender({ vista: despues, relatos: [{ tipo: 'descarte', seat: 1, carta: 'J♥' }] })
+    // Queued: nothing has happened yet on screen.
+    expect(arriba(result.current.mesaContada?.vista.descarte)).toBe('J♥')
+
+    // In the air: gone from the pile, not yet in the hand.
+    act(() => void vi.advanceTimersByTime(0))
+    expect(result.current.viaje?.desde).toEqual({ pila: 'descarte' })
+    expect(arriba(result.current.mesaContada?.vista.descarte)).toBe('9♦')
+    expect(result.current.mesaContada?.vista.jugadores[1].cartas).toBe(1)
+
+    // Landed in the hand.
+    act(() => void vi.advanceTimersByTime(MS_DE_VIAJE))
+    expect(arriba(result.current.mesaContada?.vista.descarte)).toBe('9♦')
+    expect(result.current.mesaContada?.vista.jugadores[1].cartas).toBe(2)
+  })
+})
+
 describe('a bajada flies to the mesa', () => {
   beforeEach(() => vi.useFakeTimers())
   afterEach(() => vi.useRealTimers())
