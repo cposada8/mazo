@@ -23,10 +23,12 @@ import {
   type VistaDeAsiento,
   type VistaDePartida,
   aplicarEnVista,
+  describeCard,
   isComodin,
   ordenarEscalera,
 } from '@/lib/engine'
-import type { Relato, Viaje } from '@/lib/relato'
+import { cartaDeTexto, rebobinar } from '@/lib/rebobinar'
+import { MS_DE_VIAJE, type Relato, type Viaje } from '@/lib/relato'
 import { useMano } from './useMano'
 
 /** One empty hand, so an absent ronda does not look like a changed one. */
@@ -141,6 +143,12 @@ export function useMesa(transporte: Transporte) {
    * in order, and it is cheaper than no story at all.
    */
   const [contados, setContados] = useState(relatos.length)
+  /**
+   * The line whose card is still in the air (Phase 59), by its index in the
+   * log. Its move has been told but has not landed: the table goes on showing
+   * the pile, the counts and the mesa as they were until the flight ends.
+   */
+  const [enVuelo, setEnVuelo] = useState<number | null>(null)
   /** Which line the card in flight belongs to; see the journey below. */
   const [ultimoContado, setUltimoContado] = useState(relatos.length)
   /** When the last line was told, so a lone one is not made to wait for a beat. */
@@ -153,6 +161,7 @@ export function useMesa(transporte: Transporte) {
     // still queued belonged to a ronda that is over.
     setContados(relatos.length)
     setUltimoContado(relatos.length)
+    setEnVuelo(null)
   } else if (relatos.length - contados > MAXIMO_EN_COLA) {
     // And a backlog this size is not a turn being played in front of you. It
     // is a reload, a tab that was away, or a stretch of the game that ran
@@ -160,6 +169,7 @@ export function useMesa(transporte: Transporte) {
     // right about: land where the table is now rather than replaying it.
     setContados(relatos.length)
     setUltimoContado(relatos.length)
+    setEnVuelo(null)
   }
 
   const porContar = relatos.length - contados
@@ -198,12 +208,41 @@ export function useMesa(transporte: Transporte) {
     setUltimoContado(contados)
     // Only forward: a log that shrank took its journeys with it.
     const dicho = contados > ultimoContado ? relatos[contados - 1] : undefined
-    const trip = dicho ? viajeDeRelato(dicho, viajes + 1) : null
+    const base = dicho && ronda ? viajeDeRelato(dicho, viajes + 1, ronda) : null
+    // With lines still queued behind this one, the next is told in
+    // `MS_AL_ALCANZAR`: the flight takes exactly that, and lands as it goes.
+    const trip = base && {
+      ...base,
+      ms: relatos.length > contados ? MS_AL_ALCANZAR : MS_DE_VIAJE,
+    }
     if (trip) {
       setViajes(viajes + 1)
       setViaje(trip)
     }
+    // A new line lands whatever was still flying, and flies itself if it has
+    // a card to carry; a line with nothing to carry lands as it is told.
+    setEnVuelo(trip ? contados - 1 : null)
   }
+
+  const duracionDelVuelo = viaje?.ms ?? MS_DE_VIAJE
+  useEffect(() => {
+    if (enVuelo === null) return
+    const aterriza = setTimeout(
+      () => setEnVuelo((actual) => (actual === enVuelo ? null : actual)),
+      duracionDelVuelo,
+    )
+    return () => clearTimeout(aterriza)
+  }, [enVuelo, duracionDelVuelo])
+
+  /**
+   * The table as it has been told (Phase 59): the state less every move whose
+   * card has not landed — the lines still queued, and the one in the air.
+   */
+  const aterrizados = enVuelo ?? contados
+  const mesaContada = useMemo(
+    () => (ronda ? rebobinar(ronda, relatos.slice(aterrizados)) : null),
+    [ronda, relatos, aterrizados],
+  )
 
   /**
    * The card you drew this turn, so the hand can mark it. Found by diffing
@@ -424,6 +463,7 @@ export function useMesa(transporte: Transporte) {
     relato,
     historia: relatos,
     viaje,
+    mesaContada,
     recienRobada,
     doradas,
     reloj: {
@@ -464,7 +504,13 @@ function idsEnMesa(ronda: VistaDeAsiento | null): ReadonlySet<string> {
 }
 
 /** The trip a public move implies, if it moved a card anyone could follow. */
-function viajeDeRelato(relato: Relato, clave: number): Viaje | null {
+function viajeDeRelato(
+  relato: Relato,
+  clave: number,
+  ronda: VistaDeAsiento,
+): Viaje | null {
+  const deTexto = (texto: string) => cartaDeTexto(texto, `viaje-${texto}`)
+
   switch (relato.tipo) {
     case 'mazo':
       // Secret by construction: the card travels face down.
@@ -474,38 +520,71 @@ function viajeDeRelato(relato: Relato, clave: number): Viaje | null {
         clave,
         desde: { pila: 'descarte' },
         hasta: { seat: relato.seat },
-        carta: cartaDeTexto(relato.carta),
+        carta: deTexto(relato.carta),
       }
     case 'bota':
       return {
         clave,
         desde: { seat: relato.seat },
         hasta: { pila: 'descarte' },
-        carta: cartaDeTexto(relato.carta),
+        carta: deTexto(relato.carta),
       }
+    case 'bajada': {
+      // Phase 58: the grupos fly from the seat to the mesa, one face apiece.
+      const grupos = ronda.jugadores[relato.seat]?.grupos ?? []
+      if (grupos.length === 0) return null
+      return {
+        clave,
+        desde: { seat: relato.seat },
+        hasta: { grupo: `${relato.seat}-0` },
+        carta: null,
+        cartas: grupos.slice(0, 4).map((grupo) => grupo.cards[0]),
+      }
+    }
+    case 'agrega': {
+      const destino = grupoConCarta(ronda, relato.cartas[0], [relato.dueno])
+      if (!destino) return null
+      return {
+        clave,
+        desde: { seat: relato.seat },
+        hasta: { grupo: destino },
+        carta: null,
+        cartas: relato.cartas
+          .map(deTexto)
+          .filter((card): card is Card => card !== null),
+      }
+    }
+    case 'comodin': {
+      const destino = grupoConCarta(
+        ronda,
+        relato.carta,
+        ronda.jugadores.map((_, seat) => seat),
+      )
+      if (!destino) return null
+      return {
+        clave,
+        desde: { seat: relato.seat },
+        hasta: { grupo: destino },
+        carta: deTexto(relato.carta),
+      }
+    }
     default:
       return null
   }
 }
 
-/**
- * The log names cards the way a person says them — «J♥» — because it is prose
- * first. The travelling card needs a `Card` to draw, so it is read back.
- * Only ever for cards that were face up, so nothing secret is reconstructed.
- */
-function cartaDeTexto(texto: string): Card | null {
-  if (texto.startsWith('★') || texto === '**') {
-    return { id: `viaje-${texto}`, kind: 'comodin' }
+/** Where on the mesa a card named this way lies, as the key its grupo is drawn under. */
+function grupoConCarta(
+  ronda: VistaDeAsiento,
+  texto: string | undefined,
+  asientos: readonly number[],
+): string | null {
+  if (!texto) return null
+  let hallado: string | null = null
+  for (const seat of asientos) {
+    ronda.jugadores[seat]?.grupos.forEach((grupo, index) => {
+      if (grupo.cards.some((card) => describeCard(card) === texto)) hallado = `${seat}-${index}`
+    })
   }
-  const match = /^(10|[2-9AJQK])([♠♥♦♣])$/.exec(texto)
-  if (!match) return null
-
-  const palos = { '♠': 'spades', '♥': 'hearts', '♦': 'diamonds', '♣': 'clubs' } as const
-  const carta = {
-    id: `viaje-${texto}`,
-    kind: 'normal',
-    rank: match[1],
-    suit: palos[match[2] as keyof typeof palos],
-  } as Card
-  return isComodin(carta) ? null : carta
+  return hallado
 }

@@ -2509,6 +2509,82 @@ until the owner says which level a table should start with.
 
 ---
 
+## Asked for after v1.3.0
+
+*The owner, 2026-09-30, after playing v1.3.0. Both are about the table
+showing a move the way it happened; neither changes a rule. Listed in the
+order the owner gave them. The comodín gallery (Phase 51) stays behind them,
+not a priority.*
+
+### Phase 58 — Lo que llega a la mesa se ve llegar ✅
+Laying down and adding to a grupo happen **instantly**: the grupos simply
+appear on the felt, and a card added to somebody's escala is just there.
+Only drawing and throwing travel today — `viajeDeRelato` (`app/jugar/
+useMesa.ts`) makes a trip for `mazo`, `descarte` and `bota` and returns
+null for `bajada`, `agrega` and `comodin`. So:
+
+- **A bajada** travels: the grupos go from the player's seat to their place
+  on the mesa, card by card or grupo by grupo, in the same public way the
+  rest of the table moves.
+- **An agregar** travels from the player's seat to the grupo that received
+  it, and **freeing a comodín** sends the paying card from the seat into its
+  place. (The comodín itself does not travel: the rules move it to an end of
+  the same escala, so it never leaves the mesa.)
+- The landing is visible: the grupo that just grew is marked the way a new
+  grupo already is on a closed mesa (Phase 42's ring), so the eye finds it.
+
+Open with the owner: how long each trip takes when several land in one turn
+(a bajada of three grupos followed by two agregars) — played one after
+another, the turn's seconds can run out before the story does.
+
+**Done.** `viajeDeRelato` makes a trip for `bajada` (a fan of one face per
+grupo, seat → the seat's first grupo), `agrega` (the added cards, seat →
+the grupo holding them) and `comodin` (the paying card, seat → its grupo).
+Grupos on the mesa carry `data-grupo="${seat}-${index}"` for the flight to
+aim at, and the landing is marked by the Phase 41 gold that already rings
+what a turn put down. The open question settled itself: trips play one per
+line of the story, at the story's pace, so a busy turn takes as long to
+tell as it always did — the cards just move now. A thrown comodín also flies
+for the first time: the relato calls it `comodin` and the reader only knew
+`★` and `**`.
+
+### Phase 59 — Primero el viaje, después la carta ✅
+Playing against bots with little thinking time, **the thrown card appears
+on the descarte before the animation of throwing it**. The cause is in how
+the trip is drawn: `CartaViajera` animates *after* the state has already
+moved («the table catching the eye up»), and the descarte pile draws from
+the state. The relatos are told at a steady pace, so when a bot's moves land
+close together the telling falls behind, and the pile shows each card before
+its trip has been told — a card lands, and then a copy of it flies in.
+
+The fix is to hold the piles (and, with Phase 58, the mesa) to what has been
+*told*, not to what has *happened*: a card joins the descarte when its trip
+ends. The state stays the truth; what is drawn waits for the story. Done
+when, at the shortest bot time, every thrown card flies first and lands
+second, for bots and people alike, in both homes.
+
+**Done.** `rebobinar` (`lib/rebobinar.ts`) takes the view back by the moves
+not yet landed — the lines still queued and the one in the air: a thrown
+card comes off the descarte, a taken one goes back on it, the stock and the
+seats' counts step back, and cards a bajada or an agregar put on the mesa
+are *hidden, not removed*, so the mesa keeps their room and does not jump.
+Each step checks the view agrees before undoing anything; the reader's own
+hand is never rewound. `useMesa` counts a line as landed when its flight
+ends, and a flight told while a queue is catching up lasts exactly the
+catching-up beat (300 ms), so it lands as the next one leaves instead of
+being cut off halfway.
+
+Measured in the browser with three bots at one second: every thrown card
+appeared in flight first and on the pile ~310 ms later, and a card taken off
+the descarte restored the one beneath when its flight landed.
+
+Found on the way, and fixed: in the local home the log was appended from
+inside the partida's state updater, which React runs twice in development,
+so every line was told twice there. The partida, its log and the last
+refusal are one state now, updated by one pure function.
+
+---
+
 ## After
 
 Not scheduled, and not to be started before Milestone 3 — online play:

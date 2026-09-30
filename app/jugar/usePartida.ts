@@ -52,14 +52,21 @@ export function usePartida(options: {
 }) {
   const { jugadores, seed, config, segundosBot = SEGUNDOS_DEL_BOT, bots, id } = options
 
-  const [partida, setPartida] = useState<PartidaState>(
-    () => recordada(id)?.partida ?? startPartida({ players: jugadores, seed, config }),
-  )
-  /** Everything public that has happened this ronda, in order. */
-  const [relatos, setRelatos] = useState<readonly Relato[]>(
-    () => recordada(id)?.relatos ?? [],
-  )
-  const [aviso, setAviso] = useState<string | null>(null)
+  /**
+   * The partida, its log and the last refusal, as one state — so applying a
+   * move is one pure update. They used to be three, and the log was appended
+   * from inside the partida's updater, which React runs twice in development:
+   * every line was told twice (found in Phase 59).
+   */
+  const [juego, setJuego] = useState<Juego>(() => {
+    const guardada = recordada(id)
+    return {
+      partida: guardada?.partida ?? startPartida({ players: jugadores, seed, config }),
+      relatos: guardada?.relatos ?? [],
+      aviso: null,
+    }
+  })
+  const { partida, relatos, aviso } = juego
 
   /**
    * A local partida is kept in the browser that is playing it, so closing the
@@ -74,7 +81,7 @@ export function usePartida(options: {
   const [repartoVisto, setRepartoVisto] = useState(partida.indiceContrato)
   if (repartoVisto !== partida.indiceContrato) {
     setRepartoVisto(partida.indiceContrato)
-    if (relatos.length > 0) setRelatos([])
+    if (relatos.length > 0) setJuego((actual) => ({ ...actual, relatos: [] }))
   }
 
   const vista = useMemo(
@@ -86,24 +93,25 @@ export function usePartida(options: {
    * Apply a move and narrate it. One place, so no path can play a move that
    * the log does not know about — the mistake Phase 26 found the hard way.
    */
-  const aplicar = useCallback((estado: PartidaState, move: Move) => {
-    const ronda = estado.ronda
+  const aplicar = useCallback((estado: Juego, move: Move): Juego => {
+    const ronda = estado.partida.ronda
     if (!ronda) return estado
 
     const cuento = relatar(move, ronda)
-    const result = aplicarEnPartida(estado, move)
+    const result = aplicarEnPartida(estado.partida, move)
     if (!result.ok) {
-      setAviso(mensajeDeError(result.code, result.detail))
-      return estado
+      return { ...estado, aviso: mensajeDeError(result.code, result.detail) }
     }
 
-    setAviso(null)
-    if (cuento) setRelatos((antes) => [...antes, cuento])
-    return result.state
+    return {
+      partida: result.state,
+      relatos: cuento ? [...estado.relatos, cuento] : estado.relatos,
+      aviso: null,
+    }
   }, [])
 
   const jugar = useCallback(
-    (move: Move) => setPartida((actual) => aplicar(actual, move)),
+    (move: Move) => setJuego((actual) => aplicar(actual, move)),
     [aplicar],
   )
 
@@ -149,7 +157,10 @@ export function usePartida(options: {
     relatos,
     segundosDelTurno: segundosBot,
     aviso,
-    limpiarAviso: useCallback(() => setAviso(null), []),
+    limpiarAviso: useCallback(
+      () => setJuego((actual) => (actual.aviso === null ? actual : { ...actual, aviso: null })),
+      [],
+    ),
     jugar,
   })
 
@@ -175,7 +186,7 @@ export function usePartida(options: {
       const restante = Math.max(segundosBot * 1000 - (Date.now() - empezo), 0)
       const tiempos = tiemposDeMoves(moves.length, restante)
       ids = moves.map((move, i) =>
-        setTimeout(() => setPartida((antes) => aplicar(antes, move)), tiempos[i]),
+        setTimeout(() => setJuego((antes) => aplicar(antes, move)), tiempos[i]),
       )
     })
 
@@ -199,6 +210,14 @@ export function usePartida(options: {
 const CLAVE = 'mazo:partida-local'
 
 type Recordada = { id: string; partida: PartidaState; relatos: readonly Relato[] }
+
+type Juego = {
+  readonly partida: PartidaState
+  /** Everything public that has happened this ronda, in order. */
+  readonly relatos: readonly Relato[]
+  /** The referee's last refusal, in words; cleared by the next good move. */
+  readonly aviso: string | null
+}
 
 /** The partida this browser was playing, if it is the one being asked for. */
 function recordada(id: string | undefined): Recordada | null {

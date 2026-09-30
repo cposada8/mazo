@@ -45,7 +45,7 @@ import {
   rangoDeEscaleraEn,
 } from '@/lib/engine'
 import type { Seccion } from '@/lib/mano'
-import type { PuntoDeViaje, Viaje } from '@/lib/relato'
+import { MS_DE_VIAJE, type PuntoDeViaje, type Viaje } from '@/lib/relato'
 import { cn } from '@/lib/utils'
 
 const SIMBOLO_DE_PALO = {
@@ -95,9 +95,18 @@ export function GrupoEnMesa({
   grupo,
   onClick,
   doradas,
+  ocultas,
+  destino,
   compacto,
   ajustado,
 }: {
+  /**
+   * Cards whose move has not landed yet (Phase 59): drawn invisible, so the
+   * grupo keeps their room and the flight has somewhere to land.
+   */
+  ocultas?: ReadonlySet<string>
+  /** The key a flight aims at, `${seat}-${grupoIndex}` (Phase 58). */
+  destino?: string
   grupo: Grupo
   onClick?: () => void
   /**
@@ -127,6 +136,7 @@ export function GrupoEnMesa({
       <div className="flex">
         {grupo.cards.map((card, index) => {
           const nueva = doradas?.has(card.id) ?? false
+          const oculta = ocultas?.has(card.id) ?? false
 
           return (
             <Carta
@@ -141,6 +151,7 @@ export function GrupoEnMesa({
                 // a ring on any card but the last would be painted over by
                 // its neighbour.
                 nueva && 'relative z-10 ring-[1.5px] ring-amber-400',
+                oculta && 'invisible',
               )}
               represents={
                 !isComodin(card)
@@ -162,11 +173,18 @@ export function GrupoEnMesa({
   // side, times twenty grupos, is a row's worth of space spent on nothing.
   const hueco = ajustado ? '' : compacto ? 'p-0.5' : 'p-1'
 
-  if (!onClick) return <div className={cn('shrink-0', hueco)}>{contenido}</div>
+  if (!onClick) {
+    return (
+      <div data-grupo={destino} className={cn('shrink-0', hueco)}>
+        {contenido}
+      </div>
+    )
+  }
 
   return (
     <button
       type="button"
+      data-grupo={destino}
       onClick={onClick}
       className={cn(
         'shrink-0 rounded-md text-left transition-[outline-color] outline-2 outline-offset-2 outline-transparent hover:outline-amber-300/60',
@@ -715,7 +733,9 @@ function CartaViajera({ viaje }: { viaje: Viaje }) {
     const selector = (punto: PuntoDeViaje) =>
       'pila' in punto
         ? `[data-pila="${punto.pila}"]`
-        : `[data-destino="${punto.seat}"]`
+        : 'grupo' in punto
+          ? `[data-grupo="${punto.grupo}"]`
+          : `[data-destino="${punto.seat}"]`
 
     const desde = cancha.querySelector(selector(viaje.desde))
     const hasta = cancha.querySelector(selector(viaje.hasta))
@@ -732,8 +752,8 @@ function CartaViajera({ viaje }: { viaje: Viaje }) {
     // Two frames: one to paint the start, one to begin the trip.
     const marco = requestAnimationFrame(() =>
       requestAnimationFrame(() => {
-        el.style.transition =
-          'transform 500ms ease-in-out, opacity 220ms ease-in 380ms'
+        const ms = viaje.ms ?? MS_DE_VIAJE
+        el.style.transition = `transform ${ms}ms ease-in-out, opacity ${Math.round(ms * 0.44)}ms ease-in ${Math.round(ms * 0.76)}ms`
         el.style.transform = `translate(${b.x + b.width / 2 - propia.width / 2 - caja.x}px, ${b.y + b.height / 2 - propia.height / 2 - caja.y}px)`
         el.style.opacity = '0'
       }),
@@ -747,7 +767,15 @@ function CartaViajera({ viaje }: { viaje: Viaje }) {
       aria-hidden
       className="pointer-events-none absolute top-0 left-0 z-30 opacity-0"
     >
-      {viaje.carta ? (
+      {viaje.cartas && viaje.cartas.length > 0 ? (
+        // Several at once — a bajada, or one agregar of more than a card —
+        // fanned, so it reads as the grupo it is about to become.
+        <div className="flex">
+          {viaje.cartas.map((card, index) => (
+            <Carta key={`${card.id}-${index}`} card={card} size="sm" className="-ml-3 first:ml-0" />
+          ))}
+        </div>
+      ) : viaje.carta ? (
         <Carta card={viaje.carta} size="sm" />
       ) : (
         <CartaBocaAbajo size="sm" />
@@ -785,6 +813,7 @@ export function Mesa({
   seleccionadas,
   resaltada,
   doradas,
+  ocultas,
 }: {
   state: VistaDeAsiento
   /** The seat whose hand is shown face up. */
@@ -796,6 +825,8 @@ export function Mesa({
   resaltada?: string
   /** Cards the turn in play has put on the mesa, marked gold (Phase 41). */
   doradas?: ReadonlySet<string>
+  /** Mesa cards whose move has not landed yet (Phase 59). */
+  ocultas?: ReadonlySet<string>
   /** Your hand laid out. Defaults to the dealt order, unpinned. */
   secciones?: readonly Seccion[]
   /** What your hand would cost right now. */
@@ -932,8 +963,10 @@ export function Mesa({
               enMesa.map(({ grupo, seat, grupoIndex }) => (
                 <GrupoEnMesa
                   key={`${seat}-${grupoIndex}`}
+                  destino={`${seat}-${grupoIndex}`}
                   grupo={grupo}
                   doradas={doradas}
+                  ocultas={ocultas}
                   ajustado
                   onClick={onGrupo ? () => onGrupo(seat, grupoIndex) : undefined}
                 />

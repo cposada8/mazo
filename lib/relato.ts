@@ -60,10 +60,15 @@ export type Relato =
    */
   | { readonly tipo: 'tiempo'; readonly seat: number }
 
-/** One end of a card's trip: a pile, or a player's hand. */
+/** How long a card takes to cross the table; the move lands when it arrives. */
+export const MS_DE_VIAJE = 500
+
+/** One end of a card's trip: a pile, a player's hand, or a grupo on the mesa. */
 export type PuntoDeViaje =
   | { readonly pila: 'stock' | 'descarte' }
   | { readonly seat: number }
+  /** A grupo, as `${seat}-${grupoIndex}` — the key the mesa draws it under. */
+  | { readonly grupo: string }
 
 /** A card on its way across the table, for the travel animation. */
 export type Viaje = {
@@ -73,6 +78,18 @@ export type Viaje = {
   readonly hasta: PuntoDeViaje
   /** The face to show, only when everybody saw it. Null travels face down. */
   readonly carta: Card | null
+  /**
+   * Several faces travelling together, fanned — a bajada's grupos, or the
+   * cards of one agregar (Phase 58). When present it is drawn instead of
+   * `carta`.
+   */
+  readonly cartas?: readonly Card[]
+  /**
+   * How long this flight takes. Shorter while a queue is being caught up, so
+   * a flight lands exactly when the next line is told instead of being cut
+   * off halfway (Phase 59).
+   */
+  readonly ms?: number
 }
 
 /**
