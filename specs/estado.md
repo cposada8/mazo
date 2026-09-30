@@ -364,12 +364,25 @@ bots stay as the *Fácil* level, the stronger play comes as new bots:
 **Next, asked for after v1.4.1** (`roadmap.md` has the briefs), in the
 owner's order:
 
-1. ~~Phase 61 — La portada al día.~~ ✅ Done, on dev: no contracts, the door
+1. ~~Phase 61 — La portada al día.~~ ✅ Done, released as v1.4.2: no contracts, the door
    first, the footer true; la mesa and the banco de pruebas moved to the
    panel.
-2. ~~Phase 62 — Del inicio al panel y de vuelta.~~ ✅ Done, on dev.
-3. **Phase 63 — Acomodar arrastrando.** Hold a loose card and drag it; a
-   selected card carries the whole selection.
+2. ~~Phase 62 — Del inicio al panel y de vuelta.~~ ✅ Done, released as
+   v1.4.2.
+3. ~~Phase 63 — Acomodar arrastrando.~~ ✅ Done, on dev: hold a loose card
+   (a moment, with a finger) and drag it; a selected card carries the whole
+   selection.
+4. ~~Phase 64 — Tocar la mesa suelta la selección.~~ ✅ Done, on dev.
+5. ~~Phase 65 — Arrastrar entre bloques.~~ ✅ Done, on dev: pinned cards
+   drag too — within a bloque, between bloques, and in and out of the loose
+   run.
+6. ~~Phase 66 — Un grupo nuevo, arrastrando.~~ ✅ Done, on dev: a lock
+   appears over the hand while a card is up; dropped on it, it is a new
+   bloque.
+7. ~~Phase 67 — Lo que se movió se ve dónde quedó.~~ ✅ Done, on dev: what a
+   drag carried stays green until the next touch.
+8. ~~Phase 68 — Lo arrastrado se suelta.~~ ✅ Done, on dev: what a drag
+   carried is deselected on landing, marked green instead.
 
 The comodín gallery (was Phase 51) moved to the *After* list.
 

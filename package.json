@@ -1,6 +1,6 @@
 {
   "name": "mazo",
-  "version": "1.4.2",
+  "version": "1.5.0",
   "private": true,
   "scripts": {
     "dev": "npm run bots:worker && next dev",

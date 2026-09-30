@@ -2660,7 +2660,7 @@ without typing an address.
 **Done.** «Panel» under «Cómo se juega» on the home page; «‹ Mazo» at the top
 of every panel screen — the key, the list, and a deployment with no panel.
 
-### Phase 63 — Acomodar arrastrando
+### Phase 63 — Acomodar arrastrando ✅
 Arranging the hand today is select, then tap an arrow once per place
 (`moverCartas`, `app/jugar/useMano.ts`). The owner wants to **touch a card
 and drag it** to where it goes.
@@ -2682,7 +2682,7 @@ What has to be got right is the gesture, not the state:
   then drag; a swipe without the hold keeps scrolling.
 - **The fan is tight** — only each card's left edge shows — so the drop
   position comes from the cards' measured positions, not from what is under
-  the finger. While dragging, the neighbours open a gap where it will land.
+  the finger. While dragging, the place it will land is marked.
 - **A latched sort is released** by a drag, as the arrows already do; left
   on, it would file the card straight back.
 - **Pinned bloques stay out of it** at first: only loose cards drag. Dragging
@@ -2697,6 +2697,118 @@ What has to be got right is the gesture, not the state:
 Done when, on a phone lying down and on a laptop, a loose card — or the
 selection it belongs to — can be held, carried and dropped anywhere in the
 loose run, a tap still selects, and a swipe still scrolls the hand.
+
+**Done.** `useArrastre` (`components/arrastre.ts`) is the gesture;
+`llevarCartas` in `useMano` and `llevar` in `lib/mano.ts` are the rule. A
+finger lifts a card after holding it still for 250 ms — moving first is
+scrolling, and is left alone — and a mouse lifts on moving. While a card is
+up, the row stops scrolling under the finger (a non-passive `touchmove`),
+its own spot fades, the carried cards ride above the finger, and a seam of
+light marks where they will land. Close to either end, the row scrolls along.
+
+One change from the brief: the neighbours do **not** open a gap. The target
+is computed against where the cards sat when the drag began; a gap that
+moved them would move the target too, and the fan jittered. The seam says
+the same thing and holds still.
+
+Measured in the browser, lying down: a mouse drag and a held-finger drag
+each land the card where dropped; four scattered 9s dragged by one of them
+arrive together, in the order they sat, still selected; a quick tap
+selects; a swipe without the hold moves and selects nothing.
+
+### Phase 64 — Tocar la mesa suelta la selección ✅
+The owner, 2026-09-30: tapping anywhere else on the screen should let go of
+the cards selected.
+
+«Anywhere else» is the table (`.cancha`) where nothing can be pressed: the
+felt, the gaps between cards, the seats. A tap on a button is the button's —
+a card, a grupo to add to, «Botar», the arrows all act *on* the selection,
+and would find it gone. The overlays over the table (menu, reglas, descarte,
+historial) are not part of it.
+
+The click that closes a drag is caught before anything sees it: which
+element it lands on differs between browsers, and letting it reach the felt
+would drop the very selection just carried.
+
+**Done.** `onFondo` on `Mesa`, wired to `limpiarSeleccion` while something is
+selected. Tested on the whole table: a tap on the felt empties the
+selection, the arrows keep it, and a drag released over the felt keeps it.
+
+### Phase 65 — Arrastrar entre bloques ✅
+The owner, 2026-09-30, trying Phase 63: pinned cards could not be dragged.
+They want to **rearrange a bloque by dragging** and to **drag between
+bloques**.
+
+Any card can now be held, and a drop lands at a **seam** — in front of a
+card, or after the last of a run — so the card at the seam also says which
+run: the loose one or a bloque. `llevar` (`lib/mano.ts`) takes the carried
+cards out of wherever they were and puts them in, gathered:
+
+- within a bloque, it rearranges it;
+- into another bloque, it moves them there — pinned;
+- among the loose cards, it unpins them;
+- a bloque left empty goes away.
+
+A selected card still carries the whole selection, now from wherever each
+card sits. A latched sort is released only by a drop among the loose cards:
+it never ordered the bloques, and a drop into one leaves it standing.
+
+**Done.** Measured in the browser: a card moved inside its bloque, from one
+bloque to the end of another, and from a bloque back among the loose cards.
+Dropping between two runs to start a new bloque came next, as Phase 66.
+
+### Phase 66 — Un grupo nuevo, arrastrando ✅
+The owner, 2026-09-30: dragging should also **make** a bloque, not only fill
+one.
+
+First built as dashed places that opened **in the row**, in front of every
+run, while a card was up. The owner, trying it: the places widened a hand
+that had already fanned itself to fit, and the row overflowed into a
+scrollbar. Their call: **the new bloque's target goes above the hand**, not
+in line with it.
+
+So while a card is up, **a lock appears over the hand**, straight above the
+card that was picked up (kept within the row's ends), 0.85 of a card over
+the row. Carried up to it and let go, what is carried becomes a bloque of
+its own, after the other bloques. The lock lights blue when the finger is on
+it — blue, like the seam, because both say «here» — and the seam's line
+hides meanwhile. Nothing in the row moves when a card lifts, so the seams go
+back to being measured at the moment of lifting.
+
+`Destino` gained `{ nuevoBloqueAntesDe }`, named by the first card of the
+bloque it goes in front of, read before anything moves; the lock always
+passes null, after them all.
+
+**Done.** In the browser: lifting a card leaves the row's width alone, a
+drop on the lock makes a bloque of the carried card, and a drop at a seam
+still lands between cards.
+
+### Phase 67 — Lo que se movió se ve dónde quedó ✅
+The owner, 2026-09-30: after a drag it is easy to lose track of what moved.
+
+The cards a drag carried stay ringed **green** where they landed — green,
+because blue is the selection and gold the card just drawn — until the next
+touch anywhere on the screen. The ghost also rides higher (0.7 of a card),
+so the seam or the new place it is aimed at is not hidden under it.
+
+**Done.** In the browser: both cards of a dragged selection green on
+landing, and neither after one tap on the felt.
+
+### Phase 68 — Lo arrastrado se suelta ✅
+The owner, 2026-09-30: a dragged card was left **selected** after the drop.
+They want it marked where it landed — Phase 67's green — and not selected.
+
+- **What a drag carried leaves the selection** (`llevarCartas`). A selected
+  card carries the whole selection, so all of it is let go; an unselected
+  card dragged alone leaves the rest of the selection as it was.
+- **The click that closes a drag is caught until the next touch**, not for
+  a fixed 100 ms: on some phones it comes late, and a late one would select
+  the card just dropped. The next pointer down is a real tap starting, so
+  it ends the wait; a second at most, for a release that makes no click.
+
+**Done.** In the browser, with a mouse and with a held finger: a lone card
+and a selection of two each land green and unselected, and a tap straight
+after a drop still selects.
 
 ---
 

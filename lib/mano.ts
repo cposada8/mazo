@@ -225,3 +225,74 @@ export function moverSeleccion(
 
   return [...resto.slice(0, destino), ...bloque, ...resto.slice(destino)]
 }
+
+/**
+ * Where dragged cards land: the seam in front of a card, or the one after
+ * it (Phase 63). Named by a card and not by a position, because a position
+ * would be counted over the cards on screen, and a run also holds cards set
+ * aside for a grupo, which are not. And since every card sits in exactly one
+ * place — the loose run or one bloque — the card also says *which* run.
+ */
+export type Destino =
+  | { readonly antesDe: string }
+  | { readonly despuesDe: string }
+  /**
+   * A bloque of their own (Phase 66), placed in front of the bloque that
+   * holds this card — or after every bloque, just before the loose run, for
+   * null.
+   */
+  | { readonly nuevoBloqueAntesDe: string | null }
+
+/**
+ * Carry cards to a seam, gathered, by dragging (Phases 63 and 65).
+ *
+ * The cards leave wherever they were — loose or pinned — and land together
+ * at `destino`, in the order `llevadas` gives them (the order they sat, not
+ * the order they were tapped). Landing in a bloque pins them there; landing
+ * in the loose run unpins them. A bloque left with nothing disappears.
+ *
+ * Or they land in a bloque of their own, pinned together, among the others
+ * (Phase 66).
+ *
+ * A seam beside one of the carried cards means nothing, so it changes
+ * nothing.
+ */
+export function llevar(
+  orden: readonly string[],
+  bloques: readonly Bloque[],
+  llevadas: readonly string[],
+  destino: Destino,
+): { orden: string[]; bloques: Bloque[] } {
+  const sinCambio = { orden: [...orden], bloques: bloques.map((bloque) => [...bloque]) }
+  const elegidas = new Set(llevadas)
+
+  // The loose run first, then each bloque: one list of places.
+  const listas = [orden, ...bloques]
+  const bloque = llevadas.filter((id) => listas.some((lista) => lista.includes(id)))
+  if (bloque.length === 0) return sinCambio
+  const limpias = listas.map((lista) => lista.filter((id) => !elegidas.has(id)))
+
+  if ('nuevoBloqueAntesDe' in destino) {
+    // Where it goes is read before anything moves: the bloque it is placed
+    // in front of may be the very one the drag is emptying.
+    const ancla = destino.nuevoBloqueAntesDe
+    const k = ancla === null ? bloques.length : bloques.findIndex((b) => b.includes(ancla))
+    if (k === -1) return sinCambio
+
+    const [nuevoOrden, ...nuevosBloques] = limpias
+    nuevosBloques.splice(k, 0, bloque)
+    return { orden: nuevoOrden, bloques: nuevosBloques.filter((b) => b.length > 0) }
+  }
+
+  const ancla = 'antesDe' in destino ? destino.antesDe : destino.despuesDe
+  if (elegidas.has(ancla)) return sinCambio
+  const donde = listas.findIndex((lista) => lista.includes(ancla))
+  if (donde === -1) return sinCambio
+
+  const lista = limpias[donde]
+  const i = lista.indexOf(ancla) + ('despuesDe' in destino ? 1 : 0)
+  limpias[donde] = [...lista.slice(0, i), ...bloque, ...lista.slice(i)]
+
+  const [nuevoOrden, ...nuevosBloques] = limpias
+  return { orden: nuevoOrden, bloques: nuevosBloques.filter((b) => b.length > 0) }
+}

@@ -316,6 +316,10 @@ export function Tablero({
             // cards selected first.
             juego.alternarCarta
           }
+          onLlevar={juego.llevarCartas}
+          // Tapping anywhere else on the table lets go of what you picked
+          // (Phase 64), the way a hand relaxes when you look away from it.
+          onFondo={juego.seleccion.length > 0 ? juego.limpiarSeleccion : undefined}
           onRobar={esTuTurno && ronda.fase === 'draw' ? juego.robar : undefined}
           onGrupo={esTuTurno && ronda.fase === 'act' ? juego.agregarA : undefined}
         />

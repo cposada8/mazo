@@ -19,10 +19,12 @@ import { armarGrupo } from '@/lib/bots'
 import {
   type Acomodo,
   type Bloque,
+  type Destino,
   acomodar,
   aplanar,
   bloquear,
   distribuir,
+  llevar,
   moverSeleccion,
   soltarBloque,
 } from '@/lib/mano'
@@ -188,6 +190,49 @@ export function useMano(options: {
     [secciones, seleccion],
   )
 
+  /**
+   * Drop dragged cards at a seam (Phases 63 and 65), loose or pinned: a card
+   * can be carried within its bloque, from one bloque to another, into a
+   * bloque from the loose run and back out. A selected card brings the whole
+   * selection with it, wherever each card sits; any other card travels alone
+   * and leaves the selection as it was.
+   *
+   * Like the arrows, it works from the hand as displayed. A drop among the
+   * loose cards releases a latched sort — it is a claim about where they go —
+   * but a drop into a bloque does not: the sort only ever ordered the loose
+   * run, and still can. A drop that changed nothing changes nothing.
+   *
+   * What was carried is let go of (Phase 68): the drag was the thing it was
+   * selected for, and a card left selected looks like a card about to be
+   * thrown. Where it landed is marked green by the hand instead.
+   */
+  const llevarCartas = useCallback(
+    (cardId: string, destino: Destino) => {
+      const enMano = mano.map((card) => card.id)
+      if (!enMano.includes(cardId)) return
+      const sueltas = (secciones.find((seccion) => !seccion.bloqueada)?.cards ?? []).map(
+        (card) => card.id,
+      )
+
+      const llevadas = seleccion.includes(cardId)
+        ? enMano.filter((id) => seleccion.includes(id))
+        : [cardId]
+      const nuevo = llevar(sueltas, bloques, llevadas, destino)
+      const igual = (a: readonly (readonly string[])[], b: readonly (readonly string[])[]) =>
+        JSON.stringify(a) === JSON.stringify(b)
+      setSeleccion((actual) => actual.filter((id) => !llevadas.includes(id)))
+      if (igual([nuevo.orden, ...nuevo.bloques], [sueltas, ...bloques])) return
+
+      setOrden(nuevo.orden)
+      setBloques(nuevo.bloques)
+      // A new bloque leaves the loose run's order alone, so the sort stays.
+      const ancla =
+        'antesDe' in destino ? destino.antesDe : 'despuesDe' in destino ? destino.despuesDe : null
+      if (ancla !== null && sueltas.includes(ancla)) setAcomodoActivo(null)
+    },
+    [mano, secciones, bloques, seleccion],
+  )
+
   const alternarCarta = useCallback(
     (cardId: string) => {
       onAviso(null)
@@ -261,6 +306,7 @@ export function useMano(options: {
     acomodoActivo,
     acomodarMano,
     moverCartas,
+    llevarCartas,
     fijarSeleccion,
     soltar,
     alternarCarta,
