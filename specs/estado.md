@@ -381,6 +381,8 @@ owner's order:
    bloque.
 7. ~~Phase 67 — Lo que se movió se ve dónde quedó.~~ ✅ Done, on dev: what a
    drag carried stays green until the next touch.
+8. ~~Phase 68 — Lo arrastrado se suelta.~~ ✅ Done, on dev: what a drag
+   carried is deselected on landing, marked green instead.
 
 The comodín gallery (was Phase 51) moved to the *After* list.
 

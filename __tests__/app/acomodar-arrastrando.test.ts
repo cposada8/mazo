@@ -42,6 +42,8 @@ describe('llevarCartas', () => {
     act(() => result.current.llevarCartas(id('K♦'), { despuesDe: id('7♠') }))
 
     expect(escrita(result)).toEqual(['5♥', '9♣', '7♠', '2♠', 'K♦'])
+    // Carried is done with: nothing stays selected (Phase 68).
+    expect(result.current.seleccion).toEqual([])
   })
 
   it('releases a latched sort — a drag is a claim about where cards go', () => {

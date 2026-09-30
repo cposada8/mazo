@@ -2794,6 +2794,22 @@ so the seam or the new place it is aimed at is not hidden under it.
 **Done.** In the browser: both cards of a dragged selection green on
 landing, and neither after one tap on the felt.
 
+### Phase 68 — Lo arrastrado se suelta ✅
+The owner, 2026-09-30: a dragged card was left **selected** after the drop.
+They want it marked where it landed — Phase 67's green — and not selected.
+
+- **What a drag carried leaves the selection** (`llevarCartas`). A selected
+  card carries the whole selection, so all of it is let go; an unselected
+  card dragged alone leaves the rest of the selection as it was.
+- **The click that closes a drag is caught until the next touch**, not for
+  a fixed 100 ms: on some phones it comes late, and a late one would select
+  the card just dropped. The next pointer down is a real tap starting, so
+  it ends the wait; a second at most, for a release that makes no click.
+
+**Done.** In the browser, with a mouse and with a held finger: a lone card
+and a selection of two each land green and unselected, and a tap straight
+after a drop still selects.
+
 ---
 
 ## After

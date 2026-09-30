@@ -329,15 +329,24 @@ export function useArrastre({
 /**
  * A drag ends in a click, and it is not a tap: not on the card, which would
  * select it, nor on the felt, which would let go of the selection just
- * carried. Which element that click lands on differs between browsers, so
- * it is caught before any of them sees it.
+ * carried. Which element that click lands on differs between browsers, and
+ * on some phones it comes late — so it is caught before anyone sees it, and
+ * given until the next touch to arrive, not a fixed time (Phase 68). The
+ * next touch is a real tap starting, and its click must go through.
  */
 function tragarClick() {
   const tragar = (e: MouseEvent) => {
     e.stopPropagation()
     e.preventDefault()
+    soltar()
   }
-  window.addEventListener('click', tragar, { capture: true, once: true })
-  // A release that makes no click must not leave the next real tap eaten.
-  setTimeout(() => window.removeEventListener('click', tragar, { capture: true }), 100)
+  const soltar = () => {
+    window.removeEventListener('click', tragar, { capture: true })
+    window.removeEventListener('pointerdown', soltar, { capture: true })
+    clearTimeout(reloj)
+  }
+  window.addEventListener('click', tragar, { capture: true })
+  window.addEventListener('pointerdown', soltar, { capture: true })
+  // A release that makes no click at all must not lie in wait forever.
+  const reloj = setTimeout(soltar, 1000)
 }

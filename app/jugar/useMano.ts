@@ -201,6 +201,10 @@ export function useMano(options: {
    * loose cards releases a latched sort — it is a claim about where they go —
    * but a drop into a bloque does not: the sort only ever ordered the loose
    * run, and still can. A drop that changed nothing changes nothing.
+   *
+   * What was carried is let go of (Phase 68): the drag was the thing it was
+   * selected for, and a card left selected looks like a card about to be
+   * thrown. Where it landed is marked green by the hand instead.
    */
   const llevarCartas = useCallback(
     (cardId: string, destino: Destino) => {
@@ -216,6 +220,7 @@ export function useMano(options: {
       const nuevo = llevar(sueltas, bloques, llevadas, destino)
       const igual = (a: readonly (readonly string[])[], b: readonly (readonly string[])[]) =>
         JSON.stringify(a) === JSON.stringify(b)
+      setSeleccion((actual) => actual.filter((id) => !llevadas.includes(id)))
       if (igual([nuevo.orden, ...nuevo.bloques], [sueltas, ...bloques])) return
 
       setOrden(nuevo.orden)
