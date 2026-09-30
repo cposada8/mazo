@@ -271,7 +271,10 @@ export function Tablero({
         )}
       >
         <Mesa
-          state={ronda}
+          // Drawn as it has been told (Phase 59): a move shows on the piles
+          // and the mesa when its card lands, not a beat before.
+          state={juego.mesaContada?.vista ?? ronda}
+          ocultas={juego.mesaContada?.ocultas}
           asiento={asiento}
           nombres={nombresEnMesa}
           reloj={juego.reloj}

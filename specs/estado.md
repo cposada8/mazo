@@ -353,11 +353,10 @@ bots stay as the *Fácil* level, the stronger play comes as new bots:
 
 **Next, asked for after v1.3.0** (`roadmap.md` has the briefs):
 
-1. **Phase 58 — Lo que llega a la mesa se ve llegar.** Bajadas and agregars
-   travel onto the mesa instead of appearing.
-2. **Phase 59 — Primero el viaje, después la carta.** With quick bots the
-   thrown card shows on the descarte before its trip; the piles should wait
-   for the story.
+1. ~~Phase 58 — Lo que llega a la mesa se ve llegar.~~ ✅ Done, on dev:
+   bajadas, agregars and freed comodines fly onto the mesa.
+2. ~~Phase 59 — Primero el viaje, después la carta.~~ ✅ Done, on dev: the
+   table is drawn as told, so a card lands when its flight ends.
 
 The comodín gallery (Phase 51) stays behind them, not a priority.
 
