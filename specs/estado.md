@@ -364,12 +364,14 @@ bots stay as the *Fácil* level, the stronger play comes as new bots:
 **Next, asked for after v1.4.1** (`roadmap.md` has the briefs), in the
 owner's order:
 
-1. ~~Phase 61 — La portada al día.~~ ✅ Done, on dev: no contracts, the door
+1. ~~Phase 61 — La portada al día.~~ ✅ Done, released as v1.4.2: no contracts, the door
    first, the footer true; la mesa and the banco de pruebas moved to the
    panel.
-2. ~~Phase 62 — Del inicio al panel y de vuelta.~~ ✅ Done, on dev.
-3. **Phase 63 — Acomodar arrastrando.** Hold a loose card and drag it; a
-   selected card carries the whole selection.
+2. ~~Phase 62 — Del inicio al panel y de vuelta.~~ ✅ Done, released as
+   v1.4.2.
+3. ~~Phase 63 — Acomodar arrastrando.~~ ✅ Done, on dev: hold a loose card
+   (a moment, with a finger) and drag it; a selected card carries the whole
+   selection.
 
 The comodín gallery (was Phase 51) moved to the *After* list.
 

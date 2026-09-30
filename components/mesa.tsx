@@ -26,6 +26,7 @@
 
 import { Check, Layers, Lightbulb } from 'lucide-react'
 import { useLayoutEffect, useRef, useState } from 'react'
+import { type Arrastre, useArrastre } from '@/components/arrastre'
 import { Carta, CartaBocaAbajo } from '@/components/carta'
 import {
   ASOMA,
@@ -500,6 +501,7 @@ export function Mano({
   resaltada,
   onCarta,
   onSoltar,
+  onLlevar,
   acciones,
   cabecera,
   esTuTurno,
@@ -531,6 +533,11 @@ export function Mano({
   onCarta?: (cardId: string) => void
   /** Unpin a bloque, by its position among the pinned ones. */
   onSoltar?: (indice: number) => void
+  /**
+   * Given one, loose cards can be held and dragged (Phase 63): the card, or
+   * the whole selection when it is selected, lands in front of `antesDe`.
+   */
+  onLlevar?: (cardId: string, antesDe: string | null) => void
   /** Sorting and moving controls, rendered beside the heading. */
   acciones?: React.ReactNode
   /**
@@ -546,6 +553,21 @@ export function Mano({
   reloj?: Reloj
 }) {
   const total = secciones.reduce((suma, seccion) => suma + seccion.cards.length, 0)
+
+  const fila = useRef<HTMLDivElement>(null)
+  const { arrastre, empezar, tragarClick } = useArrastre({
+    fila,
+    // The same rule `llevarCartas` applies: a selected card brings the
+    // selected loose cards with it, any other card travels alone.
+    llevadasDe: (cardId) => {
+      const sueltas = secciones.find((seccion) => !seccion.bloqueada)?.cards ?? []
+      return seleccionadas?.has(cardId)
+        ? sueltas.filter((card) => seleccionadas.has(card.id)).map((card) => card.id)
+        : [cardId]
+    },
+    onSoltar: onLlevar,
+  })
+  const llevadas = new Set(arrastre?.llevadas)
 
   // Which pinned bloque each section is, counted among the pinned ones only —
   // that is the index `onSoltar` expects.
@@ -619,6 +641,7 @@ export function Mano({
 
       {!soloCabecera && (
       <div
+        ref={fila}
         className={cn(
           // The row scrolls sideways, and a scrolling box clips upward too —
           // so the lift a selected card makes is room reserved here, not
@@ -626,7 +649,7 @@ export function Mano({
           // `px` for the same reason on the sides: the selection ring and
           // its glow are drawn outside the card, and the scroller would
           // shave them off the first and last cards.
-          'flex items-start gap-3 overflow-x-auto px-1.5 pt-[calc(var(--carta-md,5rem)*0.16)]',
+          'relative flex items-start gap-3 overflow-x-auto px-1.5 pt-[calc(var(--carta-md,5rem)*0.16)]',
         )}
         style={
           solape === undefined
@@ -650,6 +673,7 @@ export function Mano({
                 {seccion.cards.map((card) => {
                   const elegida = seleccionadas?.has(card.id) ?? false
                   const nueva = resaltada === card.id
+                  const arrastrable = Boolean(onLlevar) && !seccion.bloqueada
                   const carta = (
                     <Carta
                       card={card}
@@ -663,6 +687,9 @@ export function Mano({
                         nueva && 'ring-2 ring-amber-400',
                         elegida &&
                           '-translate-y-[calc(var(--carta-md,5rem)*0.14)] ring-2 ring-sky-300 shadow-[0_0_12px_rgba(125,211,252,0.6)]',
+                        // In the air: what is left behind is the gap it
+                        // came from, faintly.
+                        llevadas.has(card.id) && 'opacity-30',
                       )}
                     />
                   )
@@ -676,9 +703,19 @@ export function Mano({
                     <button
                       key={card.id}
                       type="button"
-                      onClick={() => onCarta(card.id)}
+                      onClick={() => {
+                        if (!tragarClick()) onCarta(card.id)
+                      }}
                       aria-pressed={elegida}
-                      className="-ml-[var(--solape-mano,calc(var(--carta-md,5rem)*0.34))] shrink-0"
+                      data-suelta={arrastrable ? card.id : undefined}
+                      onPointerDown={arrastrable ? (e) => empezar(e, card.id) : undefined}
+                      // A held finger is a pick-up here, not a request for
+                      // the phone's own long-press menu.
+                      onContextMenu={arrastrable ? (e) => e.preventDefault() : undefined}
+                      className={cn(
+                        '-ml-[var(--solape-mano,calc(var(--carta-md,5rem)*0.34))] shrink-0',
+                        arrastrable && '[-webkit-touch-callout:none]',
+                      )}
                     >
                       {carta}
                     </button>
@@ -706,8 +743,69 @@ export function Mano({
             </div>
           )
         })}
+
+        {arrastre && (
+          <>
+            {/* Where it will land: a seam of light between two cards. */}
+            <span
+              aria-hidden
+              className="pointer-events-none absolute z-10 h-[var(--carta-md,5rem)] w-1 -translate-x-1/2 rounded-full bg-sky-300 shadow-[0_0_10px_rgba(125,211,252,0.9)]"
+              style={{ left: arrastre.marca, top: 'calc(var(--carta-md,5rem) * 0.16)' }}
+            />
+            <EnElAire arrastre={arrastre} secciones={secciones} />
+          </>
+        )}
       </div>
       )}
+    </div>
+  )
+}
+
+/**
+ * The cards being dragged, under the finger (Phase 63). Held up off the
+ * row, so the seam where they will land shows beneath them — and above a
+ * finger, which would otherwise hide the very corner that names the card.
+ *
+ * Drawn `fixed` so the row's scrolling cannot clip them — but `.cancha` is a
+ * size container, and a container is where `fixed` is measured from. Rather
+ * than assume which box that is, an empty frame at `0, 0` is asked where it
+ * actually landed, and the cards are placed from there.
+ */
+function EnElAire({
+  arrastre,
+  secciones,
+}: {
+  arrastre: Arrastre
+  secciones: readonly Seccion[]
+}) {
+  const marco = useRef<HTMLDivElement>(null)
+  const cartas = useRef<HTMLDivElement>(null)
+
+  useLayoutEffect(() => {
+    if (!marco.current || !cartas.current) return
+    const origen = marco.current.getBoundingClientRect()
+    cartas.current.style.transform = `translate(${arrastre.x - origen.left}px, ${arrastre.y - origen.top}px)`
+  }, [arrastre.x, arrastre.y])
+
+  const porId = new Map(secciones.flatMap((seccion) => seccion.cards).map((card) => [card.id, card]))
+
+  return (
+    <div ref={marco} aria-hidden className="pointer-events-none fixed top-0 left-0 z-50 size-0">
+      <div ref={cartas} className="relative">
+        {arrastre.llevadas.map((id, indice) => {
+          const card = porId.get(id)
+          return (
+            card && (
+              <div key={id} className="absolute top-0" style={{ left: indice * arrastre.paso }}>
+                <Carta
+                  card={card}
+                  className="-translate-y-[calc(var(--carta-md,5rem)*0.45)] scale-105 ring-2 ring-sky-300 shadow-[-4px_8px_16px_rgba(0,0,0,0.55)]"
+                />
+              </div>
+            )
+          )
+        })}
+      </div>
     </div>
   )
 }
@@ -789,6 +887,8 @@ function CartaViajera({ viaje }: { viaje: Viaje }) {
 export type MesaInteractiva = {
   onRobar?: (de: 'stock' | 'descarte') => void
   onCarta?: (cardId: string) => void
+  /** Drop dragged cards in front of `antesDe`, or at the end (Phase 63). */
+  onLlevar?: (cardId: string, antesDe: string | null) => void
   onGrupo?: (seat: number, grupoIndex: number) => void
   seleccionadas?: ReadonlySet<string>
 }
@@ -811,6 +911,7 @@ export function Mesa({
   sobreLaMano,
   onRobar,
   onCarta,
+  onLlevar,
   onGrupo,
   seleccionadas,
   resaltada,
@@ -1058,6 +1159,7 @@ export function Mesa({
               resaltada={resaltada}
               onCarta={onCarta}
               onSoltar={onSoltar}
+              onLlevar={onLlevar}
               solape={anchoDeMano.carta ? solape : undefined}
             />
           </div>

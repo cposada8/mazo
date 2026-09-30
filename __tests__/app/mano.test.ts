@@ -6,6 +6,7 @@ import {
   aplicarOrden,
   bloquear,
   distribuir,
+  llevar,
   moverSeleccion,
   soltarBloque,
 } from '@/lib/mano'
@@ -189,6 +190,39 @@ describe('moverSeleccion', () => {
     const antes = [...orden]
     moverSeleccion(orden, ['b'], 'derecha')
     expect(orden).toEqual(antes)
+  })
+})
+
+describe('llevar — dragging cards to a place (Phase 63)', () => {
+  const orden = ['a', 'b', 'c', 'd', 'e']
+
+  it('carries one card in front of another', () => {
+    expect(llevar(orden, ['e'], 'b')).toEqual(['a', 'e', 'b', 'c', 'd'])
+    expect(llevar(orden, ['a'], 'd')).toEqual(['b', 'c', 'a', 'd', 'e'])
+  })
+
+  it('carries a card to the end', () => {
+    expect(llevar(orden, ['b'], null)).toEqual(['a', 'c', 'd', 'e', 'b'])
+  })
+
+  it('gathers scattered cards where they land, in the order they sat', () => {
+    // Tapped e first, then b: they still arrive as b, e.
+    expect(llevar(orden, ['e', 'b'], 'a')).toEqual(['b', 'e', 'a', 'c', 'd'])
+    expect(llevar(orden, ['a', 'c'], null)).toEqual(['b', 'd', 'e', 'a', 'c'])
+  })
+
+  it('leaves the run alone when dropped in front of a card it carries', () => {
+    expect(llevar(orden, ['b', 'd'], 'd')).toEqual(orden)
+  })
+
+  it('leaves the run alone for cards or a target it does not hold', () => {
+    expect(llevar(orden, ['z'], 'a')).toEqual(orden)
+    expect(llevar(orden, ['a'], 'z')).toEqual(orden)
+  })
+
+  it('keeps its place among cards the screen does not show', () => {
+    // x is set aside for a grupo: hidden, but still in the run.
+    expect(llevar(['a', 'x', 'b', 'c'], ['c'], 'b')).toEqual(['a', 'x', 'c', 'b'])
   })
 })
 

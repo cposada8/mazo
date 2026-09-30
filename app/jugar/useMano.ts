@@ -23,6 +23,7 @@ import {
   aplanar,
   bloquear,
   distribuir,
+  llevar,
   moverSeleccion,
   soltarBloque,
 } from '@/lib/mano'
@@ -188,6 +189,34 @@ export function useMano(options: {
     [secciones, seleccion],
   )
 
+  /**
+   * Drop a dragged card in front of `antesDe`, or at the end (Phase 63). A
+   * selected card brings the rest of the selection with it; any other card
+   * travels alone and leaves the selection as it was.
+   *
+   * Like the arrows, it works from the hand as displayed and releases a
+   * latched sort — unless the drop changed nothing, in which case there is
+   * no claim to honour and the sort stays down.
+   */
+  const llevarCartas = useCallback(
+    (cardId: string, antesDe: string | null) => {
+      const sueltas = (secciones.find((seccion) => !seccion.bloqueada)?.cards ?? []).map(
+        (card) => card.id,
+      )
+      if (!sueltas.includes(cardId)) return
+
+      const llevadas = seleccion.includes(cardId)
+        ? sueltas.filter((id) => seleccion.includes(id))
+        : [cardId]
+      const nuevo = llevar(sueltas, llevadas, antesDe)
+      if (nuevo.every((id, i) => id === sueltas[i])) return
+
+      setOrden(nuevo)
+      setAcomodoActivo(null)
+    },
+    [secciones, seleccion],
+  )
+
   const alternarCarta = useCallback(
     (cardId: string) => {
       onAviso(null)
@@ -261,6 +290,7 @@ export function useMano(options: {
     acomodoActivo,
     acomodarMano,
     moverCartas,
+    llevarCartas,
     fijarSeleccion,
     soltar,
     alternarCarta,

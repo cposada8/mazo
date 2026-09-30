@@ -316,6 +316,7 @@ export function Tablero({
             // cards selected first.
             juego.alternarCarta
           }
+          onLlevar={juego.llevarCartas}
           onRobar={esTuTurno && ronda.fase === 'draw' ? juego.robar : undefined}
           onGrupo={esTuTurno && ronda.fase === 'act' ? juego.agregarA : undefined}
         />

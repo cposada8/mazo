@@ -225,3 +225,33 @@ export function moverSeleccion(
 
   return [...resto.slice(0, destino), ...bloque, ...resto.slice(destino)]
 }
+
+/**
+ * Carry cards to a place in the run, gathered, by dragging (Phase 63).
+ *
+ * `antesDe` names the card they land in front of — or `null`, the end — and
+ * not a position: a position would be counted over the cards on screen, and
+ * the run here also holds cards set aside for a grupo, which are not. A card
+ * is a place both agree on.
+ *
+ * The carried cards keep the order they were sitting in, whatever order they
+ * were tapped in. Carrying them in front of one of themselves means nothing,
+ * so it leaves the run as it was.
+ */
+export function llevar(
+  orden: readonly string[],
+  llevadas: readonly string[],
+  antesDe: string | null,
+): string[] {
+  const elegidas = new Set(llevadas)
+  if (antesDe !== null && elegidas.has(antesDe)) return [...orden]
+
+  const bloque = orden.filter((id) => elegidas.has(id))
+  if (bloque.length === 0) return [...orden]
+
+  const resto = orden.filter((id) => !elegidas.has(id))
+  const destino = antesDe === null ? resto.length : resto.indexOf(antesDe)
+  if (destino === -1) return [...orden]
+
+  return [...resto.slice(0, destino), ...bloque, ...resto.slice(destino)]
+}

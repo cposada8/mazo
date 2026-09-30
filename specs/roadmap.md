@@ -2660,7 +2660,7 @@ without typing an address.
 **Done.** «Panel» under «Cómo se juega» on the home page; «‹ Mazo» at the top
 of every panel screen — the key, the list, and a deployment with no panel.
 
-### Phase 63 — Acomodar arrastrando
+### Phase 63 — Acomodar arrastrando ✅
 Arranging the hand today is select, then tap an arrow once per place
 (`moverCartas`, `app/jugar/useMano.ts`). The owner wants to **touch a card
 and drag it** to where it goes.
@@ -2682,7 +2682,7 @@ What has to be got right is the gesture, not the state:
   then drag; a swipe without the hold keeps scrolling.
 - **The fan is tight** — only each card's left edge shows — so the drop
   position comes from the cards' measured positions, not from what is under
-  the finger. While dragging, the neighbours open a gap where it will land.
+  the finger. While dragging, the place it will land is marked.
 - **A latched sort is released** by a drag, as the arrows already do; left
   on, it would file the card straight back.
 - **Pinned bloques stay out of it** at first: only loose cards drag. Dragging
@@ -2697,6 +2697,24 @@ What has to be got right is the gesture, not the state:
 Done when, on a phone lying down and on a laptop, a loose card — or the
 selection it belongs to — can be held, carried and dropped anywhere in the
 loose run, a tap still selects, and a swipe still scrolls the hand.
+
+**Done.** `useArrastre` (`components/arrastre.ts`) is the gesture;
+`llevarCartas` in `useMano` and `llevar` in `lib/mano.ts` are the rule. A
+finger lifts a card after holding it still for 250 ms — moving first is
+scrolling, and is left alone — and a mouse lifts on moving. While a card is
+up, the row stops scrolling under the finger (a non-passive `touchmove`),
+its own spot fades, the carried cards ride above the finger, and a seam of
+light marks where they will land. Close to either end, the row scrolls along.
+
+One change from the brief: the neighbours do **not** open a gap. The target
+is computed against where the cards sat when the drag began; a gap that
+moved them would move the target too, and the fan jittered. The seam says
+the same thing and holds still.
+
+Measured in the browser, lying down: a mouse drag and a held-finger drag
+each land the card where dropped; four scattered 9s dragged by one of them
+arrive together, in the order they sat, still selected; a quick tap
+selects; a swipe without the hold moves and selects nothing.
 
 ---
 
