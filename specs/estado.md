@@ -358,6 +358,9 @@ bots stay as the *Fácil* level, the stronger play comes as new bots:
 2. ~~Phase 59 — Primero el viaje, después la carta.~~ ✅ Done, on dev: the
    table is drawn as told, so a card lands when its flight ends.
 
+3. ~~Phase 60 — La carta sale de donde estaba.~~ ✅ Done, on dev: a card in
+   the air has left where it was; only its landing waits.
+
 The comodín gallery (Phase 51) stays behind them, not a priority.
 
 Both 47 and 48 are settled with the owner; nothing is waiting on a question.

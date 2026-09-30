@@ -40,10 +40,17 @@ export type MesaContada = {
 /**
  * `vista` less the moves in `pendientes` (oldest first), as far as the table
  * shows them.
+ *
+ * `primeroEnVuelo`: the first of them is the one whose card is in the air
+ * (Phase 60). A card in flight has left where it was and not reached where it
+ * is going, so for that move only the landing is undone — the take-off stays
+ * visible. Undoing it whole drew a card taken off the descarte on the pile
+ * and in flight at once.
  */
 export function rebobinar(
   vista: VistaDeAsiento,
   pendientes: readonly Relato[],
+  primeroEnVuelo = false,
 ): MesaContada {
   const ocultas = new Set<string>()
   if (pendientes.length === 0) return { vista, ocultas }
@@ -67,59 +74,82 @@ export function rebobinar(
   }
   const todos = vista.jugadores.map((_, seat) => seat)
 
+  /** Hide what a move put on the mesa; how many cards that was. */
+  const esconder = (relato: Relato): number => {
+    switch (relato.tipo) {
+      case 'bajada': {
+        // A bajada is a seat's first grupos: everything it has on the mesa.
+        let cuantas = 0
+        for (const grupo of vista.jugadores[relato.seat]?.grupos ?? []) {
+          for (const card of grupo.cards) {
+            if (ocultas.has(card.id)) continue
+            ocultas.add(card.id)
+            cuantas++
+          }
+        }
+        bajado[relato.seat] = null
+        return cuantas
+      }
+      case 'agrega': {
+        let cuantas = 0
+        for (const texto of relato.cartas) {
+          const card = enMesa(texto, [relato.dueno])
+          if (!card) continue
+          ocultas.add(card.id)
+          cuantas++
+        }
+        return cuantas
+      }
+      case 'comodin': {
+        const card = enMesa(relato.carta, todos)
+        if (!card) return 0
+        ocultas.add(card.id)
+        return 1
+      }
+      default:
+        return 0
+    }
+  }
+
   for (let i = pendientes.length - 1; i >= 0; i--) {
     const relato = pendientes[i]
     const seat = relato.seat
+    // Only the landing is held back for the card in the air.
+    const soloLlegada = primeroEnVuelo && i === 0
 
     switch (relato.tipo) {
       case 'bota': {
+        // Lands on the pile; leaves the hand.
         const arriba = descarte.at(-1)
         if (!arriba || describeCard(arriba) !== relato.carta) break
         descarte.pop()
-        cartas[seat]++
+        if (!soloLlegada) cartas[seat]++
         break
       }
       case 'descarte': {
+        // Lands in the hand; leaves the pile.
+        cartas[seat] = Math.max(0, cartas[seat] - 1)
+        if (soloLlegada) break
         // Back on top: the reader's own copy if it took it, a face otherwise.
         const propia =
           seat === vista.asiento
             ? vista.mano.find((card) => describeCard(card) === relato.carta)
             : undefined
         const carta = propia ?? cartaDeTexto(relato.carta, `rebobinada-${i}`)
-        if (!carta) break
-        descarte.push(carta)
-        cartas[seat] = Math.max(0, cartas[seat] - 1)
+        if (carta) descarte.push(carta)
         break
       }
       case 'mazo':
-        stock++
+        // Lands in the hand; leaves the stock.
         cartas[seat] = Math.max(0, cartas[seat] - 1)
+        if (!soloLlegada) stock++
         break
-      case 'bajada': {
-        // A bajada is a seat's first grupos: everything it has on the mesa.
-        for (const grupo of vista.jugadores[seat]?.grupos ?? []) {
-          for (const card of grupo.cards) {
-            if (ocultas.has(card.id)) continue
-            ocultas.add(card.id)
-            cartas[seat]++
-          }
-        }
-        bajado[seat] = null
-        break
-      }
+      case 'bajada':
       case 'agrega':
-        for (const texto of relato.cartas) {
-          const card = enMesa(texto, [relato.dueno])
-          if (!card) continue
-          ocultas.add(card.id)
-          cartas[seat]++
-        }
-        break
       case 'comodin': {
-        const card = enMesa(relato.carta, todos)
-        if (!card) break
-        ocultas.add(card.id)
-        cartas[seat]++
+        // Lands on the mesa; leaves the hand.
+        const cuantas = esconder(relato)
+        if (!soloLlegada) cartas[seat] += cuantas
         break
       }
     }

@@ -753,7 +753,9 @@ function CartaViajera({ viaje }: { viaje: Viaje }) {
     const marco = requestAnimationFrame(() =>
       requestAnimationFrame(() => {
         const ms = viaje.ms ?? MS_DE_VIAJE
-        el.style.transition = `transform ${ms}ms ease-in-out, opacity ${Math.round(ms * 0.44)}ms ease-in ${Math.round(ms * 0.76)}ms`
+        // The fade ends exactly on landing, when the move shows where it
+        // arrived: fading past it drew the card twice for a moment (Phase 60).
+        el.style.transition = `transform ${ms}ms ease-in-out, opacity ${Math.round(ms * 0.4)}ms ease-in ${Math.round(ms * 0.6)}ms`
         el.style.transform = `translate(${b.x + b.width / 2 - propia.width / 2 - caja.x}px, ${b.y + b.height / 2 - propia.height / 2 - caja.y}px)`
         el.style.opacity = '0'
       }),

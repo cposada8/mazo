@@ -2583,6 +2583,35 @@ inside the partida's state updater, which React runs twice in development,
 so every line was told twice there. The partida, its log and the last
 refusal are one state now, updated by one pure function.
 
+### Phase 60 — La carta sale de donde estaba ✅
+The owner, 2026-09-30, on v1.4.0: when somebody takes the card off the
+descarte, the flight carries it to their hand **while the same card is
+still drawn on the pile** — for an instant it is in two places.
+
+Phase 59's own doing. `rebobinar` undoes a move *whole* until its flight
+lands, and a take from the descarte is undone by putting the card back on
+the pile. Right for the end a card arrives at, wrong for the end it leaves:
+a card in the air has left where it was. So every move is undone in two
+halves — where the card leaves and where it lands — and the move in flight
+has only its landing held back:
+
+| Move | Seen at take-off | Seen on landing |
+| --- | --- | --- |
+| Take from the descarte | off the pile | the seat holds one more |
+| Draw from the mazo | the stock one fewer | the seat holds one more |
+| Throw | the seat holds one fewer | on the pile |
+| Bajada, agregar, comodín | the seat holds fewer | on the mesa |
+
+Done when no card is ever drawn in two places, in either home.
+
+**Done.** `rebobinar(vista, pendientes, primeroEnVuelo)` undoes each move in
+its two halves, and only the landing of the one in the air. A second, smaller
+double turned up while measuring: the flying card's fade ran to 120% of the
+flight, so a thrown card lingered on top of the pile that already showed it.
+The fade now ends on landing. Measured in the browser, three bots at one
+second, every animation frame for 25 s: no frame with the card drawn away
+from where it is and still on the pile.
+
 ---
 
 ## After
