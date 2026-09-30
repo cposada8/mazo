@@ -8,7 +8,7 @@
  */
 
 import { cookies } from 'next/headers'
-import { Entrada, Panel } from './cliente'
+import { AlInicio, Entrada, Panel } from './cliente'
 import {
   COOKIE_DEL_PANEL,
   claveCorrecta,
@@ -23,7 +23,8 @@ export default async function PaginaDelPanel() {
   // deployment with an open door.
   if (!hayPanel()) {
     return (
-      <main className="mx-auto flex w-full max-w-md flex-1 items-center justify-center px-6 py-16">
+      <main className="mx-auto flex w-full max-w-md flex-1 flex-col items-center justify-center gap-3 px-6 py-16">
+        <AlInicio />
         <p className="text-muted-foreground text-sm">
           Este despliegue no tiene panel.
         </p>

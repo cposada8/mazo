@@ -8,6 +8,8 @@
  * code, the ages, who is a bot — is detail underneath them.
  */
 
+import { ChevronLeft } from 'lucide-react'
+import Link from 'next/link'
 import { useActionState } from 'react'
 import type { PartidaDelPanel } from '@/lib/server/panel'
 import { cn } from '@/lib/utils'
@@ -22,6 +24,7 @@ export function Entrada() {
   return (
     <main className="mx-auto flex w-full max-w-sm flex-1 flex-col justify-center gap-4 px-6 py-16">
       <div className="flex flex-col gap-1">
+        <AlInicio />
         <h1 className="text-2xl font-semibold tracking-tight">Partidas abiertas</h1>
         <p className="text-muted-foreground text-sm">
           Para ver y cerrar las mesas que siguen abiertas.
@@ -63,6 +66,7 @@ export function Panel({
 
   return (
     <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-4 px-4 py-8">
+      <AlInicio />
       <div className="flex flex-wrap items-baseline justify-between gap-2">
         <h1 className="text-2xl font-semibold tracking-tight">
           Partidas abiertas{' '}
@@ -106,7 +110,38 @@ export function Panel({
           ))}
         </ul>
       )}
+
+      {/*
+        Tools from building the engine (Phase 61): they meant nothing to a
+        player on the home page, so they live here, behind the key.
+      */}
+      <nav className="mt-6 flex flex-col gap-1 text-xs">
+        <h2 className="text-muted-foreground font-medium tracking-widest uppercase">
+          Herramientas
+        </h2>
+        <a href="/mesa" className="w-fit underline underline-offset-2">
+          La mesa
+          <span className="text-muted-foreground"> — una partida de bots, paso a paso</span>
+        </a>
+        <a href="/pruebas" className="w-fit underline underline-offset-2">
+          Banco de pruebas
+          <span className="text-muted-foreground"> — repartos con semilla y validación de grupos</span>
+        </a>
+      </nav>
     </main>
+  )
+}
+
+/** The way back to the home page (Phase 62), on every screen of the panel. */
+export function AlInicio() {
+  return (
+    <Link
+      href="/"
+      className="text-muted-foreground hover:text-foreground -ml-1 flex w-fit items-center gap-1 text-sm transition-colors"
+    >
+      <ChevronLeft className="size-4" aria-hidden />
+      Mazo
+    </Link>
   )
 }
 
