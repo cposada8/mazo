@@ -29,7 +29,7 @@ describe('llevarCartas', () => {
   it('carries a card that is not selected alone, and leaves the selection be', () => {
     const { result } = montar()
     act(() => result.current.alternarCarta(id('9♣')))
-    act(() => result.current.llevarCartas(id('7♠'), id('2♠')))
+    act(() => result.current.llevarCartas(id('7♠'), { antesDe: id('2♠') }))
 
     expect(escrita(result)).toEqual(['7♠', '2♠', '5♥', '9♣', 'K♦'])
     expect(result.current.seleccion).toEqual([id('9♣')])
@@ -39,7 +39,7 @@ describe('llevarCartas', () => {
     const { result } = montar()
     act(() => result.current.alternarCarta(id('K♦')))
     act(() => result.current.alternarCarta(id('2♠')))
-    act(() => result.current.llevarCartas(id('K♦'), null))
+    act(() => result.current.llevarCartas(id('K♦'), { despuesDe: id('7♠') }))
 
     expect(escrita(result)).toEqual(['5♥', '9♣', '7♠', '2♠', 'K♦'])
   })
@@ -49,7 +49,7 @@ describe('llevarCartas', () => {
     act(() => result.current.acomodarMano('numeros'))
     expect(escrita(result)).toEqual(['2♠', '5♥', '7♠', '9♣', 'K♦'])
 
-    act(() => result.current.llevarCartas(id('K♦'), id('2♠')))
+    act(() => result.current.llevarCartas(id('K♦'), { antesDe: id('2♠') }))
     expect(escrita(result)).toEqual(['K♦', '2♠', '5♥', '7♠', '9♣'])
     expect(result.current.acomodoActivo).toBeNull()
   })
@@ -57,17 +57,68 @@ describe('llevarCartas', () => {
   it('keeps the sort latched when the drop changed nothing', () => {
     const { result } = montar()
     act(() => result.current.acomodarMano('numeros'))
-    act(() => result.current.llevarCartas(id('5♥'), id('7♠')))
+    act(() => result.current.llevarCartas(id('5♥'), { antesDe: id('7♠') }))
 
     expect(result.current.acomodoActivo).toBe('numeros')
   })
 
-  it('leaves pinned cards where they are', () => {
+  it('rearranges a bloque from inside (Phase 65)', () => {
+    const { result } = montar()
+    act(() => result.current.alternarCarta(id('9♣')))
+    act(() => result.current.alternarCarta(id('K♦')))
+    act(() => result.current.fijarSeleccion())
+    act(() => result.current.llevarCartas(id('K♦'), { antesDe: id('9♣') }))
+
+    expect(escrita(result)).toEqual(['K♦', '9♣', '2♠', '5♥', '7♠'])
+    expect(result.current.secciones[0]).toMatchObject({ bloqueada: true })
+    expect(result.current.secciones[0].cards.map(describeCard)).toEqual(['K♦', '9♣'])
+  })
+
+  it('pins a loose card by dropping it into a bloque, and unpins one back out', () => {
     const { result } = montar()
     act(() => result.current.alternarCarta(id('9♣')))
     act(() => result.current.fijarSeleccion())
-    act(() => result.current.llevarCartas(id('9♣'), null))
 
-    expect(escrita(result)).toEqual(['9♣', '2♠', '5♥', 'K♦', '7♠'])
+    act(() => result.current.llevarCartas(id('7♠'), { despuesDe: id('9♣') }))
+    expect(result.current.secciones[0].cards.map(describeCard)).toEqual(['9♣', '7♠'])
+
+    act(() => result.current.llevarCartas(id('9♣'), { antesDe: id('2♠') }))
+    expect(result.current.secciones[0].cards.map(describeCard)).toEqual(['7♠'])
+    expect(escrita(result)).toEqual(['7♠', '9♣', '2♠', '5♥', 'K♦'])
+  })
+
+  it('moves a card between bloques, and a bloque it empties goes away', () => {
+    const { result } = montar()
+    act(() => result.current.alternarCarta(id('2♠')))
+    act(() => result.current.fijarSeleccion())
+    act(() => result.current.alternarCarta(id('K♦')))
+    act(() => result.current.fijarSeleccion())
+
+    act(() => result.current.llevarCartas(id('2♠'), { despuesDe: id('K♦') }))
+    const fijas = result.current.secciones.filter((seccion) => seccion.bloqueada)
+    expect(fijas.map((seccion) => seccion.cards.map(describeCard))).toEqual([['K♦', '2♠']])
+  })
+
+  it('carries a selection spread over bloque and loose run together', () => {
+    const { result } = montar()
+    act(() => result.current.alternarCarta(id('9♣')))
+    act(() => result.current.fijarSeleccion())
+    act(() => result.current.alternarCarta(id('9♣')))
+    act(() => result.current.alternarCarta(id('K♦')))
+    act(() => result.current.llevarCartas(id('K♦'), { despuesDe: id('7♠') }))
+
+    expect(escrita(result)).toEqual(['2♠', '5♥', '7♠', '9♣', 'K♦'])
+    expect(result.current.secciones.some((seccion) => seccion.bloqueada)).toBe(false)
+  })
+
+  it('keeps a latched sort when the drop only touches a bloque', () => {
+    const { result } = montar()
+    act(() => result.current.alternarCarta(id('9♣')))
+    act(() => result.current.fijarSeleccion())
+    act(() => result.current.acomodarMano('numeros'))
+    act(() => result.current.llevarCartas(id('K♦'), { antesDe: id('9♣') }))
+
+    expect(result.current.acomodoActivo).toBe('numeros')
+    expect(escrita(result)).toEqual(['K♦', '9♣', '2♠', '5♥', '7♠'])
   })
 })

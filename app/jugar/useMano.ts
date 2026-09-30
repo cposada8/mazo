@@ -19,6 +19,7 @@ import { armarGrupo } from '@/lib/bots'
 import {
   type Acomodo,
   type Bloque,
+  type Destino,
   acomodar,
   aplanar,
   bloquear,
@@ -190,31 +191,39 @@ export function useMano(options: {
   )
 
   /**
-   * Drop a dragged card in front of `antesDe`, or at the end (Phase 63). A
-   * selected card brings the rest of the selection with it; any other card
-   * travels alone and leaves the selection as it was.
+   * Drop dragged cards at a seam (Phases 63 and 65), loose or pinned: a card
+   * can be carried within its bloque, from one bloque to another, into a
+   * bloque from the loose run and back out. A selected card brings the whole
+   * selection with it, wherever each card sits; any other card travels alone
+   * and leaves the selection as it was.
    *
-   * Like the arrows, it works from the hand as displayed and releases a
-   * latched sort — unless the drop changed nothing, in which case there is
-   * no claim to honour and the sort stays down.
+   * Like the arrows, it works from the hand as displayed. A drop among the
+   * loose cards releases a latched sort — it is a claim about where they go —
+   * but a drop into a bloque does not: the sort only ever ordered the loose
+   * run, and still can. A drop that changed nothing changes nothing.
    */
   const llevarCartas = useCallback(
-    (cardId: string, antesDe: string | null) => {
+    (cardId: string, destino: Destino) => {
+      const enMano = mano.map((card) => card.id)
+      if (!enMano.includes(cardId)) return
       const sueltas = (secciones.find((seccion) => !seccion.bloqueada)?.cards ?? []).map(
         (card) => card.id,
       )
-      if (!sueltas.includes(cardId)) return
 
       const llevadas = seleccion.includes(cardId)
-        ? sueltas.filter((id) => seleccion.includes(id))
+        ? enMano.filter((id) => seleccion.includes(id))
         : [cardId]
-      const nuevo = llevar(sueltas, llevadas, antesDe)
-      if (nuevo.every((id, i) => id === sueltas[i])) return
+      const nuevo = llevar(sueltas, bloques, llevadas, destino)
+      const igual = (a: readonly (readonly string[])[], b: readonly (readonly string[])[]) =>
+        JSON.stringify(a) === JSON.stringify(b)
+      if (igual([nuevo.orden, ...nuevo.bloques], [sueltas, ...bloques])) return
 
-      setOrden(nuevo)
-      setAcomodoActivo(null)
+      setOrden(nuevo.orden)
+      setBloques(nuevo.bloques)
+      const ancla = 'antesDe' in destino ? destino.antesDe : destino.despuesDe
+      if (sueltas.includes(ancla)) setAcomodoActivo(null)
     },
-    [secciones, seleccion],
+    [mano, secciones, bloques, seleccion],
   )
 
   const alternarCarta = useCallback(

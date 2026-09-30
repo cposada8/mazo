@@ -2716,6 +2716,48 @@ each land the card where dropped; four scattered 9s dragged by one of them
 arrive together, in the order they sat, still selected; a quick tap
 selects; a swipe without the hold moves and selects nothing.
 
+### Phase 64 — Tocar la mesa suelta la selección ✅
+The owner, 2026-09-30: tapping anywhere else on the screen should let go of
+the cards selected.
+
+«Anywhere else» is the table (`.cancha`) where nothing can be pressed: the
+felt, the gaps between cards, the seats. A tap on a button is the button's —
+a card, a grupo to add to, «Botar», the arrows all act *on* the selection,
+and would find it gone. The overlays over the table (menu, reglas, descarte,
+historial) are not part of it.
+
+The click that closes a drag is caught before anything sees it: which
+element it lands on differs between browsers, and letting it reach the felt
+would drop the very selection just carried.
+
+**Done.** `onFondo` on `Mesa`, wired to `limpiarSeleccion` while something is
+selected. Tested on the whole table: a tap on the felt empties the
+selection, the arrows keep it, and a drag released over the felt keeps it.
+
+### Phase 65 — Arrastrar entre bloques ✅
+The owner, 2026-09-30, trying Phase 63: pinned cards could not be dragged.
+They want to **rearrange a bloque by dragging** and to **drag between
+bloques**.
+
+Any card can now be held, and a drop lands at a **seam** — in front of a
+card, or after the last of a run — so the card at the seam also says which
+run: the loose one or a bloque. `llevar` (`lib/mano.ts`) takes the carried
+cards out of wherever they were and puts them in, gathered:
+
+- within a bloque, it rearranges it;
+- into another bloque, it moves them there — pinned;
+- among the loose cards, it unpins them;
+- a bloque left empty goes away.
+
+A selected card still carries the whole selection, now from wherever each
+card sits. A latched sort is released only by a drop among the loose cards:
+it never ordered the bloques, and a drop into one leaves it standing.
+
+**Done.** Measured in the browser: a card moved inside its bloque, from one
+bloque to the end of another, and from a bloque back among the loose cards.
+Not done, and not asked for: dropping between two runs to start a new
+bloque — pinning stays the lock button's job.
+
 ---
 
 ## After

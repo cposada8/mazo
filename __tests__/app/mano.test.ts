@@ -193,36 +193,77 @@ describe('moverSeleccion', () => {
   })
 })
 
-describe('llevar — dragging cards to a place (Phase 63)', () => {
+describe('llevar — dragging cards to a seam (Phases 63 and 65)', () => {
   const orden = ['a', 'b', 'c', 'd', 'e']
+  const soloSueltas = (destino: Parameters<typeof llevar>[3], llevadas: string[]) =>
+    llevar(orden, [], llevadas, destino).orden
 
-  it('carries one card in front of another', () => {
-    expect(llevar(orden, ['e'], 'b')).toEqual(['a', 'e', 'b', 'c', 'd'])
-    expect(llevar(orden, ['a'], 'd')).toEqual(['b', 'c', 'a', 'd', 'e'])
+  it('carries one card in front of another, or after it', () => {
+    expect(soloSueltas({ antesDe: 'b' }, ['e'])).toEqual(['a', 'e', 'b', 'c', 'd'])
+    expect(soloSueltas({ despuesDe: 'e' }, ['b'])).toEqual(['a', 'c', 'd', 'e', 'b'])
   })
 
-  it('carries a card to the end', () => {
-    expect(llevar(orden, ['b'], null)).toEqual(['a', 'c', 'd', 'e', 'b'])
+  it('gathers scattered cards where they land, in the order given', () => {
+    expect(soloSueltas({ antesDe: 'a' }, ['b', 'e'])).toEqual(['b', 'e', 'a', 'c', 'd'])
   })
 
-  it('gathers scattered cards where they land, in the order they sat', () => {
-    // Tapped e first, then b: they still arrive as b, e.
-    expect(llevar(orden, ['e', 'b'], 'a')).toEqual(['b', 'e', 'a', 'c', 'd'])
-    expect(llevar(orden, ['a', 'c'], null)).toEqual(['b', 'd', 'e', 'a', 'c'])
+  it('changes nothing at a seam beside a card it carries', () => {
+    expect(soloSueltas({ antesDe: 'd' }, ['b', 'd'])).toEqual(orden)
+    expect(soloSueltas({ despuesDe: 'b' }, ['b'])).toEqual(orden)
   })
 
-  it('leaves the run alone when dropped in front of a card it carries', () => {
-    expect(llevar(orden, ['b', 'd'], 'd')).toEqual(orden)
-  })
-
-  it('leaves the run alone for cards or a target it does not hold', () => {
-    expect(llevar(orden, ['z'], 'a')).toEqual(orden)
-    expect(llevar(orden, ['a'], 'z')).toEqual(orden)
+  it('changes nothing for cards or a seam it does not hold', () => {
+    expect(soloSueltas({ antesDe: 'a' }, ['z'])).toEqual(orden)
+    expect(soloSueltas({ antesDe: 'z' }, ['a'])).toEqual(orden)
   })
 
   it('keeps its place among cards the screen does not show', () => {
     // x is set aside for a grupo: hidden, but still in the run.
-    expect(llevar(['a', 'x', 'b', 'c'], ['c'], 'b')).toEqual(['a', 'x', 'c', 'b'])
+    expect(llevar(['a', 'x', 'b', 'c'], [], ['c'], { antesDe: 'b' }).orden).toEqual([
+      'a',
+      'x',
+      'c',
+      'b',
+    ])
+  })
+
+  describe('with bloques', () => {
+    const bloques = [['p', 'q', 'r'], ['s', 't']]
+
+    it('rearranges a bloque from inside', () => {
+      const r = llevar(['a', 'b'], bloques, ['r'], { antesDe: 'p' })
+      expect(r.bloques).toEqual([['r', 'p', 'q'], ['s', 't']])
+      expect(r.orden).toEqual(['a', 'b'])
+    })
+
+    it('moves a card from one bloque to another', () => {
+      const r = llevar(['a', 'b'], bloques, ['q'], { despuesDe: 't' })
+      expect(r.bloques).toEqual([['p', 'r'], ['s', 't', 'q']])
+    })
+
+    it('pins a loose card by dropping it into a bloque', () => {
+      const r = llevar(['a', 'b'], bloques, ['a'], { antesDe: 's' })
+      expect(r.orden).toEqual(['b'])
+      expect(r.bloques).toEqual([['p', 'q', 'r'], ['a', 's', 't']])
+    })
+
+    it('unpins a card by dropping it among the loose ones', () => {
+      const r = llevar(['a', 'b'], bloques, ['p'], { despuesDe: 'a' })
+      expect(r.orden).toEqual(['a', 'p', 'b'])
+      expect(r.bloques).toEqual([['q', 'r'], ['s', 't']])
+    })
+
+    it('carries a selection from several places at once', () => {
+      const r = llevar(['a', 'b'], bloques, ['q', 's', 'b'], { antesDe: 'a' })
+      expect(r.orden).toEqual(['q', 's', 'b', 'a'])
+      expect(r.bloques).toEqual([['p', 'r'], ['t']])
+    })
+
+    it('lets a bloque emptied by the move disappear', () => {
+      const r = llevar(['a', 'b'], bloques, ['s', 't'], { antesDe: 'b' })
+      expect(r.orden).toEqual(['a', 's', 't', 'b'])
+      expect(r.bloques).toEqual([['p', 'q', 'r']])
+    })
   })
 })
 

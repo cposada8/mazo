@@ -372,6 +372,10 @@ owner's order:
 3. ~~Phase 63 — Acomodar arrastrando.~~ ✅ Done, on dev: hold a loose card
    (a moment, with a finger) and drag it; a selected card carries the whole
    selection.
+4. ~~Phase 64 — Tocar la mesa suelta la selección.~~ ✅ Done, on dev.
+5. ~~Phase 65 — Arrastrar entre bloques.~~ ✅ Done, on dev: pinned cards
+   drag too — within a bloque, between bloques, and in and out of the loose
+   run.
 
 The comodín gallery (was Phase 51) moved to the *After* list.
 

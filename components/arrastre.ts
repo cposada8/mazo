@@ -1,11 +1,11 @@
 'use client'
 
 /**
- * Picking a card up and carrying it along the hand (Phase 63).
+ * Picking a card up and carrying it along the hand (Phases 63 and 65).
  *
- * The state it writes is small — one card lands in front of another — so
- * this is all gesture. Three things share the same finger on the same row,
- * and each has to keep working:
+ * The state it writes is small — cards land at a seam — so this is all
+ * gesture. Three things share the same finger on the same row, and each has
+ * to keep working:
  *
  * - **A tap selects.** A press that is let go without travelling is a tap,
  *   even a slow one, and the click goes through.
@@ -16,12 +16,16 @@
  * - **A drag carries.** Once held, the row stops scrolling under the finger
  *   and the card follows it until it is let go.
  *
+ * Any card can be carried, pinned or loose, and dropped at any seam: inside
+ * its own bloque, in another one, or among the loose cards.
+ *
  * Where it will land is worked out against where the cards sat **when it was
  * picked up**, not where they are drawn now, so nothing on screen can move
  * the target out from under the finger.
  */
 
 import { useEffect, useRef, useState } from 'react'
+import type { Destino } from '@/lib/mano'
 
 /** How long a finger holds a card still before it lifts. */
 export const MS_PARA_LEVANTAR = 250
@@ -33,23 +37,19 @@ const TOLERANCIA_RATON = 5
 const BORDE_QUE_DESPLAZA = 28
 const PASO_DE_DESPLAZAMIENTO = 12
 
-/** Where a loose card sat, in the row's own coordinates (scroll included). */
-type Puesto = {
-  id: string
-  /** Left edge of the card. */
-  inicio: number
-  /** Where the next card covers it: the end of the slice you can see. */
-  fin: number
-  ancho: number
-}
+/**
+ * A seam cards can land at, in the row's own coordinates (scroll included):
+ * in front of each card that stays put, and after the last one of each run.
+ */
+type Costura = { x: number; destino: Destino }
 
 export type Arrastre = {
   /** The card under the finger. */
   cardId: string
   /** Every card being carried, in the order they sat. */
   llevadas: readonly string[]
-  /** The card they would land in front of; null is the end of the run. */
-  antesDe: string | null
+  /** Where they would land. */
+  destino: Destino
   /** Where the mark of the landing goes, in the row's coordinates. */
   marca: number
   /** Where the carried cards are drawn, in the viewport. */
@@ -68,11 +68,11 @@ type Gesto = {
   reloj: ReturnType<typeof setTimeout> | null
   levantada: boolean
   movida: boolean
-  puestos: Puesto[]
+  costuras: Costura[]
   llevadas: string[]
   agarre: { dx: number; dy: number }
   paso: number
-  antesDe: string | null
+  destino: Destino | null
 }
 
 export function useArrastre({
@@ -80,16 +80,18 @@ export function useArrastre({
   llevadasDe,
   onSoltar,
 }: {
-  /** The scrolling row. Loose cards inside it carry `data-suelta={id}`. */
+  /**
+   * The scrolling row. Each card in it carries `data-arrastrable={id}` and
+   * sits inside an element with `data-seccion`: one per bloque, and one for
+   * the loose run.
+   */
   fila: React.RefObject<HTMLElement | null>
   /** What picking up this card carries, in the order they sit. */
   llevadasDe: (cardId: string) => string[]
-  onSoltar?: (cardId: string, antesDe: string | null) => void
+  onSoltar?: (cardId: string, destino: Destino) => void
 }) {
   const [arrastre, setArrastre] = useState<Arrastre | null>(null)
   const gesto = useRef<Gesto | null>(null)
-  /** A drag ends in a click on the card it started on; that click is not a tap. */
-  const tragarHasta = useRef(0)
   const quitar = useRef<(() => void) | null>(null)
 
   // The latest of each, for listeners that outlive a render.
@@ -100,19 +102,14 @@ export function useArrastre({
     onSoltarRef.current = onSoltar
   })
 
-  const destino = (g: Gesto, clientX: number): { antesDe: string | null; marca: number } => {
+  /** The seam nearest the finger. */
+  const cercana = (g: Gesto, clientX: number): Costura | null => {
     const el = fila.current
-    if (!el) return { antesDe: g.antesDe, marca: 0 }
+    if (!el || g.costuras.length === 0) return null
     const x = clientX - el.getBoundingClientRect().left + el.scrollLeft
-
-    const resto = g.puestos.filter((p) => !g.llevadas.includes(p.id))
-    for (const puesto of resto) {
-      if (x < (puesto.inicio + puesto.fin) / 2) {
-        return { antesDe: puesto.id, marca: puesto.inicio }
-      }
-    }
-    const ultimo = resto.at(-1)
-    return { antesDe: null, marca: ultimo ? ultimo.inicio + ultimo.ancho : 0 }
+    return g.costuras.reduce((mejor, costura) =>
+      Math.abs(costura.x - x) < Math.abs(mejor.x - x) ? costura : mejor,
+    )
   }
 
   const terminar = () => {
@@ -131,39 +128,54 @@ export function useArrastre({
     g.reloj = null
 
     const caja = el.getBoundingClientRect()
-    const cartas = Array.from(el.querySelectorAll<HTMLElement>('[data-suelta]')).map(
-      (carta) => ({ id: carta.dataset.suelta ?? '', r: carta.getBoundingClientRect() }),
+    const x = (r: DOMRect) => r.left - caja.left + el.scrollLeft
+    const llevadas = llevadasDeRef.current(g.cardId)
+    const elegidas = new Set(llevadas)
+
+    const secciones = Array.from(el.querySelectorAll<HTMLElement>('[data-seccion]')).map(
+      (seccion) =>
+        Array.from(seccion.querySelectorAll<HTMLElement>('[data-arrastrable]')).map(
+          (carta) => ({ id: carta.dataset.arrastrable ?? '', r: carta.getBoundingClientRect() }),
+        ),
     )
-    const propia = cartas.find((carta) => carta.id === g.cardId)
+    const propia = secciones.flat().find((carta) => carta.id === g.cardId)
     if (!propia) return
 
-    const x = (r: DOMRect) => r.left - caja.left + el.scrollLeft
-    g.puestos = cartas.map((carta, i) => ({
-      id: carta.id,
-      inicio: x(carta.r),
-      fin: i + 1 < cartas.length ? x(cartas[i + 1].r) : x(carta.r) + carta.r.width,
-      ancho: carta.r.width,
-    }))
-    g.paso =
-      cartas.length > 1 ? cartas[1].r.left - cartas[0].r.left : propia.r.width
-    g.llevadas = llevadasDeRef.current(g.cardId)
+    // In front of every card that stays, and after the last of each run.
+    // A run the drag empties offers no seam: nothing would be left to say
+    // where in it they went.
+    g.costuras = secciones.flatMap((cartas) => {
+      const quedan = cartas.filter((carta) => !elegidas.has(carta.id))
+      const ultima = quedan.at(-1)
+      if (!ultima) return []
+      return [
+        ...quedan.map((carta) => ({ x: x(carta.r), destino: { antesDe: carta.id } })),
+        { x: x(ultima.r) + ultima.r.width, destino: { despuesDe: ultima.id } },
+      ]
+    })
+    const vecinas = secciones.find((cartas) => cartas.length > 1)
+    g.paso = vecinas ? vecinas[1].r.left - vecinas[0].r.left : propia.r.width
+    g.llevadas = llevadas
     // Held where it was grabbed, and the rest of what it carries fanned
     // after it — so the card under the finger stays under the finger.
     g.agarre = {
-      dx: g.x0 - propia.r.left + g.llevadas.indexOf(g.cardId) * g.paso,
+      dx: g.x0 - propia.r.left + llevadas.indexOf(g.cardId) * g.paso,
       dy: g.y0 - propia.r.top,
     }
-    g.levantada = true
 
-    const { antesDe, marca } = destino(g, g.x0)
-    g.antesDe = antesDe
+    const costura = cercana(g, g.x0)
+    // Carrying every card in the hand leaves nowhere to put them.
+    if (!costura) return
+    g.levantada = true
+    g.destino = costura.destino
+
     // A small knock under the finger: it has been picked up.
     if (!g.raton) navigator.vibrate?.(8)
     setArrastre({
       cardId: g.cardId,
-      llevadas: g.llevadas,
-      antesDe,
-      marca,
+      llevadas,
+      destino: costura.destino,
+      marca: costura.x,
       x: g.x0 - g.agarre.dx,
       y: g.y0 - g.agarre.dy,
       paso: g.paso,
@@ -184,11 +196,11 @@ export function useArrastre({
       reloj: null,
       levantada: false,
       movida: false,
-      puestos: [],
+      costuras: [],
       llevadas: [],
       agarre: { dx: 0, dy: 0 },
       paso: 0,
-      antesDe: null,
+      destino: null,
     }
     gesto.current = g
     if (!raton) g.reloj = setTimeout(levantar, MS_PARA_LEVANTAR)
@@ -215,13 +227,14 @@ export function useArrastre({
         else if (e.clientX > caja.right - BORDE_QUE_DESPLAZA) el.scrollLeft += PASO_DE_DESPLAZAMIENTO
       }
 
-      const { antesDe, marca } = destino(g, e.clientX)
-      g.antesDe = antesDe
+      const costura = cercana(g, e.clientX)
+      if (!costura) return
+      g.destino = costura.destino
       setArrastre((actual) =>
         actual && {
           ...actual,
-          antesDe,
-          marca,
+          destino: costura.destino,
+          marca: costura.x,
           x: e.clientX - g.agarre.dx,
           y: e.clientY - g.agarre.dy,
         },
@@ -230,9 +243,9 @@ export function useArrastre({
 
     const alSoltar = (e: PointerEvent) => {
       if (e.pointerId !== g.pointerId || gesto.current !== g) return
-      if (g.levantada && g.movida) {
-        tragarHasta.current = performance.now() + 500
-        onSoltarRef.current?.(g.cardId, g.antesDe)
+      if (g.levantada && g.movida && g.destino) {
+        tragarClick()
+        onSoltarRef.current?.(g.cardId, g.destino)
       }
       terminar()
     }
@@ -273,8 +286,21 @@ export function useArrastre({
     [],
   )
 
-  /** True for the click that closes a drag, which must not select anything. */
-  const tragarClick = () => performance.now() < tragarHasta.current
+  return { arrastre, empezar }
+}
 
-  return { arrastre, empezar, tragarClick }
+/**
+ * A drag ends in a click, and it is not a tap: not on the card, which would
+ * select it, nor on the felt, which would let go of the selection just
+ * carried. Which element that click lands on differs between browsers, so
+ * it is caught before any of them sees it.
+ */
+function tragarClick() {
+  const tragar = (e: MouseEvent) => {
+    e.stopPropagation()
+    e.preventDefault()
+  }
+  window.addEventListener('click', tragar, { capture: true, once: true })
+  // A release that makes no click must not leave the next real tap eaten.
+  setTimeout(() => window.removeEventListener('click', tragar, { capture: true }), 400)
 }

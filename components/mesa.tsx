@@ -45,7 +45,7 @@ import {
   isComodin,
   rangoDeEscaleraEn,
 } from '@/lib/engine'
-import type { Seccion } from '@/lib/mano'
+import type { Destino, Seccion } from '@/lib/mano'
 import { MS_DE_VIAJE, type PuntoDeViaje, type Viaje } from '@/lib/relato'
 import { cn } from '@/lib/utils'
 
@@ -534,10 +534,11 @@ export function Mano({
   /** Unpin a bloque, by its position among the pinned ones. */
   onSoltar?: (indice: number) => void
   /**
-   * Given one, loose cards can be held and dragged (Phase 63): the card, or
-   * the whole selection when it is selected, lands in front of `antesDe`.
+   * Given one, any card can be held and dragged to a seam (Phases 63 and 65):
+   * the card, or the whole selection when it is selected — within a bloque,
+   * between bloques, or in and out of the loose run.
    */
-  onLlevar?: (cardId: string, antesDe: string | null) => void
+  onLlevar?: (cardId: string, destino: Destino) => void
   /** Sorting and moving controls, rendered beside the heading. */
   acciones?: React.ReactNode
   /**
@@ -555,14 +556,14 @@ export function Mano({
   const total = secciones.reduce((suma, seccion) => suma + seccion.cards.length, 0)
 
   const fila = useRef<HTMLDivElement>(null)
-  const { arrastre, empezar, tragarClick } = useArrastre({
+  const { arrastre, empezar } = useArrastre({
     fila,
-    // The same rule `llevarCartas` applies: a selected card brings the
-    // selected loose cards with it, any other card travels alone.
+    // The same rule `llevarCartas` applies: a selected card brings every
+    // selected card with it, wherever it sits; any other card travels alone.
     llevadasDe: (cardId) => {
-      const sueltas = secciones.find((seccion) => !seccion.bloqueada)?.cards ?? []
+      const todas = secciones.flatMap((seccion) => seccion.cards)
       return seleccionadas?.has(cardId)
-        ? sueltas.filter((card) => seleccionadas.has(card.id)).map((card) => card.id)
+        ? todas.filter((card) => seleccionadas.has(card.id)).map((card) => card.id)
         : [cardId]
     },
     onSoltar: onLlevar,
@@ -661,7 +662,7 @@ export function Mano({
           const indice = posicionFijada.get(seccion.id) ?? -1
 
           return (
-            <div key={seccion.id} className="flex shrink-0 flex-col gap-0.5">
+            <div key={seccion.id} data-seccion={seccion.id} className="flex shrink-0 flex-col gap-0.5">
               {/*
                 The fan is tight on purpose: each card only shows its left
                 edge, and since Phase 25 that edge carries the whole identity
@@ -673,7 +674,7 @@ export function Mano({
                 {seccion.cards.map((card) => {
                   const elegida = seleccionadas?.has(card.id) ?? false
                   const nueva = resaltada === card.id
-                  const arrastrable = Boolean(onLlevar) && !seccion.bloqueada
+                  const arrastrable = Boolean(onLlevar)
                   const carta = (
                     <Carta
                       card={card}
@@ -703,11 +704,9 @@ export function Mano({
                     <button
                       key={card.id}
                       type="button"
-                      onClick={() => {
-                        if (!tragarClick()) onCarta(card.id)
-                      }}
+                      onClick={() => onCarta(card.id)}
                       aria-pressed={elegida}
-                      data-suelta={arrastrable ? card.id : undefined}
+                      data-arrastrable={arrastrable ? card.id : undefined}
                       onPointerDown={arrastrable ? (e) => empezar(e, card.id) : undefined}
                       // A held finger is a pick-up here, not a request for
                       // the phone's own long-press menu.
@@ -887,8 +886,14 @@ function CartaViajera({ viaje }: { viaje: Viaje }) {
 export type MesaInteractiva = {
   onRobar?: (de: 'stock' | 'descarte') => void
   onCarta?: (cardId: string) => void
-  /** Drop dragged cards in front of `antesDe`, or at the end (Phase 63). */
-  onLlevar?: (cardId: string, antesDe: string | null) => void
+  /** Drop dragged cards at a seam, pinned or loose (Phases 63 and 65). */
+  onLlevar?: (cardId: string, destino: Destino) => void
+  /**
+   * A tap on the table that lands on nothing you can press — the felt, the
+   * gaps, the seats (Phase 64). Taps on buttons are theirs: a card, a grupo,
+   * «Botar» all act on the selection, so they must not clear it first.
+   */
+  onFondo?: () => void
   onGrupo?: (seat: number, grupoIndex: number) => void
   seleccionadas?: ReadonlySet<string>
 }
@@ -912,6 +917,7 @@ export function Mesa({
   onRobar,
   onCarta,
   onLlevar,
+  onFondo,
   onGrupo,
   seleccionadas,
   resaltada,
@@ -1017,6 +1023,16 @@ export function Mesa({
         'cancha relative h-full w-full overflow-hidden bg-[radial-gradient(ellipse_at_50%_35%,#2b211c_0%,#15100d_60%,#0b0908_100%)]',
         lados && 'con-lados',
       )}
+      onClick={
+        onFondo
+          ? (e) => {
+              const pulsable = (e.target as Element).closest(
+                'button, a, input, select, textarea, label, [role="button"]',
+              )
+              if (!pulsable) onFondo()
+            }
+          : undefined
+      }
     >
       {/*
         The felt (Phase 46): a lit table in a dim room, with a rail around it.

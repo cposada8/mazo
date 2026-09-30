@@ -227,31 +227,47 @@ export function moverSeleccion(
 }
 
 /**
- * Carry cards to a place in the run, gathered, by dragging (Phase 63).
+ * Where dragged cards land: the seam in front of a card, or the one after
+ * it (Phase 63). Named by a card and not by a position, because a position
+ * would be counted over the cards on screen, and a run also holds cards set
+ * aside for a grupo, which are not. And since every card sits in exactly one
+ * place — the loose run or one bloque — the card also says *which* run.
+ */
+export type Destino = { readonly antesDe: string } | { readonly despuesDe: string }
+
+/**
+ * Carry cards to a seam, gathered, by dragging (Phases 63 and 65).
  *
- * `antesDe` names the card they land in front of — or `null`, the end — and
- * not a position: a position would be counted over the cards on screen, and
- * the run here also holds cards set aside for a grupo, which are not. A card
- * is a place both agree on.
+ * The cards leave wherever they were — loose or pinned — and land together
+ * at `destino`, in the order `llevadas` gives them (the order they sat, not
+ * the order they were tapped). Landing in a bloque pins them there; landing
+ * in the loose run unpins them. A bloque left with nothing disappears.
  *
- * The carried cards keep the order they were sitting in, whatever order they
- * were tapped in. Carrying them in front of one of themselves means nothing,
- * so it leaves the run as it was.
+ * A seam beside one of the carried cards means nothing, so it changes
+ * nothing.
  */
 export function llevar(
   orden: readonly string[],
+  bloques: readonly Bloque[],
   llevadas: readonly string[],
-  antesDe: string | null,
-): string[] {
+  destino: Destino,
+): { orden: string[]; bloques: Bloque[] } {
+  const sinCambio = { orden: [...orden], bloques: bloques.map((bloque) => [...bloque]) }
+  const ancla = 'antesDe' in destino ? destino.antesDe : destino.despuesDe
   const elegidas = new Set(llevadas)
-  if (antesDe !== null && elegidas.has(antesDe)) return [...orden]
+  if (elegidas.has(ancla)) return sinCambio
 
-  const bloque = orden.filter((id) => elegidas.has(id))
-  if (bloque.length === 0) return [...orden]
+  // The loose run first, then each bloque: one list of places.
+  const listas = [orden, ...bloques]
+  const donde = listas.findIndex((lista) => lista.includes(ancla))
+  const bloque = llevadas.filter((id) => listas.some((lista) => lista.includes(id)))
+  if (donde === -1 || bloque.length === 0) return sinCambio
 
-  const resto = orden.filter((id) => !elegidas.has(id))
-  const destino = antesDe === null ? resto.length : resto.indexOf(antesDe)
-  if (destino === -1) return [...orden]
+  const limpias = listas.map((lista) => lista.filter((id) => !elegidas.has(id)))
+  const lista = limpias[donde]
+  const i = lista.indexOf(ancla) + ('despuesDe' in destino ? 1 : 0)
+  limpias[donde] = [...lista.slice(0, i), ...bloque, ...lista.slice(i)]
 
-  return [...resto.slice(0, destino), ...bloque, ...resto.slice(destino)]
+  const [nuevoOrden, ...nuevosBloques] = limpias
+  return { orden: nuevoOrden, bloques: nuevosBloques.filter((b) => b.length > 0) }
 }
