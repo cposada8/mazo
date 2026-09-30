@@ -243,6 +243,13 @@ export function useMesa(transporte: Transporte) {
     () => (ronda ? rebobinar(ronda, relatos.slice(aterrizados), enVuelo !== null) : null),
     [ronda, relatos, aterrizados, enVuelo],
   )
+  /**
+   * Some move has happened that the table has not finished showing (Phase
+   * 69). The state may already say it is your turn — a bot's throw hands it
+   * over at once — but the piles still show the descarte from before, and
+   * glowing them now offers you a card that is not the one on top.
+   */
+  const contando = aterrizados < relatos.length
 
   /**
    * The card you drew this turn, so the hand can mark it. Found by diffing
@@ -464,6 +471,7 @@ export function useMesa(transporte: Transporte) {
     historia: relatos,
     viaje,
     mesaContada,
+    contando,
     recienRobada,
     doradas,
     reloj: {
