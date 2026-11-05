@@ -2941,9 +2941,11 @@ anything the gallery or an open partida's copy still lists. Verified
 locally against `mazo-dev` and its Blob store at phone width: upload, the
 face in the public gallery, removal, nothing left behind; a text file named
 `.jpg` refused; and with the cookie cleared under an open editor, the
-upload refused by the server with «Hace falta la clave.».
+upload refused by the server with «Hace falta la clave.». Then on the deployed
+dev site (`mazo-git-dev-cepm23.vercel.app`): key, upload, the face in the
+public gallery, removal, gone.
 
-### Phase 73 — Los specs al día
+### Phase 73 — Los specs al día ✅
 `specs/estado.md` says "Last updated after Phase 45", and its *Open
 questions* still lists as open four things that were settled — the
 escaleras (Phase 48), guest identity (32), the transport (38) and the ronda
@@ -2957,6 +2959,14 @@ Carioca is complete, which this milestone makes true.
 
 **Done when:** someone opening `estado.md` cold learns nothing from it that
 is no longer true, and Milestone 7 can be marked closed.
+
+**Done.** `estado.md` opens on Carioca complete, the phase table runs to 73,
+the module map names what exists now, and *Open questions* keeps only what
+is open: the table of two that can stall, and how two games share one
+engine. Its *What comes next* holds the steps production needs before the
+next release — the SQL, the faces into `mazo-comodines`, then the folder
+goes — and el Mentiroso after. `mission.md` puts a second game in scope.
+**Milestone 7 is closed.**
 
 ---
 
