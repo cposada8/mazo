@@ -71,6 +71,32 @@ export type EstadoMentiroso = {
   /** 1-based count of plays made, for ordering what happened. */
   readonly numeroDeJugada: number
   readonly ganador: number | null
+  /**
+   * Seats that left on purpose (Phase 80): no cards, no turn, no call.
+   * Absent means nobody has — every partida before leaving existed.
+   */
+  readonly retirados?: readonly number[]
+  /** Ended with nobody out: fewer than two seats left (Phase 80). */
+  readonly sinGanador?: boolean
+}
+
+/** Is this seat still playing? */
+export function estaEnJuego(estado: EstadoMentiroso, asiento: number): boolean {
+  return !(estado.retirados ?? []).includes(asiento)
+}
+
+/** The next seat after `asiento` that is still playing, in turn order. */
+export function siguienteEnJuego(estado: EstadoMentiroso, asiento: number): number {
+  for (let paso = 1; paso <= estado.jugadores; paso++) {
+    const otro = (asiento + paso) % estado.jugadores
+    if (estaEnJuego(estado, otro)) return otro
+  }
+  return asiento
+}
+
+/** Over: somebody went out, or too few seats were left to play on. */
+export function terminada(estado: EstadoMentiroso): boolean {
+  return estado.ganador !== null || estado.sinGanador === true
 }
 
 export type MoveMentiroso =
@@ -147,7 +173,7 @@ export function aplicarMentiroso(
   estado: EstadoMentiroso,
   move: MoveMentiroso,
 ): ResultadoMentiroso {
-  if (estado.ganador !== null) {
+  if (terminada(estado)) {
     return rechazo('partida-terminada', 'the partida is over')
   }
   switch (move.type) {
@@ -199,7 +225,7 @@ function jugar(
       pila: [...estado.pila, ...(jugadas as Card[])],
       ultimaJugada: { asiento, cantidad: cartaIds.length, rango: estado.rangoEnTurno },
       rangoEnTurno: rankAfter(estado.rangoEnTurno),
-      turno: (asiento + 1) % estado.jugadores,
+      turno: siguienteEnJuego(estado, asiento),
       fase: 'ventana',
       numeroDeJugada: estado.numeroDeJugada + 1,
     },
@@ -207,8 +233,13 @@ function jugar(
 }
 
 function acusar(estado: EstadoMentiroso, acusador: number): ResultadoMentiroso {
-  if (!Number.isInteger(acusador) || acusador < 0 || acusador >= estado.jugadores) {
-    return rechazo('asiento-invalido', `no seat ${acusador}`)
+  if (
+    !Number.isInteger(acusador) ||
+    acusador < 0 ||
+    acusador >= estado.jugadores ||
+    !estaEnJuego(estado, acusador)
+  ) {
+    return rechazo('asiento-invalido', `seat ${acusador} is not playing`)
   }
   const jugada = estado.ultimaJugada
   if (estado.fase !== 'ventana' || jugada === null) {
@@ -269,4 +300,50 @@ function conMano(
   mano: readonly Card[],
 ): readonly (readonly Card[])[] {
   return manos.map((actual, i) => (i === asiento ? mano : actual))
+}
+
+/**
+ * A seat leaves on purpose (Phase 80, `mentiroso-rules.md` «Leaving»). Its
+ * cards leave play, the turn skips it, and it can no longer call. Its own
+ * play in the window stands and the window closes — leaving is never a way
+ * to go out. Fewer than two seats left, and the partida ends with no winner.
+ */
+export function retirarMentiroso(estado: EstadoMentiroso, asiento: number): EstadoMentiroso {
+  if (terminada(estado) || !estaEnJuego(estado, asiento)) return estado
+
+  const retirados = [...(estado.retirados ?? []), asiento]
+  const sinEl: EstadoMentiroso = {
+    ...estado,
+    manos: conMano(estado.manos, asiento, []),
+    retirados,
+  }
+  const suJugadaEnVentana =
+    estado.fase === 'ventana' && estado.ultimaJugada?.asiento === asiento
+  const turno = estado.turno === asiento ? siguienteEnJuego(sinEl, asiento) : estado.turno
+  const quedan = estado.jugadores - retirados.length
+
+  return {
+    ...sinEl,
+    turno,
+    fase: suJugadaEnVentana ? 'jugar' : estado.fase,
+    ...(quedan < 2 ? { sinGanador: true } : {}),
+  }
+}
+
+/**
+ * What the player's clock plays for a person who let it run out (Phase 80):
+ * one card from their hand, chosen from the seed, announced as the rank in
+ * turn like any play. The same partida at the same play always picks the
+ * same card, so a replay replays it.
+ */
+export function jugadaDelReloj(estado: EstadoMentiroso): MoveMentiroso | null {
+  if (terminada(estado) || estado.fase !== 'jugar') return null
+  const mano = estado.manos[estado.turno]
+  if (mano.length === 0) return null
+  const rng = createRng(`${estado.seed}#reloj#${estado.numeroDeJugada}`)
+  return {
+    type: 'jugar',
+    asiento: estado.turno,
+    cartaIds: [mano[rng.nextInt(mano.length)].id],
+  }
 }

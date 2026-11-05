@@ -113,6 +113,23 @@ as any truthful call does.
 - A partida is short (a few minutes), so «otra» deals a new one at the same
   table, the way Carioca's lobby does after a final score.
 
+## Leaving, and the clock **(Mazo's call)**
+
+Found missing while building play among several people (Phase 80), and
+settled the way Carioca settles it:
+
+- **Leaving on purpose** takes a seat out of the partida. Its cards leave
+  play — nobody inherits them — the turn order skips it from then on, and it
+  can neither play nor call. If its own play is in the window when it
+  leaves, the window closes on the spot and the play stands; leaving is
+  never a way to go out, so it wins nothing.
+- **When fewer than two seats are left**, or no person is, the partida ends
+  with no winner.
+- **The player's clock**: a person in turn who does not play within the
+  table's time per play has one card played for them — a random one, from
+  the seed — announced as the rank in turn, like anybody's. A person is
+  never forced to call.
+
 ## What everybody sees
 
 Public: how many cards every seat holds, how many are in the pile, every
