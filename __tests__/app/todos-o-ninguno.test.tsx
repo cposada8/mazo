@@ -32,6 +32,7 @@ function pintar(contratos: typeof CATALOGO) {
       onTodos={onTodos}
       onComodines={nada}
       onBajada={nada}
+      onRebarajadas={nada}
       onSegundosPorTurno={nada}
       onSegundosBot={nada}
       onVerDescarte={nada}
@@ -69,5 +70,52 @@ describe('Todos o ninguno', () => {
   it('keeps «Ninguno» live when a single other reparto is on', () => {
     const { ninguno } = pintar(CATALOGO.slice(2, 3))
     expect(ninguno.disabled).toBe(false)
+  })
+})
+
+describe('veces que se revuelve el mazo (Phase 74)', () => {
+  const pintarCon = (rebarajadas: unknown, onRebarajadas = vi.fn()) => {
+    const nada = () => {}
+    render(
+      <Ajustes
+        partida={
+          {
+            ...partidaCon(CATALOGO),
+            config: { ...CONFIG_POR_DEFECTO, rebarajadas },
+          } as unknown as Partida
+        }
+        onContrato={nada}
+        onTodos={nada}
+        onComodines={nada}
+        onBajada={nada}
+        onRebarajadas={onRebarajadas}
+        onSegundosPorTurno={nada}
+        onSegundosBot={nada}
+        onVerDescarte={nada}
+        onVerHistorial={nada}
+      />,
+    )
+    return onRebarajadas
+  }
+
+  it('opens on estricta and two', () => {
+    pintarCon(undefined)
+    expect(screen.getByRole('button', { name: 'Estricta' })).toHaveAttribute('aria-pressed', 'true')
+    expect(screen.getByRole('button', { name: '2' })).toHaveAttribute('aria-pressed', 'true')
+  })
+
+  it('offers seven limits and hands back sin límite', () => {
+    const onRebarajadas = pintarCon(2)
+    for (const etiqueta of ['0', '1', '2', '3', '4', '5', '∞']) {
+      expect(screen.getByRole('button', { name: etiqueta })).toBeInTheDocument()
+    }
+    fireEvent.click(screen.getByRole('button', { name: '∞' }))
+    expect(onRebarajadas).toHaveBeenCalledWith('sinLimite')
+  })
+
+  it('says in words what sin límite gives up', () => {
+    pintarCon('sinLimite')
+    expect(screen.getByRole('button', { name: '∞' })).toHaveAttribute('aria-pressed', 'true')
+    expect(screen.getByText(/hay que abandonar/)).toBeInTheDocument()
   })
 })

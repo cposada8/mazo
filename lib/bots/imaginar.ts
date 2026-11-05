@@ -104,6 +104,9 @@ export function imaginarRonda(
     stock: resto.slice(siguiente),
     discard: [...vista.descarte],
     rebarajadas: vista.rebarajadas,
+    // The table's limit (Phase 74), so an imagined draw closes en tablas
+    // exactly when a real one would.
+    limiteDeRebarajadas: vista.limiteDeRebarajadas,
     turno: vista.turno,
     numeroDeTurno: vista.numeroDeTurno,
     fase: vista.fase,

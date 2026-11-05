@@ -46,7 +46,10 @@ import {
   type Marcador as MarcadorDeRonda,
   type VistaDePartida,
   type Propuesta,
+  type LimiteDeRebarajadas,
+  limiteDeRebarajadas,
 } from '@/lib/engine'
+import { textoDeRebarajadas } from '@/lib/rebarajadas'
 import { carasDeRonda } from '@/lib/caras'
 import { CarasDeComodinProvider } from '@/components/caras'
 import { GaleriaDeComodines } from '@/components/galeria'
@@ -66,6 +69,7 @@ export function Juego({
   contratos,
   comodines,
   bajada = 'libre',
+  rebarajadas,
   segundosBot: segundosBotInicial,
   bots,
   id,
@@ -78,6 +82,8 @@ export function Juego({
   comodines: boolean
   /** Exactly the contract when bajándose, or more (Phase 47). */
   bajada?: 'libre' | 'estricta'
+  /** How many times the descarte may rebuild the stock (Phase 74). */
+  rebarajadas?: LimiteDeRebarajadas
   /** Seconds a bot spends on its whole turn. */
   segundosBot: number
   /** Which bot sits in each seat, by id. A seat left out plays as the default. */
@@ -89,8 +95,14 @@ export function Juego({
     // Every rule the lobby chose, spelled out: a field left off here is a rule
     // the local table silently plays by its default instead (Phase 47 found
     // the bajada missing exactly this way).
-    () => ({ ...CONFIG_POR_DEFECTO, contratos, comodines, bajada }),
-    [contratos, comodines, bajada],
+    () => ({
+      ...CONFIG_POR_DEFECTO,
+      contratos,
+      comodines,
+      bajada,
+      rebarajadas: limiteDeRebarajadas(rebarajadas),
+    }),
+    [contratos, comodines, bajada, rebarajadas],
   )
   // Pacing is not a rule (Phase 28): it can be changed mid-partida from the
   // menu, so what the lobby said is only where it starts.
@@ -467,7 +479,8 @@ function MenuDePartida({
         <p className="text-muted-foreground mb-2 text-xs tracking-wide uppercase">
           {contrato} ·{' '}
           {partida.config.comodines ? 'con comodines' : 'sin comodines'} ·{' '}
-          {partida.config.bajada === 'estricta' ? 'bajada estricta' : 'bajada libre'}
+          {partida.config.bajada === 'estricta' ? 'bajada estricta' : 'bajada libre'} ·{' '}
+          {textoDeRebarajadas(limiteDeRebarajadas(partida.config.rebarajadas))}
         </p>
         <Marcador partida={partida} nombres={nombres} yo={partida.asiento} />
 

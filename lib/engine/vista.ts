@@ -17,11 +17,14 @@ import { type Contrato } from './contratos'
 import { type Grupo } from './grupos'
 import type { Marcador, PartidaConfig, PartidaState } from './partida'
 import {
+  type LimiteDeRebarajadas,
   type Move,
   type MoveErrorCode,
   type RondaState,
   type TurnPhase,
+  REBARAJADAS_MAX,
   apply,
+  limiteDeRebarajadas,
 } from './ronda'
 
 export type VistaJugador = {
@@ -48,6 +51,8 @@ export type VistaDeAsiento = {
   readonly descarte: readonly Card[]
   /** Everybody watched the descarte rebuild the stock — a public count. */
   readonly rebarajadas: number
+  /** How many the table allows (Phase 74) — a rule, so public too. */
+  readonly limiteDeRebarajadas: LimiteDeRebarajadas
   readonly turno: number
   readonly numeroDeTurno: number
   readonly fase: TurnPhase
@@ -71,6 +76,7 @@ export function vistaDeAsiento(
     stock: state.stock.length,
     descarte: state.discard,
     rebarajadas: state.rebarajadas,
+    limiteDeRebarajadas: limiteDeRebarajadas(state.limiteDeRebarajadas),
     turno: state.turno,
     numeroDeTurno: state.numeroDeTurno,
     fase: state.fase,
@@ -193,6 +199,9 @@ function rondaImaginada(vista: VistaDeAsiento): RondaState {
     stock: [],
     discard: vista.descarte,
     rebarajadas: vista.rebarajadas,
+    ...(vista.limiteDeRebarajadas !== REBARAJADAS_MAX
+      ? { limiteDeRebarajadas: vista.limiteDeRebarajadas }
+      : {}),
     turno: vista.turno,
     numeroDeTurno: vista.numeroDeTurno,
     fase: vista.fase,
