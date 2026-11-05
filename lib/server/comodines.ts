@@ -17,7 +17,7 @@ import { prisma } from './db'
 export const BYTES_MAXIMOS = 900 * 1024
 
 /** What a face may be, told by its first bytes rather than by its name. */
-function tipoDeImagen(bytes: Uint8Array): string | null {
+export function tipoDeImagen(bytes: Uint8Array): string | null {
   const empieza = (...firma: number[]) => firma.every((b, i) => bytes[i] === b)
   if (empieza(0xff, 0xd8, 0xff)) return 'image/jpeg'
   if (empieza(0x89, 0x50, 0x4e, 0x47)) return 'image/png'

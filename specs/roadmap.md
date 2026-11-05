@@ -2836,7 +2836,7 @@ starts, Carioca is closed. What closes it is the comodín gallery — seen by
 anyone, edited by the owner alone — and specs that say what is true. The
 rest of the *After* list stays there.*
 
-### Phase 70 — La galería de comodines
+### Phase 70 — La galería de comodines ✅
 Was Phase 51. Every face in the gallery, on one screen, open to anyone —
 no key, no seat, no partida needed. Browsing only; it changes nothing about
 the game.
@@ -2855,7 +2855,19 @@ the game.
 menu of a partida in progress, and inside the partida the faces at the top
 are exactly the comodines on that ronda's cards.
 
-### Phase 71 — La galería sale de la carpeta
+**Done.** The gallery is `/comodines`, open to anyone and linked from the
+home page beside «Cómo se juega». The same grid (`components/galeria.tsx`)
+opens over the felt from the partida's menu, led by the faces this ronda
+dealt, ringed and marked «En juego» (`ordenarGaleria`, `lib/galeria.ts`);
+each face once, any face can be opened large. The page is read per request
+(`connection()`), so the gallery can change without a deploy. The lobby has
+no menu, so the gallery has no entry there. In the browser at phone width:
+16 faces from the home page, and in a partida's first ronda exactly four
+marked at the top, including the two comodines in the hand. Built in
+parallel with Phase 71, the two meeting at one seam: `galeriaDeComodines()`
+in `lib/server/galeria.ts`, written first.
+
+### Phase 71 — La galería sale de la carpeta ✅
 Groundwork for Phase 72, with no visible change. Today the gallery is a
 folder, `public/candidatos/comodines`, read by `app/partida/[codigo]/page.tsx`
 and `/jugar`; curating it is editing files and deploying. A deployed
@@ -2878,7 +2890,23 @@ has to live somewhere else:
 and Blob with the folder deleted, and a face removed from the table mid-
 partida still shows on that partida's cards.
 
-### Phase 72 — La galería se edita
+**Done.** Two public Blob stores, `mazo-comodines` (Production) and
+`mazo-comodines-dev` (Preview and Development), each giving its environment
+a `BLOB_READ_WRITE_TOKEN`. The schema change is `prisma/sql/71-galeria.sql`,
+applied with `scripts/aplicar-sql.ts` — additive, so the running code
+ignores it — and the faces were moved by `scripts/comodines-a-blob.ts`,
+which skips what is already there. `Partida.caras` holds the copy, written
+by `crearPartida`; `galeriaDePartida(codigo)` deals from it, and a partida
+older than the copy deals from the gallery as it is. Measured on
+`mazo-dev`: a face removed after a partida was created is gone from the
+gallery, still in that partida's copy, and its image still served; once the
+partida ended, the sweep freed exactly that one image. Tested in
+`__tests__/server/galeria.test.ts`. Blob images load through `next/image`
+(`images.remotePatterns` for `*.public.blob.vercel-storage.com`).
+**The folder stays until production has its faces:** it is the source the
+migration reads. It goes in the same release that migrates `mazo`.
+
+### Phase 72 — La galería se edita ✅
 The owner, and only the owner, adds and removes faces from the app —
 no commit, no deploy.
 
@@ -2902,6 +2930,18 @@ no commit, no deploy.
 phone and it is in the public gallery and dealt in a new partida, removes
 one and it is gone from both — and the same upload without the key is
 refused by the server.
+
+**Done.** `/panel/comodines`, linked from the panel's tools, behind the
+panel's key; the same `Entrada` screen with its own title. The browser
+shrinks a photo to 1000 px JPEG before sending it (a 9 MB camera-sized
+photo arrived as 157 KB), and `lib/server/comodines.ts` checks the size cap
+and tells the type by the file's first bytes, not its name. Removing asks
+inside the page. Images are freed by `soltarImagenesLibres`, which keeps
+anything the gallery or an open partida's copy still lists. Verified
+locally against `mazo-dev` and its Blob store at phone width: upload, the
+face in the public gallery, removal, nothing left behind; a text file named
+`.jpg` refused; and with the cookie cleared under an open editor, the
+upload refused by the server with «Hace falta la clave.».
 
 ### Phase 73 — Los specs al día
 `specs/estado.md` says "Last updated after Phase 45", and its *Open

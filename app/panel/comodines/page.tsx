@@ -5,6 +5,7 @@
  */
 
 import { cookies } from 'next/headers'
+import { connection } from 'next/server'
 import { AlInicio, Entrada } from '../cliente'
 import { COOKIE_DEL_PANEL, claveCorrecta, hayPanel } from '@/lib/server/panel'
 import { listarComodines } from '@/lib/server/comodines'
@@ -13,6 +14,9 @@ import { EditorDeComodines } from './cliente'
 export const metadata = { title: 'Los comodines — editar' }
 
 export default async function PaginaDeComodines() {
+  // Per request, always: whether there is a key is read at run time, not
+  // frozen by a build that happened not to have one.
+  await connection()
   if (!hayPanel()) {
     return (
       <main className="mx-auto flex w-full max-w-md flex-1 flex-col items-center justify-center gap-3 px-6 py-16">
