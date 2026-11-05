@@ -28,7 +28,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { useIdentidad } from '@/components/identidad'
 import { BOTS, NOMBRE_DE_NIVEL, type Nivel, botPorId } from '@/lib/bots'
 import { botDeJuego, botPorDefecto, botsDeJuego } from '@/lib/bots-de-juego'
-import { ASIENTOS, type Juego, NOMBRE_DE_JUEGO } from '@/lib/juegos'
+import { ASIENTOS, type Juego, NOMBRE_DE_JUEGO, mesaFija } from '@/lib/juegos'
 import {
   CATALOGO,
   type PartidaConfig,
@@ -307,6 +307,13 @@ export function Lobby({
           ))}
         </ul>
 
+        {mesaFija(juego) && (
+          <p className="text-muted-foreground text-xs">
+            El {NOMBRE_DE_JUEGO[juego]} se juega siempre entre {asientosDelJuego.max}: quien
+            entra con el código toma el lugar de un bot, y si alguien se va, un bot
+            sigue con su mano.
+          </p>
+        )}
         {soyHost && partida.asientos.length < asientosDelJuego.max && (
           <button
             type="button"

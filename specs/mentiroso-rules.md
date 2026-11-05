@@ -20,13 +20,16 @@ player with no cards left wins.
 
 ## Players and the deck
 
-- **3 to 6 players.** With two, each knows exactly what the other holds
-  after a few turns, and lying stops being a game.
+- **Always four players** — the owner's table, 2026-11-05. A Mentiroso
+  partida on Mazo has exactly four seats, people and bots together: nobody
+  adds or removes a bot, a person who joins takes a bot's seat, and a person
+  who leaves is replaced by one (see *Leaving*). The game itself is played
+  by 3 to 6 and the engine still deals any of those — the soak measured all
+  four sizes — but Mazo seats four.
 - **One 52-card deck, no comodines.** A comodín would be a card that is
   never a lie, which removes the doubt the game is made of.
 - **The whole deck is dealt**, one card at a time, starting with the seat
-  that opens. 52 does not divide by 3, 5 or 6, so some seats start with one
-  card more — the opener always among them; that is the game, not a flaw.
+  that opens: thirteen cards each.
 - **Who starts** is drawn from the partida's seed, like Carioca's first
   opener — reproducible, never chosen.
 
@@ -115,16 +118,15 @@ as any truthful call does.
 
 ## Leaving, and the clock **(Mazo's call)**
 
-Found missing while building play among several people (Phase 80), and
-settled the way Carioca settles it:
+Settled with «always four» (the owner, 2026-11-05):
 
-- **Leaving on purpose** takes a seat out of the partida. Its cards leave
-  play — nobody inherits them — the turn order skips it from then on, and it
-  can neither play nor call. If its own play is in the window when it
-  leaves, the window closes on the spot and the play stands; leaving is
-  never a way to go out, so it wins nothing.
-- **When fewer than two seats are left**, or no person is, the partida ends
-  with no winner.
+- **Leaving the lobby** gives the seat back to a bot.
+- **Leaving a dealt partida** hands the seat to a bot — El Embustero takes
+  over the hand exactly as it stands and plays on. Nobody's cards leave
+  play, the turn order never changes, and the table stays four. A person
+  who left does not come back to that seat.
+- **When no person is left**, the partida ends (Phase 44's rule: a table of
+  bots is not a partida).
 - **The player's clock**: a person in turn who does not play within the
   table's time per play has one card played for them — a random one, from
   the seed — announced as the rank in turn, like anybody's. A person is

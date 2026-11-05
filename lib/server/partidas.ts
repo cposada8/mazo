@@ -24,7 +24,7 @@ import {
 } from '@/lib/engine'
 import { empezarMentiroso } from '@/lib/engine/mentiroso'
 import { botDeJuego, botPorDefecto } from '@/lib/bots-de-juego'
-import { ASIENTOS, type Juego, juegoDe } from '@/lib/juegos'
+import { ASIENTOS, type Juego, juegoDe, mesaFija } from '@/lib/juegos'
 import { codigoAlAzar, limpiarCodigo } from '@/lib/codigo'
 import type {
   ErrorDeLobby,
@@ -217,7 +217,31 @@ export async function unirse(opciones: {
   if (propio) return { ok: true, indice: propio.indice }
 
   if (fila.fase !== 'lobby') return { ok: false, code: 'YA_EMPEZO' }
-  if (fila.asientos.length >= MAX_PLAYERS) return { ok: false, code: 'MESA_LLENA' }
+
+  // A fixed table (el Mentiroso: always four) has no empty chair. A person
+  // takes the last bot's seat instead; a table of people only is full.
+  const juego = juegoDe(fila.juego)
+  if (mesaFija(juego)) {
+    const bot = [...fila.asientos]
+      .filter((a) => a.esBot)
+      .sort((a, b) => b.indice - a.indice)[0]
+    if (!bot) return { ok: false, code: 'MESA_LLENA' }
+    await prisma.asiento.updateMany({
+      where: { partidaId: fila.id, indice: bot.indice },
+      data: {
+        esBot: false,
+        bot: null,
+        secreto,
+        alias: aliasLibre(
+          alias,
+          fila.asientos.filter((a) => a.indice !== bot.indice).map((a) => a.alias),
+        ),
+      },
+    })
+    return { ok: true, indice: bot.indice }
+  }
+
+  if (fila.asientos.length >= ASIENTOS[juego].max) return { ok: false, code: 'MESA_LLENA' }
 
   const indice = Math.max(...fila.asientos.map((a) => a.indice)) + 1
   await prisma.asiento.create({
@@ -430,7 +454,10 @@ export async function quitarAsiento(opciones: {
   const { fila } = acceso
   const victima = fila.asientos.find((a) => a.indice === opciones.indice)
   if (!victima || !victima.esBot) return { ok: false, code: 'NO_SE_PUEDE_QUITAR' }
-  if (fila.asientos.length <= MIN_PLAYERS) return { ok: false, code: 'MESA_MUY_CHICA' }
+  // Each game's own floor — el Mentiroso's table of four has no seat to spare.
+  if (fila.asientos.length <= ASIENTOS[juegoDe(fila.juego)].min) {
+    return { ok: false, code: 'MESA_MUY_CHICA' }
+  }
 
   await prisma.$transaction([
     prisma.asiento.deleteMany({
@@ -591,6 +618,49 @@ export async function abandonar(opciones: {
   const propio = fila.asientos.find((a) => a.secreto === opciones.secreto)
   if (!propio) return { ok: false, code: 'NO_ES_TU_ASIENTO' }
 
+  const juego = juegoDe(fila.juego)
+  const gente = fila.asientos.filter(
+    (asiento) => !asiento.esBot && !asiento.retirado && asiento.indice !== propio.indice,
+  )
+
+  // A fixed table (el Mentiroso: always four) keeps its seat when a person
+  // leaves: a bot sits in it — in the lobby an empty one, in a dealt partida
+  // with the hand exactly as it stands. The person is gone for good: the
+  // seat no longer knows their secreto. Nobody left, and the partida is over.
+  if (mesaFija(juego)) {
+    const bot = botPorDefecto(juego)
+    const hostNuevo = propio.esHost ? gente[0]?.indice : undefined
+    await prisma.$transaction([
+      prisma.asiento.updateMany({
+        where: { partidaId: fila.id, indice: propio.indice },
+        data: {
+          esBot: true,
+          bot: bot.id,
+          secreto: null,
+          esHost: false,
+          alias: aliasLibre(
+            bot.nombre,
+            fila.asientos.filter((a) => a.indice !== propio.indice).map((a) => a.alias),
+          ),
+        },
+      }),
+      ...(hostNuevo !== undefined
+        ? [
+            prisma.asiento.updateMany({
+              where: { partidaId: fila.id, indice: hostNuevo },
+              data: { esHost: true },
+            }),
+          ]
+        : []),
+      ...(gente.length === 0
+        ? fila.estado
+          ? [prisma.partida.update({ where: { id: fila.id }, data: { fase: 'terminada' } })]
+          : [prisma.partida.delete({ where: { id: fila.id } })]
+        : []),
+    ])
+    return { ok: true, enLobby: !fila.estado }
+  }
+
   // Still in the lobby: the seat has nothing in it yet, so it just goes.
   if (!fila.estado) {
     await prisma.$transaction([
@@ -609,26 +679,6 @@ export async function abandonar(opciones: {
     return { ok: true, enLobby: true }
   }
 
-  // El Mentiroso has no retiring yet (Phase 80 brings several people to one
-  // table). Until then a dealt Mentiroso partida has one person in it, so
-  // leaving it is the last person leaving: it ends (Phase 44's rule).
-  if (juegoDe(fila.juego) === 'mentiroso') {
-    const gente = fila.asientos.filter(
-      (asiento) => !asiento.esBot && !asiento.retirado && asiento.indice !== propio.indice,
-    ).length
-    await prisma.$transaction([
-      prisma.asiento.updateMany({
-        where: { partidaId: fila.id, indice: propio.indice },
-        data: { retirado: true },
-      }),
-      prisma.partida.update({
-        where: { id: fila.id },
-        data: { fase: gente === 0 ? 'terminada' : 'jugando' },
-      }),
-    ])
-    return { ok: true, enLobby: false }
-  }
-
   const estado = JSON.parse(fila.estado) as PartidaState
   const conRetiro = estado.ronda
     ? { ...estado, ronda: retirarAsiento(estado.ronda, propio.indice) }
@@ -640,10 +690,8 @@ export async function abandonar(opciones: {
   // nobody is watching (Phase 44). Nine of the thirteen tables still open when
   // that phase was written were exactly this.
   const quedan = conRetiro.ronda ? asientosActivos(conRetiro.ronda).length : 0
-  const gente = fila.asientos.filter(
-    (asiento) => !asiento.esBot && !asiento.retirado && asiento.indice !== propio.indice,
-  ).length
-  const terminada = conRetiro.ronda !== null && (quedan < MIN_PLAYERS || gente === 0)
+  const terminada =
+    conRetiro.ronda !== null && (quedan < MIN_PLAYERS || gente.length === 0)
 
   await prisma.$transaction([
     prisma.asiento.updateMany({
