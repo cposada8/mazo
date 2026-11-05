@@ -3162,7 +3162,7 @@ reload and whose Repartir says the table is not ready yet, and a Carioca
 partida created, dealt and at the table as before. 6 tests in
 `__tests__/server/mentiroso.test.ts`; 814 in all.
 
-### Phase 79 — La mesa del Mentiroso
+### Phase 79 — La mesa del Mentiroso ✅
 The table on a phone, against bots, through the same local transport
 Carioca's bots-only tables use: your hand, the pile and its size, the rank
 in turn, choosing 1–4 cards and playing them, the window drawn as a
@@ -3174,7 +3174,27 @@ takes it. Narrated in one line per event, like Carioca's relato.
 against three bots to a winner, and every call is understandable from
 what is on screen alone.
 
-### Phase 80 — El Mentiroso entre varios
+**Done.** Built in parallel with Phase 78, by a fork in its own worktree.
+`components/mentiroso/mesa.tsx`, `MesaMentiroso`, is fed only by a seat's
+view, the public log, the names and the window's deadline — so Phase 80
+fed it from the server without touching it. Seats as discs with their
+counts (amber in turn, red for the play in the window); the rank in turn
+the biggest thing on the felt; while a play is open, «X dice dos sietes.
+¿Le crees?», a draining bar and a big «¡Mentiroso!» (disabled on your
+own play); a call shown where it happened, the called cards turned face
+up with the wrong ones ringed red under «¡Mentira!» or «Era verdad»; one
+narrated line; a winner screen. The narration is `lib/relato-mentiroso.ts`
+— a list per move, since a call on a last play is two events — built from
+the move and the states around it, and a test searches the log for every
+hidden card. The local transport is `app/mentiroso/useMentirosoLocal.ts`;
+a bot that wants to call waits a seeded third to four-fifths of the window,
+so a person who sees it first can beat it. `/pruebas/mentiroso` deals one
+from a seed. In the browser, upright and on its side, whole partidas to a
+winner with calls both ways. **Left for a second pass**, after the owner
+sent Plato's table as inspiration: a big hand overflows sideways and has to
+be scrolled; the felt is mostly empty while the action sits small in it.
+
+### Phase 80 — El Mentiroso entre varios ✅
 Several people at one table, the server the referee: plays and calls go to
 the server, the window is a stored deadline applied by the next request
 (the way Carioca's bot turns are), and of two calls the first the server
@@ -3184,6 +3204,27 @@ as they do in Carioca.
 **Done when:** three people on three phones finish a partida from one
 code, each seeing only their own hand, and two calls sent in the same
 instant resolve as one.
+
+**Done.** `lib/server/mentiroso.ts` and `/api/partidas/[codigo]/mentiroso`.
+Lazy deadlines, as in Carioca: a bot's play `segundosBot` into its turn, a
+person's `segundosPorTurno` into theirs (`jugadaDelReloj`, one card from
+the seed), and the window `segundosVentana` after a play, a bot that
+wants to call doing so a second into it. **Every write is a
+compare-and-swap on the stored state**, so of two calls computed from the
+same state one lands and the other re-reads and is refused — the window
+already shut. `ponerAlDia` is pure; the clock is passed in, which is how
+the tests own every deadline. Leaving on purpose found a rule missing, now
+in `mentiroso-rules.md` («Leaving», Mazo's call): the seat's cards leave
+play and the turn skips it; fewer than two seats, or no person, ends it.
+(For an hour it was "always four", a question taken as an instruction and
+reverted, `d5e493a`; kept from it, each game's seat floor is enforced on
+the server.) `useMentirosoRemoto` polls every 250 ms while a window is
+open and 600 ms otherwise. 7 tests in `mesa-mentiroso.test.ts`, the race
+among them. **In the browser:** three separate identities — two phones
+upright, one on its side — and one bot finished a partida from one code
+in 2 min 23 s, every screen naming the same winner; 56 presses of
+«¡Mentiroso!» across the three, each window resolving one call and
+answering the rest «Llegaste tarde». 837 tests.
 
 ### Phase 81 — Cómo se juega, y a producción
 «Cómo se juega» for el Mentiroso — the rules on one screen, as Carioca has

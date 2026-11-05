@@ -32,6 +32,7 @@ import type {
   PartidaGuardada,
 } from '@/lib/lobby'
 import { galeriaDeComodines } from './galeria'
+import { retirarDeMesaMentiroso } from './mentiroso'
 import { prisma } from './db'
 
 export type { ErrorDeLobby, FaseDePartida, PartidaGuardada }
@@ -612,23 +613,13 @@ export async function abandonar(opciones: {
     return { ok: true, enLobby: true }
   }
 
-  // El Mentiroso has no retiring yet (Phase 80 brings several people to one
-  // table). Until then a dealt Mentiroso partida has one person in it, so
-  // leaving it is the last person leaving: it ends (Phase 44's rule).
+  // El Mentiroso retires a seat its own way (Phase 80, `mentiroso-rules.md`
+  // «Leaving»): the cards leave play, the turn skips it.
   if (juegoDe(fila.juego) === 'mentiroso') {
     const gente = fila.asientos.filter(
       (asiento) => !asiento.esBot && !asiento.retirado && asiento.indice !== propio.indice,
     ).length
-    await prisma.$transaction([
-      prisma.asiento.updateMany({
-        where: { partidaId: fila.id, indice: propio.indice },
-        data: { retirado: true },
-      }),
-      prisma.partida.update({
-        where: { id: fila.id },
-        data: { fase: gente === 0 ? 'terminada' : 'jugando' },
-      }),
-    ])
+    await retirarDeMesaMentiroso(fila, propio.indice, gente)
     return { ok: true, enLobby: false }
   }
 

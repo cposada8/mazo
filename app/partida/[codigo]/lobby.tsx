@@ -188,10 +188,7 @@ export function Lobby({
   const humanos = partida.asientos.filter((asiento) => !asiento.esBot)
   const juego = partida.juego
   const asientosDelJuego = ASIENTOS[juego]
-  // El Mentiroso among several people needs the server to referee it, which
-  // is Phase 80. Until then its table is for one person and bots.
-  const faltaElServidor = juego === 'mentiroso' && humanos.length > 1
-  const puedeEmpezar = partida.asientos.length >= asientosDelJuego.min && !faltaElServidor
+  const puedeEmpezar = partida.asientos.length >= asientosDelJuego.min
 
   const ajustar = (cambio: Partial<Omit<Accion & { tipo: 'ajustes' }, 'tipo'>>) =>
     mutacion.mutate({ tipo: 'ajustes', ...cambio })
@@ -365,13 +362,7 @@ export function Lobby({
             <Play className="size-4" aria-hidden />
             Repartir
           </button>
-          {faltaElServidor && (
-            <p className="text-muted-foreground text-xs">
-              El Mentiroso entre varias personas todavía no está: por ahora se
-              juega solo contra bots. Quita a los demás, o juega Carioca.
-            </p>
-          )}
-          {humanos.length > 1 && !faltaElServidor && (
+          {humanos.length > 1 && (
             <p className="text-muted-foreground text-xs">
               Con más de una persona la partida la lleva el servidor: cada quien
               ve solo su mano, y la mesa avanza aunque cierres la página.
