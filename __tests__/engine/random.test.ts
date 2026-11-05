@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { createRng, shuffle } from '@/lib/engine/random'
+import { createRng, shuffle } from '@/lib/engine/comun/random'
 
 const take = (n: number, seed: string) => {
   const rng = createRng(seed)

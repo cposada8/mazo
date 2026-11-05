@@ -5,7 +5,7 @@
  * Cards on the mesa are worth nothing, which is the whole incentive to unload.
  */
 
-import { type Card, type Rank, isComodin } from './cards'
+import { type Card, type Rank, isComodin } from '../comun/cards'
 
 export const PUNTOS_COMODIN = 50
 export const PUNTOS_AS = 20

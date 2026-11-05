@@ -19,7 +19,7 @@ import {
   type Suit,
   isComodin,
   rankAfter,
-} from './cards'
+} from '../comun/cards'
 import { LARGO_DE_ESCALERA, type TipoDeEscalera, ordenarEscalera } from './escalera'
 
 export const TRIO_MIN_SIZE = 3

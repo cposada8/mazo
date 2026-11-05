@@ -1,9 +1,9 @@
 /**
  * Card primitives.
  *
- * Naming follows the vocabulary table in specs/carioca-rules.md: English where
- * English is precise (rank, suit, hand), Spanish where it is not (comodin,
- * trio, escala).
+ * Shared by every game on Mazo (Phase 75). Naming is English where English
+ * is precise (rank, suit, hand) and Spanish where the table says it in
+ * Spanish (comodín).
  */
 
 export const SUITS = ['spades', 'hearts', 'diamonds', 'clubs'] as const
@@ -33,9 +33,9 @@ export type Comodin = {
 }
 
 /**
- * A physical card. Two decks are in play, so `rank` + `suit` does NOT identify a
- * card — there are two of every one. `id` is what identifies it, and it is
- * unique across the whole deck.
+ * A physical card. A game may play with more than one copy of the deck, so
+ * `rank` + `suit` does NOT identify a card. `id` is what identifies it, and
+ * it is unique across the whole deck.
  */
 export type Card = NormalCard | Comodin
 
@@ -64,8 +64,9 @@ export function rankAfter(rank: Rank, steps = 1): Rank {
 /**
  * Steps forward from `from` to `to` around the ring, always in [0, 12].
  *
- * `cyclicDistance('K', '2')` is 2 — K to A to 2 — which is what makes
- * `K A 2 3` a valid escala.
+ * `cyclicDistance('K', '2')` is 2 — K to A to 2. A game whose sequences wrap
+ * around the ring (Carioca's escalas, el Mentiroso's ranks in turn) needs no
+ * special case for the ace.
  */
 export function cyclicDistance(from: Rank, to: Rank): number {
   return (rankIndex(to) - rankIndex(from) + RANK_COUNT) % RANK_COUNT

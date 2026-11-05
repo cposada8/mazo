@@ -6,8 +6,9 @@
  * up to start the descarte.
  */
 
-import { RANKS, SUITS, type Card } from './cards'
-import { shuffle, type Rng } from './random'
+import { construirBaraja } from '../comun/baraja'
+import { type Card } from '../comun/cards'
+import { shuffle, type Rng } from '../comun/random'
 
 /** Copies of a standard deck in play. Fixed — it does not scale with players. */
 export const DECK_COPIES = 2
@@ -23,25 +24,10 @@ export const MAX_PLAYERS = 6
  * deterministic on purpose so tests can assert composition without a seed.
  */
 export function buildDeck({ comodines }: { comodines: boolean }): Card[] {
-  const cards: Card[] = []
-
-  for (let copy = 0; copy < DECK_COPIES; copy++) {
-    for (const suit of SUITS) {
-      for (const rank of RANKS) {
-        cards.push({ id: `${rank}-${suit}#${copy}`, kind: 'normal', rank, suit })
-      }
-    }
-  }
-
-  if (comodines) {
-    for (let copy = 0; copy < DECK_COPIES; copy++) {
-      for (let n = 0; n < COMODINES_PER_COPY; n++) {
-        cards.push({ id: `comodin#${copy}-${n}`, kind: 'comodin' })
-      }
-    }
-  }
-
-  return cards
+  return construirBaraja({
+    copias: DECK_COPIES,
+    comodinesPorCopia: comodines ? COMODINES_PER_COPY : 0,
+  })
 }
 
 export type Deal = {

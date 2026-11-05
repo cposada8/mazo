@@ -3036,7 +3036,7 @@ platform learns there are two games, then the table, then other people.
 Every phase is measured against one test of the whole milestone — Carioca
 keeps working, untouched, at every step.*
 
-### Phase 75 — Dos juegos, un motor
+### Phase 75 — Dos juegos, un motor ✅
 `lib/engine/` is Carioca's. Split it into what any card game on Mazo
 shares and what is Carioca's own, before a second game copies anything.
 
@@ -3051,6 +3051,21 @@ shares and what is Carioca's own, before a second game copies anything.
 **Done when:** every existing test passes with only its imports changed,
 the purity test covers the shared half and each game, and nothing in the
 shared half names a Carioca concept.
+
+**Done.** `lib/engine/comun/` holds `cards.ts`, `random.ts`, `notacion.ts`
+and a new `baraja.ts` — `construirBaraja({ copias, comodinesPorCopia })`,
+which Carioca's `buildDeck` now calls with two and two, producing the same
+cards in the same order with the same ids (saved partidas hold them).
+Everything else moved to `lib/engine/carioca/`, by `git mv`. `@/lib/engine`
+stays the Carioca entry point, re-exporting both halves, so the 98 files
+that import it did not change; four tests that imported files by path
+changed their paths, and nothing else in them. A second game will be
+imported by its own folder, never through the root, so names cannot
+collide. The purity test now walks the folders and enforces the
+direction — `comun/` imports no game, a game imports only itself and
+`comun/` — and was checked by planting a wrong-way import, which it caught.
+The shared half's comments no longer speak Carioca. 764 tests, build green;
+no behaviour changed.
 
 ### Phase 76 — El motor del Mentiroso
 The rules as a pure state machine, beside Carioca's: deal the whole deck

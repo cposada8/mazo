@@ -10,7 +10,7 @@
  * about the others.
  */
 
-import { type Card, isComodin } from './cards'
+import { type Card, isComodin } from '../comun/cards'
 import { CATALOGO, type Contrato } from './contratos'
 import {
   CARDS_PER_HAND,
@@ -18,8 +18,8 @@ import {
   MIN_PLAYERS,
   buildDeck,
 } from './deck'
-import { type CardSpec, describeSpec, parseCardSpecs } from './notacion'
-import { createRng, shuffle } from './random'
+import { type CardSpec, describeSpec, parseCardSpecs } from '../comun/notacion'
+import { createRng, shuffle } from '../comun/random'
 import { type RondaState } from './ronda'
 
 export type EscenarioSpec = {

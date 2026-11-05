@@ -24,7 +24,7 @@
  * which is to say the A of a pintada may be either colour.
  */
 
-import { type Card, type NormalCard, type Rank, type Suit, isComodin } from './cards'
+import { type Card, type NormalCard, type Rank, type Suit, isComodin } from '../comun/cards'
 
 export type TipoDeEscalera = 'sucia' | 'pintada' | 'color' | 'real'
 

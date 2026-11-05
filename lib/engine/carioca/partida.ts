@@ -9,7 +9,7 @@
 import { CATALOGO, type Contrato } from './contratos'
 import { MAX_PLAYERS, MIN_PLAYERS } from './deck'
 import { puntosDeMano } from './puntaje'
-import { createRng } from './random'
+import { createRng } from '../comun/random'
 import type { Grupo } from './grupos'
 import {
   type LimiteDeRebarajadas,

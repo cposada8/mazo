@@ -1,9 +1,10 @@
 /**
  * Seeded randomness.
  *
- * A ronda can reshuffle more than once — the descarte becomes the new stock when
- * the stock runs out — so the engine carries a *stream* of random numbers, not a
- * single shuffle. Replaying a seed reproduces every draw from it, in order.
+ * A game may shuffle more than once from the same seed (Carioca rebuilds its
+ * stock from the discards), so the engine carries a *stream* of random
+ * numbers, not a single shuffle. Replaying a seed reproduces every draw from
+ * it, in order.
  */
 
 export type Rng = {
@@ -15,7 +16,7 @@ export type Rng = {
    * The generator's whole state, as one number.
    *
    * Passing it back to `createRng` resumes the stream exactly where it left
-   * off. That is what lets a ronda be stored, reloaded, and keep reshuffling
+   * off. That is what lets a game be stored, reloaded, and keep reshuffling
    * deterministically without replaying every draw since the deal.
    */
   state(): number

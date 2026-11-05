@@ -7,7 +7,7 @@ import {
   isConsecutive,
   rankAfter,
   rankIndex,
-} from '@/lib/engine/cards'
+} from '@/lib/engine/comun/cards'
 
 describe('ranks and suits', () => {
   it('has 13 ranks and 4 suits', () => {
