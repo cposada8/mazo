@@ -21,7 +21,7 @@
  */
 
 import { type Card, type Rank, RANKS, isNormal, rankAfter } from '@/lib/engine'
-import { MAX_CARTAS_POR_JUGADA, type VistaMentiroso } from '@/lib/engine/mentiroso'
+import { MAX_CARTAS_POR_JUGADA } from '@/lib/engine/mentiroso'
 import type { BotMentiroso } from './bot'
 
 /** Copies of each rank in el Mentiroso's single deck. */
