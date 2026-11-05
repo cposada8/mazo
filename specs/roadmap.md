@@ -2970,6 +2970,62 @@ goes — and el Mentiroso after. `mission.md` puts a second game in scope.
 
 ---
 
+## Asked for after v1.6.0
+
+*The owner, 2026-11-05, before el Mentiroso starts: two more things for
+Carioca's setup.*
+
+### Phase 74 — Cuántas veces se revuelve, y la bajada estricta por defecto ✅
+Two changes to how a partida is set up.
+
+- **The rebarajada limit becomes a lobby choice.** Phase 31 fixed it at
+  two: the descarte rebuilds the stock twice, and the third empty mazo
+  closes the ronda en tablas. The host now picks **0, 1, 2, 3, 4, 5 or «Sin
+  límite»**, beside libre/estricta; **2 stays the default**. Like the rest
+  of the config it is part of the partida's identity — shown in the lobby
+  and the menu, never changed mid-game, carried by the server. A partida
+  saved before the option plays two, as it always did. With 0, the first
+  empty mazo closes the ronda.
+- **«Sin límite» means no limit**, the owner's word: the stock is rebuilt
+  every time it runs out, for as long as there is a descarte to rebuild it
+  from (a descarte of one card still cannot, and that still closes en
+  tablas). What it gives up, said plainly: Phase 31's guarantee that every
+  ronda ends. A ronda nobody can win now goes on until somebody abandons —
+  bots never do — and a table with no people left in it closes itself
+  (Phases 37 and 44). The soak keeps playing the default, so the guarantee
+  is still measured where it holds.
+- **The strict bajada becomes the default** for new partidas (Phase 47's
+  *Estricta*: exactly 3 per trío, 4 per escala). The lobby opens on it;
+  *Libre* is one tap away. A saved partida without the field still reads as
+  libre — the field was optional for exactly this.
+
+Rules first: `carioca-rules.md`'s tablas section says the limit is the
+table's choice, two by default, and what «sin límite» means.
+
+**Done when:** in the lobby the host sees *Estricta* and *2* preselected,
+can pick any of the seven limits, and a partida played with 0 closes its
+first ronda en tablas at the first empty mazo, one with 3 rebuilds three
+times, and one with «sin límite» rebuilds past three — proven by tests, and
+the choice reads back in the menu.
+
+**Done.** `PartidaConfig.rebarajadas` (0–5 or `'sinLimite'`) reaches every
+ronda as `limiteDeRebarajadas`, stored only when it is not two, like
+`bajadaEstricta`; `limiteDeRebarajadas()` reads anything else — absent,
+old, or nonsense from a client — as two, and `rebarajadasAgotadas()` is the
+one question the referee and the relato both ask. The seat's view carries
+it, so El Tahúr's imagined draws close en tablas when real ones would. The
+lobby shows seven buttons, ∞ for sin límite, with a sentence under them
+that says what the choice gives up; the summary and the partida's menu say
+«el mazo se revuelve N veces». `CONFIG_POR_DEFECTO` is estricta and two;
+the Phase 47 test that pinned *libre* as the default now pins *estricta*,
+and a saved partida without the field still plays libre. In the browser:
+a new partida opens on Estricta and 2, ∞ survives a reload, and the dealt
+ronda on the server carries `sinLimite`. 741 tests
+(`limite-de-rebarajadas.test.ts`, and the lobby's in
+`todos-o-ninguno.test.tsx`).
+
+---
+
 ## After
 
 Not scheduled, and not to be started before Milestone 3 — online play:

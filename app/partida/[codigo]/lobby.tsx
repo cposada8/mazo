@@ -32,6 +32,9 @@ import {
   MAX_PLAYERS,
   MIN_PLAYERS,
   type PartidaConfig,
+  LIMITES_DE_REBARAJADAS,
+  type LimiteDeRebarajadas,
+  limiteDeRebarajadas,
 } from '@/lib/engine'
 import {
   type Accion,
@@ -41,6 +44,7 @@ import {
   leerLobby,
   mensajeDeLobby,
 } from '@/lib/lobby'
+import { detalleDeRebarajadas, textoDeRebarajadas } from '@/lib/rebarajadas'
 import { semillaAleatoria } from '@/lib/semilla'
 import { cn } from '@/lib/utils'
 
@@ -316,6 +320,9 @@ export function Lobby({
             ajustar({ config: { ...partida.config, comodines } })
           }
           onBajada={(bajada) => ajustar({ config: { ...partida.config, bajada } })}
+          onRebarajadas={(rebarajadas) =>
+            ajustar({ config: { ...partida.config, rebarajadas } })
+          }
           onSegundosPorTurno={(segundosPorTurno) => ajustar({ segundosPorTurno })}
           onSegundosBot={(segundosBot) => ajustar({ segundosBot })}
           onVerDescarte={(verDescarte) => ajustar({ verDescarte })}
@@ -424,6 +431,7 @@ export function Ajustes({
   onTodos,
   onComodines,
   onBajada,
+  onRebarajadas,
   onSegundosPorTurno,
   onSegundosBot,
   onVerDescarte,
@@ -435,6 +443,7 @@ export function Ajustes({
   onTodos: (todos: boolean) => void
   onComodines: (comodines: boolean) => void
   onBajada: (bajada: Bajada) => void
+  onRebarajadas: (limite: LimiteDeRebarajadas) => void
   onSegundosPorTurno: (segundos: number) => void
   onSegundosBot: (segundos: number) => void
   onVerDescarte: (ver: boolean) => void
@@ -529,6 +538,17 @@ export function Ajustes({
         onCambiar={onBajada}
       />
 
+      {/* Phase 74. Seven buttons on a phone: the numbers, and ∞ for «sin
+          límite» — the sentence under them says it in words. */}
+      <Escogencia
+        titulo="Veces que se revuelve el mazo"
+        detalle={detalleDeRebarajadas(limiteDeRebarajadas(partida.config.rebarajadas))}
+        opciones={LIMITES_DE_REBARAJADAS}
+        valor={limiteDeRebarajadas(partida.config.rebarajadas)}
+        etiqueta={(limite) => (limite === 'sinLimite' ? '∞' : String(limite))}
+        onCambiar={onRebarajadas}
+      />
+
       <Escogencia
         titulo="Tiempo por jugada"
         detalle="Si se acaba, se roba del mazo y se bota una carta al azar."
@@ -574,6 +594,7 @@ function ResumenDeAjustes({
         {partida.config.contratos.length} repartos ·{' '}
         {partida.config.comodines ? 'con comodines' : 'sin comodines'} ·{' '}
         {partida.config.bajada === 'estricta' ? 'bajada estricta' : 'bajada libre'} ·{' '}
+        {textoDeRebarajadas(limiteDeRebarajadas(partida.config.rebarajadas))} ·{' '}
         {partida.segundosPorTurno} s por jugada
       </p>
     </section>

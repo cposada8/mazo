@@ -190,8 +190,10 @@ export function ComoSeJuega({
           grupo de la mesa. La ronda se acaba ahí mismo.
         </p>
         <p className="text-muted-foreground">
-          Si el mazo se agota tres veces sin que nadie salga, la ronda queda en{' '}
-          <b>tablas</b>: nadie gana y todos cuentan lo que tienen.
+          Cuando el mazo se acaba, el descarte se revuelve y vuelve a ser mazo:
+          dos veces, o las que haya escogido la mesa. Si se acaba una vez más sin
+          que nadie salga, la ronda queda en <b>tablas</b>: nadie gana y todos
+          cuentan lo que tienen.
         </p>
       </Seccion>
 

@@ -175,8 +175,8 @@ comodines, and never changed mid-game:
 
 | Bajada | A trío goes down with | An escala goes down with |
 | --- | --- | --- |
-| **Libre** (default) | 3 or more cards | 4 or more cards |
-| **Estricta** | exactly 3 cards | exactly 4 cards |
+| **Libre** | 3 or more cards | 4 or more cards |
+| **Estricta** (default since Phase 74) | exactly 3 cards | exactly 4 cards |
 
 - Only the bajada is strict. From the turn after, cards are added to grupos
   (the player's own or anyone's) exactly as in the libre game, so a trío laid
@@ -574,12 +574,19 @@ on in the lobby.
 
 ### Tablas: the ronda nobody wins — settled in Phase 31
 
-The descarte may rebuild the stock **twice** per ronda. When a player must
-draw from the stock and it can no longer be served — the two rebarajadas are
+The descarte may rebuild the stock **twice** per ronda — or as many times as
+the table chose (Phase 74): **0 to 5, or sin límite**, picked in the lobby
+with the rest of the partida's rules, two by default. When a player must
+draw from the stock and it can no longer be served — the rebarajadas are
 spent, or there is nothing left to rebuild it from — the ronda ends right
 there, **en tablas**: nobody goes out, everybody scores the cards left in
 their hand, and no bonus is paid. The seat whose draw closed the ronda opens
 the next one.
+
+**Sin límite** rebuilds the stock every time it runs out, for as long as the
+descarte holds more than its top card. A ronda nobody can win then does not
+end by itself; the table ends it by abandoning. That is the table's choice
+to make, and the reason two is the default.
 
 Chosen by the owner from the three options that used to sit here (leave it /
 cap the reshuffles / let the table vote to abandon). Two rebarajadas is

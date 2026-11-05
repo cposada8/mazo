@@ -1,6 +1,6 @@
 # Project status — pick up here
 
-Last updated after Phase 73 — Milestone 7 is closed: **Carioca is complete.**
+Last updated after Phase 74 — **Carioca is complete**; Phase 74 added two setup choices after it.
 
 Read this first, then `mission.md` for the why, `carioca-rules.md` for the game,
 `tech-stack.md` for the stack, and `roadmap.md` for what comes next. This file is
@@ -14,7 +14,7 @@ doc is worse than none.
 
 ## Where things stand
 
-Phases 0–73 are numbered and **all of them are done: Milestones 1 through 7
+Phases 0–74 are numbered and **all of them are done: Milestones 1 through 7
 are complete, and Carioca is finished as a game.** Open the site on a phone,
 get dealt an alias, create a partida — you host, a short code is dealt,
 three bots sit down at the level you pick — or join one with a code, and
@@ -110,6 +110,7 @@ engine's separation".
 | 71 | The gallery leaves the folder: Blob, a table, a copy per partida | ✅ |
 | 72 | The gallery is edited, behind the panel's key | ✅ |
 | 73 | The specs brought up to date — **Milestone 7, Carioca complete** | ✅ |
+| 74 | The rebarajada limit as a lobby choice (0–5, sin límite); estricta by default | ✅ |
 
 - **Repo:** https://github.com/cposada8/mazo
 - **Live:** https://mazo-six.vercel.app — **online play is in production**
@@ -122,7 +123,7 @@ engine's separation".
   public, no login.
 - **Deploys:** work goes to `dev`, which builds by itself. Production changes
   only by merging `dev` into `main`. Nothing else deploys `main`.
-- **Tests:** 728, all green (the run takes ~45s, mostly the soak). `npm run test:run`, `npx tsc --noEmit`, `npm run lint`.
+- **Tests:** 741, all green (the run takes ~45s, mostly the soak). `npm run test:run`, `npx tsc --noEmit`, `npm run lint`.
 - **Database:** SQLite via Prisma 7 + libSQL. Local dev uses `prisma/dev.db`;
   **online is live on Turso** — group `mazo` in `aws-us-east-1`, so it sits
   beside Vercel's functions and leaves `fwc_2026`'s group alone. **Two

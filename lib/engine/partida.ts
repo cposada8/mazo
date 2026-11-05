@@ -12,6 +12,7 @@ import { puntosDeMano } from './puntaje'
 import { createRng } from './random'
 import type { Grupo } from './grupos'
 import {
+  type LimiteDeRebarajadas,
   type Move,
   type MoveErrorCode,
   type RondaState,
@@ -32,6 +33,12 @@ export type PartidaConfig = {
    * and that partida was played libre.
    */
   readonly bajada?: 'libre' | 'estricta'
+  /**
+   * How many times the descarte may rebuild the stock per ronda (Phase 74):
+   * 0–5, or `'sinLimite'`. Optional for the same reason as `bajada`: a
+   * partida saved before the choice played two.
+   */
+  readonly rebarajadas?: LimiteDeRebarajadas
   /** Subtracted from the ronda winner's score. 0 means they simply score none. */
   readonly bonusGanadorRonda: number
   /**
@@ -45,7 +52,9 @@ export type PartidaConfig = {
 export const CONFIG_POR_DEFECTO: PartidaConfig = {
   contratos: CATALOGO.slice(0, 7),
   comodines: true,
-  bajada: 'libre',
+  // Phase 74: the strict bajada is the default; libre is one tap away.
+  bajada: 'estricta',
+  rebarajadas: 2,
   bonusGanadorRonda: 0,
   empiezaPrimeraRonda: 'aleatorio',
 }
@@ -125,6 +134,7 @@ export function startPartida(options: {
       players,
       comodines: config.comodines,
       bajadaEstricta: config.bajada === 'estricta',
+      limiteDeRebarajadas: config.rebarajadas,
       seed: seedDeRonda(seed, 0),
       empieza: quienAbrePrimero(config.empiezaPrimeraRonda, players, seed),
     }),
@@ -216,6 +226,7 @@ export function cerrarRonda(state: PartidaState): PartidaState {
       players: state.players,
       comodines: state.config.comodines,
       bajadaEstricta: state.config.bajada === 'estricta',
+      limiteDeRebarajadas: state.config.rebarajadas,
       seed: seedDeRonda(state.seed, indiceContrato),
       empieza: ganador === 'nadie' ? ronda.turno : ganador,
       // Whoever left stays left: no cards, no turn, for the rest of the

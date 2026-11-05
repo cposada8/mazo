@@ -15,7 +15,7 @@
 import {
   type Card,
   type Move,
-  REBARAJADAS_MAX,
+  rebarajadasAgotadas,
   type RondaState,
   describeCard,
 } from '@/lib/engine'
@@ -107,11 +107,11 @@ export function relatar(move: Move, antes: RondaState): Relato | null {
     case 'robar': {
       if (move.de === 'stock') {
         // A stock draw that cannot be served closes the ronda en tablas
-        // (Phase 31): the two rebarajadas are spent, or there is nothing left
-        // to rebuild the stock from. No card moved, so none is named.
+        // (Phase 31): the rebarajadas are spent, or there is nothing left to
+        // rebuild the stock from. No card moved, so none is named.
         const agotado =
           antes.stock.length === 0 &&
-          (antes.rebarajadas >= REBARAJADAS_MAX || antes.discard.length <= 1)
+          (rebarajadasAgotadas(antes) || antes.discard.length <= 1)
         return agotado ? { tipo: 'tablas', seat } : { tipo: 'mazo', seat }
       }
       const arriba = antes.discard.at(-1)

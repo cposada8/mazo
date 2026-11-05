@@ -113,6 +113,7 @@ function MesaLocal({
       contratos={partida.config.contratos}
       comodines={partida.config.comodines}
       bajada={partida.config.bajada}
+      rebarajadas={partida.config.rebarajadas}
       segundosBot={partida.segundosBot}
       verDescarte={partida.verDescarte}
       verHistorial={partida.verHistorial}

@@ -45,8 +45,42 @@ export type JugadorState = {
 /** A turn is draw, then optionally act, then discard. In that order, always. */
 export type TurnPhase = 'draw' | 'act'
 
-/** The descarte may rebuild the stock this many times per ronda (Phase 31). */
+/**
+ * The descarte may rebuild the stock this many times per ronda (Phase 31) —
+ * the default, since Phase 74 made it the table's choice.
+ */
 export const REBARAJADAS_MAX = 2
+
+/**
+ * How many times the descarte may rebuild the stock: a count, or
+ * `'sinLimite'` for every time it runs out (Phase 74).
+ */
+export type LimiteDeRebarajadas = number | 'sinLimite'
+
+/** The options the lobby offers, in order. */
+export const LIMITES_DE_REBARAJADAS: readonly LimiteDeRebarajadas[] = [
+  0, 1, 2, 3, 4, 5, 'sinLimite',
+]
+
+/**
+ * A limit as the referee uses it. Anything that is not one of the offered
+ * options — absent, from a partida older than the choice, or nonsense from
+ * a client — is the default, two.
+ */
+export function limiteDeRebarajadas(valor: unknown): LimiteDeRebarajadas {
+  return LIMITES_DE_REBARAJADAS.includes(valor as LimiteDeRebarajadas)
+    ? (valor as LimiteDeRebarajadas)
+    : REBARAJADAS_MAX
+}
+
+/** Has this ronda spent every rebarajada it is allowed? */
+export function rebarajadasAgotadas(state: {
+  readonly rebarajadas: number
+  readonly limiteDeRebarajadas?: LimiteDeRebarajadas
+}): boolean {
+  const limite = limiteDeRebarajadas(state.limiteDeRebarajadas)
+  return limite !== 'sinLimite' && state.rebarajadas >= limite
+}
 
 export type RondaState = {
   readonly contrato: Contrato
@@ -60,8 +94,13 @@ export type RondaState = {
   readonly stock: readonly Card[]
   /** Face up. The last element is the top card, the only one in play. */
   readonly discard: readonly Card[]
-  /** Times the descarte has rebuilt the stock. Capped at REBARAJADAS_MAX. */
+  /** Times the descarte has rebuilt the stock. Capped by the limit below. */
   readonly rebarajadas: number
+  /**
+   * How many rebarajadas this ronda allows (Phase 74). Absent means two:
+   * every ronda saved before the choice existed was played that way.
+   */
+  readonly limiteDeRebarajadas?: LimiteDeRebarajadas
   /** Seat to move. */
   readonly turno: number
   /** 1-based, increases with every turn taken by anyone. */
@@ -148,6 +187,8 @@ export function startRonda(options: {
   comodines?: boolean
   /** Exactly three cards per trío and four per escala when bajándose (Phase 47). */
   bajadaEstricta?: boolean
+  /** How many times the descarte may rebuild the stock (Phase 74). Default 2. */
+  limiteDeRebarajadas?: LimiteDeRebarajadas
   seed: string | number
   /** Seat that plays first. Rotates between rondas so no seat is always first. */
   empieza?: number
@@ -159,6 +200,7 @@ export function startRonda(options: {
     players,
     comodines = true,
     bajadaEstricta = false,
+    limiteDeRebarajadas: limitePedido,
     seed,
     empieza = 0,
     retirados,
@@ -169,6 +211,11 @@ export function startRonda(options: {
   return {
     contrato,
     ...(bajadaEstricta ? { bajadaEstricta: true } : {}),
+    // Only stored when it is not the default, like bajadaEstricta: a ronda
+    // with two reads the same with or without it.
+    ...(limiteDeRebarajadas(limitePedido) !== REBARAJADAS_MAX
+      ? { limiteDeRebarajadas: limiteDeRebarajadas(limitePedido) }
+      : {}),
     jugadores: dealt.hands.map((hand, seat) => ({
       // A seat that left is dealt nothing again.
       hand: retirados?.includes(seat) ? [] : hand,
@@ -345,7 +392,7 @@ function robar(state: RondaState, de: 'stock' | 'descarte'): MoveResult {
   const refilled = refillStockIfEmpty(state)
   const top = refilled.stock.at(-1)
   if (!top) {
-    // The stock cannot be served and cannot be rebuilt — the two rebarajadas
+    // The stock cannot be served and cannot be rebuilt — the rebarajadas
     // are spent, or there is nothing to rebuild it from. The ronda ends right
     // here, en tablas: nobody goes out, and scoring falls to the partida
     // (Phase 31). The draw itself never happens.
@@ -364,13 +411,14 @@ function robar(state: RondaState, de: 'stock' | 'descarte'): MoveResult {
 
 /**
  * When the stock runs out the descarte is shuffled back into it, keeping the
- * top card face up so the pile is never empty — at most REBARAJADAS_MAX times
- * per ronda. The third empty mazo does not refill; it closes the ronda en
- * tablas (Phase 31), so a ronda nobody can win still ends.
+ * top card face up so the pile is never empty — as many times per ronda as
+ * the table allows, two by default (Phase 74). The empty mazo after the last
+ * one does not refill; it closes the ronda en tablas (Phase 31). «Sin
+ * límite» always refills while the descarte holds more than its top card.
  */
 function refillStockIfEmpty(state: RondaState): RondaState {
   if (state.stock.length > 0 || state.discard.length <= 1) return state
-  if (state.rebarajadas >= REBARAJADAS_MAX) return state
+  if (rebarajadasAgotadas(state)) return state
 
   const top = state.discard.at(-1)!
   const rest = state.discard.slice(0, -1)

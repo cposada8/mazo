@@ -170,9 +170,9 @@ describe('the partida carries the choice', () => {
     expect(partida.ronda?.bajadaEstricta).toBe(true)
   })
 
-  it('is libre by default, and for a partida saved before the option', () => {
+  it('is estricta by default (Phase 74), and libre for a partida saved before the option', () => {
     const porDefecto = startPartida({ players: 3, seed: 'libre' })
-    expect(porDefecto.ronda?.bajadaEstricta).toBeUndefined()
+    expect(porDefecto.ronda?.bajadaEstricta).toBe(true)
 
     const vieja = { ...CONFIG_POR_DEFECTO }
     delete (vieja as { bajada?: string }).bajada
