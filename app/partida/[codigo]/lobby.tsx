@@ -226,6 +226,14 @@ export function Lobby({
         <h1 className="text-3xl font-semibold tracking-tight">
           La mesa <span className="text-muted-foreground">· {NOMBRE_DE_JUEGO[juego]}</span>
         </h1>
+        {juego === 'mentiroso' && (
+          <Link
+            href="/como-se-juega/mentiroso"
+            className="text-muted-foreground hover:text-foreground w-fit text-sm underline underline-offset-2"
+          >
+            Cómo se juega el Mentiroso
+          </Link>
+        )}
         <button
           type="button"
           onClick={() => {

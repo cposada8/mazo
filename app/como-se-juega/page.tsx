@@ -32,7 +32,11 @@ export default function Reglas() {
         <p className="text-muted-foreground text-balance">
           Carioca, en una pantalla. Se lee en cinco minutos y se aprende
           jugando: la primera partida trae una guía que te va diciendo qué
-          sigue.
+          sigue. ¿Buscas el Mentiroso?{' '}
+          <Link href="/como-se-juega/mentiroso" className="text-foreground underline underline-offset-2">
+            Sus reglas están aquí
+          </Link>
+          .
         </p>
       </header>
 

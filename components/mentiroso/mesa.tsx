@@ -20,10 +20,11 @@
  *     from the width, and a hand too big for one row takes two.
  */
 
-import { X } from 'lucide-react'
+import { CircleHelp, X } from 'lucide-react'
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { Carta, CartaBocaAbajo } from '@/components/carta'
 import { colorDeAsiento, iniciales } from '@/components/mesa'
+import { ComoSeJuegaMentiroso } from '@/components/reglas-mentiroso'
 import { type Card, isNormal, rankIndex } from '@/lib/engine'
 import { MAX_CARTAS_POR_JUGADA, type VistaMentiroso } from '@/lib/engine/mentiroso'
 import {
@@ -85,6 +86,7 @@ export function MesaMentiroso({
 }: PropsDeMesaMentiroso) {
   const yo = vista.asiento
   const [seleccion, setSeleccion] = useState<readonly string[]>([])
+  const [reglas, setReglas] = useState(false)
   const mano = useMemo(() => ordenar(vista.mano), [vista.mano])
   const ids = useMemo(() => new Set(vista.mano.map((c) => c.id)), [vista.mano])
   const elegidas = seleccion.filter((id) => ids.has(id))
@@ -153,6 +155,14 @@ export function MesaMentiroso({
             />
           ))}
         </ul>
+        <button
+          type="button"
+          onClick={() => setReglas(true)}
+          aria-label="Cómo se juega"
+          className="text-tinta-suave hover:text-tinta mt-1 rounded-md p-1 transition-colors"
+        >
+          <CircleHelp className="size-5" />
+        </button>
       </header>
 
       {/* The felt: the pile, what was declared, and the decision at hand. */}
@@ -262,6 +272,29 @@ export function MesaMentiroso({
         </div>
         <Mano mano={mano} elegidas={elegidas} activa={puedoJugar} onTocar={alternar} />
       </footer>
+
+      {/* The rules over the felt (Phase 81): the game keeps going under them. */}
+      {reglas && (
+        <div className="absolute inset-0 z-30 flex justify-center bg-black/70 p-3">
+          <div className="bg-background text-foreground flex max-h-full w-full max-w-md flex-col rounded-xl border">
+            <div className="flex items-center justify-between border-b px-4 py-3">
+              <h2 className="text-base font-semibold">Cómo se juega</h2>
+              <button
+                type="button"
+                onClick={() => setReglas(false)}
+                autoFocus
+                aria-label="Cerrar las reglas"
+                className="text-muted-foreground hover:text-foreground rounded-md p-1"
+              >
+                <X className="size-5" />
+              </button>
+            </div>
+            <div className="overflow-y-auto px-4 py-4">
+              <ComoSeJuegaMentiroso />
+            </div>
+          </div>
+        </div>
+      )}
 
       {(vista.ganador !== null || vista.sinGanador) && (
         <Ganador

@@ -34,7 +34,7 @@ export default function Home() {
           <span className="flex min-w-0 flex-col gap-0.5">
             <span className="text-sm font-medium">Cómo se juega</span>
             <span className="text-muted-foreground text-xs">
-              Los contratos, el turno, los grupos, los comodines y el puntaje
+              Las reglas de Carioca y del Mentiroso
             </span>
           </span>
         </Link>

@@ -3240,12 +3240,21 @@ in 2 min 23 s, every screen naming the same winner; 56 presses of
 «¡Mentiroso!» across the three, each window resolving one call and
 answering the rest «Llegaste tarde». 837 tests.
 
-### Phase 81 — Cómo se juega, y a producción
+### Phase 81 — Cómo se juega, y a producción ✅
 «Cómo se juega» for el Mentiroso — the rules on one screen, as Carioca has
 — reachable from its lobby and its menu, and the home page naming both
 games. Then the release.
 
 **Done when:** el Mentiroso is in production, and `estado.md` says so.
+
+**Done.** `components/reglas-mentiroso.tsx`, `ComoSeJuegaMentiroso`: the
+game in five short sections with real cards on the felt — a lie and a truth
+turned over. Two entrances: `/como-se-juega/mentiroso` (linked from the
+Mentiroso lobby and from Carioca's rules page, and back), and a ⓘ on the
+table that opens it over the felt. The home page's «Cómo se juega» names
+both games. Production took `prisma/sql/78-juego.sql` before the release
+deployed, and the release is **v2.0.0** — a major, because Mazo became a
+platform of two games. **Milestone 8 is closed.**
 
 ---
 

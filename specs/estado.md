@@ -1,6 +1,6 @@
 # Project status — pick up here
 
-Last updated after Phase 80 — **Carioca is complete**, and Milestone 8 (el Mentiroso) has begun.
+Last updated after Phase 81 — **Milestone 8 closed: Mazo has two games**, v2.0.0 — **Carioca is complete**, and Milestone 8 (el Mentiroso) has begun.
 
 Read this first, then `mission.md` for the why, `carioca-rules.md` for the game,
 `tech-stack.md` for the stack, and `roadmap.md` for what comes next. This file is
@@ -14,7 +14,7 @@ doc is worse than none.
 
 ## Where things stand
 
-Phases 0–80 are numbered and **all of them are done: Milestones 1 through 7
+Phases 0–81 are numbered and **all of them are done: Milestones 1 through 7
 are complete, and Carioca is finished as a game.** Open the site on a phone,
 get dealt an alias, create a partida — you host, a short code is dealt,
 three bots sit down at the level you pick — or join one with a code, and
@@ -117,6 +117,7 @@ engine's separation".
 | 78 | The door knows two games: `Partida.juego`, a lobby per game | ✅ |
 | 79 | El Mentiroso's table, against bots | ✅ |
 | 80 | El Mentiroso among several people, the server the referee | ✅ |
+| 81 | El Mentiroso's «Cómo se juega», and production — **Milestone 8, v2.0.0** | ✅ |
 
 - **Repo:** https://github.com/cposada8/mazo
 - **Live:** https://mazo-six.vercel.app — **online play is in production**
@@ -129,7 +130,7 @@ engine's separation".
   public, no login.
 - **Deploys:** work goes to `dev`, which builds by itself. Production changes
   only by merging `dev` into `main`. Nothing else deploys `main`.
-- **Tests:** 837, all green (the run takes ~45s, mostly the soak). `npm run test:run`, `npx tsc --noEmit`, `npm run lint`.
+- **Tests:** 838, all green (the run takes ~45s, mostly the soak). `npm run test:run`, `npx tsc --noEmit`, `npm run lint`.
 - **Database:** SQLite via Prisma 7 + libSQL. Local dev uses `prisma/dev.db`;
   **online is live on Turso** — group `mazo` in `aws-us-east-1`, so it sits
   beside Vercel's functions and leaves `fwc_2026`'s group alone. **Two
@@ -309,12 +310,11 @@ credentials are in `.env.turso`; `vercel env pull` masks them.
    `lib/engine/mentiroso/`, every rule tested.
 3. ~~Phase 77 — Un bot que miente.~~ ✅ Done, on dev: El Embustero, and
    1,000 bot partidas that all end.
-4. ~~Phase 78 — La puerta sabe que hay dos juegos.~~ ✅ Done, on dev:
-   `Partida.juego` and `segundosVentana`, applied to `mazo-dev` —
-   **production needs `prisma/sql/78-juego.sql` before the release.**
+4. ~~Phase 78 — La puerta sabe que hay dos juegos.~~ ✅ Done:
+   `Partida.juego` and `segundosVentana`, applied to `mazo-dev` and `mazo`.
 5. ~~Phase 79 — La mesa del Mentiroso.~~ ✅ Done, on dev.
 6. ~~Phase 80 — El Mentiroso entre varios.~~ ✅ Done, on dev.
-7. Phase 81 — Cómo se juega, and production.
+7. ~~Phase 81 — Cómo se juega, and production.~~ ✅ Released as v2.0.0.
 
 *Everything below is the record of how the project got here.*
 
