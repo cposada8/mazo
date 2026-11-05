@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { ETIQUETA_DE_VERSION } from "@/lib/version";
-import { BookOpen, LayoutList } from "lucide-react";
+import { BookOpen, Images, LayoutList } from "lucide-react";
 import { AliasEditable } from "@/components/identidad";
 import { Puerta } from "@/components/puerta";
 
@@ -34,6 +34,19 @@ export default function Home() {
             <span className="text-sm font-medium">Cómo se juega</span>
             <span className="text-muted-foreground text-xs">
               Los contratos, el turno, los grupos, los comodines y el puntaje
+            </span>
+          </span>
+        </Link>
+        {/* Open to anyone (Phase 70): the faces the comodines can wear. */}
+        <Link
+          href="/comodines"
+          className="bg-card hover:bg-accent flex items-center gap-3 px-4 py-3 transition-colors"
+        >
+          <Images className="size-4 shrink-0" aria-hidden />
+          <span className="flex min-w-0 flex-col gap-0.5">
+            <span className="text-sm font-medium">Los comodines</span>
+            <span className="text-muted-foreground text-xs">
+              Todas las caras que puede llevar un comodín
             </span>
           </span>
         </Link>
