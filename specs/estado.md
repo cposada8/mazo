@@ -391,6 +391,17 @@ Released as v1.5.0. Then, from playing it:
 
 The comodín gallery (was Phase 51) moved to the *After* list.
 
+**Next — Milestone 7, Cerrar Carioca** (the owner, 2026-11-05; `roadmap.md`
+has the briefs). Carioca is closed before el Mentiroso starts:
+
+1. Phase 70 — La galería de comodines: open to anyone, from the home page
+   and from the partida's menu, with this ronda's comodines first.
+2. Phase 71 — La galería sale de la carpeta: Blob and a table, one store per
+   environment, and each partida keeps its own copy of the list.
+3. Phase 72 — La galería se edita: add and remove faces from the app, behind
+   the panel's key, owner only.
+4. Phase 73 — Los specs al día: this file and `mission.md`.
+
 Both 47 and 48 are settled with the owner; nothing is waiting on a question.
 The *After* list in `roadmap.md` stays unordered behind them.
 
