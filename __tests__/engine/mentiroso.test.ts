@@ -320,6 +320,45 @@ describe('a whole partida, played blind', () => {
   })
 })
 
+describe('leaving on purpose (Phase 80)', () => {
+  it('takes the seat out: no cards, skipped in turn, no call', async () => {
+    const { retirarMentiroso } = await import('@/lib/engine/mentiroso')
+    let estado = retirarMentiroso(mesa({ manos: ['7s 8s', 'Kc Kd', 'Qc Qd', 'Jc'] }), 1)
+    expect(estado.manos[1]).toEqual([])
+    estado = jugar(estado, 0, 1)
+    expect(estado.turno).toBe(2)
+    expect(rechazo(estado, { type: 'mentiroso', asiento: 1 })).toBe('asiento-invalido')
+    expect(aplicar(estado, { type: 'mentiroso', asiento: 3 }).ultimaAcusacion!.acusador).toBe(3)
+  })
+
+  it('the seat in turn leaving hands the turn on', async () => {
+    const { retirarMentiroso } = await import('@/lib/engine/mentiroso')
+    const estado = retirarMentiroso(mesa({ manos: ['7s', 'Kc', 'Qc'], turno: 0 }), 0)
+    expect(estado.turno).toBe(1)
+  })
+
+  it('its own play in the window stands, and wins nothing', async () => {
+    const { retirarMentiroso } = await import('@/lib/engine/mentiroso')
+    let estado = jugar(mesa({ manos: ['7s', 'Kc Kd', 'Qc Qd'] }), 0, 1) // its last card
+    estado = retirarMentiroso(estado, 0)
+    expect(estado.fase).toBe('jugar')
+    expect(estado.ganador).toBeNull()
+    expect(estado.pila).toHaveLength(1)
+    expect(estado.turno).toBe(1)
+  })
+
+  it('fewer than two seats left ends the partida with no winner', async () => {
+    const { retirarMentiroso, terminada } = await import('@/lib/engine/mentiroso')
+    let estado = retirarMentiroso(mesa({ manos: ['7s', 'Kc', 'Qc'] }), 1)
+    expect(terminada(estado)).toBe(false)
+    estado = retirarMentiroso(estado, 2)
+    expect(estado.sinGanador).toBe(true)
+    expect(rechazo(estado, { type: 'jugar', asiento: 0, cartaIds: primeras(estado, 0, 1) })).toBe(
+      'partida-terminada',
+    )
+  })
+})
+
 describe("the player's clock (Phase 80)", () => {
   it('plays one card of the hand in turn, the same one every time', async () => {
     const { jugadaDelReloj } = await import('@/lib/engine/mentiroso')

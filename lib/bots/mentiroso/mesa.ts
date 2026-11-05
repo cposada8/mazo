@@ -13,6 +13,7 @@ import {
   type MoveMentiroso,
   aplicarMentiroso,
   empezarMentiroso,
+  estaEnJuego,
   vistaMentiroso,
 } from '@/lib/engine/mentiroso'
 import type { BotMentiroso } from './bot'
@@ -41,6 +42,7 @@ export function siguienteMovimiento(
   const jugo = estado.ultimaJugada!.asiento
   for (let paso = 1; paso < estado.jugadores; paso++) {
     const asiento = (jugo + paso) % estado.jugadores
+    if (!estaEnJuego(estado, asiento)) continue
     if (bots[asiento].acusar(vistaMentiroso(estado, asiento))) {
       return { type: 'mentiroso', asiento }
     }

@@ -9,6 +9,7 @@
  */
 
 import { MAX_PLAYERS, MIN_PLAYERS } from '@/lib/engine'
+import { MAX_JUGADORES, MIN_JUGADORES } from '@/lib/engine/mentiroso'
 
 export const JUEGOS = ['carioca', 'mentiroso'] as const
 export type Juego = (typeof JUEGOS)[number]
@@ -29,17 +30,7 @@ export const DESCRIPCION_DE_JUEGO: Record<Juego, string> = {
   mentiroso: 'Botar cartas boca abajo y que no te pillen.',
 }
 
-/**
- * How many seats a table of each game has. El Mentiroso is always four (the
- * owner's table): its engine deals 3 to 6, Mazo seats exactly four. A game
- * whose min and max agree has a fixed table — no bots added or removed, and
- * a person joining takes a bot's seat (`mesaFija`).
- */
 export const ASIENTOS: Record<Juego, { min: number; max: number }> = {
   carioca: { min: MIN_PLAYERS, max: MAX_PLAYERS },
-  mentiroso: { min: 4, max: 4 },
-}
-
-export function mesaFija(juego: Juego): boolean {
-  return ASIENTOS[juego].min === ASIENTOS[juego].max
+  mentiroso: { min: MIN_JUGADORES, max: MAX_JUGADORES },
 }
