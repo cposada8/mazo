@@ -29,6 +29,7 @@ import type {
   FaseDePartida,
   PartidaGuardada,
 } from '@/lib/lobby'
+import { galeriaDeComodines } from './galeria'
 import { prisma } from './db'
 
 export type { ErrorDeLobby, FaseDePartida, PartidaGuardada }
@@ -109,6 +110,9 @@ export async function crearPartida(opciones: {
     aliasesDeBots = [],
   } = opciones
 
+  // The gallery as it is now travels with the partida (Phase 71).
+  const caras = JSON.stringify(await galeriaDeComodines())
+
   // A code collision is unlikely and loud: unique constraint. Retry a few
   // times rather than pretending it cannot happen.
   for (let intento = 0; intento < 5; intento++) {
@@ -120,6 +124,7 @@ export async function crearPartida(opciones: {
           config: JSON.stringify(config),
           segundosPorTurno,
           segundosBot,
+          caras,
           asientos: {
             create: [
               { indice: 0, alias, secreto, esHost: true },

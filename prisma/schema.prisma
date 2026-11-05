@@ -40,6 +40,11 @@ model Partida {
   /// may the descarte be browsed, and may the ronda's story be reread.
   verDescarte  Boolean @default(true)
   verHistorial Boolean @default(true)
+  /// JSON string[] — the comodín gallery as it was when this partida was
+  /// created (Phase 71). Faces are dealt from this copy, so editing the
+  /// gallery never changes a partida in progress. Null for partidas older
+  /// than the copy, which deal from the gallery as it is now.
+  caras        String?
   creadaEn      DateTime @default(now())
   actualizadaEn DateTime @updatedAt
   asientos      Asiento[]
@@ -68,4 +73,17 @@ model Asiento {
 
   @@unique([partidaId, indice])
   @@index([secreto])
+}
+
+/// One face in the comodín gallery (Phase 71). The image lives in Vercel
+/// Blob; this row is what makes it part of the gallery.
+model Comodin {
+  id       String   @id @default(cuid())
+  /// The public Blob URL — what a card and the gallery load.
+  url      String   @unique
+  /// The Blob pathname, for deleting it.
+  pathname String
+  /// The name it was uploaded with, for the editing screen.
+  nombre   String
+  creadoEn DateTime @default(now())
 }
