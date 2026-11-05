@@ -11,6 +11,7 @@
  */
 
 import type { PartidaConfig } from '@/lib/engine'
+import type { Juego } from '@/lib/juegos'
 
 export type FaseDePartida = 'lobby' | 'jugando' | 'terminada'
 
@@ -31,7 +32,13 @@ export type AsientoGuardado = {
 export type PartidaGuardada = {
   readonly id: string
   readonly codigo: string
+  /** Which game (Phase 78). Everything below that is a rule is that game's. */
+  readonly juego: Juego
   readonly fase: FaseDePartida
+  /**
+   * Carioca's rules. A Mentiroso partida carries the default here and never
+   * reads it: its only setting is a clock, `segundosVentana`.
+   */
   readonly config: PartidaConfig
   /**
    * The seed the partida was dealt from, once it has been. Never the state:
@@ -43,6 +50,8 @@ export type PartidaGuardada = {
   readonly repartida: boolean
   readonly segundosPorTurno: number
   readonly segundosBot: number
+  /** El Mentiroso's window to call, in seconds (Phase 78). */
+  readonly segundosVentana: number
   /** Memory aids (Phase 24): browse the descarte, reread the ronda's story. */
   readonly verDescarte: boolean
   readonly verHistorial: boolean
@@ -82,6 +91,7 @@ export type Accion =
       readonly config?: PartidaConfig
       readonly segundosPorTurno?: number
       readonly segundosBot?: number
+      readonly segundosVentana?: number
       readonly verDescarte?: boolean
       readonly verHistorial?: boolean
     }
@@ -108,7 +118,7 @@ export function mensajeDeLobby(code: ErrorDeLobby): string {
     case 'MESA_LLENA':
       return 'La mesa está llena.'
     case 'MESA_MUY_CHICA':
-      return 'Se necesitan al menos dos en la mesa.'
+      return 'Faltan jugadores: Carioca se juega desde dos y Mentiroso desde tres.'
     case 'NO_SE_PUEDE_QUITAR':
       return 'Solo se pueden quitar bots.'
     case 'NO_ES_UN_BOT':
@@ -145,6 +155,7 @@ export async function actuar(
 export async function crearPartidaRemota(cuerpo: {
   secreto: string
   alias: string
+  juego?: Juego
   config: PartidaConfig
   segundosPorTurno: number
   segundosBot: number

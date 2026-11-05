@@ -9,11 +9,14 @@
 import type { NextRequest } from 'next/server'
 import { CONFIG_POR_DEFECTO, type PartidaConfig } from '@/lib/engine'
 import type { VistaDeLobby } from '@/lib/lobby'
+import { juegoDe } from '@/lib/juegos'
 import { crearPartida } from '@/lib/server/partidas'
 
 type Cuerpo = {
   secreto?: string
   alias?: string
+  /** Which game (Phase 78). Absent — every client before it — is Carioca. */
+  juego?: string
   config?: PartidaConfig
   segundosPorTurno?: number
   segundosBot?: number
@@ -28,6 +31,7 @@ export async function POST(request: NextRequest) {
   const partida = await crearPartida({
     secreto: cuerpo.secreto,
     alias: cuerpo.alias,
+    juego: juegoDe(cuerpo.juego),
     config: cuerpo.config ?? CONFIG_POR_DEFECTO,
     segundosPorTurno: cuerpo.segundosPorTurno,
     segundosBot: cuerpo.segundosBot,

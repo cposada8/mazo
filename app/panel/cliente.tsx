@@ -12,6 +12,7 @@ import { ChevronLeft } from 'lucide-react'
 import Link from 'next/link'
 import { useActionState } from 'react'
 import type { PartidaDelPanel } from '@/lib/server/panel'
+import { NOMBRE_DE_JUEGO } from '@/lib/juegos'
 import { cn } from '@/lib/utils'
 import { barrerAhora, cerrar, entrar, limpiarTerminadas, salir } from './acciones'
 
@@ -171,6 +172,7 @@ function Fila({ partida, ahora }: { partida: PartidaDelPanel; ahora: number }) {
       <div className="flex min-w-0 flex-1 flex-col gap-1">
         <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
           <span className="font-mono text-sm font-medium">{partida.codigo}</span>
+          <span className="text-xs">{NOMBRE_DE_JUEGO[partida.juego]}</span>
           <span className="text-muted-foreground text-xs">{partida.fase}</span>
           {partida.reparto !== null && (
             <span className="text-muted-foreground text-xs tabular-nums">

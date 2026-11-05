@@ -10,8 +10,9 @@ export default function Home() {
       <header className="flex flex-col gap-3">
         <h1 className="text-5xl font-semibold tracking-tight">Mazo</h1>
         <p className="text-muted-foreground text-lg text-balance">
-          Juegos de cartas. Empezando por{" "}
-          <span className="text-foreground font-medium">Carioca</span>.
+          Juegos de cartas:{" "}
+          <span className="text-foreground font-medium">Carioca</span> y{" "}
+          <span className="text-foreground font-medium">Mentiroso</span>.
         </p>
         <AliasEditable />
       </header>

@@ -91,6 +91,7 @@ async function ejecutar(
           config: accion.config,
           segundosPorTurno: accion.segundosPorTurno,
           segundosBot: accion.segundosBot,
+          segundosVentana: accion.segundosVentana,
           verDescarte: accion.verDescarte,
           verHistorial: accion.verHistorial,
         }),

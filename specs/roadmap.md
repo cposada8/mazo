@@ -3128,7 +3128,7 @@ tenth of a second; on average 33–40 plays and two calls a partida, the
 longest 101. Plain play, as a baseline should be: the calls are rare
 because the bot only calls on certainty. 9 tests.
 
-### Phase 78 — La puerta sabe que hay dos juegos
+### Phase 78 — La puerta sabe que hay dos juegos ✅
 The platform learns that a partida is *of* a game. `Partida.juego`
 (`'carioca'` | `'mentiroso'`, Carioca for every row that predates it —
 additive SQL, applied to `mazo-dev` and then `mazo` before the release,
@@ -3140,6 +3140,27 @@ The home page stops saying "Empezando por Carioca".
 **Done when:** a Carioca partida is created, joined and played exactly as
 in v1.7.0, and a Mentiroso partida can be created and its lobby filled —
 even before its table exists, starting it says so plainly.
+
+**Done.** `Partida.juego` and `Partida.segundosVentana`
+(`prisma/sql/78-juego.sql`: two `ADD COLUMN`s with constant defaults —
+Prisma's own diff rebuilt the whole table to place them, which nothing
+needs and production should not pay for); applied to `mazo-dev`.
+`lib/juegos.ts` names the games and their seat limits and is light on
+purpose, because the door imports it; which bots each game seats is
+`lib/bots-de-juego.ts`. The door is two buttons, «Carioca» and
+«Mentiroso», each with a line; the server creates, seats (El Embustero),
+limits (3–6) and deals by game, and a Mentiroso row keeps no gallery copy.
+Every path that reads a state as Carioca's now checks the game first:
+Carioca's table endpoints answer `OTRO_JUEGO`, `estadoDe` and
+`vistaParaSecreto` return nothing, the panel counts no repartos and names
+the game, and leaving a dealt Mentiroso partida alone with bots ends it.
+The lobby says «La mesa · Mentiroso», shows its two clocks — the window to
+call (2/3/5/8 s) and the bots' thinking — and only Mentiroso bots; with
+more than one person it says plainly that that comes later, and Repartir
+waits. In the browser: the door, a Mentiroso lobby whose 5 s survives a
+reload and whose Repartir says the table is not ready yet, and a Carioca
+partida created, dealt and at the table as before. 6 tests in
+`__tests__/server/mentiroso.test.ts`; 814 in all.
 
 ### Phase 79 — La mesa del Mentiroso
 The table on a phone, against bots, through the same local transport

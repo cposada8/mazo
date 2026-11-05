@@ -75,6 +75,23 @@ export function PartidaCliente({
   const humanos = partida.asientos.filter((asiento) => !asiento.esBot)
   const soloBots = humanos.length <= 1
 
+  // Phase 78: a Mentiroso partida never reaches Carioca's tables. Its own
+  // table is Phase 79's; until it is wired in, the page says so plainly.
+  if (partida.juego === 'mentiroso') {
+    return (
+      <main className="mx-auto flex w-full max-w-md flex-1 flex-col items-center justify-center gap-3 px-6 py-16 text-center">
+        <p className="text-sm">La mesa del Mentiroso todavía no está lista.</p>
+        <button
+          type="button"
+          onClick={() => void salir(true)}
+          className="border-input hover:bg-accent rounded-md border px-4 py-2 text-sm"
+        >
+          Salir
+        </button>
+      </main>
+    )
+  }
+
   return soloBots ? (
     <MesaLocal
       codigo={codigo}
