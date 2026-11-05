@@ -277,21 +277,14 @@ forwards dev to main so dev knows the number it builds on. Vercel deploys
 
 ## What comes next
 
-**Before the next release to production**, `mazo` needs what `mazo-dev`
-already has — Phases 70–72 are on dev only. In this order, from a clean
-tree:
+**Production got the gallery in v1.6.0** (2026-11-05): `mazo` took
+`prisma/sql/71-galeria.sql` and its sixteen faces in `mazo-comodines`
+before the release deployed, and `public/candidatos/comodines` is gone. The
+next schema change goes the same way — SQL under `prisma/sql/`, applied to
+`mazo-dev`, then to `mazo` before `npm run publicar`. Production's database
+credentials are in `.env.turso`; `vercel env pull` masks them.
 
-0. `vercel env pull .env.vercel-prod --environment production --yes`
-   (gitignored by `.env*`) — production's database and Blob token.
-1. `npx tsx --env-file=.env.vercel-prod scripts/aplicar-sql.ts prisma/sql/71-galeria.sql`
-   — additive, so v1.5.1 keeps running on it.
-2. `npx tsx --env-file=.env.vercel-prod scripts/comodines-a-blob.ts public/candidatos/comodines`
-   — the sixteen faces into `mazo-comodines`. Safe to repeat.
-3. Delete `public/candidatos/comodines` (keep its photos somewhere first if
-   wanted: they now live in both Blob stores), commit, push to dev.
-4. `npm run publicar -- patch` or `minor` — the gallery is new, so minor.
-
-**Then a second game, el Mentiroso** (the owner, 2026-11-05). Its milestone
+**Next, a second game: el Mentiroso** (the owner, 2026-11-05). Its milestone
 is not written yet; it starts with its rules in `specs/`, as Phase 0 did
 for Carioca, and with the engine split so that two games share cards, the
 seeded stream and the deck while each owns its rules.
