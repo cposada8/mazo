@@ -400,6 +400,24 @@
   .carta-volteada {
     animation: carta-voltea 0.45s ease-out both;
   }
+  /*
+   * El Mentiroso (2026-11-05): a play's cards fly from the seat that threw
+   * them to the middle of the table — --desde-x / --desde-y say from where —
+   * so who threw what is seen, not read.
+   */
+  .jugada-llega {
+    animation: jugada-llega 0.5s cubic-bezier(0.2, 0.7, 0.3, 1) both;
+  }
+  @keyframes jugada-llega {
+    from {
+      transform: translate(var(--desde-x, 0), var(--desde-y, 0)) scale(0.45) rotate(-12deg);
+      opacity: 0.4;
+    }
+    to {
+      transform: none;
+      opacity: 1;
+    }
+  }
   @keyframes carta-voltea {
     from {
       transform: perspective(400px) rotateY(90deg);
@@ -409,7 +427,8 @@
     }
   }
   @media (prefers-reduced-motion: reduce) {
-    .carta-volteada {
+    .carta-volteada,
+    .jugada-llega {
       animation: none;
     }
   }
