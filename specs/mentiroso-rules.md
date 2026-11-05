@@ -25,8 +25,8 @@ player with no cards left wins.
 - **One 52-card deck, no comodines.** A comodín would be a card that is
   never a lie, which removes the doubt the game is made of.
 - **The whole deck is dealt**, one card at a time, starting with the seat
-  after the dealer. 52 does not divide by 3, 5 or 6, so some seats start
-  with one card more; that is the game, not a flaw.
+  that opens. 52 does not divide by 3, 5 or 6, so some seats start with one
+  card more — the opener always among them; that is the game, not a flaw.
 - **Who starts** is drawn from the partida's seed, like Carioca's first
   opener — reproducible, never chosen.
 

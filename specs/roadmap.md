@@ -3067,7 +3067,7 @@ direction — `comun/` imports no game, a game imports only itself and
 The shared half's comments no longer speak Carioca. 764 tests, build green;
 no behaviour changed.
 
-### Phase 76 — El motor del Mentiroso
+### Phase 76 — El motor del Mentiroso ✅
 The rules as a pure state machine, beside Carioca's: deal the whole deck
 from a seed, the rank in turn, a play of 1–4 cards announced as that rank,
 the **window to call** as a state of its own (the play is on the pile,
@@ -3085,6 +3085,20 @@ or being told it has run out.
 play both ways, the sequence carrying on after a call, the K → A wrap, a
 refused play of 0 or 5 cards, a refused call by the player who played — and
 the same seed always deals the same partida.
+
+**Done.** `lib/engine/mentiroso/` — `partida.ts` (`empezarMentiroso`,
+`aplicarMentiroso`) and `vista.ts` (`vistaMentiroso`), imported as
+`@/lib/engine/mentiroso`. A turn is `'jugar'` then `'ventana'`: a play
+opens the window and hands the turn on; only `mentiroso` (anyone but the
+player) or `cerrarVentana` (the clock) end it, and a second call finds the
+window already shut — which is how "the first call counts" holds in the
+engine, before any server. A going-out is decided where the window ends,
+never at the play. The deal is the whole single deck from the shared
+`construirBaraja`, the opener drawn from the seed and dealt first. The
+seat's view holds one hand and the pile as a count, and a test searches it
+for every hidden card id. 26 tests in `mentiroso.test.ts`, one of them a
+whole blind partida checking all 52 cards at every step; the purity test
+picked up the new folder by itself. 799 tests.
 
 ### Phase 77 — Un bot que miente
 A baseline bot, the El Codicioso of this game: plays the rank in turn
