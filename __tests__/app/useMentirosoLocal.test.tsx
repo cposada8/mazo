@@ -87,8 +87,8 @@ describe('MesaMentirosoLocal', () => {
         onSalir={() => {}}
       />,
     )
-    for (let i = 0; i < 60 && !screen.queryByText(/elige tus cartas para los/); i++) esperar(500)
-    expect(screen.getByText(/elige tus cartas para los/)).toBeInTheDocument()
+    for (let i = 0; i < 60 && !screen.queryByText(/elige tus cartas para los/i); i++) esperar(500)
+    expect(screen.getByText(/elige tus cartas para los/i)).toBeInTheDocument()
     expect(screen.getByText('Tu turno')).toBeInTheDocument()
     const cartas = screen.getAllByRole('button', { pressed: false }).filter((b) =>
       / de (picas|corazones|diamantes|tréboles)$/.test(b.getAttribute('aria-label') ?? ''),

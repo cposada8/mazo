@@ -178,7 +178,7 @@ export function MesaMentiroso({
     <main
       className="text-tinta fixed inset-0 z-10 flex flex-col overflow-hidden bg-[radial-gradient(ellipse_at_50%_35%,oklch(0.26_0.03_250),oklch(0.13_0.02_260)_70%)]"
       style={{
-        ['--carta-md' as string]: 'clamp(3.75rem, 15dvh, 8rem)',
+        ['--carta-md' as string]: 'clamp(3.5rem, 12dvh, 6.5rem)',
         ['--carta-sm' as string]: 'clamp(3rem, 12dvh, 6rem)',
         ['--carta-xs' as string]: 'clamp(1rem, 3.4dvh, 1.6rem)',
       }}
@@ -529,10 +529,11 @@ function Revelacion({
 }
 
 /**
- * The whole hand, on screen, always. The overlap is computed from the width
- * the footer has: as loose as fits, never so tight a card's corner is hidden —
- * and past that, two rows. A hand never scrolls sideways, because a card you
- * cannot see is a card you forget you hold.
+ * The whole hand, on screen, in one row — the way Carioca fans it (the
+ * owner: «que se junten y puedan estar en una misma fila; mira cómo se unen
+ * en carioca»). Cards overlap so only their corner strip shows: never wider
+ * than Carioca's strip, however much room there is, and tighter when the hand
+ * is big. Only a hand too big even for a sliver of corner takes two rows.
  */
 function Mano({
   mano,
@@ -567,12 +568,15 @@ function Mano({
     return () => observador.disconnect()
   }, [mano.length])
 
+  // Carioca's strip: a card's height times 0.34 hidden, about half its width
+  // showing (components/mesa.tsx). Here as a share of the width.
+  const FRANJA = 0.5
   const paso = (n: number) =>
     n <= 1 || medidas.carta === 0
-      ? medidas.carta + 4
-      : Math.min(medidas.carta + 4, (medidas.ancho - medidas.carta) / (n - 1))
-  // A corner needs about a quarter of a card showing to be read.
-  const dosFilas = medidas.carta > 0 && paso(mano.length) < medidas.carta * 0.24
+      ? medidas.carta
+      : Math.min(medidas.carta * FRANJA, (medidas.ancho - medidas.carta) / (n - 1))
+  // The rank and suit in the corner need about a fifth of the width to read.
+  const dosFilas = medidas.carta > 0 && paso(mano.length) < medidas.carta * 0.2
   const filas = dosFilas
     ? [mano.slice(0, Math.ceil(mano.length / 2)), mano.slice(Math.ceil(mano.length / 2))]
     : [mano]
@@ -596,7 +600,7 @@ function Mano({
                   disabled={!activa}
                   style={i > 0 && medidas.carta > 0 ? { marginLeft: p - medidas.carta } : undefined}
                   className={cn(
-                    'shrink-0 rounded-md shadow-md transition-transform',
+                    'shrink-0 rounded-md shadow-[-2px_0_4px_rgba(0,0,0,0.35)] transition-transform',
                     elegida && '-translate-y-4 ring-[3px] ring-amber-400',
                   )}
                 >
