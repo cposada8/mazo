@@ -159,3 +159,27 @@ export function textoDeEvento(
         : `${quien(evento.asiento)} se quedó sin cartas y gana.`
   }
 }
+
+/*
+ * How long each thing takes to *show* (2026-11-05, after the owner found the
+ * table too abrupt). The table tells events one at a time, in these times —
+ * Carioca's rule from Phases 58–60: the state has moved, the eye catches up —
+ * and whoever keeps the clock (the local transport, the server) waits them
+ * out before the next play, so nothing lands on top of a scene still playing.
+ */
+
+/** A play's cards crossing from the seat that threw them to the middle. */
+export const MS_VUELO_JUGADA = 700
+/** «¡Mentiroso!» shouted, before anything turns over. */
+export const MS_GRITO = 900
+/** Each called card turning face up, one after another. */
+export const MS_POR_VOLTEO = 420
+/** The verdict on the table, read before the pile moves. */
+export const MS_VEREDICTO = 1500
+/** The pile crossing to whoever takes it. */
+export const MS_RECOGE = 750
+
+/** The whole scene of a call over `cartas` cards, start to empty middle. */
+export function msDeAcusacion(cartas: number): number {
+  return MS_GRITO + MS_POR_VOLTEO * cartas + 300 + MS_VEREDICTO + MS_RECOGE
+}

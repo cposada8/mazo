@@ -96,8 +96,11 @@ describe('MesaMentirosoLocal', () => {
     fireEvent.click(cartas[0])
     fireEvent.click(cartas[1])
     fireEvent.click(screen.getByRole('button', { name: /^Jugar 2 como / }))
-    // Your own play: declared, and no button to call it.
+    // Your cards fly to the middle first; the declaration is shown when they land.
+    expect(screen.queryByText(/Declaraste/)).toBeNull()
+    for (let i = 0; i < 10; i++) esperar(100)
     expect(screen.getByText(/Declaraste/)).toBeInTheDocument()
+    expect(screen.getAllByLabelText('2 cartas boca abajo')).toHaveLength(1)
     expect(screen.queryByRole('button', { name: '¡Mentiroso!' })).toBeNull()
   })
 })

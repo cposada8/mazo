@@ -36,11 +36,31 @@ import {
   terminada,
   vistaMentiroso,
 } from '@/lib/engine/mentiroso'
-import { type EventoMentiroso, relatarMentiroso } from '@/lib/relato-mentiroso'
+import {
+  type EventoMentiroso,
+  MS_VUELO_JUGADA,
+  msDeAcusacion,
+  relatarMentiroso,
+} from '@/lib/relato-mentiroso'
 import { prisma } from './db'
 
 /** How far into a window a bot that wants to call does so. */
 const MS_HASTA_QUE_ACUSA_UN_BOT = 1_000
+
+/**
+ * How long the table is still showing what just happened, before the next
+ * deadline starts counting: a play's cards in the air, or a whole call. Every
+ * screen tells events in these times (`lib/relato-mentiroso.ts`), so a bot
+ * never plays on top of a scene still playing.
+ */
+export function pausaDeEscena(estado: EstadoMentiroso): number {
+  if (estado.fase === 'ventana') return MS_VUELO_JUGADA
+  // Right after a call the pile is empty and the call is the last thing told.
+  if (estado.ultimaAcusacion && estado.pila.length === 0) {
+    return msDeAcusacion(estado.ultimaAcusacion.cartas.length)
+  }
+  return 0
+}
 
 export type VistaDeMesaMentiroso = {
   readonly vista: VistaMentiroso
@@ -110,11 +130,12 @@ function publicar(fila: Fila, estado: EstadoMentiroso, asiento: number): VistaDe
   const desde = fila.turnoDesde?.getTime() ?? fila.actualizadaEn.getTime()
   const enTurno = fila.asientos.find((a) => a.indice === estado.turno)
   const plazo = enTurno?.esBot ? fila.segundosBot : fila.segundosPorTurno
+  const pausa = pausaDeEscena(estado)
   return {
     vista: vistaMentiroso(estado, asiento),
     eventos: JSON.parse(fila.relatos) as EventoMentiroso[],
     desde,
-    plazoHasta: desde + plazo * 1000,
+    plazoHasta: desde + pausa + plazo * 1000,
     segundosDelPlazo: plazo,
     segundosBot: fila.segundosBot,
     segundosPorTurno: fila.segundosPorTurno,
@@ -161,7 +182,8 @@ export function ponerAlDia(
     // bot in turn would play over it, so the call is never lost to the play.
     if (estado.fase === 'ventana') {
       const jugo = estado.ultimaJugada!.asiento
-      const cuandoAcusa = desde + Math.min(MS_HASTA_QUE_ACUSA_UN_BOT, fila.segundosBot * 500)
+      const cuandoAcusa =
+        desde + MS_VUELO_JUGADA + Math.min(MS_HASTA_QUE_ACUSA_UN_BOT, fila.segundosBot * 500)
       let acusador: number | null = null
       for (let paso = 1; paso < estado.jugadores; paso++) {
         const asiento = (jugo + paso) % estado.jugadores
@@ -181,7 +203,8 @@ export function ponerAlDia(
     // clock runs out. Either way the play closes the window on the one before
     // — or, if that one emptied a hand, accepts it.
     const bot = botDe(estado.turno)
-    const vence = desde + (bot ? fila.segundosBot : fila.segundosPorTurno) * 1000
+    const vence =
+      desde + pausaDeEscena(estado) + (bot ? fila.segundosBot : fila.segundosPorTurno) * 1000
     if (ahora < vence) break
     const move: MoveMentiroso | null = bot
       ? debeAceptarOAcusar(estado)

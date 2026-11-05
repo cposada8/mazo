@@ -24,7 +24,7 @@
  */
 
 import { CircleHelp, X } from 'lucide-react'
-import { type CSSProperties, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { type ReactNode, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { Carta, CartaBocaAbajo } from '@/components/carta'
 import { colorDeAsiento, iniciales } from '@/components/mesa'
 import { ComoSeJuegaMentiroso } from '@/components/reglas-mentiroso'
@@ -32,6 +32,11 @@ import { type Card, type Rank, isNormal, rankIndex } from '@/lib/engine'
 import { MAX_CARTAS_POR_JUGADA, type VistaMentiroso } from '@/lib/engine/mentiroso'
 import {
   type EventoMentiroso,
+  MS_GRITO,
+  MS_POR_VOLTEO,
+  MS_RECOGE,
+  MS_VEREDICTO,
+  MS_VUELO_JUGADA,
   cantidadDeRango,
   nombreDeRango,
   textoDeEvento,
@@ -114,7 +119,6 @@ export function MesaMentiroso({
   const yo = vista.asiento
   const [seleccion, setSeleccion] = useState<readonly string[]>([])
   const [reglas, setReglas] = useState(false)
-  const mano = useMemo(() => ordenar(vista.mano), [vista.mano])
   const ids = useMemo(() => new Set(vista.mano.map((c) => c.id)), [vista.mano])
   const elegidas = seleccion.filter((id) => ids.has(id))
 
@@ -128,35 +132,50 @@ export function MesaMentiroso({
   const retirados = vista.retirados ?? []
   const meRetire = retirados.includes(yo)
 
-  // The call to show in the middle: the last one, until the next play lands.
-  const ultimo = [...eventos].reverse().find((e) => e.tipo === 'acusacion' || e.tipo === 'jugada')
-  const revelada = ultimo?.tipo === 'acusacion' && !abierta ? ultimo : null
-  const narracion = eventos.length > 0 ? textoDeEvento(eventos.at(-1)!, nombres, yo) : null
+  // The table tells what happened one event at a time, in the times of
+  // `lib/relato-mentiroso.ts`: a play flies in, a call is shouted, turned over,
+  // judged and carried off. Everything in the middle is drawn from what has
+  // been *told*, never from the state ahead of it.
+  const escena = useEscenas(eventos)
+  const hasta = escena.contados
+  const contados = useMemo(() => eventos.slice(0, hasta), [eventos, hasta])
+  const enEscena = escena.evento
+  const alDia = escena.contados === eventos.length && enEscena === null
+  const ultimoContado = [...contados]
+    .reverse()
+    .find((e) => e.tipo === 'acusacion' || e.tipo === 'jugada')
+  const jugadaEnMedio = ultimoContado?.tipo === 'jugada' ? ultimoContado : null
+  const narracion = contados.length > 0 ? textoDeEvento(contados.at(-1)!, nombres, yo) : null
 
   // What each seat last declared — the bubble beside it. A call clears the
   // board, so only plays since the last call count.
   const declarado = useMemo(() => {
     const porAsiento = new Map<number, { cantidad: number; rango: Rank; numero: number }>()
-    for (const evento of eventos) {
+    for (const evento of contados) {
       if (evento.tipo === 'acusacion') porAsiento.clear()
       if (evento.tipo === 'jugada') porAsiento.set(evento.asiento, evento)
     }
     return porAsiento
-  }, [eventos])
+  }, [contados])
 
   const total = vista.cartasPorAsiento.length
   const otros = Array.from({ length: total - 1 }, (_, i) => (yo + 1 + i) % total)
   const lugares = new Map(otros.map((asiento, i) => [asiento, angulos(otros.length)[i]]))
+  const gritando =
+    enEscena?.tipo === 'acusacion' && escena.etapa === 'grito' ? enEscena.acusador : null
 
-  // Where a play flies in from: the thrower's seat on the ellipse, or below.
-  const desde = (asiento: number): CSSProperties => {
-    if (asiento === yo) return { ['--desde-x' as string]: '0px', ['--desde-y' as string]: '40dvh' }
-    const { x, y } = punto(lugares.get(asiento) ?? 270)
-    return {
-      ['--desde-x' as string]: `${(x - 50) * 0.9}vw`,
-      ['--desde-y' as string]: `${(y - 60) * 0.6}dvh`,
-    }
-  }
+  // Whoever takes the pile only has it once it has crossed the table: until
+  // the scene ends their count — and, if it is you, your hand — stays as it
+  // was. (The state took it at once; the table shows it arriving.)
+  const recogiendo = enEscena?.tipo === 'acusacion' ? enEscena : null
+  const cartasDe = (asiento: number) =>
+    vista.cartasPorAsiento[asiento] -
+    (recogiendo && recogiendo.seLlevo === asiento ? recogiendo.cartasDeLaPila : 0)
+  const [manoFija, setManoFija] = useState(vista.mano)
+  const retener = recogiendo?.seLlevo === yo
+  if (!retener && manoFija !== vista.mano) setManoFija(vista.mano)
+
+  const mano = useMemo(() => ordenar(retener ? manoFija : vista.mano), [retener, manoFija, vista.mano])
 
   const alternar = (id: string) => {
     if (!puedoJugar) return
@@ -221,45 +240,40 @@ export function MesaMentiroso({
               y={y}
               nombre={nombres[asiento]}
               asiento={asiento}
-              cartas={vista.cartasPorAsiento[asiento]}
+              cartas={cartasDe(asiento)}
               enTurno={enJuego && vista.turno === asiento}
-              suJugadaAbierta={abierta?.asiento === asiento}
+              suJugadaAbierta={jugadaEnMedio?.asiento === asiento && enEscena === null}
               declaro={declarado.get(asiento) ?? null}
+              gritando={gritando === asiento}
               retirado={retirados.includes(asiento)}
             />
           )
         })}
 
-        {/* The middle: the open play, or the call that turned it over. */}
+        {/* The middle: what is being told now, or the last play told. */}
         <div className="absolute inset-x-[8%] top-[38%] bottom-[6%] flex flex-col items-center justify-center gap-[1.2dvh] text-center">
-          {revelada ? (
-            <Revelacion evento={revelada} nombres={nombres} yo={yo} />
-          ) : abierta ? (
+          {enEscena?.tipo === 'acusacion' ? (
+            <Revelacion
+              key={`acusacion-${escena.contados}`}
+              evento={enEscena}
+              etapa={escena.etapa!}
+              volteadas={escena.volteadas}
+              nombres={nombres}
+              yo={yo}
+            />
+          ) : enEscena?.tipo === 'jugada' ? (
+            <Viajan key={`vuela-${escena.contados}`} desde={enEscena.asiento} ms={MS_VUELO_JUGADA}>
+              <Dorsos cantidad={enEscena.cantidad} />
+            </Viajan>
+          ) : jugadaEnMedio ? (
             <>
-              <div
-                key={vista.numeroDeJugada}
-                className="jugada-llega flex"
-                style={desde(abierta.asiento)}
-                aria-label={`${abierta.cantidad} ${abierta.cantidad === 1 ? 'carta' : 'cartas'} boca abajo`}
-              >
-                {Array.from({ length: abierta.cantidad }, (_, i) => (
-                  <CartaBocaAbajo
-                    key={i}
-                    size="sm"
-                    className={cn(
-                      'shadow-lg',
-                      i > 0 && '-ml-[calc(var(--carta-sm)*0.42)]',
-                      abierta.cantidad > 1 && (i % 2 ? 'rotate-6' : '-rotate-6'),
-                    )}
-                  />
-                ))}
-              </div>
+              <Dorsos cantidad={jugadaEnMedio.cantidad} />
               <p className="text-[clamp(1rem,2.4dvh,1.3rem)] leading-tight font-semibold text-white drop-shadow">
-                {esMiJugada ? 'Declaraste' : `${nombres[abierta.asiento]} declaró`}{' '}
+                {jugadaEnMedio.asiento === yo ? 'Declaraste' : `${nombres[jugadaEnMedio.asiento]} declaró`}{' '}
                 <span className="text-amber-300">
-                  {cantidadDeRango(abierta.cantidad, abierta.rango)}
+                  {cantidadDeRango(jugadaEnMedio.cantidad, jugadaEnMedio.rango)}
                 </span>
-                {debeDecidir && !esMiJugada && (
+                {alDia && debeDecidir && !esMiJugada && (
                   <span className="block text-sm font-normal text-white/80">
                     y se quedó sin cartas
                   </span>
@@ -274,7 +288,8 @@ export function MesaMentiroso({
             )
           )}
 
-          {abierta && !esMiJugada && !meRetire && (
+          {/* Only what has been seen can be called: the button waits for the table. */}
+          {alDia && abierta && !esMiJugada && !meRetire && (
             <button
               type="button"
               onClick={onMentiroso}
@@ -283,7 +298,7 @@ export function MesaMentiroso({
               ¡Mentiroso!
             </button>
           )}
-          {miTurno && debeDecidir && (
+          {alDia && miTurno && debeDecidir && (
             <button
               type="button"
               onClick={onCreer}
@@ -292,13 +307,13 @@ export function MesaMentiroso({
               Le creo
             </button>
           )}
-          {puedoJugar && (
+          {alDia && puedoJugar && (
             <p className="text-sm text-white/90 drop-shadow">
               {abierta ? 'o elige' : 'Elige'} tus cartas para los{' '}
               <b className="text-[1.15em] text-white">{plural(vista.rangoEnTurno)}</b>
             </p>
           )}
-          <Pila cantidad={vista.pila} />
+          <Pila cantidad={vista.pila + (recogiendo ? recogiendo.cartasDeLaPila : 0)} />
         </div>
       </section>
 
@@ -318,13 +333,16 @@ export function MesaMentiroso({
         <Mano mano={mano} elegidas={elegidas} activa={puedoJugar} onTocar={alternar} />
         <div className="flex min-h-10 w-full items-center justify-center gap-3">
           <span
+            data-asiento={yo}
             className={cn(
+              'relative',
               'flex size-9 shrink-0 items-center justify-center rounded-full text-xs font-semibold text-white',
               miTurno && 'ring-2 ring-sky-400 ring-offset-2 ring-offset-black',
             )}
             style={{ background: colorDeAsiento(yo) }}
           >
             {iniciales(nombres[yo] ?? 'Tú')}
+            {gritando === yo && <Grito className="-top-1 left-full ml-2 translate-x-0" />}
           </span>
           {puedoJugar && elegidas.length > 0 ? (
             <button
@@ -398,6 +416,7 @@ function Asiento({
   enTurno,
   suJugadaAbierta,
   declaro,
+  gritando,
   retirado,
 }: {
   x: number
@@ -408,6 +427,8 @@ function Asiento({
   enTurno: boolean
   suJugadaAbierta: boolean
   declaro: { cantidad: number; rango: Rank } | null
+  /** Shouting «¡Mentiroso!» right now — the first beat of a call. */
+  gritando: boolean
   retirado: boolean
 }) {
   return (
@@ -419,7 +440,9 @@ function Asiento({
       style={{ left: `${x}%`, top: `${y}%` }}
     >
       <span className="relative">
+        {gritando && <Grito />}
         <span
+          data-asiento={asiento}
           className={cn(
             'flex size-[clamp(2.25rem,7dvh,3.25rem)] items-center justify-center rounded-full text-sm font-semibold text-white shadow-lg',
             enTurno && 'ring-[3px] ring-sky-400 ring-offset-2 ring-offset-black/60',
@@ -482,47 +505,258 @@ function Pila({ cantidad }: { cantidad: number }) {
   )
 }
 
-/** A call, shown in the middle: the cards turned over, and what it meant. */
+type Etapa = 'vuela' | 'grito' | 'volteo' | 'veredicto' | 'recoge'
+
+/** The beats an event is told in, and how long each lasts. */
+function planDe(evento: EventoMentiroso): { etapa: Etapa; ms: number }[] {
+  if (evento.tipo === 'jugada') return [{ etapa: 'vuela', ms: MS_VUELO_JUGADA }]
+  if (evento.tipo === 'acusacion') {
+    return [
+      { etapa: 'grito', ms: MS_GRITO },
+      ...evento.cartas.map(() => ({ etapa: 'volteo' as const, ms: MS_POR_VOLTEO })),
+      { etapa: 'volteo', ms: 300 },
+      { etapa: 'veredicto', ms: MS_VEREDICTO },
+      { etapa: 'recoge', ms: MS_RECOGE },
+    ]
+  }
+  return []
+}
+
+/**
+ * Tells the log one event at a time (Carioca's rule, Phases 58–60: the state
+ * has moved, the eye catches up). Starts caught up — a table opened mid-game
+ * does not replay its history — and, when it falls behind by more than an
+ * event, tells the backlog at a fraction of the pace instead of dropping it.
+ */
+function useEscenas(eventos: readonly EventoMentiroso[]) {
+  const [contados, setContados] = useState(eventos.length)
+  const [paso, setPaso] = useState<number | null>(null)
+  // A new partida at the same table starts a new log.
+  const [largo, setLargo] = useState(eventos.length)
+  if (eventos.length < largo) {
+    setLargo(eventos.length)
+    setContados(eventos.length)
+    setPaso(null)
+  } else if (eventos.length !== largo) {
+    setLargo(eventos.length)
+  }
+
+  const evento = contados < eventos.length ? eventos[contados] : null
+  const plan = useMemo(() => (evento ? planDe(evento) : []), [evento])
+
+  useEffect(() => {
+    if (!evento) return
+    if (plan.length === 0) {
+      const t = setTimeout(() => setContados((c) => c + 1), 0)
+      return () => clearTimeout(t)
+    }
+    if (paso === null) {
+      const t = setTimeout(() => setPaso(0), 0)
+      return () => clearTimeout(t)
+    }
+    const atrasado = eventos.length - contados > 2
+    const t = setTimeout(
+      () => {
+        if (paso + 1 < plan.length) setPaso(paso + 1)
+        else {
+          setPaso(null)
+          setContados((c) => c + 1)
+        }
+      },
+      atrasado ? plan[paso].ms * 0.35 : plan[paso].ms,
+    )
+    return () => clearTimeout(t)
+  }, [evento, plan, paso, eventos.length, contados])
+
+  const enCurso = evento && paso !== null && plan.length > 0
+  return {
+    contados,
+    evento: enCurso ? evento : null,
+    etapa: enCurso ? plan[paso].etapa : null,
+    /** During a call: how many of its cards are face up so far. */
+    volteadas: enCurso ? Math.max(0, paso - 1 + (plan[paso].etapa === 'volteo' ? 1 : 0)) : 0,
+  }
+}
+
+/**
+ * Cards in transit between two seats and the middle, measured from the live
+ * layout (`data-asiento`) the way Carioca's `CartaViajera` is: the element
+ * starts where `desde` is and slides into place, or slides from its place to
+ * `hacia` and fades as it arrives.
+ */
+function Viajan({
+  desde,
+  hacia,
+  ms,
+  children,
+}: {
+  desde?: number
+  hacia?: number
+  ms: number
+  children: ReactNode
+}) {
+  const ref = useRef<HTMLDivElement>(null)
+  useLayoutEffect(() => {
+    const el = ref.current
+    const raiz = el?.closest('main')
+    if (!el || !raiz) return
+    const punto = (asiento: number) => raiz.querySelector(`[data-asiento="${asiento}"]`)
+    const propio = el.getBoundingClientRect()
+    const centro = (r: DOMRect) => ({ x: r.x + r.width / 2, y: r.y + r.height / 2 })
+    const yo = centro(propio)
+    const delta = (asiento: number) => {
+      const otro = punto(asiento)
+      if (!otro) return null
+      const c = centro(otro.getBoundingClientRect())
+      return `translate(${c.x - yo.x}px, ${c.y - yo.y}px) scale(0.35)`
+    }
+    if (desde !== undefined) {
+      const inicio = delta(desde)
+      if (!inicio) return
+      el.style.transform = inicio
+      el.style.opacity = '0.6'
+      const marco = requestAnimationFrame(() =>
+        requestAnimationFrame(() => {
+          el.style.transition = `transform ${ms}ms cubic-bezier(0.2, 0.7, 0.3, 1), opacity ${ms * 0.5}ms ease-out`
+          el.style.transform = 'none'
+          el.style.opacity = '1'
+        }),
+      )
+      return () => cancelAnimationFrame(marco)
+    }
+    if (hacia !== undefined) {
+      const fin = delta(hacia)
+      if (!fin) return
+      const marco = requestAnimationFrame(() =>
+        requestAnimationFrame(() => {
+          el.style.transition = `transform ${ms}ms ease-in, opacity ${ms * 0.4}ms ease-in ${ms * 0.6}ms`
+          el.style.transform = fin
+          el.style.opacity = '0'
+        }),
+      )
+      return () => cancelAnimationFrame(marco)
+    }
+  }, [desde, hacia, ms])
+  return (
+    <div ref={ref} className="will-change-transform">
+      {children}
+    </div>
+  )
+}
+
+/** A play's cards, face down: exactly as many as were thrown. */
+function Dorsos({ cantidad }: { cantidad: number }) {
+  return (
+    <div className="flex" aria-label={`${cantidad} ${cantidad === 1 ? 'carta' : 'cartas'} boca abajo`}>
+      {Array.from({ length: cantidad }, (_, i) => (
+        <CartaBocaAbajo
+          key={i}
+          size="sm"
+          className={cn(
+            'shadow-lg',
+            i > 0 && '-ml-[calc(var(--carta-sm)*0.42)]',
+            cantidad > 1 && (i % 2 ? 'rotate-6' : '-rotate-6'),
+          )}
+        />
+      ))}
+    </div>
+  )
+}
+
+/** «¡Mentiroso!», shouted from a seat: the first beat of a call. */
+function Grito({ className }: { className?: string }) {
+  return (
+    <span
+      className={cn(
+        'grito absolute -top-9 left-1/2 z-10 -translate-x-1/2 rounded-full bg-red-600 px-3 py-1 text-sm font-black whitespace-nowrap text-white shadow-lg',
+        className,
+      )}
+    >
+      ¡Mentiroso!
+    </span>
+  )
+}
+
+/**
+ * A call, told in beats: the shout (cards still face down), the cards turning
+ * one by one, the verdict, and the pile carried off to whoever takes it —
+ * after which the middle is empty, because the cards are in a hand now.
+ */
 function Revelacion({
   evento,
+  etapa,
+  volteadas,
   nombres,
   yo,
 }: {
   evento: Extract<EventoMentiroso, { tipo: 'acusacion' }>
+  etapa: Etapa
+  volteadas: number
   nombres: readonly string[]
   yo: number
 }) {
   const quien = (asiento: number) => (asiento === yo ? 'tú' : nombres[asiento])
-  return (
-    <div className="flex flex-col items-center gap-1.5" role="status">
-      <span
-        className={cn(
-          'rounded-full px-3 py-0.5 text-xs font-bold tracking-widest uppercase shadow',
-          evento.eraMentira ? 'bg-red-600 text-white' : 'bg-emerald-600 text-white',
-        )}
-      >
-        {evento.eraMentira ? '¡Mentira!' : 'Era verdad'}
-      </span>
-      <div className="flex gap-1">
-        {evento.cartas.map((carta) => (
+  const juzgada = etapa === 'veredicto' || etapa === 'recoge'
+  const cartas = (
+    <div className="flex gap-1">
+      {evento.cartas.map((carta, i) =>
+        i < volteadas || juzgada ? (
           <Carta
             key={carta.id}
             card={carta}
             size="sm"
             className={cn(
               'carta-volteada shadow-lg',
-              isNormal(carta) && carta.rank !== evento.rango && 'ring-[3px] ring-red-500',
+              juzgada && isNormal(carta) && carta.rank !== evento.rango && 'ring-[3px] ring-red-500',
             )}
           />
-        ))}
-      </div>
-      <p className="text-sm text-white drop-shadow">
-        {evento.acusado === yo ? 'Dijiste' : `${nombres[evento.acusado]} dijo`}{' '}
-        {cantidadDeRango(evento.cartas.length, evento.rango)}.{' '}
-        <b>
-          {evento.seLlevo === yo ? 'Te llevas' : `${quien(evento.seLlevo)} se lleva`} la pila
-        </b>{' '}
-        ({evento.cartasDeLaPila})
+        ) : (
+          <CartaBocaAbajo key={carta.id} size="sm" className="shadow-lg" />
+        ),
+      )}
+    </div>
+  )
+  return (
+    <div className="flex flex-col items-center gap-1.5" role="status">
+      {/* The verdict exists only once it is given — never hidden in the page
+          ahead of the cards, where a screen reader would tell it early. */}
+      <span className="flex h-6 items-center">
+        {juzgada && (
+          <span
+            className={cn(
+              'grito-veredicto rounded-full px-3 py-0.5 text-xs font-bold tracking-widest uppercase shadow',
+              evento.eraMentira ? 'bg-red-600 text-white' : 'bg-emerald-600 text-white',
+            )}
+          >
+            {evento.eraMentira ? '¡Mentira!' : 'Era verdad'}
+          </span>
+        )}
+      </span>
+      {etapa === 'recoge' ? (
+        <Viajan hacia={evento.seLlevo} ms={MS_RECOGE}>
+          {cartas}
+        </Viajan>
+      ) : (
+        cartas
+      )}
+      <p className="min-h-[2.5em] text-sm text-white drop-shadow">
+        {etapa === 'grito' ? (
+          <>
+            <b>{quien(evento.acusador) === 'tú' ? 'Gritaste' : `${nombres[evento.acusador]} grita`}</b>{' '}
+            «¡Mentiroso!» a {evento.acusado === yo ? 'ti' : nombres[evento.acusado]}…
+          </>
+        ) : juzgada ? (
+          <>
+            {evento.acusado === yo ? 'Dijiste' : `${nombres[evento.acusado]} dijo`}{' '}
+            {cantidadDeRango(evento.cartas.length, evento.rango)}.{' '}
+            <b>
+              {evento.seLlevo === yo ? 'Te llevas' : `${quien(evento.seLlevo)} se lleva`} la pila
+            </b>{' '}
+            ({evento.cartasDeLaPila})
+          </>
+        ) : (
+          <>Dijo {cantidadDeRango(evento.cartas.length, evento.rango)}…</>
+        )}
       </p>
     </div>
   )

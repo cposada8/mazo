@@ -400,21 +400,32 @@
   .carta-volteada {
     animation: carta-voltea 0.45s ease-out both;
   }
-  /*
-   * El Mentiroso (2026-11-05): a play's cards fly from the seat that threw
-   * them to the middle of the table — --desde-x / --desde-y say from where —
-   * so who threw what is seen, not read.
-   */
-  .jugada-llega {
-    animation: jugada-llega 0.5s cubic-bezier(0.2, 0.7, 0.3, 1) both;
+  /* El Mentiroso: the verdict stamps down once the cards are face up. */
+  .grito-veredicto {
+    animation: veredicto 0.4s cubic-bezier(0.3, 1.5, 0.5, 1) both;
   }
-  @keyframes jugada-llega {
+  @keyframes veredicto {
     from {
-      transform: translate(var(--desde-x, 0), var(--desde-y, 0)) scale(0.45) rotate(-12deg);
-      opacity: 0.4;
+      scale: 1.8;
+      opacity: 0;
     }
     to {
-      transform: none;
+      scale: 1;
+      opacity: 1;
+    }
+  }
+  /* El Mentiroso: a shout pops out of the seat that made it. */
+  .grito {
+    animation: grito 0.35s cubic-bezier(0.3, 1.6, 0.5, 1) both;
+  }
+  /* Scale and opacity only: where the bubble sits is its own `translate`. */
+  @keyframes grito {
+    from {
+      scale: 0.4;
+      opacity: 0;
+    }
+    to {
+      scale: 1;
       opacity: 1;
     }
   }
@@ -428,7 +439,8 @@
   }
   @media (prefers-reduced-motion: reduce) {
     .carta-volteada,
-    .jugada-llega {
+    .grito,
+    .grito-veredicto {
       animation: none;
     }
   }
