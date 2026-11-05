@@ -1,6 +1,6 @@
 # Project status — pick up here
 
-Last updated after Phase 76 — **Carioca is complete**, and Milestone 8 (el Mentiroso) has begun.
+Last updated after Phase 77 — **Carioca is complete**, and Milestone 8 (el Mentiroso) has begun.
 
 Read this first, then `mission.md` for the why, `carioca-rules.md` for the game,
 `tech-stack.md` for the stack, and `roadmap.md` for what comes next. This file is
@@ -14,7 +14,7 @@ doc is worse than none.
 
 ## Where things stand
 
-Phases 0–76 are numbered and **all of them are done: Milestones 1 through 7
+Phases 0–77 are numbered and **all of them are done: Milestones 1 through 7
 are complete, and Carioca is finished as a game.** Open the site on a phone,
 get dealt an alias, create a partida — you host, a short code is dealt,
 three bots sit down at the level you pick — or join one with a code, and
@@ -113,6 +113,7 @@ engine's separation".
 | 74 | The rebarajada limit as a lobby choice (0–5, sin límite); estricta by default | ✅ |
 | 75 | Two games, one engine: `lib/engine/comun/` and `lib/engine/carioca/` | ✅ |
 | 76 | El Mentiroso's engine: `lib/engine/mentiroso/` | ✅ |
+| 77 | El Embustero, el Mentiroso's baseline bot, and its soak | ✅ |
 
 - **Repo:** https://github.com/cposada8/mazo
 - **Live:** https://mazo-six.vercel.app — **online play is in production**
@@ -125,7 +126,7 @@ engine's separation".
   public, no login.
 - **Deploys:** work goes to `dev`, which builds by itself. Production changes
   only by merging `dev` into `main`. Nothing else deploys `main`.
-- **Tests:** 799, all green (the run takes ~45s, mostly the soak). `npm run test:run`, `npx tsc --noEmit`, `npm run lint`.
+- **Tests:** 808, all green (the run takes ~45s, mostly the soak). `npm run test:run`, `npx tsc --noEmit`, `npm run lint`.
 - **Database:** SQLite via Prisma 7 + libSQL. Local dev uses `prisma/dev.db`;
   **online is live on Turso** — group `mazo` in `aws-us-east-1`, so it sits
   beside Vercel's functions and leaves `fwc_2026`'s group alone. **Two
@@ -175,6 +176,8 @@ lib/engine/          The games. Pure TypeScript. Two halves since Phase 75;
     escenario.ts     A ronda dealt from cards you name, rest filled by seed.
     vista.ts         What one seat may see. Bots and the server both take it.
 
+lib/bots/mentiroso/  El Mentiroso's bots (Phase 77): El Embustero, and
+                     jugarMentirosoConBots for a whole bots-only partida.
 lib/bots/             Clients of the engine. Nothing in the engine imports these.
   catalogo.ts        Every bot by id, with its level: Fácil, Normal, Difícil.
   agrupar.ts         The grouping search, and how useful a card is.
@@ -301,7 +304,8 @@ credentials are in `.env.turso`; `vercel env pull` masks them.
    and `lib/engine/carioca/`, no behaviour change.
 2. ~~Phase 76 — El motor del Mentiroso.~~ ✅ Done, on dev:
    `lib/engine/mentiroso/`, every rule tested.
-3. Phase 77 — Un bot que miente, and a soak that proves every partida ends.
+3. ~~Phase 77 — Un bot que miente.~~ ✅ Done, on dev: El Embustero, and
+   1,000 bot partidas that all end.
 4. Phase 78 — La puerta sabe que hay dos juegos: `Partida.juego`.
 5. Phase 79 — La mesa del Mentiroso, against bots.
 6. Phase 80 — El Mentiroso entre varios.

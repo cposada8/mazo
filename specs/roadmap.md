@@ -3100,7 +3100,7 @@ for every hidden card id. 26 tests in `mentiroso.test.ts`, one of them a
 whole blind partida checking all 52 cards at every step; the purity test
 picked up the new folder by itself. 799 tests.
 
-### Phase 77 — Un bot que miente
+### Phase 77 — Un bot que miente ✅
 A baseline bot, the El Codicioso of this game: plays the rank in turn
 truthfully when it holds it, and when it does not, lies with as few cards
 as it can spare; calls when what it can see makes the claim impossible
@@ -3111,6 +3111,22 @@ the server.
 **Done when:** a soak of 1,000 bot partidas at 3 to 6 seats finishes every
 one — the game has no stalemate, and this proves it — and a bot never
 calls a play it could know is true.
+
+**Done.** El Embustero (`lib/bots/mentiroso/`, imported as
+`@/lib/bots/mentiroso`): every copy of the rank in turn when it holds it;
+otherwise one card, the one its own coming turns will ask for last; calls
+a claim its hand makes impossible, and any play that would take a player
+out; nothing else. `jugarMentirosoConBots` plays a whole partida, the
+window resolved by asking each other seat in turn order and closing when
+nobody calls. **The done-when's last clause was not measurable as
+written:** with one deck no seat can ever *know* a play is true, so "never
+calls what it could know is true" holds of every bot vacuously. What was
+measured instead is the converse — it always calls a claim it can prove
+false — and that it never calls its own play. The soak: 1,000 partidas,
+250 at each table size, every one finished, no move refused, in about a
+tenth of a second; on average 33–40 plays and two calls a partida, the
+longest 101. Plain play, as a baseline should be: the calls are rare
+because the bot only calls on certainty. 9 tests.
 
 ### Phase 78 — La puerta sabe que hay dos juegos
 The platform learns that a partida is *of* a game. `Partida.juego`
