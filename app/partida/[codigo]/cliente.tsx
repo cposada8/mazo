@@ -88,7 +88,6 @@ export function PartidaCliente({
         seed={partida.seed!}
         jugadores={partida.asientos.length}
         nombres={nombres}
-        segundosVentana={partida.segundosVentana}
         segundosBot={partida.segundosBot}
         onSalir={() => void salir(true)}
       />
@@ -223,11 +222,12 @@ function MesaMentirosoDelServidor({
       vista={mesa.vista}
       eventos={mesa.eventos}
       nombres={mesa.asientos.map((asiento) => asiento.alias)}
-      ventanaHasta={mesa.ventanaHasta}
-      segundosVentana={mesa.segundosVentana}
+      plazoHasta={mesa.plazoHasta}
+      segundosDelPlazo={mesa.segundosDelPlazo}
       error={remota.error}
       onJugar={remota.onJugar}
       onMentiroso={remota.onMentiroso}
+      onCreer={remota.onCreer}
       onSalir={onSalir}
     />
   )

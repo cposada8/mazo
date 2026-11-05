@@ -9,8 +9,9 @@
  *   - a **bot's play**, `segundosBot` after its turn began;
  *   - a **person's play**, `segundosPorTurno` after theirs, played by the
  *     clock (`jugadaDelReloj`) if they let it run out;
- *   - the **window**, `segundosVentana` after a play: a bot that wants to
- *     call does so a moment into it, and if nobody calls it closes.
+ *   - a **call**, by a bot that wants to make one, a moment into a play's
+ *     window. The window itself has no length: the next play closes it
+ *     (the owner, 2026-11-05, as Plato plays it).
  *
  * **The first call counts.** Every write is conditional on the stored state
  * being the one it was computed from. Two calls sent in the same instant are
@@ -28,6 +29,7 @@ import {
   type MoveMentiroso,
   type VistaMentiroso,
   aplicarMentiroso,
+  debeAceptarOAcusar,
   estaEnJuego,
   jugadaDelReloj,
   retirarMentiroso,
@@ -46,8 +48,13 @@ export type VistaDeMesaMentiroso = {
   readonly eventos: readonly EventoMentiroso[]
   /** When the current phase began, epoch ms — a turn or a window. */
   readonly desde: number
-  /** When the open window closes, epoch ms; null while nobody's play is open. */
-  readonly ventanaHasta: number | null
+  /**
+   * When the seat in turn must have acted, epoch ms — its thinking time if a
+   * bot, its clock if a person. The table draws it as the turn's clock.
+   */
+  readonly plazoHasta: number
+  /** The length of that deadline, in seconds, to draw it as a fraction. */
+  readonly segundosDelPlazo: number
   readonly segundosBot: number
   readonly segundosPorTurno: number
   readonly segundosVentana: number
@@ -74,6 +81,8 @@ export type ResultadoMesaMentiroso =
 export type JugadaDePersona =
   | { readonly type: 'jugar'; readonly cartaIds: readonly string[] }
   | { readonly type: 'mentiroso' }
+  /** «Le creo»: accept a play that emptied its player's hand. */
+  | { readonly type: 'creer' }
 
 const INCLUIR = { asientos: true } as const
 
@@ -99,11 +108,14 @@ async function abrir(codigo: string, secreto: string) {
 
 function publicar(fila: Fila, estado: EstadoMentiroso, asiento: number): VistaDeMesaMentiroso {
   const desde = fila.turnoDesde?.getTime() ?? fila.actualizadaEn.getTime()
+  const enTurno = fila.asientos.find((a) => a.indice === estado.turno)
+  const plazo = enTurno?.esBot ? fila.segundosBot : fila.segundosPorTurno
   return {
     vista: vistaMentiroso(estado, asiento),
     eventos: JSON.parse(fila.relatos) as EventoMentiroso[],
     desde,
-    ventanaHasta: estado.fase === 'ventana' ? desde + fila.segundosVentana * 1000 : null,
+    plazoHasta: desde + plazo * 1000,
+    segundosDelPlazo: plazo,
     segundosBot: fila.segundosBot,
     segundosPorTurno: fila.segundosPorTurno,
     segundosVentana: fila.segundosVentana,
@@ -145,9 +157,11 @@ export function ponerAlDia(
   }
 
   for (let vuelta = 0; vuelta < 200 && !terminada(estado); vuelta++) {
+    // An open play: a bot that wants to call does so a moment in — before a
+    // bot in turn would play over it, so the call is never lost to the play.
     if (estado.fase === 'ventana') {
       const jugo = estado.ultimaJugada!.asiento
-      const cuandoAcusa = desde + Math.min(MS_HASTA_QUE_ACUSA_UN_BOT, fila.segundosVentana * 500)
+      const cuandoAcusa = desde + Math.min(MS_HASTA_QUE_ACUSA_UN_BOT, fila.segundosBot * 500)
       let acusador: number | null = null
       for (let paso = 1; paso < estado.jugadores; paso++) {
         const asiento = (jugo + paso) % estado.jugadores
@@ -157,19 +171,22 @@ export function ponerAlDia(
           break
         }
       }
-      if (acusador !== null && ahora >= cuandoAcusa) {
+      if (acusador !== null) {
+        if (ahora < cuandoAcusa) break
         if (aplicar({ type: 'mentiroso', asiento: acusador }, cuandoAcusa)) continue
       }
-      const cierra = desde + fila.segundosVentana * 1000
-      if (ahora >= cierra && aplicar({ type: 'cerrarVentana' }, cierra)) continue
-      break
     }
 
+    // The seat in turn: a bot after its thinking time, a person when their
+    // clock runs out. Either way the play closes the window on the one before
+    // — or, if that one emptied a hand, accepts it.
     const bot = botDe(estado.turno)
     const vence = desde + (bot ? fila.segundosBot : fila.segundosPorTurno) * 1000
     if (ahora < vence) break
     const move: MoveMentiroso | null = bot
-      ? { type: 'jugar', asiento: estado.turno, cartaIds: bot.jugar(vistaMentiroso(estado, estado.turno)) }
+      ? debeAceptarOAcusar(estado)
+        ? { type: 'cerrarVentana' }
+        : { type: 'jugar', asiento: estado.turno, cartaIds: bot.jugar(vistaMentiroso(estado, estado.turno)) }
       : jugadaDelReloj(estado)
     if (!move || !aplicar(move, vence)) break
   }
@@ -249,10 +266,16 @@ export async function jugarMentirosoEnMesa(
   let fila = await avanzar(abierta.fila, ahora)
   for (let intento = 0; intento < 2; intento++) {
     const estado = JSON.parse(fila.estado!) as EstadoMentiroso
+    // «Le creo» is only the seat in turn's to say, and only to a last play.
+    if (jugada.type === 'creer' && (estado.turno !== asiento.indice || !debeAceptarOAcusar(estado))) {
+      return { ok: false, code: 'fase-equivocada', detail: 'nothing to accept' }
+    }
     const move: MoveMentiroso =
       jugada.type === 'jugar'
         ? { type: 'jugar', asiento: asiento.indice, cartaIds: jugada.cartaIds }
-        : { type: 'mentiroso', asiento: asiento.indice }
+        : jugada.type === 'creer'
+          ? { type: 'cerrarVentana' }
+          : { type: 'mentiroso', asiento: asiento.indice }
     const resultado = aplicarMentiroso(estado, move)
     if (!resultado.ok) return { ok: false, code: resultado.code, detail: resultado.detail }
 

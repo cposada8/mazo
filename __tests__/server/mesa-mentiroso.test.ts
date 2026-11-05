@@ -78,29 +78,40 @@ describe('the table on the server', () => {
     expect(vista.cartasPorAsiento.reduce((a, b) => a + b, 0)).toBe(52)
   })
 
-  it('a play opens the window, and the window closes by the clock', async () => {
+  it('a play stays open until the next play closes it', async () => {
     const { codigo, estado, secretoDe, desde } = await mesaDeTres('ventana')
     const jugador = secretoDe(estado.turno)
+    const siguiente = (estado.turno + 1) % 3
     const t0 = desde + 100
     const carta = estado.manos[estado.turno][0].id
     const jugada = await mesa.jugarMentirosoEnMesa(codigo, jugador, { type: 'jugar', cartaIds: [carta] }, t0)
     expect(jugada.ok && jugada.mesa.vista.fase).toBe('ventana')
-    expect(jugada.ok && jugada.mesa.ventanaHasta).toBe(t0 + 3000)
+    expect(jugada.ok && jugada.mesa.plazoHasta).toBe(t0 + 45_000)
 
-    expect((await leer(codigo, jugador, t0 + 2999)).vista.fase).toBe('ventana')
-    const cerrada = await leer(codigo, jugador, t0 + 3001)
-    expect(cerrada.vista.fase).toBe('jugar')
-    expect(cerrada.eventos.map((e) => e.tipo)).toEqual(['jugada', 'ventanaCerrada'])
+    // Nothing closes it but the next player — or their clock.
+    expect((await leer(codigo, jugador, t0 + 44_000)).vista.ultimaJugada!.asiento).toBe(estado.turno)
+    const despues = JSON.parse((await prisma.partida.findUnique({ where: { codigo } }))!.estado!) as EstadoMentiroso
+    const otra = await mesa.jugarMentirosoEnMesa(
+      codigo,
+      secretoDe(siguiente),
+      { type: 'jugar', cartaIds: [despues.manos[siguiente][0].id] },
+      t0 + 44_500,
+    )
+    expect(otra.ok && otra.mesa.vista.ultimaJugada!.asiento).toBe(siguiente)
+    expect(otra.ok && otra.mesa.eventos.map((e) => e.tipo)).toEqual(['jugada', 'jugada'])
   })
 
-  it('a call after the window ran out is too late', async () => {
+  it('once the next play lands, a call reaches only that one', async () => {
     const { codigo, estado, secretoDe, desde } = await mesaDeTres('tarde')
-    const jugador = secretoDe(estado.turno)
-    const otro = secretoDe((estado.turno + 1) % 3)
+    const primero = estado.turno
+    const segundo = (primero + 1) % 3
+    const tercero = (primero + 2) % 3
     const t0 = desde + 100
-    await mesa.jugarMentirosoEnMesa(codigo, jugador, { type: 'jugar', cartaIds: [estado.manos[estado.turno][0].id] }, t0)
-    const tarde = await mesa.jugarMentirosoEnMesa(codigo, otro, { type: 'mentiroso' }, t0 + 3500)
-    expect(tarde.ok ? null : tarde.code).toBe('fase-equivocada')
+    await mesa.jugarMentirosoEnMesa(codigo, secretoDe(primero), { type: 'jugar', cartaIds: [estado.manos[primero][0].id] }, t0)
+    await mesa.jugarMentirosoEnMesa(codigo, secretoDe(segundo), { type: 'jugar', cartaIds: [estado.manos[segundo][0].id] }, t0 + 500)
+    const acusacion = await mesa.jugarMentirosoEnMesa(codigo, secretoDe(tercero), { type: 'mentiroso' }, t0 + 600)
+    const ultima = acusacion.ok ? acusacion.mesa.eventos.at(-1) : null
+    expect(ultima?.tipo === 'acusacion' && ultima.acusado).toBe(segundo)
   })
 
   it('of two calls sent in the same instant, exactly one counts', async () => {

@@ -15,8 +15,6 @@ export type PropsDeMesaMentirosoLocal = {
   jugadores: number
   /** One name per seat; seat 0 is you. */
   nombres: string[]
-  /** How long a play stays open to a call. Default 3. */
-  segundosVentana?: number
   /** How long a bot takes to play. Default 2. */
   segundosBot?: number
   onSalir: () => void
@@ -27,22 +25,22 @@ export function MesaMentirosoLocal({
   seed,
   jugadores,
   nombres,
-  segundosVentana = 3,
   segundosBot = 2,
   onSalir,
   onOtra,
 }: PropsDeMesaMentirosoLocal) {
-  const mesa = useMentirosoLocal({ seed, jugadores, segundosVentana, segundosBot })
+  const mesa = useMentirosoLocal({ seed, jugadores, segundosBot })
   return (
     <MesaMentiroso
       vista={mesa.vista}
       eventos={mesa.eventos}
       nombres={nombres}
-      ventanaHasta={mesa.ventanaHasta}
-      segundosVentana={segundosVentana}
+      plazoHasta={mesa.plazoHasta}
+      segundosDelPlazo={segundosBot}
       error={mesa.error}
       onJugar={mesa.onJugar}
       onMentiroso={mesa.onMentiroso}
+      onCreer={mesa.onCreer}
       onSalir={onSalir}
       onOtra={onOtra}
     />

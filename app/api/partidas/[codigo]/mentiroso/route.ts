@@ -34,7 +34,7 @@ export async function POST(
     secreto?: string
     jugada?: JugadaDePersona
   }
-  if (!secreto || !jugada || (jugada.type !== 'jugar' && jugada.type !== 'mentiroso')) {
+  if (!secreto || !jugada || !['jugar', 'mentiroso', 'creer'].includes(jugada.type)) {
     return Response.json({ error: 'falta la identidad o la jugada' }, { status: 400 })
   }
   const resultado = await jugarMentirosoEnMesa(codigo, secreto, jugada)

@@ -69,17 +69,22 @@ the player who made the play that was called.
 made it. Only the **last** play can be called; once the next play is on the
 pile, the one before it is safe forever.
 
-### When the chance closes **(Mazo's call)**
+### When the chance closes: the next play
 
-Around a real table the call is a shout before the next player's cards land.
-Online, a fast next player — or a bot — would make calling impossible. So
-after every play there is a **window to call**: a few seconds (3 by
-default, a lobby setting like the turn clock) in which the next player
-cannot play yet and anyone may call. When it closes without a call, the
-play stands and the next turn starts.
+A play is open to a call **until the next play lands** — the owner,
+2026-11-05, the way it is played around a real table and in Plato. The
+player in turn decides: call, or play their own cards, and the moment those
+land the play before is safe forever. Everyone else may call until then.
+There is no pause of its own length: how long a play stays open is however
+long the next player takes — a bot's thinking time, or a person's clock.
+
+**A last card is not played over.** If the open play emptied its player's
+hand, the player in turn cannot simply play — that would let them out with
+nobody deciding. They call it, or accept it («Le creo»); their clock, run
+out, accepts it.
 
 If two players call at once, **the first call the server receives** is the
-one that counts; the others are simply too late.
+one that counts; the others are simply too late. **(Mazo's call)**
 
 ### What a call turns over
 
@@ -100,7 +105,7 @@ see their own new hand, nobody else's.
 ## Going out
 
 A player **goes out** when their hand is empty and their last play
-**survives**: the window closes with no call, or a call finds it true. If a
+**survives**: the next player accepts it, or a call finds it true. If a
 call finds it a lie, they take the pile and play on.
 
 Going out with a true last play that was called gives the pile to the caller,

@@ -14,64 +14,61 @@ afterEach(() => {
   vi.useRealTimers()
 })
 
+/** The person, playing one card whenever it is their turn — or accepting a last play. */
+function turnoDeLaPersona(result: { current: ReturnType<typeof useMentirosoLocal> }) {
+  const v = result.current.vista
+  if (v.ganador !== null || v.turno !== TU_ASIENTO) return false
+  const ultima = v.fase === 'ventana' && v.ultimaJugada && v.cartasPorAsiento[v.ultimaJugada.asiento] === 0
+  act(() => (ultima ? result.current.onCreer() : result.current.onJugar([v.mano[0].id])))
+  return true
+}
+
+const esperar = (ms: number) =>
+  act(() => {
+    vi.advanceTimersByTime(ms)
+  })
+
 describe('useMentirosoLocal', () => {
   it('a whole partida, the person playing one card a turn, reaches a winner', () => {
     const { result } = renderHook(() =>
-      useMentirosoLocal({ seed: 'local-entera', jugadores: 4, segundosVentana: 3, segundosBot: 1 }),
+      useMentirosoLocal({ seed: 'local-entera', jugadores: 4, segundosBot: 1 }),
     )
     for (let paso = 0; paso < 2_000 && result.current.vista.ganador === null; paso++) {
-      const v = result.current.vista
-      if (v.fase === 'jugar' && v.turno === TU_ASIENTO) {
-        act(() => result.current.onJugar([v.mano[0].id]))
-      } else {
-        act(() => {
-          vi.advanceTimersByTime(500)
-        })
-      }
+      if (!turnoDeLaPersona(result)) esperar(500)
     }
     expect(result.current.vista.ganador).not.toBeNull()
     expect(result.current.eventos.at(-1)?.tipo).toBe('gano')
   })
 
-  it('opens a window after every play, with its deadline, and closes it', () => {
+  it("the next play closes a play's window: there is no other clock on it", () => {
     const { result } = renderHook(() =>
-      useMentirosoLocal({ seed: 'ventana', jugadores: 3, segundosVentana: 3, segundosBot: 1 }),
+      useMentirosoLocal({ seed: 'ventana', jugadores: 3, segundosBot: 1 }),
     )
-    // Let the table run until some play is in its window.
-    for (let i = 0; i < 40 && result.current.vista.fase !== 'ventana'; i++) {
+    // Run until a play by somebody else is open with the person in turn.
+    for (let i = 0; i < 80; i++) {
       const v = result.current.vista
-      if (v.turno === TU_ASIENTO && v.fase === 'jugar') {
-        act(() => result.current.onJugar([v.mano[0].id]))
-      } else {
-        act(() => {
-          vi.advanceTimersByTime(250)
-        })
-      }
+      if (v.fase === 'ventana' && v.turno === TU_ASIENTO && v.cartasPorAsiento[v.ultimaJugada!.asiento] > 0) break
+      if (!turnoDeLaPersona(result)) esperar(250)
     }
-    expect(result.current.vista.fase).toBe('ventana')
-    expect(result.current.ventanaHasta).toBeGreaterThan(Date.now())
-    act(() => {
-      vi.advanceTimersByTime(3_100)
-    })
-    expect(result.current.vista.fase).toBe('jugar')
-    expect(result.current.ventanaHasta).toBeNull()
+    const v = result.current.vista
+    expect(v.fase).toBe('ventana')
+    const abierta = v.ultimaJugada!
+    // Nothing closes it while the person thinks…
+    esperar(60_000)
+    expect(result.current.vista.ultimaJugada).toEqual(abierta)
+    // …and their play does.
+    act(() => result.current.onJugar([result.current.vista.mano[0].id]))
+    expect(result.current.vista.ultimaJugada!.asiento).toBe(TU_ASIENTO)
   })
 
   it("the person's call, made first, is the one that counts", () => {
     const { result } = renderHook(() =>
-      useMentirosoLocal({ seed: 'grito', jugadores: 3, segundosVentana: 3, segundosBot: 1 }),
+      useMentirosoLocal({ seed: 'grito', jugadores: 3, segundosBot: 1 }),
     )
-    // Wait for a bot's play to be open to a call, then call at once.
-    for (let i = 0; i < 40; i++) {
+    for (let i = 0; i < 80; i++) {
       const v = result.current.vista
       if (v.fase === 'ventana' && v.ultimaJugada?.asiento !== TU_ASIENTO) break
-      if (v.turno === TU_ASIENTO && v.fase === 'jugar') {
-        act(() => result.current.onJugar([v.mano[0].id]))
-      } else {
-        act(() => {
-          vi.advanceTimersByTime(250)
-        })
-      }
+      if (!turnoDeLaPersona(result)) esperar(100)
     }
     act(() => result.current.onMentiroso())
     const ultimo = result.current.eventos.at(-1)
@@ -90,21 +87,17 @@ describe('MesaMentirosoLocal', () => {
         onSalir={() => {}}
       />,
     )
-    // Let bots play until it is your turn.
-    for (let i = 0; i < 60 && !screen.queryByText(/Elige 1 a 4 cartas/); i++) {
-      act(() => {
-        vi.advanceTimersByTime(500)
-      })
-    }
-    expect(screen.getByText(/Elige 1 a 4 cartas: van como/)).toBeInTheDocument()
+    for (let i = 0; i < 60 && !screen.queryByText(/elige tus cartas para los/); i++) esperar(500)
+    expect(screen.getByText(/elige tus cartas para los/)).toBeInTheDocument()
+    expect(screen.getByText('Tu turno')).toBeInTheDocument()
     const cartas = screen.getAllByRole('button', { pressed: false }).filter((b) =>
       / de (picas|corazones|diamantes|tréboles)$/.test(b.getAttribute('aria-label') ?? ''),
     )
     fireEvent.click(cartas[0])
     fireEvent.click(cartas[1])
-    expect(screen.getByRole('button', { name: /^Jugar 2 como / })).toBeEnabled()
     fireEvent.click(screen.getByRole('button', { name: /^Jugar 2 como / }))
-    expect(screen.getByRole('button', { name: '¡Mentiroso!' })).toBeDisabled()
-    expect(screen.getByText(/¿Te creerán\?/)).toBeInTheDocument()
+    // Your own play: declared, and no button to call it.
+    expect(screen.getByText(/Declaraste/)).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: '¡Mentiroso!' })).toBeNull()
   })
 })

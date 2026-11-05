@@ -1,24 +1,27 @@
 'use client'
 
 /**
- * The Mentiroso table (Phase 79), drawn from one seat's view and the public
- * log — nothing else. Whoever feeds it (this browser's bots, or the server in
- * Phase 80) hands it the same things, so the table never knows which.
+ * The Mentiroso table (Phases 79–80), drawn from one seat's view and the
+ * public log — nothing else. Whoever feeds it (this browser's bots, or the
+ * server) hands it the same things, so the table never knows which.
  *
- * Phone first, held either way. From the top: the seats, each a disc with a
- * card count, amber for whoever is up; the felt, with the pile, the rank in
- * turn as the biggest thing on it, and — while a play is open to a call — a
- * draining bar and «¡Mentiroso!»; one line saying what just happened; and
- * your hand, with the one button that plays it.
+ * Phone first, held either way. Reworked once (2026-11-05) with Plato's table
+ * as the owner's reference — not its look — and with the rule that came with
+ * it: **the next play closes a play's window**. So the felt is about the one
+ * decision at hand. From the top:
  *
- * A call is shown where it happened: the called cards turn face up on the
- * felt, with who lied or told the truth and who took the pile, and stay there
- * until the next play lands. Everything a person needs to follow a call is on
- * the screen, without reading the log.
+ *   - the other seats: a disc, a little fan of backs for the hand, the count;
+ *   - the felt: the pile as one big face-down card with its count on it, what
+ *     was declared in large type, and the decision — «¡Mentiroso!», and if it
+ *     is your turn «o elige tus cartas para los ochos»; a call turns the
+ *     called cards over right there;
+ *   - «Tu turno» and the turn's clock;
+ *   - your whole hand, always all of it on screen: the overlap is computed
+ *     from the width, and a hand too big for one row takes two.
  */
 
 import { X } from 'lucide-react'
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { Carta, CartaBocaAbajo } from '@/components/carta'
 import { colorDeAsiento, iniciales } from '@/components/mesa'
 import { type Card, isNormal, rankIndex } from '@/lib/engine'
@@ -37,14 +40,19 @@ export type PropsDeMesaMentiroso = {
   eventos: readonly EventoMentiroso[]
   /** One name per seat. */
   nombres: readonly string[]
-  /** Epoch ms when the open window closes; null when none is open. */
-  ventanaHasta: number | null
-  /** The window's full length, for drawing how much of it is left. */
-  segundosVentana: number
+  /**
+   * When the seat in turn must have acted, epoch ms — a bot's thinking, or a
+   * person's clock. Null when nobody is timed (you, alone with bots).
+   */
+  plazoHasta: number | null
+  /** That deadline's full length, to draw how much of it is left. */
+  segundosDelPlazo: number
   /** The last refusal of one of your own moves, in words. */
   error?: string | null
   onJugar: (cartaIds: readonly string[]) => void
   onMentiroso: () => void
+  /** «Le creo»: accept a play that emptied its player's hand. */
+  onCreer: () => void
   onSalir: () => void
   /** Offered on the winner's screen when given. */
   onOtra?: () => void
@@ -60,38 +68,41 @@ function ordenar(mano: readonly Card[]): Card[] {
   )
 }
 
+const plural = (rango: VistaMentiroso['rangoEnTurno']) => nombreDeRango(rango).toLowerCase()
+
 export function MesaMentiroso({
   vista,
   eventos,
   nombres,
-  ventanaHasta,
-  segundosVentana,
+  plazoHasta,
+  segundosDelPlazo,
   error,
   onJugar,
   onMentiroso,
+  onCreer,
   onSalir,
   onOtra,
 }: PropsDeMesaMentiroso) {
   const yo = vista.asiento
   const [seleccion, setSeleccion] = useState<readonly string[]>([])
   const mano = useMemo(() => ordenar(vista.mano), [vista.mano])
-
-  // A selection only means something for the hand it was made in.
   const ids = useMemo(() => new Set(vista.mano.map((c) => c.id)), [vista.mano])
   const elegidas = seleccion.filter((id) => ids.has(id))
 
-  const miTurno = vista.ganador === null && vista.fase === 'jugar' && vista.turno === yo
-  const ventanaAbierta = vista.ganador === null && vista.fase === 'ventana' && ventanaHasta !== null
-  const jugadaEnVentana = ventanaAbierta ? vista.ultimaJugada : null
-  const esMiJugada = jugadaEnVentana?.asiento === yo
+  const enJuego = vista.ganador === null && !vista.sinGanador
+  const abierta = enJuego && vista.fase === 'ventana' ? vista.ultimaJugada : null
+  const esMiJugada = abierta?.asiento === yo
+  const miTurno = enJuego && vista.turno === yo
+  // The open play emptied a hand: whoever is in turn must call or accept.
+  const debeDecidir = abierta !== null && vista.cartasPorAsiento[abierta.asiento] === 0
+  const puedoJugar = miTurno && !debeDecidir
 
-  // The reveal stays on the felt from the call until the next play lands.
-  const ultimaAcusacion = [...eventos].reverse().find((e) => e.tipo === 'acusacion' || e.tipo === 'jugada')
-  const revelada = ultimaAcusacion?.tipo === 'acusacion' ? ultimaAcusacion : null
+  const ultima = [...eventos].reverse().find((e) => e.tipo === 'acusacion' || e.tipo === 'jugada')
+  const revelada = ultima?.tipo === 'acusacion' ? ultima : null
   const narracion = eventos.length > 0 ? textoDeEvento(eventos.at(-1)!, nombres, yo) : null
 
   const alternar = (id: string) => {
-    if (!miTurno) return
+    if (!puedoJugar) return
     setSeleccion((actual) => {
       const vigente = actual.filter((x) => ids.has(x))
       if (vigente.includes(id)) return vigente.filter((x) => x !== id)
@@ -106,16 +117,20 @@ export function MesaMentiroso({
     setSeleccion([])
   }
 
-  const otros = Array.from({ length: vista.cartasPorAsiento.length }, (_, i) => (yo + 1 + i) % vista.cartasPorAsiento.length).filter(
-    (asiento) => asiento !== yo,
-  )
+  const total = vista.cartasPorAsiento.length
+  const otros = Array.from({ length: total - 1 }, (_, i) => (yo + 1 + i) % total)
+  const retirados = vista.retirados ?? []
 
   return (
     <main
       className="text-tinta fixed inset-0 z-10 flex flex-col overflow-hidden bg-[oklch(0.18_0.02_160)]"
-      style={{ ['--carta-md' as string]: 'clamp(3rem, 14dvh, 5.5rem)', ['--carta-sm' as string]: 'clamp(2.25rem, 10dvh, 4rem)' }}
+      style={{
+        ['--carta-md' as string]: 'clamp(3.25rem, 13dvh, 6rem)',
+        ['--carta-sm' as string]: 'clamp(2.5rem, 11dvh, 4.5rem)',
+        ['--carta-xs' as string]: 'clamp(0.9rem, 3.2dvh, 1.4rem)',
+      }}
     >
-      {/* The seats, and the way out. */}
+      {/* The other seats, and the way out. */}
       <header className="flex shrink-0 items-start gap-2 px-3 pt-2">
         <button
           type="button"
@@ -125,62 +140,81 @@ export function MesaMentiroso({
         >
           <X className="size-5" />
         </button>
-        <ul className="flex flex-1 flex-wrap justify-center gap-x-3 gap-y-1">
+        <ul className="flex flex-1 flex-wrap justify-center gap-x-2 gap-y-1">
           {otros.map((asiento) => (
             <Ficha
               key={asiento}
               nombre={nombres[asiento]}
               asiento={asiento}
               cartas={vista.cartasPorAsiento[asiento]}
-              enTurno={vista.ganador === null && vista.fase === 'jugar' && vista.turno === asiento}
-              enVentana={jugadaEnVentana?.asiento === asiento}
+              enTurno={enJuego && vista.turno === asiento}
+              suJugadaAbierta={abierta?.asiento === asiento}
+              retirado={retirados.includes(asiento)}
             />
           ))}
         </ul>
       </header>
 
-      {/* The felt: the pile, the rank in turn, the window or the reveal. */}
+      {/* The felt: the pile, what was declared, and the decision at hand. */}
       <section className="relative mx-3 my-2 flex min-h-0 flex-1 items-center justify-center rounded-[2rem] border border-[oklch(0.72_0.09_80/0.45)] bg-[radial-gradient(ellipse_70%_65%_at_50%_42%,oklch(0.46_0.085_158)_0%,oklch(0.36_0.075_160)_55%,oklch(0.27_0.06_162)_100%)] shadow-[0_0_0_6px_#3a2418,0_10px_30px_rgba(0,0,0,0.6)]">
-        <div className="flex w-full max-w-md flex-col items-center gap-[1.5dvh] px-4 text-center">
-          {revelada ? (
+        <div className="flex w-full max-w-md flex-col items-center gap-[1.6dvh] px-4 text-center">
+          {revelada && !abierta ? (
             <Revelacion evento={revelada} nombres={nombres} yo={yo} />
           ) : (
-            <Pila cantidad={vista.pila} ultima={vista.ultimaJugada?.cantidad ?? 0} />
+            <Pila cantidad={vista.pila} />
           )}
 
-          {jugadaEnVentana ? (
-            <div className="flex w-full flex-col items-center gap-2">
-              <p className="text-sm">
-                {esMiJugada ? 'Pusiste' : `${nombres[jugadaEnVentana.asiento]} dice`}{' '}
-                <b>{cantidadDeRango(jugadaEnVentana.cantidad, jugadaEnVentana.rango)}</b>
-                {esMiJugada ? '. ¿Te creerán?' : '. ¿Le crees?'}
-              </p>
-              <BarraDeVentana
-                key={`${vista.numeroDeJugada}`}
-                hasta={ventanaHasta!}
-                segundos={segundosVentana}
-              />
-              <button
-                type="button"
-                onClick={onMentiroso}
-                disabled={esMiJugada}
-                className="w-full max-w-xs rounded-xl bg-red-600 px-6 py-[1.6dvh] text-lg font-bold tracking-wide text-white shadow-lg transition active:scale-95 disabled:opacity-30"
-              >
-                ¡Mentiroso!
-              </button>
-            </div>
+          {abierta ? (
+            <p className="text-[clamp(1rem,2.6dvh,1.4rem)] leading-snug font-semibold">
+              {esMiJugada ? 'Declaraste' : `${nombres[abierta.asiento]} declaró`}{' '}
+              {cantidadDeRango(abierta.cantidad, abierta.rango)}
+              {debeDecidir && !esMiJugada && (
+                <span className="text-tinta-suave block text-sm font-normal">
+                  y se quedó sin cartas
+                </span>
+              )}
+            </p>
           ) : (
-            vista.ganador === null && (
-              <div className="flex flex-col items-center">
-                <span className="text-tinta-suave text-xs tracking-widest uppercase">Toca</span>
-                <span className="text-4xl font-bold tracking-tight">
-                  {nombreDeRango(vista.rangoEnTurno)}
-                </span>
-                <span className="text-tinta-suave text-xs">
-                  {vista.turno === yo ? 'Te toca a ti' : `Juega ${nombres[vista.turno]}`}
-                </span>
-              </div>
+            enJuego && (
+              <p className="text-tinta-suave text-sm">
+                {vista.turno === yo ? 'Juegas tú' : `Juega ${nombres[vista.turno]}`}
+              </p>
             )
+          )}
+
+          {abierta && !esMiJugada && retirados.includes(yo) === false && (
+            <button
+              type="button"
+              onClick={onMentiroso}
+              className="w-full max-w-xs rounded-xl bg-red-600 px-6 py-[1.5dvh] text-lg font-bold tracking-wide text-white shadow-lg transition active:scale-95"
+            >
+              ¡Mentiroso!
+            </button>
+          )}
+
+          {miTurno && debeDecidir && (
+            <button
+              type="button"
+              onClick={onCreer}
+              className="border-tinta-suave/50 w-full max-w-xs rounded-xl border bg-black/25 px-6 py-[1.2dvh] text-base font-semibold transition active:scale-95"
+            >
+              Le creo
+            </button>
+          )}
+
+          {enJuego && (
+            <p className="text-sm">
+              {puedoJugar ? (
+                <>
+                  {abierta && 'o '}elige tus cartas para los{' '}
+                  <b className="text-[1.15em]">{plural(vista.rangoEnTurno)}</b>
+                </>
+              ) : (
+                <span className="text-tinta-suave">
+                  Toca: <b className="text-tinta">{plural(vista.rangoEnTurno)}</b>
+                </span>
+              )}
+            </p>
           )}
         </div>
       </section>
@@ -196,59 +230,40 @@ export function MesaMentiroso({
         {error ?? narracion}
       </p>
 
-      {/* Your hand, and the button that plays it. */}
-      <footer className="shrink-0 px-3 pb-[max(0.5rem,env(safe-area-inset-bottom))]">
-        <div className="mb-1 flex items-center justify-between gap-2 text-xs">
-          <span className="text-tinta-suave">
-            Tu mano · {vista.mano.length} {vista.mano.length === 1 ? 'carta' : 'cartas'}
-          </span>
-          {miTurno && (
+      <footer className="flex shrink-0 flex-col gap-1.5 px-3 pb-[max(0.5rem,env(safe-area-inset-bottom))]">
+        <div className="flex min-h-9 items-center justify-between gap-2">
+          {miTurno ? (
+            <span className="flex items-center gap-2">
+              <span className="rounded-full bg-sky-600 px-3 py-1 text-sm font-semibold text-white">
+                Tu turno
+              </span>
+              {plazoHasta !== null && (
+                <Reloj
+                  key={`${vista.numeroDeJugada}-${vista.fase}`}
+                  hasta={plazoHasta}
+                  segundos={segundosDelPlazo}
+                />
+              )}
+            </span>
+          ) : (
+            <span className="text-tinta-suave text-xs">
+              Tu mano · {vista.mano.length} {vista.mano.length === 1 ? 'carta' : 'cartas'}
+            </span>
+          )}
+          {puedoJugar && elegidas.length > 0 && (
             <button
               type="button"
               onClick={jugar}
-              disabled={elegidas.length === 0}
-              className="rounded-md bg-amber-500 px-3 py-1.5 text-sm font-semibold text-black shadow transition active:scale-95 disabled:opacity-40"
+              className="rounded-md bg-amber-500 px-4 py-2 text-sm font-semibold text-black shadow transition active:scale-95"
             >
-              {elegidas.length === 0
-                ? `Elige 1 a 4 cartas: van como ${PLURAL_CORTO(vista.rangoEnTurno)}`
-                : `Jugar ${elegidas.length} como ${PLURAL_CORTO(vista.rangoEnTurno)}`}
+              Jugar {elegidas.length} como {plural(vista.rangoEnTurno)}
             </button>
           )}
         </div>
-        <div className="flex overflow-x-auto pt-3 pb-1">
-          <div className="mx-auto flex">
-            {mano.map((carta, i) => {
-              const elegida = elegidas.includes(carta.id)
-              return (
-                <button
-                  key={carta.id}
-                  type="button"
-                  onClick={() => alternar(carta.id)}
-                  aria-pressed={elegida}
-                  aria-label={`${describir(carta)}${elegida ? ', elegida' : ''}`}
-                  disabled={!miTurno}
-                  className={cn(
-                    'shrink-0 rounded-md transition-transform',
-                    // A fan only as tight as the hand needs: a few cards sit
-                    // side by side, a big hand overlaps to its corners.
-                    i > 0 &&
-                      (mano.length <= 5
-                        ? 'ml-1'
-                        : mano.length <= 9
-                          ? '-ml-[calc(var(--carta-md)*0.25)]'
-                          : '-ml-[calc(var(--carta-md)*0.42)]'),
-                    elegida && '-translate-y-3 ring-2 ring-amber-400',
-                  )}
-                >
-                  <Carta card={carta} />
-                </button>
-              )
-            })}
-          </div>
-        </div>
+        <Mano mano={mano} elegidas={elegidas} activa={puedoJugar} onTocar={alternar} />
       </footer>
 
-      {vista.ganador !== null && (
+      {(vista.ganador !== null || vista.sinGanador) && (
         <Ganador
           ganador={vista.ganador}
           nombres={nombres}
@@ -261,12 +276,95 @@ export function MesaMentiroso({
   )
 }
 
-const PLURAL_CORTO = (rango: VistaMentiroso['rangoEnTurno']) => nombreDeRango(rango).toLowerCase()
-
 function describir(carta: Card): string {
   if (!isNormal(carta)) return 'Comodín'
   const PINTA = { spades: 'picas', hearts: 'corazones', diamonds: 'diamantes', clubs: 'tréboles' }
   return `${carta.rank} de ${PINTA[carta.suit]}`
+}
+
+/**
+ * The whole hand, on screen, always. The overlap is computed from the width
+ * the footer has: as loose as fits, never so tight a card's corner is hidden —
+ * and past that, two rows. A hand never scrolls sideways, because a card you
+ * cannot see is a card you forget you hold.
+ */
+function Mano({
+  mano,
+  elegidas,
+  activa,
+  onTocar,
+}: {
+  mano: readonly Card[]
+  elegidas: readonly string[]
+  activa: boolean
+  onTocar: (id: string) => void
+}) {
+  const caja = useRef<HTMLDivElement>(null)
+  const [medidas, setMedidas] = useState({ ancho: 0, carta: 0 })
+
+  useLayoutEffect(() => {
+    const nodo = caja.current
+    if (!nodo) return
+    const medir = () => {
+      const primera = nodo.querySelector<HTMLElement>('[data-carta]')
+      setMedidas({ ancho: nodo.clientWidth, carta: primera?.offsetWidth ?? 0 })
+    }
+    medir()
+    // Where the platform has no ResizeObserver (old browsers, the test DOM),
+    // the window's own resize is close enough: the footer spans it.
+    if (typeof ResizeObserver === 'undefined') {
+      window.addEventListener('resize', medir)
+      return () => window.removeEventListener('resize', medir)
+    }
+    const observador = new ResizeObserver(medir)
+    observador.observe(nodo)
+    return () => observador.disconnect()
+  }, [mano.length])
+
+  // How far apart cards sit in a row of `n`: their width plus a gap if there
+  // is room, less if not.
+  const paso = (n: number) =>
+    n <= 1 || medidas.carta === 0
+      ? medidas.carta + 4
+      : Math.min(medidas.carta + 4, (medidas.ancho - medidas.carta) / (n - 1))
+  // A corner needs about a third of a card showing to be read.
+  const dosFilas = medidas.carta > 0 && paso(mano.length) < medidas.carta * 0.32
+  const filas = dosFilas
+    ? [mano.slice(0, Math.ceil(mano.length / 2)), mano.slice(Math.ceil(mano.length / 2))]
+    : [mano]
+
+  return (
+    <div ref={caja} className="flex flex-col items-center pt-3">
+      {filas.map((fila, f) => {
+        const p = paso(fila.length)
+        return (
+          <div key={f} className={cn('flex', f > 0 && '-mt-[calc(var(--carta-md)*0.45)]')}>
+            {fila.map((carta, i) => {
+              const elegida = elegidas.includes(carta.id)
+              return (
+                <button
+                  key={carta.id}
+                  data-carta
+                  type="button"
+                  onClick={() => onTocar(carta.id)}
+                  aria-pressed={elegida}
+                  aria-label={`${describir(carta)}${elegida ? ', elegida' : ''}`}
+                  disabled={!activa}
+                  style={i > 0 && medidas.carta > 0 ? { marginLeft: p - medidas.carta } : undefined}
+                  className={cn(
+                    'shrink-0 rounded-md transition-transform',
+                    elegida && '-translate-y-3 ring-2 ring-amber-400',
+                  )}
+                >
+                  <Carta card={carta} />
+                </button>
+              )
+            })}
+          </div>
+        )
+      })}
+    </div>
+  )
 }
 
 function Ficha({
@@ -274,63 +372,65 @@ function Ficha({
   asiento,
   cartas,
   enTurno,
-  enVentana,
+  suJugadaAbierta,
+  retirado,
 }: {
   nombre: string
   asiento: number
   cartas: number
   enTurno: boolean
-  enVentana: boolean
+  suJugadaAbierta: boolean
+  retirado: boolean
 }) {
   return (
-    <li className="flex w-[4.75rem] flex-col items-center gap-0.5 text-center">
+    <li
+      className={cn('flex w-[5rem] flex-col items-center gap-0.5 text-center', retirado && 'opacity-40')}
+    >
       <span
         className={cn(
-          'relative flex size-[clamp(1.75rem,7dvh,2.5rem)] items-center justify-center rounded-full text-sm font-semibold text-white',
-          enTurno && 'ring-2 ring-amber-400 ring-offset-2 ring-offset-black',
-          enVentana && 'ring-2 ring-red-400 ring-offset-2 ring-offset-black',
+          'relative flex size-[clamp(1.75rem,6.5dvh,2.5rem)] items-center justify-center rounded-full text-sm font-semibold text-white',
+          enTurno && 'ring-2 ring-sky-400 ring-offset-2 ring-offset-black',
+          suJugadaAbierta && 'ring-2 ring-red-400 ring-offset-2 ring-offset-black',
         )}
         style={{ background: colorDeAsiento(asiento) }}
       >
         {iniciales(nombre)}
-        <span className="absolute -right-1.5 -bottom-1 min-w-5 rounded-full bg-black/80 px-1 text-[0.65rem] leading-4 tabular-nums">
-          {cartas}
-        </span>
       </span>
-      <span className="text-tinta-suave line-clamp-2 text-[0.7rem] leading-tight">{nombre}</span>
+      <span className="text-tinta-suave line-clamp-1 text-[0.7rem] leading-tight">{nombre}</span>
+      {/* The hand as a little fan of backs: how big it is, at a glance. */}
+      <span className="flex items-center gap-1" aria-label={`${cartas} cartas`}>
+        <span className="flex">
+          {Array.from({ length: Math.min(cartas, 6) }, (_, i) => (
+            <CartaBocaAbajo
+              key={i}
+              size="xs"
+              className={cn(i > 0 && '-ml-[calc(var(--carta-xs)*0.55)]')}
+            />
+          ))}
+        </span>
+        <span className="text-[0.7rem] tabular-nums">{retirado ? 'se fue' : cartas}</span>
+      </span>
     </li>
   )
 }
 
-/** The pile, face down, its count on it. The top play is drawn a little apart. */
-function Pila({ cantidad, ultima }: { cantidad: number; ultima: number }) {
+/** The pile: one big face-down card with the count on it, a few more under it. */
+function Pila({ cantidad }: { cantidad: number }) {
   if (cantidad === 0) {
     return (
-      <div className="text-tinta-tenue flex h-[var(--carta-sm)] items-center text-xs">
+      <div className="text-tinta-tenue flex h-[var(--carta-md)] items-center text-sm">
         La pila está vacía
       </div>
     )
   }
-  const debajo = Math.min(3, cantidad - ultima)
   return (
-    <div className="flex flex-col items-center gap-1" aria-label={`La pila: ${cantidad} cartas`}>
-      <div className="relative flex">
-        {Array.from({ length: debajo }, (_, i) => (
-          <CartaBocaAbajo key={`d${i}`} size="sm" className={cn(i > 0 && '-ml-[calc(var(--carta-sm)*0.62)]')} />
-        ))}
-        {Array.from({ length: Math.min(ultima, 4) }, (_, i) => (
-          <CartaBocaAbajo
-            key={`u${i}`}
-            size="sm"
-            className={cn(
-              debajo > 0 || i > 0 ? '-ml-[calc(var(--carta-sm)*0.5)]' : '',
-              '-translate-y-1 rotate-3',
-            )}
-          />
-        ))}
-      </div>
-      <span className="text-tinta-suave text-xs tabular-nums">
-        {cantidad} {cantidad === 1 ? 'carta' : 'cartas'} en la pila
+    <div className="relative" aria-label={`La pila: ${cantidad} cartas`}>
+      {cantidad > 1 && (
+        <CartaBocaAbajo className="absolute top-0 left-0 translate-x-1.5 -translate-y-1 rotate-6 opacity-80" />
+      )}
+      <CartaBocaAbajo className="relative" />
+      <span className="absolute -bottom-3 left-1/2 flex size-8 -translate-x-1/2 items-center justify-center rounded-full bg-black/85 text-sm font-bold tabular-nums ring-2 ring-white/20">
+        {cantidad}
       </span>
     </div>
   )
@@ -370,7 +470,7 @@ function Revelacion({
           />
         ))}
       </div>
-      <p className="text-xs">
+      <p className="text-sm">
         {evento.acusado === yo ? 'Dijiste' : `${nombres[evento.acusado]} dijo`}{' '}
         {cantidadDeRango(evento.cartas.length, evento.rango)}.{' '}
         <b>
@@ -382,34 +482,29 @@ function Revelacion({
   )
 }
 
-/**
- * How much of the window is left, as a bar that drains. Keyed by the play, so
- * a new window restarts it; a CSS animation does the draining, and a page
- * that mounts late starts it partway through.
- */
-function BarraDeVentana({ hasta, segundos }: { hasta: number; segundos: number }) {
-  // The clock is read in effects and the initializer, never while rendering.
+/** The turn's clock, as a bar that drains. Keyed by the turn, so a new one restarts it. */
+function Reloj({ hasta, segundos }: { hasta: number; segundos: number }) {
   const [inicio] = useState(() => Date.now())
   const [ahora, setAhora] = useState(inicio)
   useEffect(() => {
-    const t = setInterval(() => setAhora(Date.now()), 250)
+    const t = setInterval(() => setAhora(Date.now()), 500)
     return () => clearInterval(t)
   }, [])
   const restante = Math.max(0, hasta - inicio) / 1000
-  const segundosQuedan = Math.max(0, Math.ceil((hasta - ahora) / 1000))
+  const quedan = Math.max(0, Math.ceil((hasta - ahora) / 1000))
   return (
-    <div className="flex w-full max-w-xs items-center gap-2" aria-label={`Quedan ${segundosQuedan} segundos para acusar`}>
-      <div className="h-2 flex-1 overflow-hidden rounded-full bg-white/15">
-        <div
-          className="ventana-agota h-full origin-left rounded-full bg-red-400"
+    <span className="flex w-24 items-center gap-1.5" aria-label={`Quedan ${quedan} segundos`}>
+      <span className="h-1.5 flex-1 overflow-hidden rounded-full bg-white/15">
+        <span
+          className="ventana-agota block h-full origin-left rounded-full bg-amber-400"
           style={{
             animationDuration: `${segundos}s`,
             animationDelay: `-${Math.max(0, segundos - restante)}s`,
           }}
         />
-      </div>
-      <span className="text-tinta-suave w-4 text-right text-xs tabular-nums">{segundosQuedan}</span>
-    </div>
+      </span>
+      <span className="text-tinta-suave w-5 text-right text-xs tabular-nums">{quedan}</span>
+    </span>
   )
 }
 
@@ -420,7 +515,7 @@ function Ganador({
   onOtra,
   onSalir,
 }: {
-  ganador: number
+  ganador: number | null
   nombres: readonly string[]
   yo: number
   onOtra?: () => void
@@ -431,10 +526,14 @@ function Ganador({
       <div className="bg-background text-foreground flex w-full max-w-xs flex-col items-center gap-4 rounded-xl border p-6 text-center">
         <p className="text-muted-foreground text-xs tracking-widest uppercase">Fin de la partida</p>
         <p className="text-2xl font-semibold">
-          {ganador === yo ? '¡Ganaste!' : `Ganó ${nombres[ganador]}`}
+          {ganador === null ? 'Sin ganador' : ganador === yo ? '¡Ganaste!' : `Ganó ${nombres[ganador]}`}
         </p>
         <p className="text-muted-foreground text-sm">
-          {ganador === yo ? 'Te quedaste sin cartas.' : 'Se quedó sin cartas.'}
+          {ganador === null
+            ? 'Quedaron muy pocos en la mesa para seguir.'
+            : ganador === yo
+              ? 'Te quedaste sin cartas.'
+              : 'Se quedó sin cartas.'}
         </p>
         <div className="flex w-full flex-col gap-2">
           {onOtra && (

@@ -3190,9 +3190,23 @@ hidden card. The local transport is `app/mentiroso/useMentirosoLocal.ts`;
 a bot that wants to call waits a seeded third to four-fifths of the window,
 so a person who sees it first can beat it. `/pruebas/mentiroso` deals one
 from a seed. In the browser, upright and on its side, whole partidas to a
-winner with calls both ways. **Left for a second pass**, after the owner
-sent Plato's table as inspiration: a big hand overflows sideways and has to
-be scrolled; the felt is mostly empty while the action sits small in it.
+winner with calls both ways.
+
+**Reworked the same day**, with the owner's photo of Plato's table as a
+reference (not a look to copy) and the rule that came with it — **the next
+play closes a play's window** (the owner: «se cierra cuando el siguiente
+jugador juega»). There is no window of its own length any more: the seat in
+turn calls or plays, and its play makes the one before safe; a play that
+emptied a hand cannot be played over — it is called or accepted («Le
+creo»), and the clock accepts it. `segundosVentana` is left in the schema,
+unused; the lobby's Mentiroso clocks are now the time per play and the
+bots' thinking. On the table: the whole hand always on screen (the overlap
+computed from the width, two rows past a third of a card), the pile as one
+big face-down card with its count, «X declaró dos sietes» large,
+«¡Mentiroso!» and — on your turn — «o elige tus cartas para los ochos»,
+«Tu turno» with its clock, and the other hands as little fans of backs.
+Checked upright and on its side: a 15-card hand in two rows, nothing off
+screen, no sideways scroll.
 
 ### Phase 80 — El Mentiroso entre varios ✅
 Several people at one table, the server the referee: plays and calls go to

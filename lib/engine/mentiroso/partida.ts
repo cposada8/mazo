@@ -6,18 +6,19 @@
  * decides: a move is accepted or refused with a reason, and an accepted move
  * returns a new state.
  *
- * A turn has two phases:
+ * Two phases:
  *
- *   'jugar'   — the seat in turn puts 1–4 cards on the pile, announced as the
- *               rank in turn.
- *   'ventana' — that play is on the pile and open to a call. Nobody may play
- *               yet. It ends with a call («¡Mentiroso!») or with the window
- *               being closed.
+ *   'jugar'   — nothing is open to a call: the start, and right after a call.
+ *               The seat in turn plays 1–4 cards, announced as the rank in turn.
+ *   'ventana' — the last play is on the pile and open to a call by anyone but
+ *               who made it. **The next player's play closes it** (the owner,
+ *               2026-11-05, as Plato plays it): the seat in turn may call or
+ *               play, and the moment its cards land the play before is safe.
  *
- * How long a window lasts is not a rule but a clock, so it is not here: the
- * engine knows a window is open and what closes it, and whoever keeps time
- * (the browser for a bots-only table, the server online) sends
- * `cerrarVentana` when it has run out.
+ * One exception keeps a last card honest. If the open play emptied its
+ * player's hand, the seat in turn cannot simply play over it — that would let
+ * them out unchallenged by doing nothing. It must call, or accept with
+ * `cerrarVentana` («Le creo»), which is also what the player's clock sends.
  */
 
 import { construirBaraja } from '../comun/baraja'
@@ -116,6 +117,8 @@ export type CodigoDeRechazo =
   | 'carta-que-no-tienes'
   | 'jugada-propia'
   | 'asiento-invalido'
+  /** The open play emptied a hand: call it or accept it, but do not play over it. */
+  | 'ultima-jugada-pendiente'
 
 export type ResultadoMentiroso =
   | { readonly ok: true; readonly estado: EstadoMentiroso }
@@ -191,9 +194,6 @@ function jugar(
   asiento: number,
   cartaIds: readonly string[],
 ): ResultadoMentiroso {
-  if (estado.fase !== 'jugar') {
-    return rechazo('fase-equivocada', 'a play is waiting for its window to close')
-  }
   if (asiento !== estado.turno) {
     return rechazo('no-es-tu-turno', `seat ${estado.turno} is in turn, not ${asiento}`)
   }
@@ -208,6 +208,16 @@ function jugar(
   }
   if (new Set(cartaIds).size !== cartaIds.length) {
     return rechazo('carta-repetida', 'the same card twice in one play')
+  }
+
+  // Playing closes the open window — unless the play in it emptied a hand.
+  if (estado.fase === 'ventana' && estado.ultimaJugada) {
+    if (estado.manos[estado.ultimaJugada.asiento].length === 0) {
+      return rechazo(
+        'ultima-jugada-pendiente',
+        'that play emptied a hand: call it or accept it first',
+      )
+    }
   }
 
   const mano = estado.manos[asiento]
@@ -285,8 +295,8 @@ function cerrarVentana(estado: EstadoMentiroso): ResultadoMentiroso {
   if (estado.fase !== 'ventana' || jugada === null) {
     return rechazo('fase-equivocada', 'there is no window to close')
   }
-  // Nobody called: the play stands, and if it was the last of a hand, that
-  // player is out.
+  // Accepted — by the seat in turn, or by its clock: the play stands, and if
+  // it was the last of a hand, that player is out.
   const sale = estado.manos[jugada.asiento].length === 0
   return {
     ok: true,
@@ -330,14 +340,24 @@ export function retirarMentiroso(estado: EstadoMentiroso, asiento: number): Esta
   }
 }
 
+/** The open play emptied its player's hand: the seat in turn must call or accept. */
+export function debeAceptarOAcusar(estado: EstadoMentiroso): boolean {
+  return (
+    estado.fase === 'ventana' &&
+    estado.ultimaJugada !== null &&
+    estado.manos[estado.ultimaJugada.asiento].length === 0
+  )
+}
+
 /**
- * What the player's clock plays for a person who let it run out (Phase 80):
- * one card from their hand, chosen from the seed, announced as the rank in
- * turn like any play. The same partida at the same play always picks the
- * same card, so a replay replays it.
+ * What the player's clock does for a person who let it run out (Phase 80):
+ * accepts a play that emptied a hand, or plays one card from theirs, chosen
+ * from the seed, announced as the rank in turn like any play. The same
+ * partida at the same play always picks the same card, so a replay replays it.
  */
 export function jugadaDelReloj(estado: EstadoMentiroso): MoveMentiroso | null {
-  if (terminada(estado) || estado.fase !== 'jugar') return null
+  if (terminada(estado)) return null
+  if (debeAceptarOAcusar(estado)) return { type: 'cerrarVentana' }
   const mano = estado.manos[estado.turno]
   if (mano.length === 0) return null
   const rng = createRng(`${estado.seed}#reloj#${estado.numeroDeJugada}`)

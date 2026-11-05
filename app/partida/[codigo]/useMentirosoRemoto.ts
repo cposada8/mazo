@@ -7,10 +7,10 @@
  * hands it — a seat's view, the public log, the window's deadline and two
  * callbacks — so the table cannot tell the two apart.
  *
- * Polling is everybody's clock, as in Carioca: a bot plays and a window
- * closes because time passed and somebody asked. A window is three seconds,
- * so the table asks often while one is open; a call is a race, and a slow
- * poll would make a person lose it to a bot that only wanted to call later.
+ * Polling is everybody's clock, as in Carioca: a bot plays because time passed
+ * and somebody asked. A play is open until the next one lands, so the table
+ * asks often while one is: a call is a race, and a slow poll would make a
+ * person lose it to a bot that only wanted to call later.
  */
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
@@ -27,7 +27,10 @@ type Respuesta =
   | { ok: true; mesa: VistaDeMesaMentiroso }
   | { ok: false; code: string; detail?: string }
 
-type Jugada = { type: 'jugar'; cartaIds: readonly string[] } | { type: 'mentiroso' }
+type Jugada =
+  | { type: 'jugar'; cartaIds: readonly string[] }
+  | { type: 'mentiroso' }
+  | { type: 'creer' }
 
 export function useMentirosoRemoto(opciones: { codigo: string; secreto: string }) {
   const { codigo, secreto } = opciones
@@ -78,6 +81,7 @@ export function useMentirosoRemoto(opciones: { codigo: string; secreto: string }
     [mutacion],
   )
   const onMentiroso = useCallback(() => mutacion.mutate({ type: 'mentiroso' }), [mutacion])
+  const onCreer = useCallback(() => mutacion.mutate({ type: 'creer' }), [mutacion])
 
   return {
     mesa,
@@ -86,5 +90,6 @@ export function useMentirosoRemoto(opciones: { codigo: string; secreto: string }
     error,
     onJugar,
     onMentiroso,
+    onCreer,
   }
 }

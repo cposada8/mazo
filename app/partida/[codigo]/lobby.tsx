@@ -320,7 +320,7 @@ export function Lobby({
         soyHost ? (
           <AjustesMentiroso
             partida={partida}
-            onSegundosVentana={(segundosVentana) => ajustar({ segundosVentana })}
+            onSegundosPorTurno={(segundosPorTurno) => ajustar({ segundosPorTurno })}
             onSegundosBot={(segundosBot) => ajustar({ segundosBot })}
           />
         ) : (
@@ -624,31 +624,30 @@ export function Ajustes({
   )
 }
 
-/** Seconds a window to call may last (Phase 78). 3 is the rules' default. */
-const SEGUNDOS_VENTANA = [2, 3, 5, 8] as const
-
 /**
  * El Mentiroso's settings (Phase 78). It has no rule to choose — the rules
- * are the game's standard form, the owner's word — only two clocks: how
- * long a play stays open to a call, and how long a bot thinks.
+ * are the game's standard form, the owner's word — only two clocks: how long
+ * a person has to play, and how long a bot thinks. A play is open to a call
+ * until the next one lands (the owner, 2026-11-05), so these two are also how
+ * long anyone has to say «¡Mentiroso!».
  */
 function AjustesMentiroso({
   partida,
-  onSegundosVentana,
+  onSegundosPorTurno,
   onSegundosBot,
 }: {
   partida: NonNullable<VistaDeLobby['partida']>
-  onSegundosVentana: (segundos: number) => void
+  onSegundosPorTurno: (segundos: number) => void
   onSegundosBot: (segundos: number) => void
 }) {
   return (
     <section className="flex flex-col gap-5">
       <Escogencia
-        titulo="Tiempo para decir «¡Mentiroso!»"
-        detalle="Después de cada jugada, nadie juega hasta que pase este tiempo, y cualquiera puede acusar."
-        opciones={SEGUNDOS_VENTANA}
-        valor={partida.segundosVentana}
-        onCambiar={onSegundosVentana}
+        titulo="Tiempo por jugada"
+        detalle="Se puede decir «¡Mentiroso!» hasta que juega el siguiente. Si se te acaba el tiempo, se juega una carta al azar por ti."
+        opciones={SEGUNDOS_POR_TURNO}
+        valor={partida.segundosPorTurno}
+        onCambiar={onSegundosPorTurno}
       />
       <Escogencia
         titulo="Los bots piensan"
@@ -671,8 +670,7 @@ function ResumenMentiroso({
         Lo que escogió el host
       </h2>
       <p>
-        {partida.segundosVentana} s para decir «¡Mentiroso!» · los bots piensan{' '}
-        {partida.segundosBot} s
+        {partida.segundosPorTurno} s por jugada · los bots piensan {partida.segundosBot} s
       </p>
     </section>
   )

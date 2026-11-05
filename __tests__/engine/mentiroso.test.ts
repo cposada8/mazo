@@ -138,11 +138,26 @@ describe('a play', () => {
     )
   })
 
-  it('nobody plays while a window is open', () => {
-    const estado = jugar(mesa({ manos: ['As Ah', 'Kc 2c', 'Qc'] }), 0, 1)
-    expect(rechazo(estado, { type: 'jugar', asiento: 1, cartaIds: primeras(estado, 1, 1) })).toBe(
-      'fase-equivocada',
+  it('the next play closes the window: the play before it is safe from then on', () => {
+    let estado = jugar(mesa({ manos: ['As Ah', 'Kc 2c', 'Qc'] }), 0, 1)
+    // Only the seat in turn may play over it, and doing so closes it.
+    expect(rechazo(estado, { type: 'jugar', asiento: 2, cartaIds: primeras(estado, 2, 1) })).toBe(
+      'no-es-tu-turno',
     )
+    estado = jugar(estado, 1, 1)
+    expect(estado.ultimaJugada!.asiento).toBe(1)
+    expect(estado.fase).toBe('ventana')
+    // The window now belongs to seat 1's play; seat 0's is out of reach.
+    const acusada = aplicar(estado, { type: 'mentiroso', asiento: 2 })
+    expect(acusada.ultimaAcusacion!.acusado).toBe(1)
+  })
+
+  it('a play that emptied a hand cannot be played over: call it or accept it', () => {
+    const estado = jugar(mesa({ manos: ['7s', 'Kc 2c', 'Qc'] }), 0, 1)
+    expect(rechazo(estado, { type: 'jugar', asiento: 1, cartaIds: primeras(estado, 1, 1) })).toBe(
+      'ultima-jugada-pendiente',
+    )
+    expect(aplicar(estado, { type: 'cerrarVentana' }).ganador).toBe(0)
   })
 })
 
@@ -369,8 +384,11 @@ describe("the player's clock (Phase 80)", () => {
     expect(aplicarMentiroso(estado, una).ok).toBe(true)
   })
 
-  it('has nothing to play during a window', async () => {
+  it('plays over an open window, and accepts a play that emptied a hand', async () => {
     const { jugadaDelReloj } = await import('@/lib/engine/mentiroso')
-    expect(jugadaDelReloj(jugar(mesa({ manos: ['7s 8s', 'Kc', 'Qc'] }), 0, 1))).toBeNull()
+    const abierta = jugar(mesa({ manos: ['7s 8s', 'Kc Kd', 'Qc'] }), 0, 1)
+    expect(jugadaDelReloj(abierta)).toMatchObject({ type: 'jugar', asiento: 1 })
+    const ultima = jugar(mesa({ manos: ['7s', 'Kc Kd', 'Qc'] }), 0, 1)
+    expect(jugadaDelReloj(ultima)).toEqual({ type: 'cerrarVentana' })
   })
 })
