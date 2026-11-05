@@ -30,8 +30,11 @@ directory, not by package boundaries:
 ```
 lib/engine/          Pure game rules. No React, no Prisma, no fetch. Never imports
                      from app/ or components/.
-lib/engine/carioca/  Carioca-specific rules. Generic card primitives live one
-                     level up so a second game can reuse them.
+lib/engine/comun/    Generic card primitives — cards, the rank ring, the seeded
+                     stream, building a deck — shared by every game (Phase 75).
+lib/engine/carioca/  Carioca's rules. Imports itself and comun/, nothing else.
+lib/engine/<juego>/  Each further game the same way; games never import each
+                     other. `__tests__/engine/purity.test.ts` enforces all of it.
 lib/bots/            Bot strategies. Import the engine; nothing imports them back.
 app/                 Next.js routes, server actions, API handlers.
 components/          React UI.

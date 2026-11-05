@@ -13,6 +13,7 @@
  */
 
 import type { PartidaState } from '@/lib/engine'
+import { type Juego, juegoDe } from '@/lib/juegos'
 import { prisma } from './db'
 
 export type AsientoDelPanel = {
@@ -27,6 +28,7 @@ export type AsientoDelPanel = {
 
 export type PartidaDelPanel = {
   readonly codigo: string
+  readonly juego: Juego
   readonly fase: string
   readonly creadaEn: number
   readonly actualizadaEn: number
@@ -82,10 +84,12 @@ export async function listarPartidas(): Promise<{
       .filter((asiento) => !asiento.esBot && asiento.ultimaSenal !== null)
       .map((asiento) => asiento.ultimaSenal as number)
 
-    const estado = leerEstado(fila.estado)
+    // Only a Carioca state has repartos to count (Phase 78).
+    const estado = fila.juego === 'carioca' ? leerEstado(fila.estado) : null
 
     return {
       codigo: fila.codigo,
+      juego: juegoDe(fila.juego),
       fase: fila.fase,
       creadaEn: fila.creadaEn.getTime(),
       actualizadaEn: fila.actualizadaEn.getTime(),

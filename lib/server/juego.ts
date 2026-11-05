@@ -53,7 +53,11 @@ export type VistaDeMesa = {
   }[]
 }
 
-export type ErrorDeMesa = 'NO_EXISTE' | 'NO_ES_TU_ASIENTO' | 'NO_REPARTIDA'
+/**
+ * `OTRO_JUEGO`: the partida exists but is not Carioca (Phase 78) — this
+ * module would read its state as a Carioca one, so it refuses instead.
+ */
+export type ErrorDeMesa = 'NO_EXISTE' | 'NO_ES_TU_ASIENTO' | 'NO_REPARTIDA' | 'OTRO_JUEGO'
 
 export type ResultadoDeMesa =
   | { readonly ok: true; readonly mesa: VistaDeMesa }
@@ -71,6 +75,8 @@ export type ResultadoDeJugada =
 type Fila = {
   id: string
   codigo: string
+  /** Which game (Phase 78). This module referees Carioca only. */
+  juego: string
   estado: string | null
   relatos: string
   turnoDesde: Date | null
@@ -124,6 +130,7 @@ export async function leerMesa(
 ): Promise<ResultadoDeMesa> {
   const fila = await cargar(codigo)
   if (!fila) return { ok: false, code: 'NO_EXISTE' }
+  if (fila.juego !== 'carioca') return { ok: false, code: 'OTRO_JUEGO' }
   if (!fila.estado) return { ok: false, code: 'NO_REPARTIDA' }
 
   const propio = await asientoConEstado(fila.id, secreto)
@@ -182,6 +189,7 @@ export async function jugarEnMesa(
 ): Promise<ResultadoDeJugada> {
   const fila = await cargar(codigo)
   if (!fila) return { ok: false, code: 'NO_EXISTE' }
+  if (fila.juego !== 'carioca') return { ok: false, code: 'OTRO_JUEGO' }
   if (!fila.estado) return { ok: false, code: 'NO_REPARTIDA' }
 
   const asiento = await asientoDe(fila.id, secreto)

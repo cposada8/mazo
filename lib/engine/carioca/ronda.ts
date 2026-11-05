@@ -13,7 +13,7 @@ import {
   type Card,
   type NormalCard,
   isComodin,
-} from './cards'
+} from '../comun/cards'
 import { type Contrato } from './contratos'
 import { buildDeck, deal } from './deck'
 import { ordenarEscalera } from './escalera'
@@ -27,7 +27,7 @@ import {
   validateGrupo,
 } from './grupos'
 import { addToTrio, extendEscala, repositionComodin } from './mesa'
-import { createRng, shuffle } from './random'
+import { createRng, shuffle } from '../comun/random'
 
 export type JugadorState = {
   readonly hand: readonly Card[]

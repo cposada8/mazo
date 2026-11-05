@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import type { Card, Rank, Suit } from '@/lib/engine/cards'
+import type { Card, Rank, Suit } from '@/lib/engine/comun/cards'
 import {
   type Escala,
   type Trio,
@@ -8,7 +8,7 @@ import {
   validateEscala,
   validateGrupo,
   validateTrio,
-} from '@/lib/engine/grupos'
+} from '@/lib/engine/carioca/grupos'
 
 /** Test builders. `n` is a real card, `c` a comodin; both get unique ids. */
 let counter = 0

@@ -22,7 +22,9 @@ import {
   startPartida,
   vistaDeAsiento,
 } from '@/lib/engine'
-import { BOT_POR_DEFECTO, botPorId } from '@/lib/bots'
+import { empezarMentiroso } from '@/lib/engine/mentiroso'
+import { botDeJuego, botPorDefecto } from '@/lib/bots-de-juego'
+import { ASIENTOS, type Juego, juegoDe } from '@/lib/juegos'
 import { codigoAlAzar, limpiarCodigo } from '@/lib/codigo'
 import type {
   ErrorDeLobby,
@@ -30,6 +32,7 @@ import type {
   PartidaGuardada,
 } from '@/lib/lobby'
 import { galeriaDeComodines } from './galeria'
+import { retirarDeMesaMentiroso } from './mentiroso'
 import { prisma } from './db'
 
 export type { ErrorDeLobby, FaseDePartida, PartidaGuardada }
@@ -43,11 +46,13 @@ export type ResultadoDeLobby =
 type FilaPartida = {
   id: string
   codigo: string
+  juego: string
   fase: string
   config: string
   estado: string | null
   segundosPorTurno: number
   segundosBot: number
+  segundosVentana: number
   verDescarte: boolean
   verHistorial: boolean
   asientos: {
@@ -66,13 +71,16 @@ function publicar(fila: FilaPartida): PartidaGuardada {
   return {
     id: fila.id,
     codigo: fila.codigo,
+    juego: juegoDe(fila.juego),
     fase: fila.fase as FaseDePartida,
     config: JSON.parse(fila.config) as PartidaConfig,
     // The seed, never the state: everybody at the table reads this shape.
-    seed: fila.estado ? (JSON.parse(fila.estado) as PartidaState).seed : null,
+    // Both games' states carry it under the same name.
+    seed: fila.estado ? (JSON.parse(fila.estado) as { seed: string }).seed : null,
     repartida: fila.estado !== null,
     segundosPorTurno: fila.segundosPorTurno,
     segundosBot: fila.segundosBot,
+    segundosVentana: fila.segundosVentana,
     verDescarte: fila.verDescarte,
     verHistorial: fila.verHistorial,
     asientos: [...fila.asientos]
@@ -93,6 +101,8 @@ const INCLUIR_ASIENTOS = { asientos: true } as const
 export async function crearPartida(opciones: {
   secreto: string
   alias: string
+  /** Which game (Phase 78). Carioca when not said: every caller before it. */
+  juego?: Juego
   config: PartidaConfig
   segundosPorTurno?: number
   segundosBot?: number
@@ -103,6 +113,7 @@ export async function crearPartida(opciones: {
   const {
     secreto,
     alias,
+    juego = 'carioca',
     config,
     segundosPorTurno = 45,
     segundosBot = 2,
@@ -110,8 +121,10 @@ export async function crearPartida(opciones: {
     aliasesDeBots = [],
   } = opciones
 
-  // The gallery as it is now travels with the partida (Phase 71).
-  const caras = JSON.stringify(await galeriaDeComodines())
+  // The gallery as it is now travels with the partida (Phase 71). El
+  // Mentiroso has no comodines, so it has no faces to keep.
+  const caras = juego === 'carioca' ? JSON.stringify(await galeriaDeComodines()) : null
+  const bot = botPorDefecto(juego)
 
   // A code collision is unlikely and loud: unique constraint. Retry a few
   // times rather than pretending it cannot happen.
@@ -120,6 +133,7 @@ export async function crearPartida(opciones: {
       const fila = await prisma.partida.create({
         data: {
           codigo: codigoAlAzar(),
+          juego,
           fase: 'lobby',
           config: JSON.stringify(config),
           segundosPorTurno,
@@ -130,9 +144,9 @@ export async function crearPartida(opciones: {
               { indice: 0, alias, secreto, esHost: true },
               ...Array.from({ length: bots }, (_, i) => ({
                 indice: i + 1,
-                alias: aliasesDeBots[i] ?? `${BOT_POR_DEFECTO.nombre} ${i + 1}`,
+                alias: aliasesDeBots[i] ?? `${bot.nombre} ${i + 1}`,
                 esBot: true,
-                bot: BOT_POR_DEFECTO.id,
+                bot: bot.id,
               })),
             ],
           },
@@ -162,8 +176,9 @@ export async function cargarPorCodigo(codigo: string): Promise<PartidaGuardada |
 export async function estadoDe(codigo: string): Promise<PartidaState | null> {
   const fila = await prisma.partida.findUnique({
     where: { codigo: limpiarCodigo(codigo) },
-    select: { estado: true },
+    select: { estado: true, juego: true },
   })
+  if (fila?.juego !== 'carioca') return null
   return fila?.estado ? (JSON.parse(fila.estado) as PartidaState) : null
 }
 
@@ -285,9 +300,12 @@ export async function vistaParaSecreto(
 ): Promise<VistaDeAsiento | null> {
   const [indice, fila] = await Promise.all([
     asientoDe(partidaId, secreto),
-    prisma.partida.findUnique({ where: { id: partidaId }, select: { estado: true } }),
+    prisma.partida.findUnique({
+      where: { id: partidaId },
+      select: { estado: true, juego: true },
+    }),
   ])
-  if (indice === null || !fila?.estado) return null
+  if (indice === null || !fila?.estado || fila.juego !== 'carioca') return null
 
   const estado = JSON.parse(fila.estado) as PartidaState
   if (!estado.ronda) return null
@@ -341,9 +359,10 @@ export async function agregarBot(opciones: {
   if (!acceso.ok) return acceso
 
   const { fila } = acceso
-  if (fila.asientos.length >= MAX_PLAYERS) return { ok: false, code: 'MESA_LLENA' }
+  const juego = juegoDe(fila.juego)
+  if (fila.asientos.length >= ASIENTOS[juego].max) return { ok: false, code: 'MESA_LLENA' }
 
-  const quien = botPorId(opciones.bot)
+  const quien = botDeJuego(juego, opciones.bot)
   const indice = Math.max(...fila.asientos.map((a) => a.indice)) + 1
   await prisma.asiento.create({
     data: {
@@ -380,7 +399,7 @@ export async function cambiarBot(opciones: {
   const asiento = fila.asientos.find((a) => a.indice === opciones.indice)
   if (!asiento || !asiento.esBot) return { ok: false, code: 'NO_ES_UN_BOT' }
 
-  const quien = botPorId(opciones.bot)
+  const quien = botDeJuego(juegoDe(fila.juego), opciones.bot)
   await prisma.asiento.updateMany({
     where: { partidaId: fila.id, indice: opciones.indice },
     data: {
@@ -412,7 +431,10 @@ export async function quitarAsiento(opciones: {
   const { fila } = acceso
   const victima = fila.asientos.find((a) => a.indice === opciones.indice)
   if (!victima || !victima.esBot) return { ok: false, code: 'NO_SE_PUEDE_QUITAR' }
-  if (fila.asientos.length <= MIN_PLAYERS) return { ok: false, code: 'MESA_MUY_CHICA' }
+  // Each game's own floor: a Mentiroso table of three has no seat to spare.
+  if (fila.asientos.length <= ASIENTOS[juegoDe(fila.juego)].min) {
+    return { ok: false, code: 'MESA_MUY_CHICA' }
+  }
 
   await prisma.$transaction([
     prisma.asiento.deleteMany({
@@ -438,6 +460,7 @@ export async function actualizarAjustes(opciones: {
   config?: PartidaConfig
   segundosPorTurno?: number
   segundosBot?: number
+  segundosVentana?: number
   verDescarte?: boolean
   verHistorial?: boolean
 }): Promise<ResultadoDeLobby> {
@@ -453,6 +476,9 @@ export async function actualizarAjustes(opciones: {
         : {}),
       ...(opciones.segundosBot !== undefined
         ? { segundosBot: opciones.segundosBot }
+        : {}),
+      ...(opciones.segundosVentana !== undefined
+        ? { segundosVentana: opciones.segundosVentana }
         : {}),
       ...(opciones.verDescarte !== undefined
         ? { verDescarte: opciones.verDescarte }
@@ -517,14 +543,18 @@ export async function empezar(opciones: {
   if (!acceso.ok) return acceso
 
   const { fila } = acceso
-  if (fila.asientos.length < MIN_PLAYERS) return { ok: false, code: 'MESA_MUY_CHICA' }
+  const juego = juegoDe(fila.juego)
+  if (fila.asientos.length < ASIENTOS[juego].min) return { ok: false, code: 'MESA_MUY_CHICA' }
 
-  const config = JSON.parse(fila.config) as PartidaConfig
-  const estado = startPartida({
-    players: fila.asientos.length,
-    seed: opciones.seed,
-    config,
-  })
+  // Each game deals its own state; the row does not care which it holds.
+  const estado =
+    juego === 'mentiroso'
+      ? empezarMentiroso({ jugadores: fila.asientos.length, seed: opciones.seed })
+      : startPartida({
+          players: fila.asientos.length,
+          seed: opciones.seed,
+          config: JSON.parse(fila.config) as PartidaConfig,
+        })
 
   await prisma.partida.update({
     where: { id: fila.id },
@@ -581,6 +611,16 @@ export async function abandonar(opciones: {
         ),
     ])
     return { ok: true, enLobby: true }
+  }
+
+  // El Mentiroso retires a seat its own way (Phase 80, `mentiroso-rules.md`
+  // «Leaving»): the cards leave play, the turn skips it.
+  if (juegoDe(fila.juego) === 'mentiroso') {
+    const gente = fila.asientos.filter(
+      (asiento) => !asiento.esBot && !asiento.retirado && asiento.indice !== propio.indice,
+    ).length
+    await retirarDeMesaMentiroso(fila, propio.indice, gente)
+    return { ok: true, enLobby: false }
   }
 
   const estado = JSON.parse(fila.estado) as PartidaState

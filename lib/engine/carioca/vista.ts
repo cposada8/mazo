@@ -12,7 +12,7 @@
  * only ever receives views cannot leak what it never had.
  */
 
-import { type Card } from './cards'
+import { type Card } from '../comun/cards'
 import { type Contrato } from './contratos'
 import { type Grupo } from './grupos'
 import type { Marcador, PartidaConfig, PartidaState } from './partida'

@@ -39,7 +39,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "Mazo",
-  description: "Juegos de cartas. Empezando por Carioca.",
+  description: "Juegos de cartas: Carioca y Mentiroso.",
 };
 
 // `cover` lets the table reach the notch's row instead of living in a

@@ -1,6 +1,6 @@
 # Project status — pick up here
 
-Last updated after Phase 74 — **Carioca is complete**; Phase 74 added two setup choices after it.
+Last updated after Phase 81 — **Milestone 8 closed: Mazo has two games**, v2.0.0 — **Carioca is complete**, and Milestone 8 (el Mentiroso) has begun.
 
 Read this first, then `mission.md` for the why, `carioca-rules.md` for the game,
 `tech-stack.md` for the stack, and `roadmap.md` for what comes next. This file is
@@ -14,7 +14,7 @@ doc is worse than none.
 
 ## Where things stand
 
-Phases 0–74 are numbered and **all of them are done: Milestones 1 through 7
+Phases 0–81 are numbered and **all of them are done: Milestones 1 through 7
 are complete, and Carioca is finished as a game.** Open the site on a phone,
 get dealt an alias, create a partida — you host, a short code is dealt,
 three bots sit down at the level you pick — or join one with a code, and
@@ -111,6 +111,13 @@ engine's separation".
 | 72 | The gallery is edited, behind the panel's key | ✅ |
 | 73 | The specs brought up to date — **Milestone 7, Carioca complete** | ✅ |
 | 74 | The rebarajada limit as a lobby choice (0–5, sin límite); estricta by default | ✅ |
+| 75 | Two games, one engine: `lib/engine/comun/` and `lib/engine/carioca/` | ✅ |
+| 76 | El Mentiroso's engine: `lib/engine/mentiroso/` | ✅ |
+| 77 | El Embustero, el Mentiroso's baseline bot, and its soak | ✅ |
+| 78 | The door knows two games: `Partida.juego`, a lobby per game | ✅ |
+| 79 | El Mentiroso's table, against bots | ✅ |
+| 80 | El Mentiroso among several people, the server the referee | ✅ |
+| 81 | El Mentiroso's «Cómo se juega», and production — **Milestone 8, v2.0.0** | ✅ |
 
 - **Repo:** https://github.com/cposada8/mazo
 - **Live:** https://mazo-six.vercel.app — **online play is in production**
@@ -123,7 +130,7 @@ engine's separation".
   public, no login.
 - **Deploys:** work goes to `dev`, which builds by itself. Production changes
   only by merging `dev` into `main`. Nothing else deploys `main`.
-- **Tests:** 741, all green (the run takes ~45s, mostly the soak). `npm run test:run`, `npx tsc --noEmit`, `npm run lint`.
+- **Tests:** 838, all green (the run takes ~45s, mostly the soak). `npm run test:run`, `npx tsc --noEmit`, `npm run lint`.
 - **Database:** SQLite via Prisma 7 + libSQL. Local dev uses `prisma/dev.db`;
   **online is live on Turso** — group `mazo` in `aws-us-east-1`, so it sits
   beside Vercel's functions and leaves `fwc_2026`'s group alone. **Two
@@ -151,20 +158,30 @@ engine's separation".
 ## What exists
 
 ```
-lib/engine/          The whole game. Pure TypeScript.
-  cards.ts           Suits, the 13-rank ring, card identity.
-  random.ts          Seeded stream: createRng, shuffle.
-  deck.ts            buildDeck, deal.
-  grupos.ts          Trio and Escala, and validation by phase.
-  mesa.ts            Reshaping grupos already on the table.
-  ronda.ts           State, moves, and apply() — the referee.
-  contratos.ts       The twelve contracts, as data — 9–12 the escaleras.
-  escalera.ts        The four escalera levels, validated and placed 2 → A.
-  puntaje.ts         Card values and hand totals.
-  partida.ts         The contracts played in order, scored, to a winner.
-  notacion.ts        Card notation: 7♠, 7s, ** for a comodín.
-  escenario.ts       A ronda dealt from cards you name, rest filled by seed.
+lib/engine/          The games. Pure TypeScript. Two halves since Phase 75;
+                     index.ts is the Carioca entry point (`@/lib/engine`).
+  comun/             What every game shares, importing no game:
+    cards.ts         Suits, the 13-rank ring, card identity.
+    baraja.ts        construirBaraja: N copies of the 52, and comodines.
+    random.ts        Seeded stream: createRng, shuffle.
+    notacion.ts      Card notation: 7♠, 7s, ** for a comodín.
+  mentiroso/         El Mentiroso (Phase 76): partida.ts, the referee and its
+                     two phases, jugar and ventana; vista.ts, one seat's view.
+                     Imported as `@/lib/engine/mentiroso`.
+  carioca/           Carioca, importing only itself and comun/:
+    deck.ts          Two copies plus comodines, and dealing a ronda.
+    grupos.ts        Trio and Escala, and validation by phase.
+    mesa.ts          Reshaping grupos already on the table.
+    ronda.ts         State, moves, and apply() — the referee.
+    contratos.ts     The twelve contracts, as data — 9–12 the escaleras.
+    escalera.ts      The four escalera levels, validated and placed 2 → A.
+    puntaje.ts       Card values and hand totals.
+    partida.ts       The contracts played in order, scored, to a winner.
+    escenario.ts     A ronda dealt from cards you name, rest filled by seed.
+    vista.ts         What one seat may see. Bots and the server both take it.
 
+lib/bots/mentiroso/  El Mentiroso's bots (Phase 77): El Embustero, and
+                     jugarMentirosoConBots for a whole bots-only partida.
 lib/bots/             Clients of the engine. Nothing in the engine imports these.
   catalogo.ts        Every bot by id, with its level: Fácil, Normal, Difícil.
   agrupar.ts         The grouping search, and how useful a card is.
@@ -179,7 +196,6 @@ components/mesa.tsx  The table, landscape or portrait: seats on the rim, the
                      felt, the piles, everyone's grupos in the middle, your
                      hand along the bottom. Optional callbacks turn it from a
                      game you watch into one you play.
-lib/engine/vista.ts  What one seat may see. Bots and the server both take it.
 lib/asientos.ts      Where each seat goes around the table. Pure geometry.
 lib/relato.ts        A move told in words, public information only — the
                      `mazo` variant cannot carry a card by construction.
@@ -285,10 +301,20 @@ next schema change goes the same way — SQL under `prisma/sql/`, applied to
 `mazo-dev`, then to `mazo` before `npm run publicar`. Production's database
 credentials are in `.env.turso`; `vercel env pull` masks them.
 
-**Next, a second game: el Mentiroso** (the owner, 2026-11-05). Its milestone
-is not written yet; it starts with its rules in `specs/`, as Phase 0 did
-for Carioca, and with the engine split so that two games share cards, the
-seeded stream and the deck while each owns its rules.
+**Next — Milestone 8, el Mentiroso** (the owner, 2026-11-05). Its rules are
+`specs/mentiroso-rules.md`, settled; `roadmap.md` has the phases:
+
+1. ~~Phase 75 — Dos juegos, un motor.~~ ✅ Done, on dev: `lib/engine/comun/`
+   and `lib/engine/carioca/`, no behaviour change.
+2. ~~Phase 76 — El motor del Mentiroso.~~ ✅ Done, on dev:
+   `lib/engine/mentiroso/`, every rule tested.
+3. ~~Phase 77 — Un bot que miente.~~ ✅ Done, on dev: El Embustero, and
+   1,000 bot partidas that all end.
+4. ~~Phase 78 — La puerta sabe que hay dos juegos.~~ ✅ Done:
+   `Partida.juego` and `segundosVentana`, applied to `mazo-dev` and `mazo`.
+5. ~~Phase 79 — La mesa del Mentiroso.~~ ✅ Done, on dev.
+6. ~~Phase 80 — El Mentiroso entre varios.~~ ✅ Done, on dev.
+7. ~~Phase 81 — Cómo se juega, and production.~~ ✅ Released as v2.0.0.
 
 *Everything below is the record of how the project got here.*
 

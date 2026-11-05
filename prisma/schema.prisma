@@ -19,6 +19,9 @@ model Partida {
   id        String   @id @default(cuid())
   /// The short invite code (Phase 33). Unique among live partidas.
   codigo    String   @unique
+  /// Which game this partida is (Phase 78): 'carioca' | 'mentiroso'. Every
+  /// row that predates the choice is Carioca, which is what the default says.
+  juego     String   @default("carioca")
   /// 'lobby' | 'jugando' | 'terminada'
   fase      String   @default("lobby")
   /// JSON PartidaConfig — contracts, comodines, bonus, opener.
@@ -36,6 +39,9 @@ model Partida {
   segundosPorTurno Int @default(45)
   /// Seconds a bot thinks per turn.
   segundosBot      Int @default(2)
+  /// El Mentiroso's window to call (Phase 78): seconds after each play in
+  /// which anyone may call and nobody may play. Pacing, like the two above.
+  segundosVentana  Int @default(3)
   /// Memory aids (Phase 24), a table rule rather than a personal comfort:
   /// may the descarte be browsed, and may the ronda's story be reread.
   verDescarte  Boolean @default(true)

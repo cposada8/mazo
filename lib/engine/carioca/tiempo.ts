@@ -13,7 +13,7 @@
  */
 
 import { type Move, type RondaState } from './ronda'
-import { createRng } from './random'
+import { createRng } from '../comun/random'
 
 /** The card this seat would throw if its time ran out right now. */
 export function cartaAlAzarDeLaMano(state: RondaState): string | null {

@@ -1,13 +1,13 @@
 import { describe, expect, it } from 'vitest'
-import { RANKS, SUITS, isComodin, type Card } from '@/lib/engine/cards'
+import { RANKS, SUITS, isComodin, type Card } from '@/lib/engine/comun/cards'
 import {
   CARDS_PER_HAND,
   MAX_PLAYERS,
   MIN_PLAYERS,
   buildDeck,
   deal,
-} from '@/lib/engine/deck'
-import { createRng } from '@/lib/engine/random'
+} from '@/lib/engine/carioca/deck'
+import { createRng } from '@/lib/engine/comun/random'
 
 const ids = (cards: readonly Card[]) => cards.map((card) => card.id)
 

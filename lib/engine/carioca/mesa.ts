@@ -13,7 +13,7 @@ import {
   cyclicDistance,
   isComodin,
   rankAfter,
-} from './cards'
+} from '../comun/cards'
 import {
   type Escala,
   type Grupo,

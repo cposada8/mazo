@@ -18,8 +18,11 @@ import { useRouter } from 'next/navigation'
 import { leerBaraja } from '@/app/jugar/ajustes'
 import { Juego, Tablero } from '@/app/jugar/juego'
 import { useIdentidad } from '@/components/identidad'
+import { MesaMentirosoLocal } from '@/components/mentiroso/local'
+import { MesaMentiroso } from '@/components/mentiroso/mesa'
 import { abandonarPartida, type VistaDeLobby } from '@/lib/lobby'
 import { Lobby } from './lobby'
+import { useMentirosoRemoto } from './useMentirosoRemoto'
 import { useMesaRemota } from './useMesaRemota'
 
 /**
@@ -74,6 +77,24 @@ export function PartidaCliente({
   const { partida } = repartida
   const humanos = partida.asientos.filter((asiento) => !asiento.esBot)
   const soloBots = humanos.length <= 1
+
+  // A Mentiroso partida never reaches Carioca's tables (Phase 78): alone with
+  // bots it plays here (Phase 79), with other people the server referees it
+  // (Phase 80) — the same split as Carioca's.
+  if (partida.juego === 'mentiroso') {
+    const nombres = partida.asientos.map((asiento) => asiento.alias)
+    return soloBots ? (
+      <MesaMentirosoLocal
+        seed={partida.seed!}
+        jugadores={partida.asientos.length}
+        nombres={nombres}
+        segundosBot={partida.segundosBot}
+        onSalir={() => void salir(true)}
+      />
+    ) : (
+      <MesaMentirosoDelServidor codigo={codigo} onSalir={() => void salir(true)} />
+    )
+  }
 
   return soloBots ? (
     <MesaLocal
@@ -160,6 +181,53 @@ function MesaDelServidor({
       galeriaDeComodines={galeriaDeComodines}
       nombresDeAsientos={juego.nombresDeAsientos}
       segundosBot={juego.reloj.segundos}
+      onSalir={onSalir}
+    />
+  )
+}
+
+/** A Mentiroso table among several people: the server is the referee (Phase 80). */
+function MesaMentirosoDelServidor({
+  codigo,
+  onSalir,
+}: {
+  codigo: string
+  onSalir: () => void
+}) {
+  const { identidad } = useIdentidad()
+  const remota = useMentirosoRemoto({ codigo, secreto: identidad?.secreto ?? '' })
+
+  if (!remota.mesa) {
+    return (
+      <main className="mx-auto flex w-full max-w-md flex-1 flex-col items-center justify-center gap-3 px-6 py-16 text-center">
+        <p className="text-muted-foreground text-sm">
+          {remota.perdida ? 'Ya no tienes asiento en esta mesa.' : 'Abriendo la mesa…'}
+        </p>
+        {remota.perdida && (
+          <button
+            type="button"
+            onClick={onSalir}
+            className="border-input hover:bg-accent rounded-md border px-4 py-2 text-sm"
+          >
+            Salir
+          </button>
+        )}
+      </main>
+    )
+  }
+
+  const { mesa } = remota
+  return (
+    <MesaMentiroso
+      vista={mesa.vista}
+      eventos={mesa.eventos}
+      nombres={mesa.asientos.map((asiento) => asiento.alias)}
+      plazoHasta={mesa.plazoHasta}
+      segundosDelPlazo={mesa.segundosDelPlazo}
+      error={remota.error}
+      onJugar={remota.onJugar}
+      onMentiroso={remota.onMentiroso}
+      onCreer={remota.onCreer}
       onSalir={onSalir}
     />
   )

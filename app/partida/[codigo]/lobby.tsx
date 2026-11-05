@@ -26,11 +26,11 @@ import {
 import Link from 'next/link'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useIdentidad } from '@/components/identidad'
-import { BOTS, BOT_POR_DEFECTO, NOMBRE_DE_NIVEL, type Nivel, botPorId } from '@/lib/bots'
+import { BOTS, NOMBRE_DE_NIVEL, type Nivel, botPorId } from '@/lib/bots'
+import { botDeJuego, botPorDefecto, botsDeJuego } from '@/lib/bots-de-juego'
+import { ASIENTOS, type Juego, NOMBRE_DE_JUEGO } from '@/lib/juegos'
 import {
   CATALOGO,
-  MAX_PLAYERS,
-  MIN_PLAYERS,
   type PartidaConfig,
   LIMITES_DE_REBARAJADAS,
   type LimiteDeRebarajadas,
@@ -186,7 +186,9 @@ export function Lobby({
   const yo = partida.asientos.find((asiento) => asiento.indice === vista.asiento)
   const soyHost = Boolean(yo?.esHost)
   const humanos = partida.asientos.filter((asiento) => !asiento.esBot)
-  const puedeEmpezar = partida.asientos.length >= MIN_PLAYERS
+  const juego = partida.juego
+  const asientosDelJuego = ASIENTOS[juego]
+  const puedeEmpezar = partida.asientos.length >= asientosDelJuego.min
 
   const ajustar = (cambio: Partial<Omit<Accion & { tipo: 'ajustes' }, 'tipo'>>) =>
     mutacion.mutate({ tipo: 'ajustes', ...cambio })
@@ -221,7 +223,17 @@ export function Lobby({
           <ChevronLeft className="size-4" aria-hidden />
           Salir de la partida
         </button>
-        <h1 className="text-3xl font-semibold tracking-tight">La mesa</h1>
+        <h1 className="text-3xl font-semibold tracking-tight">
+          La mesa <span className="text-muted-foreground">· {NOMBRE_DE_JUEGO[juego]}</span>
+        </h1>
+        {juego === 'mentiroso' && (
+          <Link
+            href="/como-se-juega/mentiroso"
+            className="text-muted-foreground hover:text-foreground w-fit text-sm underline underline-offset-2"
+          >
+            Cómo se juega el Mentiroso
+          </Link>
+        )}
         <button
           type="button"
           onClick={() => {
@@ -268,6 +280,7 @@ export function Lobby({
               )}
               {asiento.esBot ? (
                 <QuienJuega
+                  juego={juego}
                   bot={asiento.bot}
                   puedeElegir={soyHost}
                   onElegir={(bot) =>
@@ -285,7 +298,7 @@ export function Lobby({
               {asiento.esHost && (
                 <Crown className="text-muted-foreground size-3.5" aria-hidden />
               )}
-              {soyHost && asiento.esBot && partida.asientos.length > MIN_PLAYERS && (
+              {soyHost && asiento.esBot && partida.asientos.length > asientosDelJuego.min && (
                 <button
                   type="button"
                   onClick={() => mutacion.mutate({ tipo: 'quitar', indice: asiento.indice })}
@@ -299,10 +312,10 @@ export function Lobby({
           ))}
         </ul>
 
-        {soyHost && partida.asientos.length < MAX_PLAYERS && (
+        {soyHost && partida.asientos.length < asientosDelJuego.max && (
           <button
             type="button"
-            onClick={() => mutacion.mutate({ tipo: 'bot', bot: BOT_POR_DEFECTO.id })}
+            onClick={() => mutacion.mutate({ tipo: 'bot', bot: botPorDefecto(juego).id })}
             className="border-input hover:bg-accent flex items-center justify-center gap-2 rounded-md border px-4 py-2.5 text-sm transition-colors"
           >
             <Plus className="size-4" aria-hidden />
@@ -311,7 +324,17 @@ export function Lobby({
         )}
       </section>
 
-      {soyHost ? (
+      {juego === 'mentiroso' ? (
+        soyHost ? (
+          <AjustesMentiroso
+            partida={partida}
+            onSegundosPorTurno={(segundosPorTurno) => ajustar({ segundosPorTurno })}
+            onSegundosBot={(segundosBot) => ajustar({ segundosBot })}
+          />
+        ) : (
+          <ResumenMentiroso partida={partida} />
+        )
+      ) : soyHost ? (
         <Ajustes
           partida={partida}
           onContrato={alternarContrato}
@@ -377,14 +400,43 @@ export function Lobby({
 const NIVELES: readonly Nivel[] = ['facil', 'normal', 'dificil']
 
 function QuienJuega({
+  juego,
   bot,
   puedeElegir,
   onElegir,
 }: {
+  juego: Juego
   bot: string | null
   puedeElegir: boolean
   onElegir: (bot: string) => void
 }) {
+  // El Mentiroso's bots have no levels yet (Phase 78): a flat list, no group.
+  if (juego !== 'carioca') {
+    const quien = botDeJuego(juego, bot)
+    const todos = botsDeJuego(juego)
+    return (
+      <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+        {puedeElegir && todos.length > 1 ? (
+          <select
+            value={quien.id}
+            onChange={(evento) => onElegir(evento.target.value)}
+            aria-label={`Quién juega en este asiento, ahora ${quien.nombre}`}
+            className="w-full truncate rounded-sm bg-transparent"
+          >
+            {todos.map((otro) => (
+              <option key={otro.id} value={otro.id}>
+                {otro.nombre}
+              </option>
+            ))}
+          </select>
+        ) : (
+          <span className="truncate">{quien.nombre}</span>
+        )}
+        <span className="text-muted-foreground truncate text-xs">{quien.descripcion}</span>
+      </span>
+    )
+  }
+
   const quien = botPorId(bot)
 
   return (
@@ -576,6 +628,58 @@ export function Ajustes({
         activo={partida.verHistorial}
         onCambiar={onVerHistorial}
       />
+    </section>
+  )
+}
+
+/**
+ * El Mentiroso's settings (Phase 78). It has no rule to choose — the rules
+ * are the game's standard form, the owner's word — only two clocks: how long
+ * a person has to play, and how long a bot thinks. A play is open to a call
+ * until the next one lands (the owner, 2026-11-05), so these two are also how
+ * long anyone has to say «¡Mentiroso!».
+ */
+function AjustesMentiroso({
+  partida,
+  onSegundosPorTurno,
+  onSegundosBot,
+}: {
+  partida: NonNullable<VistaDeLobby['partida']>
+  onSegundosPorTurno: (segundos: number) => void
+  onSegundosBot: (segundos: number) => void
+}) {
+  return (
+    <section className="flex flex-col gap-5">
+      <Escogencia
+        titulo="Tiempo por jugada"
+        detalle="Se puede decir «¡Mentiroso!» hasta que juega el siguiente. Si se te acaba el tiempo, se juega una carta al azar por ti."
+        opciones={SEGUNDOS_POR_TURNO}
+        valor={partida.segundosPorTurno}
+        onCambiar={onSegundosPorTurno}
+      />
+      <Escogencia
+        titulo="Los bots piensan"
+        opciones={SEGUNDOS_BOT}
+        valor={partida.segundosBot}
+        onCambiar={onSegundosBot}
+      />
+    </section>
+  )
+}
+
+function ResumenMentiroso({
+  partida,
+}: {
+  partida: NonNullable<VistaDeLobby['partida']>
+}) {
+  return (
+    <section className="text-muted-foreground flex flex-col gap-1 text-sm">
+      <h2 className="text-xs font-medium tracking-widest uppercase">
+        Lo que escogió el host
+      </h2>
+      <p>
+        {partida.segundosPorTurno} s por jugada · los bots piensan {partida.segundosBot} s
+      </p>
     </section>
   )
 }

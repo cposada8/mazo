@@ -1,5 +1,5 @@
 /**
- * Card notation, for writing scenarios and tests by hand.
+ * Card notation, for writing deals and tests by hand.
  *
  * Both forms are accepted, on purpose: the symbol reads well in specs and in
  * conversation, the letter is faster to type.

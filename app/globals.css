@@ -391,6 +391,30 @@
   }
 
   /*
+   * El Mentiroso (Phase 79): the window to call drains like the badge, and a
+   * called card turns over — a flip on its vertical axis, landing face up.
+   */
+  .ventana-agota {
+    animation: badge-agota linear both;
+  }
+  .carta-volteada {
+    animation: carta-voltea 0.45s ease-out both;
+  }
+  @keyframes carta-voltea {
+    from {
+      transform: perspective(400px) rotateY(90deg);
+    }
+    to {
+      transform: perspective(400px) rotateY(0deg);
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .carta-volteada {
+      animation: none;
+    }
+  }
+
+  /*
    * Standing up. The felt goes rectangular — there is no room for an oval's
    * curves — and the rest holds: seats on the rim, the mesa in the middle,
    * your hand across the bottom.
