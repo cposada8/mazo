@@ -285,10 +285,17 @@ next schema change goes the same way — SQL under `prisma/sql/`, applied to
 `mazo-dev`, then to `mazo` before `npm run publicar`. Production's database
 credentials are in `.env.turso`; `vercel env pull` masks them.
 
-**Next, a second game: el Mentiroso** (the owner, 2026-11-05). Its milestone
-is not written yet; it starts with its rules in `specs/`, as Phase 0 did
-for Carioca, and with the engine split so that two games share cards, the
-seeded stream and the deck while each owns its rules.
+**Next — Milestone 8, el Mentiroso** (the owner, 2026-11-05). Its rules are
+`specs/mentiroso-rules.md`, settled; `roadmap.md` has the phases:
+
+1. Phase 75 — Dos juegos, un motor: the engine split into shared and
+   Carioca's, no behaviour change.
+2. Phase 76 — El motor del Mentiroso.
+3. Phase 77 — Un bot que miente, and a soak that proves every partida ends.
+4. Phase 78 — La puerta sabe que hay dos juegos: `Partida.juego`.
+5. Phase 79 — La mesa del Mentiroso, against bots.
+6. Phase 80 — El Mentiroso entre varios.
+7. Phase 81 — Cómo se juega, and production.
 
 *Everything below is the record of how the project got here.*
 

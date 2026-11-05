@@ -3026,11 +3026,112 @@ ronda on the server carries `sinLimite`. 741 tests
 
 ---
 
+## Milestone 8 — El Mentiroso
+
+*The owner, 2026-11-05: the second game. Its rules are
+`specs/mentiroso-rules.md`, written before any code and confirmed by the
+owner as the game's standard form, with no house restrictions. The order
+is Carioca's own, compressed: the engine first, then a bot, then the
+platform learns there are two games, then the table, then other people.
+Every phase is measured against one test of the whole milestone — Carioca
+keeps working, untouched, at every step.*
+
+### Phase 75 — Dos juegos, un motor
+`lib/engine/` is Carioca's. Split it into what any card game on Mazo
+shares and what is Carioca's own, before a second game copies anything.
+
+- **Shared** (`lib/engine/comun/` or similar): cards and their identity, the
+  rank ring, the seeded stream (`random.ts`), building and dealing a deck.
+- **Carioca's**: contracts, grupos, the mesa, the ronda, the partida,
+  scoring, escaleras, escenarios, the seat's view.
+- The purity rule holds for both halves, and the shared half imports
+  nothing from either game.
+- No behaviour changes. Imports move; nothing else does.
+
+**Done when:** every existing test passes with only its imports changed,
+the purity test covers the shared half and each game, and nothing in the
+shared half names a Carioca concept.
+
+### Phase 76 — El motor del Mentiroso
+The rules as a pure state machine, beside Carioca's: deal the whole deck
+from a seed, the rank in turn, a play of 1–4 cards announced as that rank,
+the **window to call** as a state of its own (the play is on the pile,
+the next player cannot play yet), a call resolved by turning over the
+called play only, the pile going to the liar or the doubter, going out
+only when the last play survives. The seat's view shows every public thing
+and nothing else: no other hand, no unturned card of the pile.
+
+The window's *length* is not the engine's — it is a clock, like Carioca's
+turn timer. The engine knows a window is open and what closes it: a call,
+or being told it has run out.
+
+**Done when:** scripted partidas in tests cover every rule in
+`mentiroso-rules.md` — a lie called, the truth called, a call on the last
+play both ways, the sequence carrying on after a call, the K → A wrap, a
+refused play of 0 or 5 cards, a refused call by the player who played — and
+the same seed always deals the same partida.
+
+### Phase 77 — Un bot que miente
+A baseline bot, the El Codicioso of this game: plays the rank in turn
+truthfully when it holds it, and when it does not, lies with as few cards
+as it can spare; calls when what it can see makes the claim impossible
+(it holds enough of that rank that the play cannot be true) or nearly so.
+Built on the seat's view alone, so it plays the same in the browser and on
+the server.
+
+**Done when:** a soak of 1,000 bot partidas at 3 to 6 seats finishes every
+one — the game has no stalemate, and this proves it — and a bot never
+calls a play it could know is true.
+
+### Phase 78 — La puerta sabe que hay dos juegos
+The platform learns that a partida is *of* a game. `Partida.juego`
+(`'carioca'` | `'mentiroso'`, Carioca for every row that predates it —
+additive SQL, applied to `mazo-dev` and then `mazo` before the release,
+as Phase 71 did). «Crear una partida» asks which; the lobby shows the
+settings of that game only (Mentiroso's are few: the window to call, the
+bots' thinking time); joining by code needs no choice, the code knows.
+The home page stops saying "Empezando por Carioca".
+
+**Done when:** a Carioca partida is created, joined and played exactly as
+in v1.7.0, and a Mentiroso partida can be created and its lobby filled —
+even before its table exists, starting it says so plainly.
+
+### Phase 79 — La mesa del Mentiroso
+The table on a phone, against bots, through the same local transport
+Carioca's bots-only tables use: your hand, the pile and its size, the rank
+in turn, choosing 1–4 cards and playing them, the window drawn as a
+draining ring, «¡Mentiroso!» as the one big button while it is open, the
+called cards turning over for everyone, and the pile flying to whoever
+takes it. Narrated in one line per event, like Carioca's relato.
+
+**Done when:** on a phone, both orientations, a whole partida is played
+against three bots to a winner, and every call is understandable from
+what is on screen alone.
+
+### Phase 80 — El Mentiroso entre varios
+Several people at one table, the server the referee: plays and calls go to
+the server, the window is a stored deadline applied by the next request
+(the way Carioca's bot turns are), and of two calls the first the server
+receives counts. The player's clock, absences and leaving on purpose work
+as they do in Carioca.
+
+**Done when:** three people on three phones finish a partida from one
+code, each seeing only their own hand, and two calls sent in the same
+instant resolve as one.
+
+### Phase 81 — Cómo se juega, y a producción
+«Cómo se juega» for el Mentiroso — the rules on one screen, as Carioca has
+— reachable from its lobby and its menu, and the home page naming both
+games. Then the release.
+
+**Done when:** el Mentiroso is in production, and `estado.md` says so.
+
+---
+
 ## After
 
 Not scheduled, and not to be started before Milestone 3 — online play:
 
-- A second game on the same platform — the real test of the engine's separation.
 - Opening the app with no network at all. *Playing* bots offline is Phase
   34's two-homes rule; what remains is a service worker so the app itself
   loads without a connection. Installing to the home screen was pulled
