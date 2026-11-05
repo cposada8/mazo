@@ -2278,6 +2278,7 @@ want.
 ### ~~Phase 51 — La galería de comodines~~ → *After*
 Moved to the *After* list by the owner, 2026-09-30: a screen from the
 partida's menu showing every comodín face in the gallery. Not scheduled.
+Scheduled again on 2026-11-05, as Phase 70 in Milestone 7.
 
 ---
 
@@ -2828,6 +2829,147 @@ Tested in `mesa-contada.test.tsx`.
 
 ---
 
+## Milestone 7 — Cerrar Carioca
+
+*The owner, 2026-11-05, after v1.5.1: before a second game (el Mentiroso)
+starts, Carioca is closed. What closes it is the comodín gallery — seen by
+anyone, edited by the owner alone — and specs that say what is true. The
+rest of the *After* list stays there.*
+
+### Phase 70 — La galería de comodines ✅
+Was Phase 51. Every face in the gallery, on one screen, open to anyone —
+no key, no seat, no partida needed. Browsing only; it changes nothing about
+the game.
+
+- **Before a partida:** reached from the home page, beside «Cómo se juega».
+  Its own address (`/comodines`), so it can be linked.
+- **During a partida:** from the partida's menu, next to «Cómo se juega» and
+  in the same over-the-felt shape, so looking at it never leaves the table.
+- **The ones in play come first.** Inside a partida the screen opens on the
+  faces this ronda dealt (`carasDeRonda` — the same seed, so every seat sees
+  the same ones), marked as such; the rest of the gallery follows. Outside a
+  partida there is no ronda, and it is just the gallery.
+- A face can be opened large; the screen works at phone width first.
+
+**Done when:** on a phone, the gallery opens from the home page and from the
+menu of a partida in progress, and inside the partida the faces at the top
+are exactly the comodines on that ronda's cards.
+
+**Done.** The gallery is `/comodines`, open to anyone and linked from the
+home page beside «Cómo se juega». The same grid (`components/galeria.tsx`)
+opens over the felt from the partida's menu, led by the faces this ronda
+dealt, ringed and marked «En juego» (`ordenarGaleria`, `lib/galeria.ts`);
+each face once, any face can be opened large. The page is read per request
+(`connection()`), so the gallery can change without a deploy. The lobby has
+no menu, so the gallery has no entry there. In the browser at phone width:
+16 faces from the home page, and in a partida's first ronda exactly four
+marked at the top, including the two comodines in the hand. Built in
+parallel with Phase 71, the two meeting at one seam: `galeriaDeComodines()`
+in `lib/server/galeria.ts`, written first.
+
+### Phase 71 — La galería sale de la carpeta ✅
+Groundwork for Phase 72, with no visible change. Today the gallery is a
+folder, `public/candidatos/comodines`, read by `app/partida/[codigo]/page.tsx`
+and `/jugar`; curating it is editing files and deploying. A deployed
+function cannot write to its own files, so a gallery edited from the app
+has to live somewhere else:
+
+- **The images in Vercel Blob, the list in Turso** — a `Comodin` table (id,
+  blob URL, name, added at). One store per environment, as with the
+  databases since Phase 44: dev's uploads never reach production's
+  partidas.
+- **The sixteen faces of today migrated once**, by a script, into both
+  environments. The folder then goes; the gallery has one home.
+- **A partida keeps its own copy of the list**, taken when it is created and
+  stored with it. `carasDeRonda` deals from that copy, so a face added or
+  removed later never changes the comodines of a partida in progress, and a
+  seed replays with the faces it was played with. A removed face's image
+  stays in Blob while any open partida still lists it.
+
+**Done when:** a partida created on dev deals its comodines from the table
+and Blob with the folder deleted, and a face removed from the table mid-
+partida still shows on that partida's cards.
+
+**Done.** Two public Blob stores, `mazo-comodines` (Production) and
+`mazo-comodines-dev` (Preview and Development), each giving its environment
+a `BLOB_READ_WRITE_TOKEN`. The schema change is `prisma/sql/71-galeria.sql`,
+applied with `scripts/aplicar-sql.ts` — additive, so the running code
+ignores it — and the faces were moved by `scripts/comodines-a-blob.ts`,
+which skips what is already there. `Partida.caras` holds the copy, written
+by `crearPartida`; `galeriaDePartida(codigo)` deals from it, and a partida
+older than the copy deals from the gallery as it is. Measured on
+`mazo-dev`: a face removed after a partida was created is gone from the
+gallery, still in that partida's copy, and its image still served; once the
+partida ended, the sweep freed exactly that one image. Tested in
+`__tests__/server/galeria.test.ts`. Blob images load through `next/image`
+(`images.remotePatterns` for `*.public.blob.vercel-storage.com`).
+**The folder stays until production has its faces:** it is the source the
+migration reads. It goes in the same release that migrates `mazo`.
+
+### Phase 72 — La galería se edita ✅
+The owner, and only the owner, adds and removes faces from the app —
+no commit, no deploy.
+
+- **Behind the panel's key.** The same `CLAVE_DEL_PANEL`, the owner's
+  choice: one key, held by one person. The editing screen lives under
+  `/panel/comodines`, so the panel's cookie (path `/panel`) already covers
+  it, and it is linked from the panel. No key configured, no editing — the
+  same rule as the panel itself. The public gallery (Phase 70) shows no
+  edit controls to anyone.
+- **Every check is on the server**, in the action that uploads or deletes,
+  not in the page that offers the button.
+- **Adding:** pick a photo on the phone; images only (jpeg, png, webp,
+  avif), with a size cap, and shrunk before storage so a camera photo does
+  not cost a table full of phones a download each.
+- **Removing:** from the editing screen, with a confirmation inside the
+  page (not a browser dialog). It leaves new partidas at once; open ones
+  keep it (Phase 71).
+- An empty gallery is allowed: comodines fall back to the drawn ★.
+
+**Done when:** on the deployed dev site, the owner uploads a photo from a
+phone and it is in the public gallery and dealt in a new partida, removes
+one and it is gone from both — and the same upload without the key is
+refused by the server.
+
+**Done.** `/panel/comodines`, linked from the panel's tools, behind the
+panel's key; the same `Entrada` screen with its own title. The browser
+shrinks a photo to 1000 px JPEG before sending it (a 9 MB camera-sized
+photo arrived as 157 KB), and `lib/server/comodines.ts` checks the size cap
+and tells the type by the file's first bytes, not its name. Removing asks
+inside the page. Images are freed by `soltarImagenesLibres`, which keeps
+anything the gallery or an open partida's copy still lists. Verified
+locally against `mazo-dev` and its Blob store at phone width: upload, the
+face in the public gallery, removal, nothing left behind; a text file named
+`.jpg` refused; and with the cookie cleared under an open editor, the
+upload refused by the server with «Hace falta la clave.». Then on the deployed
+dev site (`mazo-git-dev-cepm23.vercel.app`): key, upload, the face in the
+public gallery, removal, gone.
+
+### Phase 73 — Los specs al día ✅
+`specs/estado.md` says "Last updated after Phase 45", and its *Open
+questions* still lists as open four things that were settled — the
+escaleras (Phase 48), guest identity (32), the transport (38) and the ronda
+that never ends (31). `mission.md` still says there is no second game until
+Carioca is complete, which this milestone makes true.
+
+- `estado.md` rewritten to the state after Phase 72: what Carioca is, what
+  is deliberately left (the *After* list, the stronger bot, the table of two
+  that can stall), and where to start.
+- `mission.md`: Carioca is complete; a second game is in scope.
+
+**Done when:** someone opening `estado.md` cold learns nothing from it that
+is no longer true, and Milestone 7 can be marked closed.
+
+**Done.** `estado.md` opens on Carioca complete, the phase table runs to 73,
+the module map names what exists now, and *Open questions* keeps only what
+is open: the table of two that can stall, and how two games share one
+engine. Its *What comes next* holds the steps production needs before the
+next release — the SQL, the faces into `mazo-comodines`, then the folder
+goes — and el Mentiroso after. `mission.md` puts a second game in scope.
+**Milestone 7 is closed.**
+
+---
+
 ## After
 
 Not scheduled, and not to be started before Milestone 3 — online play:
@@ -2839,8 +2981,3 @@ Not scheduled, and not to be started before Milestone 3 — online play:
   forward into Phase 18, for the screen space rather than for the install.
 - Replays from seed and move list.
 - Private leaderboards among friends.
-- The comodín gallery (was Phase 51): the comodines wear photos from
-  `public/candidatos/comodines` since Phase 29 — the owner's pets among them
-  — and a ronda only ever shows a few. A small screen from the partida's
-  menu, next to «Cómo se juega» and in the same over-the-felt shape, showing
-  every face. Browsing only; it changes nothing about the game.

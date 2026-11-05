@@ -9,9 +9,8 @@
  *
  * Each ronda shuffles the gallery and deals one face per comodín, so the four
  * differ from each other whenever there are four images to go around, and the
- * next ronda deals different ones. The gallery itself is whatever the server
- * found in `public/candidatos/comodines` at build time — pruning that folder
- * is curation, not a code change.
+ * next ronda deals different ones. The gallery is the partida's own copy of
+ * the `Comodin` table (Phase 71), curated from `/panel/comodines` (Phase 72).
  */
 
 import { buildDeck, createRng, isComodin, shuffle } from '@/lib/engine'

@@ -1,30 +1,18 @@
-import { readdirSync } from 'node:fs'
-import { join } from 'node:path'
+import { galeriaDePartida } from '@/lib/server/galeria'
 import { PartidaCliente } from './cliente'
 
 /**
  * A partida, by its code (Phase 33). The lobby first, the table once it is
  * dealt — same URL, because it is the same partida.
  *
- * The comodín gallery is read here for the same reason `/jugar` reads it: the
- * folder is the list, and curating it is editing files.
+ * Its comodines are dealt from the partida's own copy of the gallery
+ * (Phase 71), not from the gallery as it is now.
  */
-const CARPETA = join('candidatos', 'comodines')
-
 export default async function Page({
   params,
 }: PageProps<'/partida/[codigo]'>) {
   const { codigo } = await params
-
-  let galeria: string[] = []
-  try {
-    galeria = readdirSync(join(process.cwd(), 'public', CARPETA))
-      .filter((nombre) => /\.(jpe?g|png|webp|avif)$/i.test(nombre))
-      .sort()
-      .map((nombre) => `/${CARPETA}/${nombre}`)
-  } catch {
-    // No folder, no faces: the comodín keeps its drawn design.
-  }
+  const galeria = await galeriaDePartida(codigo)
 
   return <PartidaCliente codigo={codigo} galeriaDeComodines={galeria} />
 }

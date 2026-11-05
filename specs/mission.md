@@ -2,9 +2,10 @@
 
 ## What Mazo is
 
-**Mazo** is a web platform for playing Latin American card games. The first — and
-for now only — game is **Carioca**, a Chilean rummy variant played over a fixed
-sequence of contracts.
+**Mazo** is a web platform for playing Latin American card games. The first
+game is **Carioca**, a Chilean rummy variant played over a fixed
+sequence of contracts — complete since Milestone 7. The second, next, is
+**el Mentiroso**.
 
 It runs in the browser and is fully playable on a phone, so a game can start from
 a shared link with no install step.
@@ -68,8 +69,10 @@ A milestone is only real when it is playable, not when it compiles.
 - No native iOS/Android apps. The web app is the product; a PWA install is the
   most that is considered.
 - No spectator mode, tournaments, ELO ladders, or chat in the first version.
-- No second game until Carioca is complete. The architecture stays
-  multi-game-ready; the scope does not.
+- ~~No second game until Carioca is complete.~~ Carioca was declared
+  complete on 2026-11-05 (Milestone 7), and a second game — el Mentiroso —
+  is in scope. The rule it replaced still holds for the next one: a game is
+  finished before another is started.
 
 ## Open questions
 

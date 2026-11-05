@@ -18,17 +18,21 @@ import { barrerAhora, cerrar, entrar, limpiarTerminadas, salir } from './accione
 /** Somebody heard from this recently is somebody who is still at the table. */
 const MINUTOS_PRESENTE = 2
 
-export function Entrada() {
+export function Entrada({
+  titulo = 'Partidas abiertas',
+  descripcion = 'Para ver y cerrar las mesas que siguen abiertas.',
+}: {
+  titulo?: string
+  descripcion?: string
+} = {}) {
   const [error, accion, enviando] = useActionState(entrar, null)
 
   return (
     <main className="mx-auto flex w-full max-w-sm flex-1 flex-col justify-center gap-4 px-6 py-16">
       <div className="flex flex-col gap-1">
         <AlInicio />
-        <h1 className="text-2xl font-semibold tracking-tight">Partidas abiertas</h1>
-        <p className="text-muted-foreground text-sm">
-          Para ver y cerrar las mesas que siguen abiertas.
-        </p>
+        <h1 className="text-2xl font-semibold tracking-tight">{titulo}</h1>
+        <p className="text-muted-foreground text-sm">{descripcion}</p>
       </div>
       <form action={accion} className="flex flex-col gap-2">
         <input
@@ -119,6 +123,10 @@ export function Panel({
         <h2 className="text-muted-foreground font-medium tracking-widest uppercase">
           Herramientas
         </h2>
+        <Link href="/panel/comodines" className="w-fit underline underline-offset-2">
+          Los comodines
+          <span className="text-muted-foreground"> — subir y borrar fotos de la galería</span>
+        </Link>
         <a href="/mesa" className="w-fit underline underline-offset-2">
           La mesa
           <span className="text-muted-foreground"> — una partida de bots, paso a paso</span>

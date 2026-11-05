@@ -6,6 +6,7 @@ import {
   ArrowRight,
   ArrowUp01,
   BookOpen,
+  Images,
   Lightbulb,
   Lock,
   Maximize,
@@ -48,6 +49,8 @@ import {
 } from '@/lib/engine'
 import { carasDeRonda } from '@/lib/caras'
 import { CarasDeComodinProvider } from '@/components/caras'
+import { GaleriaDeComodines } from '@/components/galeria'
+import { ordenarGaleria } from '@/lib/galeria'
 import { useIdentidad } from '@/components/identidad'
 import { BotonDeBaraja, SEGUNDOS, recordarBaraja } from './ajustes'
 import type { useMesa } from './useMesa'
@@ -160,6 +163,7 @@ export function Tablero({
   const [verPila, setVerPila] = useState(false)
   const [verHistoria, setVerHistoria] = useState(false)
   const [verReglas, setVerReglas] = useState(false)
+  const [verComodines, setVerComodines] = useState(false)
   /**
    * The guide, on until the first partida is over (Phase 45). Read once on
    * mount like the deck is: it is a per-browser preference, not a rule, and
@@ -366,6 +370,7 @@ export function Tablero({
             mostrarGuia={mostrarGuia}
             onMostrarGuia={escogerGuia}
             onComoSeJuega={() => setVerReglas(true)}
+            onComodines={() => setVerComodines(true)}
             onCerrar={() => setVerMenu(false)}
             onSalir={onSalir}
           />
@@ -378,6 +383,15 @@ export function Tablero({
           <Reglas
             cartasOscuras={cartasOscuras}
             onCerrar={() => setVerReglas(false)}
+          />
+        )}
+
+        {/* Above the menu too, for the same reason as the rules. */}
+        {verComodines && (
+          <Comodines
+            galeria={galeriaDeComodines}
+            enJuego={partida.config.comodines ? [...caras.values()] : []}
+            onCerrar={() => setVerComodines(false)}
           />
         )}
 
@@ -424,6 +438,7 @@ function MenuDePartida({
   mostrarGuia,
   onMostrarGuia,
   onComoSeJuega,
+  onComodines,
   onCerrar,
   onSalir,
 }: {
@@ -440,6 +455,7 @@ function MenuDePartida({
   mostrarGuia: boolean
   onMostrarGuia: (mostrar: boolean) => void
   onComoSeJuega: () => void
+  onComodines: () => void
   onCerrar: () => void
   onSalir: () => void
 }) {
@@ -532,6 +548,20 @@ function MenuDePartida({
               <span className="text-sm font-medium">Cómo se juega</span>
               <span className="text-muted-foreground text-xs">
                 Los grupos, los comodines y el puntaje
+              </span>
+            </span>
+          </button>
+
+          <button
+            type="button"
+            onClick={onComodines}
+            className="border-input hover:bg-accent flex items-center gap-3 rounded-md border px-3 py-2.5 text-left transition-colors"
+          >
+            <Images className="size-4 shrink-0" aria-hidden />
+            <span className="flex min-w-0 flex-col">
+              <span className="text-sm font-medium">Los comodines</span>
+              <span className="text-muted-foreground text-xs">
+                Los de esta ronda y todas las caras
               </span>
             </span>
           </button>
@@ -631,6 +661,54 @@ function Reglas({
         </div>
         <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4">
           <ComoSeJuega cartasOscuras={cartasOscuras} />
+        </div>
+        <div className="flex justify-end border-t px-4 py-3">
+          <button
+            type="button"
+            onClick={onCerrar}
+            autoFocus
+            className="bg-primary text-primary-foreground rounded-md px-3 py-1.5 text-sm"
+          >
+            Volver a la mesa
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+/**
+ * The comodín gallery, over the felt (Phase 70).
+ *
+ * The same grid the `/comodines` page shows, in the shape the rules use, led
+ * by the faces this ronda dealt — the question a player has mid-ronda is
+ * «which photo is a comodín right now?», and the rest of the gallery is the
+ * answer to a question nobody at the table is asking yet. A partida without
+ * comodines has none in play, and shows the gallery as it is.
+ */
+function Comodines({
+  galeria,
+  enJuego,
+  onCerrar,
+}: {
+  galeria: readonly string[]
+  /** An array, not the map's iterator: a render may run twice. */
+  enJuego: readonly string[]
+  onCerrar: () => void
+}) {
+  const caras = ordenarGaleria(galeria, enJuego)
+
+  return (
+    <div className="absolute inset-0 z-40 flex items-center justify-center bg-black/60 p-4">
+      <div className="bg-background flex max-h-full w-full max-w-md flex-col rounded-lg border">
+        <div className="flex items-baseline justify-between gap-3 border-b px-4 py-3">
+          <h2 className="text-base font-semibold">Los comodines</h2>
+          <span className="text-muted-foreground text-xs">
+            {caras.length} {caras.length === 1 ? 'cara' : 'caras'}
+          </span>
+        </div>
+        <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4">
+          <GaleriaDeComodines caras={caras} />
         </div>
         <div className="flex justify-end border-t px-4 py-3">
           <button

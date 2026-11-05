@@ -1,6 +1,6 @@
 # Project status — pick up here
 
-Last updated after Phase 45 — Milestone 4 is closed.
+Last updated after Phase 73 — Milestone 7 is closed: **Carioca is complete.**
 
 Read this first, then `mission.md` for the why, `carioca-rules.md` for the game,
 `tech-stack.md` for the stack, and `roadmap.md` for what comes next. This file is
@@ -14,17 +14,25 @@ doc is worse than none.
 
 ## Where things stand
 
-Phases 0–45 are numbered and **all of them are done: Milestones 1 through 4
-are complete.** **Carioca is playable, it is entered through one door, and it
-now teaches itself.** Open the site on a phone, get dealt an alias, create a partida —
-you host, a short code is dealt, three bots sit down — and play a full
-partida: draw, lay down, unload onto anyone's grupos, discard, and see the
-scoreboard at the end.
+Phases 0–73 are numbered and **all of them are done: Milestones 1 through 7
+are complete, and Carioca is finished as a game.** Open the site on a phone,
+get dealt an alias, create a partida — you host, a short code is dealt,
+three bots sit down at the level you pick — or join one with a code, and
+play every contract including the escaleras, against bots and people at
+once, refereed by the server. The comodines wear the owner's photos, which
+anyone can browse at `/comodines` or from the partida's menu, and which the
+owner edits from the app at `/panel/comodines`.
 
-Milestones 1 and 2 are both complete. What is missing is other people — and
-after Phase 29 the roadmap was reordered for exactly that: **Milestone 3 is
-now online play** (a partida started, joined with a short code, bots in the
-empty seats), and the better bots moved behind it as Milestone 4.
+**What is deliberately not done**, and stays that way until somebody asks:
+the *After* list in `roadmap.md` (the app loading with no network, replays
+from seed and move list, private leaderboards), the stronger bot's missing
+components ("Deferred: the components of a stronger bot"), and a table of
+**two bots** that can stall trading the descarte — see *Open questions*.
+
+**Next is a second game, el Mentiroso.** It starts the way Carioca did: its
+rules written down in `specs/` before any code, then the engine split into
+what is shared and what is Carioca's — the roadmap's "real test of the
+engine's separation".
 
 | Phase | | |
 | --- | --- | --- |
@@ -77,6 +85,314 @@ empty seats), and the better bots moved behind it as Milestone 4.
 | 46 | A table worth sitting at: felt, seats on the rim, a measured mesa, the font | ✅ |
 | 47 | La bajada estricta: exactly 3 per trío and 4 per escala, as a lobby choice | ✅ |
 | 48 | Las escaleras: contracts 9–12, sucia, pintada, color and real | ✅ |
+| 49 | La tabla por puestos: the marcador in standing order | ✅ |
+| 50 | Todos o ninguno: every contract on or off at once | ✅ |
+| 51 | (the gallery — moved to *After*, then done as Phase 70) | — |
+| 52 | Tomar solo lo que se baja: a bajado bot takes only what it can lay | ✅ |
+| 53 | El banco de pruebas: `npm run torneo` | ✅ |
+| 54 | Un piso más alto: El Calculador | ✅ |
+| 55 | La memoria de la mesa: bots read the table's story | ✅ |
+| 56 | El Tahúr: simulates each discard | ✅ |
+| 57 | Niveles en la sala: Fácil / Normal / Difícil — **Milestone 6** | ✅ |
+| 58 | What reaches the mesa is seen arriving | ✅ |
+| 59 | The flight first, then the card | ✅ |
+| 60 | A card in the air has left where it was | ✅ |
+| 61 | The home page brought up to date | ✅ |
+| 62 | From the home page to the panel and back | ✅ |
+| 63 | Arranging by dragging | ✅ |
+| 64 | Touching the mesa lets go of the selection | ✅ |
+| 65 | Dragging between bloques | ✅ |
+| 66 | A new grupo, by dragging onto the lock | ✅ |
+| 67 | What moved is seen where it landed | ✅ |
+| 68 | What a drag carried is let go of | ✅ |
+| 69 | The piles wait for the thrown card | ✅ |
+| 70 | La galería de comodines: open to anyone, this ronda's first | ✅ |
+| 71 | The gallery leaves the folder: Blob, a table, a copy per partida | ✅ |
+| 72 | The gallery is edited, behind the panel's key | ✅ |
+| 73 | The specs brought up to date — **Milestone 7, Carioca complete** | ✅ |
+
+- **Repo:** https://github.com/cposada8/mazo
+- **Live:** https://mazo-six.vercel.app — **online play is in production**
+  since Milestone 3: the door creates or joins a partida by code, and a
+  table with more than one person is refereed by the server. **Milestone 4
+  is in production too**, played on dev first and promoted on the owner's
+  word that it held: the host picks who sits in each bot seat. `/mesa` steps
+  through a bot partida, `/pruebas` shows deals and grupo validation.
+- **Dev:** https://mazo-git-dev-cepm23.vercel.app — the latest commit on `dev`,
+  public, no login.
+- **Deploys:** work goes to `dev`, which builds by itself. Production changes
+  only by merging `dev` into `main`. Nothing else deploys `main`.
+- **Tests:** 728, all green (the run takes ~45s, mostly the soak). `npm run test:run`, `npx tsc --noEmit`, `npm run lint`.
+- **Database:** SQLite via Prisma 7 + libSQL. Local dev uses `prisma/dev.db`;
+  **online is live on Turso** — group `mazo` in `aws-us-east-1`, so it sits
+  beside Vercel's functions and leaves `fwc_2026`'s group alone. **Two
+  databases in that group, since Phase 44:** `mazo` for Production and
+  `mazo-dev` for Preview and Development. They were one until measuring the
+  abandoned partidas turned up dev's test tables sitting in the same list as
+  real play. Credentials are Vercel env vars per environment; the production
+  ones are also in `.env.turso` (gitignored) for the CLI.
+  - After a schema change: `npx prisma db push` for local; for Turso, the
+    change as SQL (`npx prisma migrate diff --from-schema <old>
+    --to-schema prisma/schema.prisma --script`) saved under `prisma/sql/`
+    and applied with `npx tsx --env-file=<env> scripts/aplicar-sql.ts` —
+    the Prisma CLI will not take a `libsql://` URL directly. Additive
+    changes go to a database *before* the code that reads them deploys.
+  - `.env.vercel-dev` (gitignored) holds Development's variables as pulled
+    from Vercel — `mazo-dev` and the dev Blob store — for scripts. It is not
+    `.env.local` on purpose: `next dev` would read that and quietly point
+    local play at `mazo-dev`.
+- **Blob, since Phase 71:** the comodín faces. Two public stores, like the
+  databases: `mazo-comodines` for Production, `mazo-comodines-dev` for
+  Preview and Development, each giving its environment a
+  `BLOB_READ_WRITE_TOKEN`. The local database lists dev's images, so local
+  play shows faces too; uploading from a local server writes to dev's store.
+
+## What exists
+
+```
+lib/engine/          The whole game. Pure TypeScript.
+  cards.ts           Suits, the 13-rank ring, card identity.
+  random.ts          Seeded stream: createRng, shuffle.
+  deck.ts            buildDeck, deal.
+  grupos.ts          Trio and Escala, and validation by phase.
+  mesa.ts            Reshaping grupos already on the table.
+  ronda.ts           State, moves, and apply() — the referee.
+  contratos.ts       The twelve contracts, as data — 9–12 the escaleras.
+  escalera.ts        The four escalera levels, validated and placed 2 → A.
+  puntaje.ts         Card values and hand totals.
+  partida.ts         The contracts played in order, scored, to a winner.
+  notacion.ts        Card notation: 7♠, 7s, ** for a comodín.
+  escenario.ts       A ronda dealt from cards you name, rest filled by seed.
+
+lib/bots/             Clients of the engine. Nothing in the engine imports these.
+  catalogo.ts        Every bot by id, with its level: Fácil, Normal, Difícil.
+  agrupar.ts         The grouping search, and how useful a card is.
+  codicioso.ts       El Codicioso: the baseline bot. The others beside it
+                     (calculador, tahur, memorioso, paciente, rapido).
+  torneo.ts          Bots against bots, for `npm run torneo`.
+  mesa.ts            Runs a whole partida with bots in the seats.
+  turno.ts           A bot's whole turn decided up front, so the clock can
+                     spread its moves over the configured seconds.
+components/carta.tsx The visual card: corner-indexed, two finishes.
+components/mesa.tsx  The table, landscape or portrait: seats on the rim, the
+                     felt, the piles, everyone's grupos in the middle, your
+                     hand along the bottom. Optional callbacks turn it from a
+                     game you watch into one you play.
+lib/engine/vista.ts  What one seat may see. Bots and the server both take it.
+lib/asientos.ts      Where each seat goes around the table. Pure geometry.
+lib/relato.ts        A move told in words, public information only — the
+                     `mazo` variant cannot carry a card by construction.
+lib/semilla.ts       Short readable seeds, random by default.
+lib/pantalla.ts      The Fullscreen API, wrapped small.
+app/manifest.ts      Standalone install, for the screen space.
+app/jugar/           The table itself: juego.tsx, useMesa.ts, usePartida.ts.
+app/partida/[codigo]/  The lobby, then the table. One URL, one partida.
+app/api/partidas/    Create, read, and act on a partida.
+lib/lobby.ts         The wire between door and server: types both sides share.
+lib/codigo.ts        The short invite code, and what a typed one means.
+lib/alias.ts         Parsing the alias file.
+components/puerta.tsx     The door: create a partida, or join by code.
+components/identidad.tsx  Your secreto and alias, dealt on first visit.
+components/consultas.tsx  TanStack Query, for polling the lobby.
+lib/server/          Server-only. db.ts is the connection; partidas.ts is
+                     partidas at rest and every lobby operation; panel.ts the
+                     owner's key; galeria.ts and comodines.ts the gallery.
+prisma/schema.prisma Partida, Asiento and Comodin. State is the engine's own
+                     JSON; a partida carries its own copy of the gallery.
+prisma/sql/          Schema changes as SQL, for Turso (scripts/aplicar-sql.ts).
+lib/caras.ts         Which face each comodín wears this ronda, from the seed.
+components/galeria.tsx  The gallery grid, for /comodines and the menu.
+app/comodines/       The gallery, open to anyone.
+app/panel/           The owner's: open partidas, and /panel/comodines.
+components/tema.tsx  Light / dark / follow the phone.
+lib/mano.ts          Arranging your hand: order, sorting, pinned bloques,
+                     latched sort. A comfort, never a rule.
+lib/guia.ts          The next move in one line, derived and pure — plus the
+                     absent/sí/no setting that lets it silence itself once.
+components/reglas.tsx  «Cómo se juega»: the rules on one screen, illustrated
+                     with real cards. Rendered by the page and the overlay.
+app/como-se-juega/   The rules as a page, for reading before sitting down.
+app/pruebas/         The page that makes the engine visible.
+__tests__/           Tests, including engine/helpers.ts for scripted rondas.
+```
+
+Partidas live on the server (Phase 34) and the server referees every
+move; a seat's browser only ever holds its own view.
+
+## The five decisions that shape the code
+
+Change these and a lot breaks. They are here so the next person does not undo
+them by accident.
+
+1. **The engine is pure.** `lib/engine/` imports nothing from the app and no
+   framework. `__tests__/engine/purity.test.ts` fails the build if that slips.
+   Bots, the UI and the future server are all clients of the engine.
+
+2. **The engine validates; it never decides.** The player proposes a grouping
+   and `apply()` accepts or refuses it. Six sevens can be one trío or two, and
+   that choice belongs to the player — auto-grouping would silently take a real
+   decision away. Any "suggested grouping" is a UI hint, never engine behavior.
+
+3. **Ranks are a ring, not a line.** `cyclicDistance` works modulo 13, so
+   `K A 2 3` is a legal escala and the ace needs no special case.
+
+4. **A comodín's binding is positional.** An escala stores the rank it starts on;
+   slot `i` stands for `rankAfter(start, i)`. There is no stored "this joker means
+   6♥" that could drift out of sync, and adjacency is just comparing neighbours.
+
+5. **Randomness is a stream carried as one number.** `RondaState.rngState`
+   survives serialization, so a ronda can be stored in a database, reloaded, and
+   keep reshuffling deterministically. Replays come free later.
+
+One more worth knowing: **the winner of a ronda opens the next one.** The first
+ronda's opener is chosen by whoever set up the partida, or drawn — and even the
+draw comes from the partida seed, so nothing about a partida is unreproducible.
+
+And a trap: **a card id names a card in the deck, not a card in this ronda.**
+`7-s#0` is the same string in every deal. Anything that remembers cards by id
+across rondas — an arrangement, a selection, a hint — will keep matching after
+the cards are gone and has to be dropped when the ronda changes.
+
+## Versions and releasing
+
+**The version counts production releases, and nothing else.** It lives in
+`package.json`, starts at **1.0.0**, and moves only when dev goes to
+production — never on a push to dev. The app shows it at the foot of the
+home page and in the partida's menu: `v1.2.0` in production, `v1.2.0 · dev`
+on any other build (dev, previews, local), meaning *the last release plus
+whatever is being tried on top of it* (`lib/version.ts`).
+
+Releasing is one command, from a clean tree:
+
+```
+npm run publicar            # 1.2.0 -> 1.3.0, the usual release
+npm run publicar -- patch   # 1.2.0 -> 1.2.1, a small fix
+npm run publicar -- major   # 1.2.0 -> 2.0.0
+```
+
+`scripts/publicar.sh` checks dev (tests, lint, build), merges it into
+`main`, bumps the version in the merge, tags it `vX.Y.Z`, pushes, and fast-
+forwards dev to main so dev knows the number it builds on. Vercel deploys
+`main` to production on push.
+
+## What comes next
+
+**Production got the gallery in v1.6.0** (2026-11-05): `mazo` took
+`prisma/sql/71-galeria.sql` and its sixteen faces in `mazo-comodines`
+before the release deployed, and `public/candidatos/comodines` is gone. The
+next schema change goes the same way — SQL under `prisma/sql/`, applied to
+`mazo-dev`, then to `mazo` before `npm run publicar`. Production's database
+credentials are in `.env.turso`; `vercel env pull` masks them.
+
+**Next, a second game: el Mentiroso** (the owner, 2026-11-05). Its milestone
+is not written yet; it starts with its rules in `specs/`, as Phase 0 did
+for Carioca, and with the engine split so that two games share cards, the
+seeded stream and the deck while each owns its rules.
+
+*Everything below is the record of how the project got here.*
+
+**The milestone lists, as they were worked through.**
+
+**Milestone 5 — More ways to play**, asked for by the owner after v1.0.1 and
+ordered by them (`roadmap.md` has the briefs and the open questions):
+
+1. ~~Phase 47 — La bajada estricta.~~ ✅ Done, on dev.
+2. ~~Phase 48 — Las escaleras.~~ ✅ Done, on dev.
+3. ~~Phase 49 — La tabla por puestos.~~ ✅ Done, on dev. The marcador's
+   columns in standing order, your own column highlighted. Put ahead of
+   the gallery by the owner.
+4. ~~Phase 50 — Todos o ninguno.~~ ✅ Done, on dev. Two buttons on the
+   lobby's list of repartos: every one on, or only the first.
+5. ~~Phase 51 — La galería de comodines.~~ Moved to *After*. Every comodín face, from the
+   menu. Not a priority.
+
+**Milestone 6 — Bots de más nivel**, asked for by the owner on 2026-09-28
+(`roadmap.md` has the phases). The owner settled it: this order, today's
+bots stay as the *Fácil* level, the stronger play comes as new bots:
+
+1. ~~Phase 52 — Tomar solo lo que se baja.~~ ✅ Done, on dev: a bajado bot
+   no longer takes a descarte card it will not put down.
+2. ~~Phase 53 — El banco de pruebas.~~ ✅ Done, on dev: `npm run torneo`.
+3. ~~Phase 54 — Un piso más alto.~~ ✅ Done, on dev: El Calculador, the
+   first bot above *Fácil* — 33% of wins against the best *Fácil*'s 17%.
+4. ~~Phase 55 — La memoria de la mesa.~~ ✅ Done, on dev: bots receive the
+   relatos everywhere; denying the next seat was measured and hurts.
+5. ~~Phase 56 — El Tahúr.~~ ✅ Done, on dev: simulates each discard a
+   hundred ways; 32% of wins against El Calculador's 18%.
+6. ~~Phase 57 — Niveles en la sala.~~ ✅ Done, on dev: Fácil / Normal /
+   Difícil in the lobby's picker. The default seat is still Fácil.
+
+**Milestone 6 is done**, released as v1.3.0. A new bot seat starts at
+*Fácil* (El Codicioso) — the owner's decision, 2026-09-29.
+
+**Next, asked for after v1.3.0** (`roadmap.md` has the briefs):
+
+1. ~~Phase 58 — Lo que llega a la mesa se ve llegar.~~ ✅ Done, on dev:
+   bajadas, agregars and freed comodines fly onto the mesa.
+2. ~~Phase 59 — Primero el viaje, después la carta.~~ ✅ Done, on dev: the
+   table is drawn as told, so a card lands when its flight ends.
+
+3. ~~Phase 60 — La carta sale de donde estaba.~~ ✅ Done, on dev: a card in
+   the air has left where it was; only its landing waits.
+
+**Next, asked for after v1.4.1** (`roadmap.md` has the briefs), in the
+owner's order:
+
+1. ~~Phase 61 — La portada al día.~~ ✅ Done, released as v1.4.2: no contracts, the door
+   first, the footer true; la mesa and the banco de pruebas moved to the
+   panel.
+2. ~~Phase 62 — Del inicio al panel y de vuelta.~~ ✅ Done, released as
+   v1.4.2.
+3. ~~Phase 63 — Acomodar arrastrando.~~ ✅ Done, on dev: hold a loose card
+   (a moment, with a finger) and drag it; a selected card carries the whole
+   selection.
+4. ~~Phase 64 — Tocar la mesa suelta la selección.~~ ✅ Done, on dev.
+5. ~~Phase 65 — Arrastrar entre bloques.~~ ✅ Done, on dev: pinned cards
+   drag too — within a bloque, between bloques, and in and out of the loose
+   run.
+6. ~~Phase 66 — Un grupo nuevo, arrastrando.~~ ✅ Done, on dev: a lock
+   appears over the hand while a card is up; dropped on it, it is a new
+   bloque.
+7. ~~Phase 67 — Lo que se movió se ve dónde quedó.~~ ✅ Done, on dev: what a
+   drag carried stays green until the next touch.
+8. ~~Phase 68 — Lo arrastrado se suelta.~~ ✅ Done, on dev: what a drag
+   carried is deselected on landing, marked green instead.
+
+Released as v1.5.0. Then, from playing it:
+
+9. ~~Phase 69 — Las pilas esperan la carta.~~ ✅ Done, on dev: the piles
+   glow for your draw only once the throw that handed you the turn lands.
+
+The comodín gallery (was Phase 51) moved to the *After* list.
+
+**Next — Milestone 7, Cerrar Carioca** (the owner, 2026-11-05; `roadmap.md`
+has the briefs). Carioca is closed before el Mentiroso starts:
+
+1. Phase 70 — La galería de comodines: open to anyone, from the home page
+   and from the partida's menu, with this ronda's comodines first.
+2. Phase 71 — La galería sale de la carpeta: Blob and a table, one store per
+   environment, and each partida keeps its own copy of the list.
+3. Phase 72 — La galería se edita: add and remove faces from the app, behind
+   the panel's key, owner only.
+4. Phase 73 — Los specs al día: this file and `mission.md`.
+
+Both 47 and 48 are settled with the owner; nothing is waiting on a question.
+The *After* list in `roadmap.md` stays unordered behind them.
+
+
+**As it stood after Phase 45.**
+
+Phases 0–45 are numbered and **all of them are done: Milestones 1 through 4
+are complete.** **Carioca is playable, it is entered through one door, and it
+now teaches itself.** Open the site on a phone, get dealt an alias, create a partida —
+you host, a short code is dealt, three bots sit down — and play a full
+partida: draw, lay down, unload onto anyone's grupos, discard, and see the
+scoreboard at the end.
+
+Milestones 1 and 2 are both complete. What is missing is other people — and
+after Phase 29 the roadmap was reordered for exactly that: **Milestone 3 is
+now online play** (a partida started, joined with a short code, bots in the
+empty seats), and the better bots moved behind it as Milestone 4.
 
 **Phase 44 came from a suspicion that measuring confirmed, and is done.**
 Thirteen partidas on the live database, all thirteen still `jugando`, none
@@ -173,228 +489,6 @@ ronda deals a face to each comodín from the partida's seed — rondas differ, a
 replayed seed repeats. Curating the gallery is deleting files and pushing;
 no code changes. `lib/caras.ts`, `components/caras.tsx`.
 
-- **Repo:** https://github.com/cposada8/mazo
-- **Live:** https://mazo-six.vercel.app — **online play is in production**
-  since Milestone 3: the door creates or joins a partida by code, and a
-  table with more than one person is refereed by the server. **Milestone 4
-  is in production too**, played on dev first and promoted on the owner's
-  word that it held: the host picks who sits in each bot seat. `/mesa` steps
-  through a bot partida, `/pruebas` shows deals and grupo validation.
-- **Dev:** https://mazo-git-dev-cepm23.vercel.app — the latest commit on `dev`,
-  public, no login.
-- **Deploys:** work goes to `dev`, which builds by itself. Production changes
-  only by merging `dev` into `main`. Nothing else deploys `main`.
-- **Tests:** 577, all green (the run takes ~18s, mostly the soak). `npm run test:run`, `npx tsc --noEmit`, `npm run lint`.
-- **Database:** SQLite via Prisma 7 + libSQL. Local dev uses `prisma/dev.db`;
-  **online is live on Turso** — group `mazo` in `aws-us-east-1`, so it sits
-  beside Vercel's functions and leaves `fwc_2026`'s group alone. **Two
-  databases in that group, since Phase 44:** `mazo` for Production and
-  `mazo-dev` for Preview and Development. They were one until measuring the
-  abandoned partidas turned up dev's test tables sitting in the same list as
-  real play. Credentials are Vercel env vars per environment; the production
-  ones are also in `.env.turso` (gitignored) for the CLI.
-  - After a schema change: `npx prisma db push` for local, then
-    `npx prisma migrate diff --from-empty --to-schema prisma/schema.prisma
-    --script | turso db shell mazo` for Turso — the Prisma CLI will not take
-    a `libsql://` URL directly.
-
-## What exists
-
-```
-lib/engine/          The whole game. Pure TypeScript.
-  cards.ts           Suits, the 13-rank ring, card identity.
-  random.ts          Seeded stream: createRng, shuffle.
-  deck.ts            buildDeck, deal.
-  grupos.ts          Trio and Escala, and validation by phase.
-  mesa.ts            Reshaping grupos already on the table.
-  ronda.ts           State, moves, and apply() — the referee.
-  contratos.ts       The eight contracts, as data.
-  puntaje.ts         Card values and hand totals.
-  partida.ts         The contracts played in order, scored, to a winner.
-  notacion.ts        Card notation: 7♠, 7s, ** for a comodín.
-  escenario.ts       A ronda dealt from cards you name, rest filled by seed.
-
-lib/bots/             Clients of the engine. Nothing in the engine imports these.
-  agrupar.ts         The grouping search, and how useful a card is.
-  codicioso.ts       El Codicioso: the baseline bot.
-  mesa.ts            Runs a whole partida with bots in the seats.
-  turno.ts           A bot's whole turn decided up front, so the clock can
-                     spread its moves over the configured seconds.
-components/carta.tsx The visual card: corner-indexed, two finishes.
-components/mesa.tsx  The table, landscape or portrait: seats on the rim, the
-                     felt, the piles, everyone's grupos in the middle, your
-                     hand along the bottom. Optional callbacks turn it from a
-                     game you watch into one you play.
-lib/engine/vista.ts  What one seat may see. Bots and the server both take it.
-lib/asientos.ts      Where each seat goes around the table. Pure geometry.
-lib/relato.ts        A move told in words, public information only — the
-                     `mazo` variant cannot carry a card by construction.
-lib/semilla.ts       Short readable seeds, random by default.
-lib/pantalla.ts      The Fullscreen API, wrapped small.
-app/manifest.ts      Standalone install, for the screen space.
-app/jugar/           The table itself: juego.tsx, usePartida.ts. inicio.tsx is
-                     the pre-door setup screen, retiring in Phase 34.
-app/partida/[codigo]/  The lobby, then the table. One URL, one partida.
-app/api/partidas/    Create, read, and act on a partida.
-lib/lobby.ts         The wire between door and server: types both sides share.
-lib/codigo.ts        The short invite code, and what a typed one means.
-lib/alias.ts         Parsing the alias file.
-components/puerta.tsx     The door: create a partida, or join by code.
-components/identidad.tsx  Your secreto and alias, dealt on first visit.
-components/consultas.tsx  TanStack Query, for polling the lobby.
-lib/server/          Server-only. db.ts is the connection; partidas.ts is
-                     partidas at rest and every lobby operation.
-prisma/schema.prisma Partida and Asiento. State is the engine's own JSON.
-components/tema.tsx  Light / dark / follow the phone.
-lib/mano.ts          Arranging your hand: order, sorting, pinned bloques,
-                     latched sort. A comfort, never a rule.
-lib/guia.ts          The next move in one line, derived and pure — plus the
-                     absent/sí/no setting that lets it silence itself once.
-components/reglas.tsx  «Cómo se juega»: the rules on one screen, illustrated
-                     with real cards. Rendered by the page and the overlay.
-app/como-se-juega/   The rules as a page, for reading before sitting down.
-app/pruebas/         The page that makes the engine visible.
-__tests__/           Tests, including engine/helpers.ts for scripted rondas.
-```
-
-Partidas are persisted (Phase 32); the table itself still plays in the
-browser, from the state the server dealt. Phase 34 moves the refereeing
-server-side.
-
-## The five decisions that shape the code
-
-Change these and a lot breaks. They are here so the next person does not undo
-them by accident.
-
-1. **The engine is pure.** `lib/engine/` imports nothing from the app and no
-   framework. `__tests__/engine/purity.test.ts` fails the build if that slips.
-   Bots, the UI and the future server are all clients of the engine.
-
-2. **The engine validates; it never decides.** The player proposes a grouping
-   and `apply()` accepts or refuses it. Six sevens can be one trío or two, and
-   that choice belongs to the player — auto-grouping would silently take a real
-   decision away. Any "suggested grouping" is a UI hint, never engine behavior.
-
-3. **Ranks are a ring, not a line.** `cyclicDistance` works modulo 13, so
-   `K A 2 3` is a legal escala and the ace needs no special case.
-
-4. **A comodín's binding is positional.** An escala stores the rank it starts on;
-   slot `i` stands for `rankAfter(start, i)`. There is no stored "this joker means
-   6♥" that could drift out of sync, and adjacency is just comparing neighbours.
-
-5. **Randomness is a stream carried as one number.** `RondaState.rngState`
-   survives serialization, so a ronda can be stored in a database, reloaded, and
-   keep reshuffling deterministically. Replays come free later.
-
-One more worth knowing: **the winner of a ronda opens the next one.** The first
-ronda's opener is chosen by whoever set up the partida, or drawn — and even the
-draw comes from the partida seed, so nothing about a partida is unreproducible.
-
-And a trap: **a card id names a card in the deck, not a card in this ronda.**
-`7-s#0` is the same string in every deal. Anything that remembers cards by id
-across rondas — an arrangement, a selection, a hint — will keep matching after
-the cards are gone and has to be dropped when the ronda changes.
-
-## Versions and releasing
-
-**The version counts production releases, and nothing else.** It lives in
-`package.json`, starts at **1.0.0**, and moves only when dev goes to
-production — never on a push to dev. The app shows it at the foot of the
-home page and in the partida's menu: `v1.2.0` in production, `v1.2.0 · dev`
-on any other build (dev, previews, local), meaning *the last release plus
-whatever is being tried on top of it* (`lib/version.ts`).
-
-Releasing is one command, from a clean tree:
-
-```
-npm run publicar            # 1.2.0 -> 1.3.0, the usual release
-npm run publicar -- patch   # 1.2.0 -> 1.2.1, a small fix
-npm run publicar -- major   # 1.2.0 -> 2.0.0
-```
-
-`scripts/publicar.sh` checks dev (tests, lint, build), merges it into
-`main`, bumps the version in the merge, tags it `vX.Y.Z`, pushes, and fast-
-forwards dev to main so dev knows the number it builds on. Vercel deploys
-`main` to production on push.
-
-## What comes next
-
-**Milestone 5 — More ways to play**, asked for by the owner after v1.0.1 and
-ordered by them (`roadmap.md` has the briefs and the open questions):
-
-1. ~~Phase 47 — La bajada estricta.~~ ✅ Done, on dev.
-2. ~~Phase 48 — Las escaleras.~~ ✅ Done, on dev.
-3. ~~Phase 49 — La tabla por puestos.~~ ✅ Done, on dev. The marcador's
-   columns in standing order, your own column highlighted. Put ahead of
-   the gallery by the owner.
-4. ~~Phase 50 — Todos o ninguno.~~ ✅ Done, on dev. Two buttons on the
-   lobby's list of repartos: every one on, or only the first.
-5. ~~Phase 51 — La galería de comodines.~~ Moved to *After*. Every comodín face, from the
-   menu. Not a priority.
-
-**Milestone 6 — Bots de más nivel**, asked for by the owner on 2026-09-28
-(`roadmap.md` has the phases). The owner settled it: this order, today's
-bots stay as the *Fácil* level, the stronger play comes as new bots:
-
-1. ~~Phase 52 — Tomar solo lo que se baja.~~ ✅ Done, on dev: a bajado bot
-   no longer takes a descarte card it will not put down.
-2. ~~Phase 53 — El banco de pruebas.~~ ✅ Done, on dev: `npm run torneo`.
-3. ~~Phase 54 — Un piso más alto.~~ ✅ Done, on dev: El Calculador, the
-   first bot above *Fácil* — 33% of wins against the best *Fácil*'s 17%.
-4. ~~Phase 55 — La memoria de la mesa.~~ ✅ Done, on dev: bots receive the
-   relatos everywhere; denying the next seat was measured and hurts.
-5. ~~Phase 56 — El Tahúr.~~ ✅ Done, on dev: simulates each discard a
-   hundred ways; 32% of wins against El Calculador's 18%.
-6. ~~Phase 57 — Niveles en la sala.~~ ✅ Done, on dev: Fácil / Normal /
-   Difícil in the lobby's picker. The default seat is still Fácil.
-
-**Milestone 6 is done**, released as v1.3.0. A new bot seat starts at
-*Fácil* (El Codicioso) — the owner's decision, 2026-09-29.
-
-**Next, asked for after v1.3.0** (`roadmap.md` has the briefs):
-
-1. ~~Phase 58 — Lo que llega a la mesa se ve llegar.~~ ✅ Done, on dev:
-   bajadas, agregars and freed comodines fly onto the mesa.
-2. ~~Phase 59 — Primero el viaje, después la carta.~~ ✅ Done, on dev: the
-   table is drawn as told, so a card lands when its flight ends.
-
-3. ~~Phase 60 — La carta sale de donde estaba.~~ ✅ Done, on dev: a card in
-   the air has left where it was; only its landing waits.
-
-**Next, asked for after v1.4.1** (`roadmap.md` has the briefs), in the
-owner's order:
-
-1. ~~Phase 61 — La portada al día.~~ ✅ Done, released as v1.4.2: no contracts, the door
-   first, the footer true; la mesa and the banco de pruebas moved to the
-   panel.
-2. ~~Phase 62 — Del inicio al panel y de vuelta.~~ ✅ Done, released as
-   v1.4.2.
-3. ~~Phase 63 — Acomodar arrastrando.~~ ✅ Done, on dev: hold a loose card
-   (a moment, with a finger) and drag it; a selected card carries the whole
-   selection.
-4. ~~Phase 64 — Tocar la mesa suelta la selección.~~ ✅ Done, on dev.
-5. ~~Phase 65 — Arrastrar entre bloques.~~ ✅ Done, on dev: pinned cards
-   drag too — within a bloque, between bloques, and in and out of the loose
-   run.
-6. ~~Phase 66 — Un grupo nuevo, arrastrando.~~ ✅ Done, on dev: a lock
-   appears over the hand while a card is up; dropped on it, it is a new
-   bloque.
-7. ~~Phase 67 — Lo que se movió se ve dónde quedó.~~ ✅ Done, on dev: what a
-   drag carried stays green until the next touch.
-8. ~~Phase 68 — Lo arrastrado se suelta.~~ ✅ Done, on dev: what a drag
-   carried is deselected on landing, marked green instead.
-
-Released as v1.5.0. Then, from playing it:
-
-9. ~~Phase 69 — Las pilas esperan la carta.~~ ✅ Done, on dev: the piles
-   glow for your draw only once the throw that handed you the turn lands.
-
-The comodín gallery (was Phase 51) moved to the *After* list.
-
-Both 47 and 48 are settled with the owner; nothing is waiting on a question.
-The *After* list in `roadmap.md` stays unordered behind them.
-
-*Everything below is the record of how the project got here.*
 
 **Online play, reprioritized — and there is no solo mode.** The roadmap's
 Milestone 3 is now "Playable together": Phases 30–38 unify the game behind
@@ -574,23 +668,21 @@ and postponed. It is postponed, not rejected.
 
 ## Open questions, deliberately unanswered
 
-- **The escalera contracts (9+).** All thirteen ranks, A through K. They do not
-  fit the `{trios, escalas}` shape and win the ronda outright, so they were
-  deferred. Do not design `Contrato` in a way that makes them impossible to add.
-- **Guest identity.** There is no login and there will not be one. Players join a
-  partida with a code and a nickname, so the system still needs to know which
-  seat is whose, survive a reload, and stop someone claiming another player's
-  seat and seeing their hand. Likely a per-seat secret in the browser. Settled
-  in `tech-stack.md` as part of Phase 32, before any code.
-- **Real-time transport.** Polling with TanStack Query is the first
-  implementation (Phase 34), behind an interface so it can be swapped. The old
-  premise that Vercel functions cannot hold WebSockets has expired — Fluid
-  Compute supports them — so Phase 38's options are keep-polling, first-party
-  WebSockets, then Pusher. Decide there, not before.
-- **A ronda nobody can win.** Carioca has no stalemate rule, and the soak
-  measures the consequence: ~1.3% of bot partidas never end. Harmless in a test,
-  a hung game online. Options are written up in `carioca-rules.md`; deciding it
-  is now its own phase — Phase 31, before anything goes online.
+Four questions that used to sit here are settled, and where: the escalera
+contracts (Phase 48), guest identity — a per-seat secret in the browser
+(Phase 32), the real-time transport — polling kept, measured (Phase 38),
+and the ronda nobody can win — tablas (Phase 31). What remains:
+
+- **A table of two bots can stall.** Measured in Phase 39: two El
+  Codiciosos trading the face-up card never touch the stock, so tablas never
+  fires — 62 stalls in 600 partidas; three bots stall once, four never. The
+  owner read it as theoretical: a table is created by a person, so a table
+  of two always has one. If it is ever wanted, the fix is a rule, not a bot
+  patch — written up in `roadmap.md` beside the measurement.
+- **How two games share one engine.** `lib/engine/` is Carioca's today.
+  What a second game takes from it (cards, the rank ring, the seeded stream,
+  the deck) and what stays Carioca's is the first thing el Mentiroso has to
+  decide. Settle it in writing before moving files.
 
 ## How this project is run
 
