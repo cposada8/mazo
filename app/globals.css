@@ -400,6 +400,33 @@
   .carta-volteada {
     animation: carta-voltea 0.45s ease-out both;
   }
+  /* El Mentiroso: a pile you took slides into your hand, card by card marked. */
+  .carta-llega {
+    animation: carta-llega 0.55s cubic-bezier(0.2, 0.8, 0.3, 1) both;
+    box-shadow: 0 0 0 3px oklch(0.82 0.16 85), 0 6px 14px rgba(0, 0, 0, 0.45);
+  }
+  @keyframes carta-llega {
+    from {
+      translate: 0 -60%;
+      opacity: 0;
+    }
+    to {
+      translate: 0 0;
+      opacity: 1;
+    }
+  }
+  /* The pile gathering before it crosses: the scattered backs close in. */
+  .pila-junta {
+    animation: pila-junta 0.35s ease-out both;
+  }
+  @keyframes pila-junta {
+    from {
+      scale: 1.25;
+    }
+    to {
+      scale: 1;
+    }
+  }
   /* El Mentiroso: the verdict stamps down once the cards are face up. */
   .grito-veredicto {
     animation: veredicto 0.4s cubic-bezier(0.3, 1.5, 0.5, 1) both;
@@ -440,7 +467,9 @@
   @media (prefers-reduced-motion: reduce) {
     .carta-volteada,
     .grito,
-    .grito-veredicto {
+    .grito-veredicto,
+    .carta-llega,
+    .pila-junta {
       animation: none;
     }
   }

@@ -167,13 +167,34 @@ export function MesaMentiroso({
   // Whoever takes the pile only has it once it has crossed the table: until
   // the scene ends their count — and, if it is you, your hand — stays as it
   // was. (The state took it at once; the table shows it arriving.)
-  const recogiendo = enEscena?.tipo === 'acusacion' ? enEscena : null
+  // A call already in the state but not yet told counts too: between the
+  // state moving and the scene starting there is a frame, and in it the hand
+  // must not jump.
+  const recogiendo =
+    (enEscena?.tipo === 'acusacion' ? enEscena : null) ??
+    eventos
+      .slice(escena.contados)
+      .find((e): e is Extract<EventoMentiroso, { tipo: 'acusacion' }> => e.tipo === 'acusacion') ??
+    null
   const cartasDe = (asiento: number) =>
     vista.cartasPorAsiento[asiento] -
     (recogiendo && recogiendo.seLlevo === asiento ? recogiendo.cartasDeLaPila : 0)
   const [manoFija, setManoFija] = useState(vista.mano)
+  // The cards the pile just brought you, marked as they slide into your hand.
+  const [recienLlegadas, setRecienLlegadas] = useState<ReadonlySet<string>>(new Set())
   const retener = recogiendo?.seLlevo === yo
-  if (!retener && manoFija !== vista.mano) setManoFija(vista.mano)
+  if (!retener && manoFija !== vista.mano) {
+    const antes = new Set(manoFija.map((c) => c.id))
+    const llegadas = vista.mano.filter((c) => !antes.has(c.id)).map((c) => c.id)
+    // Only a pile arriving brings several cards at once; a play never adds any.
+    setRecienLlegadas(new Set(llegadas.length > 0 ? llegadas : []))
+    setManoFija(vista.mano)
+  }
+  useEffect(() => {
+    if (recienLlegadas.size === 0) return
+    const t = setTimeout(() => setRecienLlegadas(new Set()), 1600)
+    return () => clearTimeout(t)
+  }, [recienLlegadas])
 
   const mano = useMemo(() => ordenar(retener ? manoFija : vista.mano), [retener, manoFija, vista.mano])
 
@@ -330,7 +351,14 @@ export function MesaMentiroso({
 
       {/* You: your hand, big, and your turn. */}
       <footer className="flex shrink-0 flex-col items-center gap-1 px-2 pb-[max(0.4rem,env(safe-area-inset-bottom))]">
-        <Mano mano={mano} elegidas={elegidas} activa={puedoJugar} onTocar={alternar} />
+        <Mano
+          mano={mano}
+          elegidas={elegidas}
+          llegadas={recienLlegadas}
+          destino={yo}
+          activa={puedoJugar}
+          onTocar={alternar}
+        />
         <div className="flex min-h-10 w-full items-center justify-center gap-3">
           <span
             data-asiento={yo}
@@ -358,7 +386,7 @@ export function MesaMentiroso({
             </span>
           ) : (
             <span className="text-tinta-suave text-xs">
-              {vista.mano.length} {vista.mano.length === 1 ? 'carta' : 'cartas'}
+              {mano.length} {mano.length === 1 ? 'carta' : 'cartas'}
             </span>
           )}
           {miTurno && plazoHasta !== null && (
@@ -600,7 +628,10 @@ function Viajan({
     const el = ref.current
     const raiz = el?.closest('main')
     if (!el || !raiz) return
-    const punto = (asiento: number) => raiz.querySelector(`[data-asiento="${asiento}"]`)
+    // A seat's destination: the hand for you, the avatar for everyone else.
+    const punto = (asiento: number) =>
+      raiz.querySelector(`[data-destino="${asiento}"]`) ??
+      raiz.querySelector(`[data-asiento="${asiento}"]`)
     const propio = el.getBoundingClientRect()
     const centro = (r: DOMRect) => ({ x: r.x + r.width / 2, y: r.y + r.height / 2 })
     const yo = centro(propio)
@@ -733,8 +764,27 @@ function Revelacion({
         )}
       </span>
       {etapa === 'recoge' ? (
+        // The whole pile goes, not only the cards that were called: the turned
+        // ones on top of everything that was under them, gathered, then carried.
         <Viajan hacia={evento.seLlevo} ms={MS_RECOGE}>
-          {cartas}
+          <div className="pila-junta relative flex flex-col items-center">
+            {cartas}
+            {evento.cartasDeLaPila > evento.cartas.length && (
+              <div className="-mt-[calc(var(--carta-sm)*0.85)] flex -space-x-[calc(var(--carta-sm)*0.62)]">
+                {Array.from(
+                  { length: Math.min(8, evento.cartasDeLaPila - evento.cartas.length) },
+                  (_, i) => (
+                    <span key={i} className="-z-10" style={{ rotate: `${(i - 3.5) * 5}deg` }}>
+                      <CartaBocaAbajo size="sm" className="shadow-md" />
+                    </span>
+                  ),
+                )}
+              </div>
+            )}
+            <span className="absolute -right-3 -bottom-2 rounded-full bg-black/85 px-2 py-0.5 text-sm font-bold text-white ring-2 ring-white/25">
+              {evento.cartasDeLaPila}
+            </span>
+          </div>
         </Viajan>
       ) : (
         cartas
@@ -772,11 +822,17 @@ function Revelacion({
 function Mano({
   mano,
   elegidas,
+  llegadas,
+  destino,
   activa,
   onTocar,
 }: {
   mano: readonly Card[]
   elegidas: readonly string[]
+  /** Cards that just arrived with a pile: they slide in, marked. */
+  llegadas: ReadonlySet<string>
+  /** Your seat: a pile you take flies here, to the hand, not the avatar. */
+  destino: number
   activa: boolean
   onTocar: (id: string) => void
 }) {
@@ -816,7 +872,7 @@ function Mano({
     : [mano]
 
   return (
-    <div ref={caja} className="flex w-full flex-col items-center pt-3">
+    <div ref={caja} data-destino={destino} className="flex w-full flex-col items-center pt-3">
       {filas.map((fila, f) => {
         const p = paso(fila.length)
         return (
@@ -836,6 +892,7 @@ function Mano({
                   className={cn(
                     'shrink-0 rounded-md shadow-[-2px_0_4px_rgba(0,0,0,0.35)] transition-transform',
                     elegida && '-translate-y-4 ring-[3px] ring-amber-400',
+                    llegadas.has(carta.id) && 'carta-llega',
                   )}
                 >
                   <Carta card={carta} />

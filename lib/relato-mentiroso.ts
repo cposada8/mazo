@@ -176,8 +176,8 @@ export const MS_GRITO = 900
 export const MS_POR_VOLTEO = 420
 /** The verdict on the table, read before the pile moves. */
 export const MS_VEREDICTO = 1500
-/** The pile crossing to whoever takes it. */
-export const MS_RECOGE = 750
+/** The whole pile gathered and crossing to whoever takes it. */
+export const MS_RECOGE = 1100
 
 /** The whole scene of a call over `cartas` cards, start to empty middle. */
 export function msDeAcusacion(cartas: number): number {
