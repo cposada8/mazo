@@ -179,6 +179,19 @@ export function MesaMentiroso({
   const cartasDe = (asiento: number) =>
     vista.cartasPorAsiento[asiento] -
     (recogiendo && recogiendo.seLlevo === asiento ? recogiendo.cartasDeLaPila : 0)
+  // Bullets, told like everything else: a spent one stays in the shooter's
+  // belt until the verdict says it was spent, and then falls.
+  const veredictoDado =
+    enEscena?.tipo === 'acusacion' && (escena.etapa === 'veredicto' || escena.etapa === 'recoge')
+  const balasDe = (asiento: number): { n: number; cae: boolean } | null => {
+    if (!vista.balas) return null
+    const n = vista.balas[asiento]
+    const gasta = recogiendo?.gastoBala && recogiendo.acusador === asiento
+    if (!gasta) return { n, cae: false }
+    return veredictoDado ? { n, cae: true } : { n: n + 1, cae: false }
+  }
+  const misBalas = vista.balas ? vista.balas[yo] : Number.POSITIVE_INFINITY
+
   const [manoFija, setManoFija] = useState(vista.mano)
   // The cards the pile just brought you, marked as they slide into your hand.
   const [recienLlegadas, setRecienLlegadas] = useState<ReadonlySet<string>>(new Set())
@@ -266,6 +279,7 @@ export function MesaMentiroso({
               suJugadaAbierta={jugadaEnMedio?.asiento === asiento && enEscena === null}
               declaro={declarado.get(asiento) ?? null}
               gritando={gritando === asiento}
+              balas={balasDe(asiento)}
               retirado={retirados.includes(asiento)}
             />
           )
@@ -310,7 +324,12 @@ export function MesaMentiroso({
           )}
 
           {/* Only what has been seen can be called: the button waits for the table. */}
-          {alDia && abierta && !esMiJugada && !meRetire && (
+          {alDia && abierta && !esMiJugada && !meRetire && misBalas <= 0 && (
+            <p className="rounded-full bg-black/40 px-3 py-1 text-xs text-white/80">
+              Sin balas: ya no puedes decir «¡Mentiroso!»
+            </p>
+          )}
+          {alDia && abierta && !esMiJugada && !meRetire && misBalas > 0 && (
             <button
               type="button"
               onClick={onMentiroso}
@@ -372,6 +391,10 @@ export function MesaMentiroso({
             {iniciales(nombres[yo] ?? 'Tú')}
             {gritando === yo && <Grito className="-top-1 left-full ml-2 translate-x-0" />}
           </span>
+          {(() => {
+            const mias = balasDe(yo)
+            return mias ? <Balas n={mias.n} cae={mias.cae} grande /> : null
+          })()}
           {puedoJugar && elegidas.length > 0 ? (
             <button
               type="button"
@@ -445,6 +468,7 @@ function Asiento({
   suJugadaAbierta,
   declaro,
   gritando,
+  balas,
   retirado,
 }: {
   x: number
@@ -457,6 +481,8 @@ function Asiento({
   declaro: { cantidad: number; rango: Rank } | null
   /** Shouting «¡Mentiroso!» right now — the first beat of a call. */
   gritando: boolean
+  /** Bullets left, and whether one is falling right now. Null: no bullets. */
+  balas: { n: number; cae: boolean } | null
   retirado: boolean
 }) {
   return (
@@ -494,6 +520,7 @@ function Asiento({
       <span className="line-clamp-1 text-[0.72rem] leading-tight font-medium text-white drop-shadow">
         {nombre}
       </span>
+      {balas && <Balas n={balas.n} cae={balas.cae} />}
       <span className="flex items-center gap-1" aria-label={`${cartas} cartas`}>
         <span className="flex">
           {Array.from({ length: Math.min(cartas, 7) }, (_, i) => (
@@ -691,6 +718,34 @@ function Dorsos({ cantidad }: { cantidad: number }) {
         />
       ))}
     </div>
+  )
+}
+
+/**
+ * A belt of bullets: what each «¡Mentiroso!» costs. A bullet that is spent
+ * falls out of the belt when the verdict is given, rather than vanishing.
+ */
+function Balas({ n, cae, grande = false }: { n: number; cae: boolean; grande?: boolean }) {
+  const una = (clave: string, className?: string) => (
+    <span
+      key={clave}
+      aria-hidden
+      className={cn(
+        'inline-block rounded-t-full rounded-b-[2px] bg-[linear-gradient(90deg,#8a5a12,#f6d27a_45%,#b7801f)] shadow-[0_1px_2px_rgba(0,0,0,0.6)]',
+        grande ? 'h-4 w-1.5' : 'h-3.5 w-1.5',
+        className,
+      )}
+    />
+  )
+  return (
+    <span
+      className="flex h-4 items-end gap-[3px]"
+      aria-label={`${n} ${n === 1 ? 'bala' : 'balas'}`}
+    >
+      {Array.from({ length: n }, (_, i) => una(`b${i}`))}
+      {cae && una('cae', 'bala-cae')}
+      {n === 0 && !cae && <span className="text-[0.65rem] text-white/60">sin balas</span>}
+    </span>
   )
 }
 

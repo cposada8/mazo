@@ -30,6 +30,8 @@ export type EventoMentiroso =
       readonly eraMentira: boolean
       readonly seLlevo: number
       readonly cartasDeLaPila: number
+      /** The caller spent a bullet (a true play). */
+      readonly gastoBala: boolean
     }
   /** The window ran out: nobody doubted the play, and it stands. */
   | { readonly tipo: 'ventanaCerrada'; readonly asiento: number }
@@ -66,6 +68,7 @@ export function relatarMentiroso(
       eraMentira: a.eraMentira,
       seLlevo: a.seLlevo,
       cartasDeLaPila: a.cartasDeLaPila,
+      gastoBala: a.gastoBala,
     })
   }
   if (move.type === 'cerrarVentana' && antes.ultimaJugada) {
@@ -149,7 +152,9 @@ export function textoDeEvento(
           : `${grita} ${quien(evento.acusado)} mentía y se lleva ${pila}.`
       }
       const verdad = evento.acusado === yo ? 'Decías la verdad' : 'Era verdad'
-      return `${grita} ${verdad}: ${seLleva}.`
+      // A true play costs the caller a bullet as well as the pile.
+      const bala = evento.acusador === yo ? ' y pierdes una bala' : ' y pierde una bala'
+      return `${grita} ${verdad}: ${seLleva}${bala}.`
     }
     case 'ventanaCerrada':
       return evento.asiento === yo ? 'Nadie dudó de ti.' : `Nadie dudó de ${quien(evento.asiento)}.`

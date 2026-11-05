@@ -114,3 +114,13 @@ describe('the soak', () => {
     expect(BOTS_MENTIROSO.map((bot) => bot.id)).toEqual(['embustero'])
   })
 })
+
+describe('El Embustero and its bullets', () => {
+  it('never calls with none left — not even a claim it can prove false', () => {
+    const v = {
+      ...vista({ mano: 'Qs Qh 2c', asiento: 1, ventana: { asiento: 0, cantidad: 3, rango: 'Q' } }),
+      balas: [3, 0, 3, 3],
+    }
+    expect(EL_EMBUSTERO.acusar(v)).toBe(false)
+  })
+})

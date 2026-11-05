@@ -89,6 +89,7 @@ export function PartidaCliente({
         jugadores={partida.asientos.length}
         nombres={nombres}
         segundosBot={partida.segundosBot}
+        balas={partida.balas}
         onSalir={() => void salir(true)}
       />
     ) : (

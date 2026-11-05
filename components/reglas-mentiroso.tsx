@@ -80,6 +80,18 @@ export function ComoSeJuegaMentiroso({ cartasOscuras = true }: { cartasOscuras?:
         </p>
       </Seccion>
 
+      <Seccion titulo="Las balas">
+        <p>
+          Cada uno empieza con <b>balas</b> — 3, o las que haya escogido la mesa.
+          Decir «¡Mentiroso!» <b>gasta una</b>: si era mentira la recuperas, si
+          era verdad la pierdes, además de llevarte la pila.
+        </p>
+        <p>
+          <b>Sin balas ya no puedes acusar.</b> Sigues jugando tus cartas, y a
+          una jugada que deja a alguien sin cartas solo le puedes decir «Le creo».
+        </p>
+      </Seccion>
+
       <Seccion titulo="Salir">
         <p>
           Te vas cuando te quedas sin cartas <b>y tu última jugada sobrevive</b>:

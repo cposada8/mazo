@@ -427,6 +427,26 @@
       scale: 1;
     }
   }
+  /* El Mentiroso: a spent bullet drops out of the belt and fades. */
+  .bala-cae {
+    animation: bala-cae 0.9s cubic-bezier(0.5, 0, 0.8, 0.4) both;
+  }
+  @keyframes bala-cae {
+    0% {
+      translate: 0 0;
+      rotate: 0deg;
+      opacity: 1;
+    }
+    25% {
+      translate: 0 -6px;
+      rotate: -20deg;
+    }
+    100% {
+      translate: 6px 22px;
+      rotate: 120deg;
+      opacity: 0;
+    }
+  }
   /* El Mentiroso: the verdict stamps down once the cards are face up. */
   .grito-veredicto {
     animation: veredicto 0.4s cubic-bezier(0.3, 1.5, 0.5, 1) both;
@@ -469,7 +489,8 @@
     .grito,
     .grito-veredicto,
     .carta-llega,
-    .pila-junta {
+    .pila-junta,
+    .bala-cae {
       animation: none;
     }
   }

@@ -82,6 +82,7 @@ describe('relatarMentiroso', () => {
       eraMentira: true,
       seLlevo: 0,
       cartasDeLaPila: 5,
+      gastoBala: false,
     }
     expect(textoDeEvento(mentira, NOMBRES, 0)).toBe(
       'Beto grita ¡Mentiroso! Mentías y te llevas la pila (5 cartas).',
@@ -89,9 +90,9 @@ describe('relatarMentiroso', () => {
     expect(textoDeEvento(mentira, NOMBRES)).toBe(
       'Beto grita ¡Mentiroso! Ana mentía y se lleva la pila (5 cartas).',
     )
-    expect(textoDeEvento({ ...mentira, eraMentira: false, seLlevo: 1 }, NOMBRES, 1)).toBe(
-      'Gritaste ¡Mentiroso! Era verdad: te llevas la pila (5 cartas).',
-    )
+    expect(
+      textoDeEvento({ ...mentira, eraMentira: false, seLlevo: 1, gastoBala: true }, NOMBRES, 1),
+    ).toBe('Gritaste ¡Mentiroso! Era verdad: te llevas la pila (5 cartas) y pierdes una bala.')
   })
 
   it('a window, and a win, in words', () => {

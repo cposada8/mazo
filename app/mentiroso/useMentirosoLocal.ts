@@ -49,17 +49,19 @@ export function useMentirosoLocal(opciones: {
   seed: string
   jugadores: number
   segundosBot?: number
+  /** Bullets each player starts with. Default 3. */
+  balas?: number
   /** The bot in each seat; seat 0 is the person and is ignored. */
   bots?: readonly BotMentiroso[]
 }) {
-  const { seed, jugadores, segundosBot = 2, bots } = opciones
+  const { seed, jugadores, segundosBot = 2, balas, bots } = opciones
   const sentados = useMemo(
     () => Array.from({ length: jugadores }, (_, i) => bots?.[i] ?? EL_EMBUSTERO),
     [bots, jugadores],
   )
 
   const [mesa, setMesa] = useState<Mesa>(() => ({
-    estado: empezarMentiroso({ jugadores, seed }),
+    estado: empezarMentiroso({ jugadores, seed, balas }),
     eventos: [],
     desde: 0,
     error: null,
@@ -160,6 +162,8 @@ export function mensajeDeRechazo(code: string): string {
       return 'Pon entre 1 y 4 cartas.'
     case 'fase-equivocada':
       return 'Llegaste tarde: ya no se puede.'
+    case 'sin-balas':
+      return 'No te quedan balas: ya no puedes acusar.'
     case 'ultima-jugada-pendiente':
       return 'Se quedó sin cartas: acúsalo o dile que le crees.'
     case 'jugada-propia':

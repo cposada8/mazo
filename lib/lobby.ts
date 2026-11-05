@@ -52,6 +52,8 @@ export type PartidaGuardada = {
   readonly segundosBot: number
   /** El Mentiroso's window to call, in seconds (Phase 78). */
   readonly segundosVentana: number
+  /** El Mentiroso's bullets per player (2026-11-05). */
+  readonly balas: number
   /** Memory aids (Phase 24): browse the descarte, reread the ronda's story. */
   readonly verDescarte: boolean
   readonly verHistorial: boolean
@@ -92,6 +94,7 @@ export type Accion =
       readonly segundosPorTurno?: number
       readonly segundosBot?: number
       readonly segundosVentana?: number
+      readonly balas?: number
       readonly verDescarte?: boolean
       readonly verHistorial?: boolean
     }

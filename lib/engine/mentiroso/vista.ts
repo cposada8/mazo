@@ -25,6 +25,8 @@ export type VistaMentiroso = {
   readonly ultimaAcusacion: Acusacion | null
   readonly numeroDeJugada: number
   readonly ganador: number | null
+  /** Bullets per seat — public, like the hand sizes. Absent: no limit. */
+  readonly balas?: readonly number[]
   /** Seats that left on purpose (Phase 80). Absent or empty: nobody. */
   readonly retirados?: readonly number[]
   /** Ended with nobody out (Phase 80). */
@@ -44,6 +46,7 @@ export function vistaMentiroso(estado: EstadoMentiroso, asiento: number): VistaM
     ultimaAcusacion: estado.ultimaAcusacion,
     numeroDeJugada: estado.numeroDeJugada,
     ganador: estado.ganador,
+    ...(estado.balas ? { balas: estado.balas } : {}),
     retirados: estado.retirados ?? [],
     sinGanador: estado.sinGanador ?? false,
   }
