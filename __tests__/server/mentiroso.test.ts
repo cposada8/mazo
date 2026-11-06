@@ -77,6 +77,18 @@ describe('the game a partida is', () => {
     expect(septimo.ok ? null : septimo.code).toBe('MESA_LLENA')
   })
 
+  it('bullets: 3 by default, the host picks 1 to 5, and the deal hands them out', async () => {
+    const partida = await crear('mentiroso')
+    expect(partida.balas).toBe(3)
+    const raro = await servidor.actualizarAjustes({ codigo: partida.codigo, secreto: HOST, balas: 10 })
+    expect(raro.ok && raro.partida.balas).toBe(3)
+    const cinco = await servidor.actualizarAjustes({ codigo: partida.codigo, secreto: HOST, balas: 5 })
+    expect(cinco.ok && cinco.partida.balas).toBe(5)
+    await servidor.empezar({ codigo: partida.codigo, secreto: HOST, seed: 'balas' })
+    const fila = await prisma.partida.findUnique({ where: { codigo: partida.codigo } })
+    expect((JSON.parse(fila!.estado!) as EstadoMentiroso).balas).toEqual([5, 5, 5, 5])
+  })
+
   it("deals el Mentiroso's own state, and keeps its window setting", async () => {
     const partida = await crear('mentiroso')
     await servidor.actualizarAjustes({ codigo: partida.codigo, secreto: HOST, segundosVentana: 5 })

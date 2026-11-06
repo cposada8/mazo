@@ -6,6 +6,7 @@ import { tmpdir } from 'node:os'
 import { beforeAll, describe, expect, it } from 'vitest'
 import { CONFIG_POR_DEFECTO } from '@/lib/engine'
 import type { EstadoMentiroso } from '@/lib/engine/mentiroso'
+import { MS_VUELO_JUGADA } from '@/lib/relato-mentiroso'
 
 /**
  * Phase 80: el Mentiroso among several people, the server the referee.
@@ -86,7 +87,8 @@ describe('the table on the server', () => {
     const carta = estado.manos[estado.turno][0].id
     const jugada = await mesa.jugarMentirosoEnMesa(codigo, jugador, { type: 'jugar', cartaIds: [carta] }, t0)
     expect(jugada.ok && jugada.mesa.vista.fase).toBe('ventana')
-    expect(jugada.ok && jugada.mesa.plazoHasta).toBe(t0 + 45_000)
+    // The next player's clock starts once the play has flown in.
+    expect(jugada.ok && jugada.mesa.plazoHasta).toBe(t0 + MS_VUELO_JUGADA + 45_000)
 
     // Nothing closes it but the next player — or their clock.
     expect((await leer(codigo, jugador, t0 + 44_000)).vista.ultimaJugada!.asiento).toBe(estado.turno)

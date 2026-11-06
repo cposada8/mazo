@@ -29,6 +29,10 @@ export const MIN_JUGADORES = 3
 export const MAX_JUGADORES = 6
 export const MIN_CARTAS_POR_JUGADA = 1
 export const MAX_CARTAS_POR_JUGADA = 4
+/** Bullets each player starts with (the owner's table, as Plato plays it). */
+export const BALAS_POR_DEFECTO = 3
+/** What the lobby offers. */
+export const OPCIONES_DE_BALAS = [1, 2, 3, 4, 5] as const
 /** The first play of a partida announces aces; then A, 2 … K and round again. */
 export const PRIMER_RANGO: Rank = RANKS[0]
 
@@ -52,6 +56,8 @@ export type Acusacion = {
   readonly seLlevo: number
   /** How many cards the pile held when it was taken. */
   readonly cartasDeLaPila: number
+  /** The caller spent a bullet: the play was true. A lie gives it back. */
+  readonly gastoBala: boolean
 }
 
 export type EstadoMentiroso = {
@@ -72,6 +78,12 @@ export type EstadoMentiroso = {
   /** 1-based count of plays made, for ordering what happened. */
   readonly numeroDeJugada: number
   readonly ganador: number | null
+  /**
+   * Bullets per seat (2026-11-05): calling costs one, a lie found gives it
+   * back, none left and you cannot call. Absent only in a partida dealt
+   * before bullets existed, which calls without limit.
+   */
+  readonly balas?: readonly number[]
   /**
    * Seats that left on purpose (Phase 80): no cards, no turn, no call.
    * Absent means nobody has — every partida before leaving existed.
@@ -119,6 +131,8 @@ export type CodigoDeRechazo =
   | 'asiento-invalido'
   /** The open play emptied a hand: call it or accept it, but do not play over it. */
   | 'ultima-jugada-pendiente'
+  /** No bullets left: this player can no longer call. */
+  | 'sin-balas'
 
 export type ResultadoMentiroso =
   | { readonly ok: true; readonly estado: EstadoMentiroso }
@@ -139,8 +153,10 @@ const rechazo = (code: CodigoDeRechazo, detail: string): ResultadoMentiroso => (
 export function empezarMentiroso(opciones: {
   jugadores: number
   seed: string
+  /** Bullets each player starts with. Default 3. */
+  balas?: number
 }): EstadoMentiroso {
-  const { jugadores, seed } = opciones
+  const { jugadores, seed, balas = BALAS_POR_DEFECTO } = opciones
   if (
     !Number.isInteger(jugadores) ||
     jugadores < MIN_JUGADORES ||
@@ -169,7 +185,13 @@ export function empezarMentiroso(opciones: {
     ultimaAcusacion: null,
     numeroDeJugada: 0,
     ganador: null,
+    balas: Array.from({ length: jugadores }, () => balas),
   }
+}
+
+/** Bullets this seat has left; a partida without bullets never runs out. */
+export function balasDe(estado: { balas?: readonly number[] }, asiento: number): number {
+  return estado.balas ? estado.balas[asiento] : Number.POSITIVE_INFINITY
 }
 
 export function aplicarMentiroso(
@@ -258,6 +280,9 @@ function acusar(estado: EstadoMentiroso, acusador: number): ResultadoMentiroso {
   if (acusador === jugada.asiento) {
     return rechazo('jugada-propia', 'nobody may call their own play')
   }
+  if (balasDe(estado, acusador) <= 0) {
+    return rechazo('sin-balas', `seat ${acusador} has no bullets left`)
+  }
 
   const cartas = estado.pila.slice(-jugada.cantidad)
   // A lie if any card is not the announced rank. There are no comodines, but a
@@ -284,7 +309,12 @@ function acusar(estado: EstadoMentiroso, acusador: number): ResultadoMentiroso {
         eraMentira,
         seLlevo,
         cartasDeLaPila: estado.pila.length,
+        gastoBala: !eraMentira,
       },
+      // The bullet is spent on a true play; a lie found gives it back.
+      ...(estado.balas && !eraMentira
+        ? { balas: estado.balas.map((b, i) => (i === acusador ? b - 1 : b)) }
+        : {}),
       ganador: sale ? jugada.asiento : null,
     },
   }

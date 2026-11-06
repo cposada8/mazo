@@ -27,12 +27,15 @@ import {
   vistaMentiroso,
 } from '@/lib/engine/mentiroso'
 import { type BotMentiroso, EL_EMBUSTERO } from '@/lib/bots/mentiroso'
-import { type EventoMentiroso, relatarMentiroso } from '@/lib/relato-mentiroso'
+import {
+  type EventoMentiroso,
+  MS_VUELO_JUGADA,
+  msDeAcusacion,
+  relatarMentiroso,
+} from '@/lib/relato-mentiroso'
 
 export const TU_ASIENTO = 0
 
-/** After a call, the next play waits this much longer, so the reveal is read. */
-const PAUSA_TRAS_ACUSACION_MS = 1500
 
 type Mesa = {
   readonly estado: EstadoMentiroso
@@ -46,17 +49,19 @@ export function useMentirosoLocal(opciones: {
   seed: string
   jugadores: number
   segundosBot?: number
+  /** Bullets each player starts with. Default 3. */
+  balas?: number
   /** The bot in each seat; seat 0 is the person and is ignored. */
   bots?: readonly BotMentiroso[]
 }) {
-  const { seed, jugadores, segundosBot = 2, bots } = opciones
+  const { seed, jugadores, segundosBot = 2, balas, bots } = opciones
   const sentados = useMemo(
     () => Array.from({ length: jugadores }, (_, i) => bots?.[i] ?? EL_EMBUSTERO),
     [bots, jugadores],
   )
 
   const [mesa, setMesa] = useState<Mesa>(() => ({
-    estado: empezarMentiroso({ jugadores, seed }),
+    estado: empezarMentiroso({ jugadores, seed, balas }),
     eventos: [],
     desde: 0,
     error: null,
@@ -91,8 +96,12 @@ export function useMentirosoLocal(opciones: {
   useEffect(() => {
     if (terminada || estado.turno === TU_ASIENTO) return
     const asiento = estado.turno
-    const recienAcusado = eventos.at(-1)?.tipo === 'acusacion'
-    const espera = segundosBot * 1000 + (recienAcusado ? PAUSA_TRAS_ACUSACION_MS : 0)
+    // The table is still telling the last thing that happened: a play's cards
+    // in the air, or a whole call — shout, turn, verdict, pile. Wait it out.
+    const ultimo = [...eventos].reverse().find((e) => e.tipo === 'acusacion' || e.tipo === 'jugada')
+    const escena =
+      ultimo?.tipo === 'acusacion' ? msDeAcusacion(ultimo.cartas.length) : ultimo ? MS_VUELO_JUGADA : 0
+    const espera = segundosBot * 1000 + escena
     const temporizador = setTimeout(() => {
       if (debeAceptarOAcusar(estado)) {
         aplicar({ type: 'cerrarVentana' }, Date.now())
@@ -116,7 +125,7 @@ export function useMentirosoLocal(opciones: {
       // A third to four fifths of a bot's thinking time in: before a bot in
       // turn plays over it, late enough that a person can be first.
       const azar = createRng(`${estado.seed}#grito#${estado.numeroDeJugada}#${asiento}`).next()
-      const cuando = (0.35 + 0.45 * azar) * segundosBot * 1000
+      const cuando = MS_VUELO_JUGADA + (0.35 + 0.45 * azar) * segundosBot * 1000
       temporizadores.push(
         setTimeout(() => aplicar({ type: 'mentiroso', asiento }, Date.now()), cuando),
       )
@@ -153,6 +162,8 @@ export function mensajeDeRechazo(code: string): string {
       return 'Pon entre 1 y 4 cartas.'
     case 'fase-equivocada':
       return 'Llegaste tarde: ya no se puede.'
+    case 'sin-balas':
+      return 'No te quedan balas: ya no puedes acusar.'
     case 'ultima-jugada-pendiente':
       return 'Se quedó sin cartas: acúsalo o dile que le crees.'
     case 'jugada-propia':

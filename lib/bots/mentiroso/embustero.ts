@@ -18,6 +18,8 @@
  *     the partida for certain, a wrong call only costs the pile.
  *   - Otherwise never. A baseline that calls on hunches is a coin, not a
  *     player; stronger bots can weigh the pile against the odds.
+ *   - Never with no bullets left. A certain call never costs one — what it
+ *     calls is a lie, so the bullet comes back — only a last-play call can.
  */
 
 import { type Card, type Rank, RANKS, isNormal, rankAfter } from '@/lib/engine'
@@ -71,6 +73,8 @@ export const EL_EMBUSTERO: BotMentiroso = {
   acusar(vista) {
     const jugada = vista.ultimaJugada
     if (vista.fase !== 'ventana' || !jugada || jugada.asiento === vista.asiento) return false
+    // No bullets, no call (2026-11-05).
+    if (vista.balas && vista.balas[vista.asiento] <= 0) return false
     const tengo = deRango(vista.mano, jugada.rango).length
     if (tengo + jugada.cantidad > COPIAS_POR_RANGO) return true
     return vista.cartasPorAsiento[jugada.asiento] === 0

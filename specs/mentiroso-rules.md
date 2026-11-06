@@ -102,6 +102,19 @@ What the turned cards were is **public**: everybody saw them. Everything
 else in the pile stays secret, including to the player who takes it — they
 see their own new hand, nobody else's.
 
+## The bullets — the owner's table, 2026-11-05
+
+Not in the classic game; played the way Plato plays it, and **always on** at
+Mazo:
+
+- Every player starts with **bullets** — **3** by default; the host picks
+  **1 to 5** in the lobby.
+- **Calling costs a bullet.** If the call finds a lie, the bullet comes back.
+  If the play was true, the bullet is spent — on top of taking the pile.
+- **A player with no bullets cannot call.** They can still play, and a play
+  that emptied a hand they can only accept («Le creo»).
+- Bullets are public: everybody sees everybody's.
+
 ## Going out
 
 A player **goes out** when their hand is empty and their last play

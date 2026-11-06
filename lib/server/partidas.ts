@@ -22,7 +22,7 @@ import {
   startPartida,
   vistaDeAsiento,
 } from '@/lib/engine'
-import { empezarMentiroso } from '@/lib/engine/mentiroso'
+import { OPCIONES_DE_BALAS, empezarMentiroso } from '@/lib/engine/mentiroso'
 import { botDeJuego, botPorDefecto } from '@/lib/bots-de-juego'
 import { ASIENTOS, type Juego, juegoDe } from '@/lib/juegos'
 import { codigoAlAzar, limpiarCodigo } from '@/lib/codigo'
@@ -53,6 +53,7 @@ type FilaPartida = {
   segundosPorTurno: number
   segundosBot: number
   segundosVentana: number
+  balas: number
   verDescarte: boolean
   verHistorial: boolean
   asientos: {
@@ -81,6 +82,7 @@ function publicar(fila: FilaPartida): PartidaGuardada {
     segundosPorTurno: fila.segundosPorTurno,
     segundosBot: fila.segundosBot,
     segundosVentana: fila.segundosVentana,
+    balas: fila.balas,
     verDescarte: fila.verDescarte,
     verHistorial: fila.verHistorial,
     asientos: [...fila.asientos]
@@ -461,6 +463,7 @@ export async function actualizarAjustes(opciones: {
   segundosPorTurno?: number
   segundosBot?: number
   segundosVentana?: number
+  balas?: number
   verDescarte?: boolean
   verHistorial?: boolean
 }): Promise<ResultadoDeLobby> {
@@ -479,6 +482,11 @@ export async function actualizarAjustes(opciones: {
         : {}),
       ...(opciones.segundosVentana !== undefined
         ? { segundosVentana: opciones.segundosVentana }
+        : {}),
+      // Only what the lobby offers: a client cannot hand out ten bullets.
+      ...(opciones.balas !== undefined &&
+      (OPCIONES_DE_BALAS as readonly number[]).includes(opciones.balas)
+        ? { balas: opciones.balas }
         : {}),
       ...(opciones.verDescarte !== undefined
         ? { verDescarte: opciones.verDescarte }
@@ -549,7 +557,7 @@ export async function empezar(opciones: {
   // Each game deals its own state; the row does not care which it holds.
   const estado =
     juego === 'mentiroso'
-      ? empezarMentiroso({ jugadores: fila.asientos.length, seed: opciones.seed })
+      ? empezarMentiroso({ jugadores: fila.asientos.length, seed: opciones.seed, balas: fila.balas })
       : startPartida({
           players: fila.asientos.length,
           seed: opciones.seed,

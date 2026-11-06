@@ -294,6 +294,11 @@ forwards dev to main so dev knows the number it builds on. Vercel deploys
 
 ## What comes next
 
+**On dev, not yet in production (v2.0.0):** el Mentiroso's table redrawn and
+animated (plays fly in, a call is shouted, turned, judged and carried off),
+and **the bullets** (`mentiroso-rules.md`). Releasing needs
+`prisma/sql/82-balas.sql` on `mazo` first — applied to `mazo-dev`.
+
 **Production got the gallery in v1.6.0** (2026-11-05): `mazo` took
 `prisma/sql/71-galeria.sql` and its sixteen faces in `mazo-comodines`
 before the release deployed, and `public/candidatos/comodines` is gone. The

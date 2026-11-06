@@ -42,6 +42,9 @@ model Partida {
   /// El Mentiroso's window to call (Phase 78): seconds after each play in
   /// which anyone may call and nobody may play. Pacing, like the two above.
   segundosVentana  Int @default(3)
+  /// El Mentiroso's bullets per player (2026-11-05): calling costs one, a
+  /// lie found gives it back. The host picks 1–5; 3 by default.
+  balas            Int @default(3)
   /// Memory aids (Phase 24), a table rule rather than a personal comfort:
   /// may the descarte be browsed, and may the ronda's story be reread.
   verDescarte  Boolean @default(true)

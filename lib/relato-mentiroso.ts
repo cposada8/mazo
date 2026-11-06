@@ -30,6 +30,8 @@ export type EventoMentiroso =
       readonly eraMentira: boolean
       readonly seLlevo: number
       readonly cartasDeLaPila: number
+      /** The caller spent a bullet (a true play). */
+      readonly gastoBala: boolean
     }
   /** The window ran out: nobody doubted the play, and it stands. */
   | { readonly tipo: 'ventanaCerrada'; readonly asiento: number }
@@ -66,6 +68,7 @@ export function relatarMentiroso(
       eraMentira: a.eraMentira,
       seLlevo: a.seLlevo,
       cartasDeLaPila: a.cartasDeLaPila,
+      gastoBala: a.gastoBala,
     })
   }
   if (move.type === 'cerrarVentana' && antes.ultimaJugada) {
@@ -149,7 +152,9 @@ export function textoDeEvento(
           : `${grita} ${quien(evento.acusado)} mentía y se lleva ${pila}.`
       }
       const verdad = evento.acusado === yo ? 'Decías la verdad' : 'Era verdad'
-      return `${grita} ${verdad}: ${seLleva}.`
+      // A true play costs the caller a bullet as well as the pile.
+      const bala = evento.acusador === yo ? ' y pierdes una bala' : ' y pierde una bala'
+      return `${grita} ${verdad}: ${seLleva}${bala}.`
     }
     case 'ventanaCerrada':
       return evento.asiento === yo ? 'Nadie dudó de ti.' : `Nadie dudó de ${quien(evento.asiento)}.`
@@ -158,4 +163,28 @@ export function textoDeEvento(
         ? '¡Te quedaste sin cartas: ganaste!'
         : `${quien(evento.asiento)} se quedó sin cartas y gana.`
   }
+}
+
+/*
+ * How long each thing takes to *show* (2026-11-05, after the owner found the
+ * table too abrupt). The table tells events one at a time, in these times —
+ * Carioca's rule from Phases 58–60: the state has moved, the eye catches up —
+ * and whoever keeps the clock (the local transport, the server) waits them
+ * out before the next play, so nothing lands on top of a scene still playing.
+ */
+
+/** A play's cards crossing from the seat that threw them to the middle. */
+export const MS_VUELO_JUGADA = 700
+/** «¡Mentiroso!» shouted, before anything turns over. */
+export const MS_GRITO = 900
+/** Each called card turning face up, one after another. */
+export const MS_POR_VOLTEO = 420
+/** The verdict on the table, read before the pile moves. */
+export const MS_VEREDICTO = 1500
+/** The whole pile gathered and crossing to whoever takes it. */
+export const MS_RECOGE = 1100
+
+/** The whole scene of a call over `cartas` cards, start to empty middle. */
+export function msDeAcusacion(cartas: number): number {
+  return MS_GRITO + MS_POR_VOLTEO * cartas + 300 + MS_VEREDICTO + MS_RECOGE
 }

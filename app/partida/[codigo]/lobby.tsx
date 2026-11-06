@@ -29,6 +29,7 @@ import { useIdentidad } from '@/components/identidad'
 import { BOTS, NOMBRE_DE_NIVEL, type Nivel, botPorId } from '@/lib/bots'
 import { botDeJuego, botPorDefecto, botsDeJuego } from '@/lib/bots-de-juego'
 import { ASIENTOS, type Juego, NOMBRE_DE_JUEGO } from '@/lib/juegos'
+import { OPCIONES_DE_BALAS } from '@/lib/engine/mentiroso'
 import {
   CATALOGO,
   type PartidaConfig,
@@ -330,6 +331,7 @@ export function Lobby({
             partida={partida}
             onSegundosPorTurno={(segundosPorTurno) => ajustar({ segundosPorTurno })}
             onSegundosBot={(segundosBot) => ajustar({ segundosBot })}
+            onBalas={(balas) => ajustar({ balas })}
           />
         ) : (
           <ResumenMentiroso partida={partida} />
@@ -643,13 +645,23 @@ function AjustesMentiroso({
   partida,
   onSegundosPorTurno,
   onSegundosBot,
+  onBalas,
 }: {
   partida: NonNullable<VistaDeLobby['partida']>
   onSegundosPorTurno: (segundos: number) => void
   onSegundosBot: (segundos: number) => void
+  onBalas: (balas: number) => void
 }) {
   return (
     <section className="flex flex-col gap-5">
+      <Escogencia
+        titulo="Balas por jugador"
+        detalle="Decir «¡Mentiroso!» gasta una bala. Si era mentira la recuperas; si era verdad, la pierdes. Sin balas no puedes acusar."
+        opciones={OPCIONES_DE_BALAS}
+        valor={partida.balas}
+        etiqueta={(n) => String(n)}
+        onCambiar={onBalas}
+      />
       <Escogencia
         titulo="Tiempo por jugada"
         detalle="Se puede decir «¡Mentiroso!» hasta que juega el siguiente. Si se te acaba el tiempo, se juega una carta al azar por ti."
@@ -678,6 +690,7 @@ function ResumenMentiroso({
         Lo que escogió el host
       </h2>
       <p>
+        {partida.balas} {partida.balas === 1 ? 'bala' : 'balas'} por jugador ·{' '}
         {partida.segundosPorTurno} s por jugada · los bots piensan {partida.segundosBot} s
       </p>
     </section>

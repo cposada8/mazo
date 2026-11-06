@@ -324,7 +324,8 @@ describe('a whole partida, played blind', () => {
     for (let paso = 0; paso < 10_000 && estado.ganador === null; paso++) {
       if (estado.fase === 'jugar') {
         estado = jugar(estado, estado.turno, 1)
-      } else if (estado.numeroDeJugada % 3 === 0) {
+      } else if (estado.numeroDeJugada % 3 === 0 && (estado.balas?.[estado.turno] ?? 1) > 0) {
+        // Calls every third play — while the caller still has bullets.
         estado = aplicar(estado, { type: 'mentiroso', asiento: estado.turno })
       } else {
         estado = aplicar(estado, { type: 'cerrarVentana' })
@@ -390,5 +391,44 @@ describe("the player's clock (Phase 80)", () => {
     expect(jugadaDelReloj(abierta)).toMatchObject({ type: 'jugar', asiento: 1 })
     const ultima = jugar(mesa({ manos: ['7s', 'Kc Kd', 'Qc'] }), 0, 1)
     expect(jugadaDelReloj(ultima)).toEqual({ type: 'cerrarVentana' })
+  })
+})
+
+describe('the bullets (2026-11-05)', () => {
+  const conBalas = (spec: Parameters<typeof mesa>[0], balas: number[]): EstadoMentiroso => ({
+    ...mesa(spec),
+    balas,
+  })
+
+  it('every player starts with 3, or what the table chose', () => {
+    expect(empezarMentiroso({ jugadores: 4, seed: 'b' }).balas).toEqual([3, 3, 3, 3])
+    expect(empezarMentiroso({ jugadores: 3, seed: 'b', balas: 5 }).balas).toEqual([5, 5, 5])
+  })
+
+  it('a call on the truth spends the bullet', () => {
+    let estado = conBalas({ manos: ['As Ah 9c', 'Kc Kd', 'Qc'] }, [3, 3, 3])
+    estado = jugar(estado, 0, 2) // two aces, truly
+    estado = aplicar(estado, { type: 'mentiroso', asiento: 2 })
+    expect(estado.balas).toEqual([3, 3, 2])
+    expect(estado.ultimaAcusacion!.gastoBala).toBe(true)
+  })
+
+  it('a call that finds a lie gets its bullet back', () => {
+    let estado = conBalas({ manos: ['7s 8s', 'Kc', 'Qc'] }, [3, 1, 3])
+    estado = jugar(estado, 0, 1) // "an ace": a seven
+    estado = aplicar(estado, { type: 'mentiroso', asiento: 1 })
+    expect(estado.balas).toEqual([3, 1, 3])
+    expect(estado.ultimaAcusacion!.gastoBala).toBe(false)
+  })
+
+  it('with no bullets left a player cannot call', () => {
+    const estado = jugar(conBalas({ manos: ['7s 8s', 'Kc', 'Qc'] }, [3, 0, 3]), 0, 1)
+    expect(rechazo(estado, { type: 'mentiroso', asiento: 1 })).toBe('sin-balas')
+    expect(aplicar(estado, { type: 'mentiroso', asiento: 2 }).ultimaAcusacion!.acusador).toBe(2)
+  })
+
+  it('bullets are public: every seat sees every seat', () => {
+    const estado = conBalas({ manos: ['7s', 'Kc', 'Qc'] }, [1, 2, 3])
+    expect(vistaMentiroso(estado, 1).balas).toEqual([1, 2, 3])
   })
 })
