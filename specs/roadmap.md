@@ -3778,7 +3778,7 @@ a test changed; the purity test took the new shared files by itself. The
 board's shared pieces are split in Phase 102, against the second board
 that needs them.
 
-### Phase 100 — El motor de Punto y Fama
+### Phase 100 — El motor de Punto y Fama ✅
 On the shared race: numbers of n digits without repeats drawn from the
 seed (0 allowed first), a guess validated and scored in puntos and famas,
 no try limit, the two race modes; and the duel as its own small state
@@ -3792,6 +3792,23 @@ shared core, the duel both ways and its tie-break, a view never holding a
 number its player has not got nor a duel secret before the end; and a soak
 of the solver on every number of 4 digits stays at about 5.5 tries on
 average and never above 8, as the owner's measured.
+
+**Done.** `lib/engine/puntoyfama/`: `numeros.ts` (shape, `puntuarNumero`,
+numbers from a seed, every number), `partida.ts` (both races on the shared
+one with `REGLA_PUNTO_Y_FAMA` — digits only, none repeated, no try limit,
+so no penalty and no lives), `vista.ts` (a rival's tries as puntos and
+famas), `duelo.ts` (two secrets, a 3-2-1 once both are in, each scored
+against the other's number, fewer tries → earlier → draw, leaving loses,
+a view holding neither the other's number nor their guesses' digits
+before the end), `bot.ts` (the owner's solver as it is, ties to the lower
+digit as the owner's code breaks them, «Deshacer», contradictions) and a
+light `opciones.ts`. **The soak, measured honestly:** over all 5,040
+four-digit numbers (`scripts/soak-punto-y-fama.ts`, 28 s) the average is
+**5.45** — the owner's 5.5 — and the worst is **9**, for 2 of the 5,040;
+8 or fewer for the other 5,038. The first guess is random, so which ones
+take 9 changes with it; the owner's 8 was measured on other first guesses.
+The suite runs a sample (one in 17) and holds the average under 6 and the
+worst at 9. 14 tests.
 
 ### Phase 101 — La puerta sabe que hay cuatro juegos
 `Partida.juego` learns `'puntoyfama'`; the door gets a fourth button. The
