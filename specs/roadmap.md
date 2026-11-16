@@ -3598,7 +3598,7 @@ whole from 0 to 10. The lobby's `NumeroConAtajos` learned labels: «Sin»,
 «1 min» … «5 min» and «Otro». In the browser: a 5-minute penalty, a word
 missed, the clock jumping by 5:00.
 
-### Phase 95 — El cierre, a elección del host
+### Phase 95 — El cierre, a elección del host ✅
 In «Palabras límite», how long the race waits for the rest after the first
 player finishes becomes a lobby setting too, and **the default becomes no
 limit** — the race waits forever (the owner, 2026-11-16), where today it
@@ -3619,6 +3619,16 @@ mattered — and «todos menos uno» ranks exactly as today's «todos» does.
 until the last player finishes, leaves, or the host closes it; one with 10
 minutes closes 10 minutes after the first finish; the lobby shows the
 setting; and an old race keeps its 30 minutes.
+
+**Done.** The state carries `msEspera` — null for «sin límite», the default
+now — and `esperaDe` reads a race dealt before as the old half hour, so no
+race in play changed its rule. `Partida.espera` (`prisma/sql/95-espera.sql`,
+on `mazo-dev`; 0 is «sin límite»), checked whole from 0 to 120. The lobby
+shows «Cuánto se espera al resto» with ∞, 5, 10, 15, 30, 60 and «Otro»,
+∞ picked; the rules page says the others keep playing after a win. Tests:
+twelve hours after the first finish a race «sin límite» is still open and
+closes when the last arrives; a 10-minute wait closes on the minute; an old
+race closes at 30.
 
 ### Phase 96 — Palabras encadenadas
 *The owner, 2026-11-16:* an option, in **both** ways to race («Palabras

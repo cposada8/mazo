@@ -29,6 +29,7 @@ import {
   esNumeroDePalabras,
   esNumeroDeVidas,
   esMinutosDeCastigo,
+  esMinutosDeEspera,
   modoValido,
   empezarPalabras,
   type EstadoPalabras,
@@ -72,6 +73,7 @@ type FilaPartida = {
   minutos: number
   vidas: number
   castigo: number
+  espera: number
   verDescarte: boolean
   verHistorial: boolean
   asientos: {
@@ -107,6 +109,7 @@ function publicar(fila: FilaPartida): PartidaGuardada {
     minutos: fila.minutos,
     vidas: fila.vidas,
     castigo: fila.castigo,
+    espera: fila.espera,
     verDescarte: fila.verDescarte,
     verHistorial: fila.verHistorial,
     asientos: [...fila.asientos]
@@ -516,6 +519,7 @@ export async function actualizarAjustes(opciones: {
   minutos?: number
   vidas?: number
   castigo?: number
+  espera?: number
   verDescarte?: boolean
   verHistorial?: boolean
 }): Promise<ResultadoDeLobby> {
@@ -549,6 +553,7 @@ export async function actualizarAjustes(opciones: {
       ...(esNumeroDeMinutos(opciones.minutos) ? { minutos: opciones.minutos } : {}),
       ...(esNumeroDeVidas(opciones.vidas) ? { vidas: opciones.vidas } : {}),
       ...(esMinutosDeCastigo(opciones.castigo) ? { castigo: opciones.castigo } : {}),
+      ...(esMinutosDeEspera(opciones.espera) ? { espera: opciones.espera } : {}),
       ...(opciones.verDescarte !== undefined
         ? { verDescarte: opciones.verDescarte }
         : {}),
@@ -628,6 +633,7 @@ export async function empezar(opciones: {
           minutos: fila.minutos,
           vidas: fila.vidas,
           castigo: fila.castigo,
+          espera: fila.espera,
         })
       : juego === 'mentiroso'
       ? empezarMentiroso({ jugadores: fila.asientos.length, seed: opciones.seed, balas: fila.balas })

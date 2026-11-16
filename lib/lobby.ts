@@ -64,6 +64,8 @@ export type PartidaGuardada = {
   readonly vidas: number
   /** Minutes a missed word adds in «Palabras límite» (Phase 94). */
   readonly castigo: number
+  /** Minutes the race waits after the first finish (Phase 95); 0: no limit. */
+  readonly espera: number
   /** Memory aids (Phase 24): browse the descarte, reread the ronda's story. */
   readonly verDescarte: boolean
   readonly verHistorial: boolean
@@ -111,6 +113,7 @@ export type Accion =
       readonly minutos?: number
       readonly vidas?: number
       readonly castigo?: number
+      readonly espera?: number
       readonly verDescarte?: boolean
       readonly verHistorial?: boolean
     }

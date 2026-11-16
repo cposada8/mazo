@@ -42,6 +42,8 @@ import {
   OPCIONES_DE_CASTIGO,
   MIN_CASTIGO,
   MAX_CASTIGO,
+  OPCIONES_DE_ESPERA,
+  MAX_ESPERA,
 } from '@/lib/engine/palabras/opciones'
 import { OPCIONES_DE_BALAS } from '@/lib/engine/mentiroso'
 import {
@@ -146,6 +148,7 @@ export function Lobby({
             ...(accion.minutos !== undefined ? { minutos: accion.minutos } : {}),
             ...(accion.vidas !== undefined ? { vidas: accion.vidas } : {}),
             ...(accion.castigo !== undefined ? { castigo: accion.castigo } : {}),
+            ...(accion.espera !== undefined ? { espera: accion.espera } : {}),
             ...(accion.verDescarte !== undefined
               ? { verDescarte: accion.verDescarte }
               : {}),
@@ -370,6 +373,7 @@ export function Lobby({
             onMinutos={(minutos) => ajustar({ minutos })}
             onVidas={(vidas) => ajustar({ vidas })}
             onCastigo={(castigo) => ajustar({ castigo })}
+            onEspera={(espera) => ajustar({ espera })}
           />
         ) : (
           <section className="text-muted-foreground flex flex-col gap-1 text-sm">
@@ -752,6 +756,7 @@ function AjustesPalabras({
   onMinutos,
   onVidas,
   onCastigo,
+  onEspera,
 }: {
   partida: NonNullable<VistaDeLobby['partida']>
   onPalabras: (palabras: number) => void
@@ -760,6 +765,7 @@ function AjustesPalabras({
   onMinutos: (minutos: number) => void
   onVidas: (vidas: number) => void
   onCastigo: (minutos: number) => void
+  onEspera: (minutos: number) => void
 }) {
   return (
     <section className="flex flex-col gap-5">
@@ -828,6 +834,23 @@ function AjustesPalabras({
           unidad="minutos de castigo"
           etiqueta={(n) => (n === 0 ? 'Sin' : `${n} min`)}
           onCambiar={onCastigo}
+        />
+      )}
+      {partida.modo !== 'tiempo' && (
+        <NumeroConAtajos
+          titulo="Cuánto se espera al resto"
+          detalle={
+            partida.espera
+              ? `La carrera se cierra ${partida.espera} ${partida.espera === 1 ? 'minuto' : 'minutos'} después de que llegue el primero, aunque falte gente.`
+              : 'Sin límite: todos pueden seguir llegando después de que alguien gane.'
+          }
+          atajos={OPCIONES_DE_ESPERA}
+          valor={partida.espera}
+          min={0}
+          max={MAX_ESPERA}
+          unidad="minutos de espera"
+          etiqueta={(n) => (n === 0 ? '∞' : `${n}`)}
+          onCambiar={onEspera}
         />
       )}
       {LARGOS.length > 1 && (

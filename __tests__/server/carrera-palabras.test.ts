@@ -161,6 +161,22 @@ describe('Palabras through the platform', () => {
     expect((await estadoDe(codigo)).msCastigo).toBe(0)
   })
 
+  it('the wait: no limit by default, the host picks up to 120 minutes, and it reaches the race (Phase 95)', async () => {
+    const creada = await partidas.crearPartida({
+      secreto: 'esperanza',
+      alias: 'esperanza',
+      juego: 'palabras',
+      config: CONFIG_POR_DEFECTO,
+    })
+    const codigo = creada.codigo
+    expect(creada.espera).toBe(0)
+    await partidas.actualizarAjustes({ codigo, secreto: 'esperanza', espera: 15 })
+    await partidas.actualizarAjustes({ codigo, secreto: 'esperanza', espera: 121 })
+    expect((await partidas.cargarPorCodigo(codigo))!.espera).toBe(15)
+    await partidas.empezar({ codigo, secreto: 'esperanza', seed: 'quince' })
+    expect((await estadoDe(codigo)).msEspera).toBe(15 * 60_000)
+  })
+
   it('refuses a number of words the lobby does not offer', async () => {
     const { codigo } = await carreraDeDos(3)
     const r = await partidas.actualizarAjustes({ codigo, secreto: 'ana', palabras: 999 })

@@ -99,6 +99,7 @@ async function ejecutar(
           minutos: accion.minutos,
           vidas: accion.vidas,
           castigo: accion.castigo,
+          espera: accion.espera,
           verDescarte: accion.verDescarte,
           verHistorial: accion.verHistorial,
         }),

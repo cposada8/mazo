@@ -152,8 +152,8 @@ describe('the race (Phase 83)', () => {
     expect(puestos[3]).toMatchObject({ termino: false, tiempo: null })
   })
 
-  it('closes when everyone racing has finished, when the host closes it, or 30 minutes after the first finish', () => {
-    let estado = carrera(1, [0, 1])
+  it('closes when everyone racing has finished, when the host closes it, or the wait after the first finish', () => {
+    let estado = empezarPalabras({ seed: 'prueba', palabras: 1, asientos: [0, 1], ahora: AHORA, espera: 30 })
     const [respuesta] = estado.bolsa
     const r = intentar(estado, 0, respuesta, EN_CARRERA + 1000)
     if (!r.ok) throw new Error(r.code)
@@ -353,5 +353,37 @@ describe('the penalty, chosen by the host (Phase 94)', () => {
     const viejo = { ...conCastigo(undefined) }
     delete (viejo as { msCastigo?: number }).msCastigo
     expect(vistaPalabras(fallarYTerminar(viejo), 0, EN_CARRERA).propio!.tiempo).toBe(10_000 + 2 * MINUTO)
+  })
+})
+
+describe('the wait after the first finish, chosen by the host (Phase 95)', () => {
+  const MINUTO = 60_000
+  function primeroLlega(espera: number | undefined) {
+    let estado = empezarPalabras({ seed: 'espera', palabras: 1, asientos: [0, 1], ahora: AHORA, espera })
+    const r = intentar(estado, 0, estado.bolsa[0], EN_CARRERA + 1000)
+    if (!r.ok) throw new Error(r.code)
+    estado = r.estado
+    return estado
+  }
+
+  it('by default there is no limit: everyone may keep arriving', () => {
+    const estado = primeroLlega(undefined)
+    expect(estado.msEspera).toBeNull()
+    expect(cerrada(estado, EN_CARRERA + 1000 + 12 * 60 * MINUTO)).toBe(false)
+    const r = intentar(estado, 1, estado.bolsa[0], EN_CARRERA + 1000 + 12 * 60 * MINUTO)
+    expect(r.ok && cerrada(r.estado, EN_CARRERA + 2 * MINUTO)).toBe(true)
+  })
+
+  it('with a limit it closes that long after the first finish', () => {
+    const estado = primeroLlega(10)
+    expect(cerrada(estado, EN_CARRERA + 1000 + 10 * MINUTO - 1)).toBe(false)
+    expect(cerrada(estado, EN_CARRERA + 1000 + 10 * MINUTO)).toBe(true)
+  })
+
+  it('a race dealt before keeps the old half hour', () => {
+    const viejo = { ...primeroLlega(undefined) }
+    delete (viejo as { msEspera?: number | null }).msEspera
+    expect(cerrada(viejo, EN_CARRERA + 1000 + 30 * MINUTO - 1)).toBe(false)
+    expect(cerrada(viejo, EN_CARRERA + 1000 + 30 * MINUTO)).toBe(true)
   })
 })

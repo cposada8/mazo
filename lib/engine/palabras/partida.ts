@@ -75,6 +75,11 @@ export type EstadoPalabras = {
   readonly vidas?: number | null
   /** What a missed word adds, ms (Phase 94). Absent in older races: two minutes. */
   readonly msCastigo?: number
+  /**
+   * How long the race waits after the first finish, ms (Phase 95): null is
+   * «sin límite». Absent in races dealt before: the old half hour.
+   */
+  readonly msEspera?: number | null
 }
 
 export type ErrorDePalabras =
@@ -191,6 +196,8 @@ export function empezarPalabras(opciones: {
   vidas?: number
   /** Minutes a missed word adds in «Palabras límite»; two when not said. */
   castigo?: number
+  /** Minutes «Palabras límite» waits after the first finish; 0 or absent: no limit. */
+  espera?: number
 }): EstadoPalabras {
   const largo = opciones.largo ?? LARGO_POR_DEFECTO
   const conTiempo = opciones.modo === 'tiempo'
@@ -211,7 +218,10 @@ export function empezarPalabras(opciones: {
           msLimite: (opciones.minutos ?? 5) * 60_000,
           vidas: opciones.vidas ? opciones.vidas : null,
         }
-      : { msCastigo: (opciones.castigo ?? 2) * 60_000 }),
+      : {
+          msCastigo: (opciones.castigo ?? 2) * 60_000,
+          msEspera: opciones.espera ? opciones.espera * 60_000 : null,
+        }),
   }
 }
 
@@ -300,12 +310,19 @@ export function cerrada(estado: EstadoPalabras, ahora: number): boolean {
   if (estado.tableros.length > 0 && estado.tableros.every((t) => t.retirado || termino(t))) {
     return true
   }
-  // The half-hour wait for stragglers is the n-words race's; time has its own end.
+  // The wait for stragglers is the n-words race's; time has its own end.
   if (fin !== null) return false
+  const espera = esperaDe(estado)
+  if (espera === null) return false
   const primero = Math.min(
     ...estado.tableros.filter(termino).map((t) => estado.inicio + t.terminoEn!),
   )
-  return Number.isFinite(primero) && ahora >= primero + MS_HASTA_CERRAR
+  return Number.isFinite(primero) && ahora >= primero + espera
+}
+
+/** How long this race waits after the first finish, ms; null for «sin límite». */
+export function esperaDe(estado: EstadoPalabras): number | null {
+  return estado.msEspera === undefined ? MS_HASTA_CERRAR : estado.msEspera
 }
 
 export function cerrar(estado: EstadoPalabras, ahora: number): EstadoPalabras {

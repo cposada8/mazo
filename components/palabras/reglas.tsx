@@ -83,6 +83,11 @@ export function ComoSeJuegaPalabras() {
           <b>sumas el castigo a tu tiempo</b>: {CASTIGO_POR_DEFECTO} minutos,
           o lo que elija el host (de 0 a {MAX_CASTIGO}).
         </p>
+        <p>
+          Cuando alguien gana, <b>los demás siguen jugando</b> y van llegando a
+          sus puestos. El host puede poner un límite de espera después del
+          primero, o cerrar la carrera cuando quiera.
+        </p>
       </Seccion>
 
       <Seccion titulo="Tiempo límite">

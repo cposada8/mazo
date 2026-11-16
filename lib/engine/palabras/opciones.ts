@@ -30,6 +30,18 @@ export function esMinutosDeCastigo(valor: unknown): valor is number {
   return Number.isInteger(valor) && (valor as number) >= MIN_CASTIGO && (valor as number) <= MAX_CASTIGO
 }
 
+/**
+ * How long «Palabras límite» waits for the rest after the first finish
+ * (Phase 95), in minutes: 0 is «sin límite», the default (the owner) — the
+ * race waits for everyone. Shortcuts, and 1–120 typed.
+ */
+export const OPCIONES_DE_ESPERA = [0, 5, 10, 15, 30, 60] as const
+export const ESPERA_POR_DEFECTO = 0
+export const MAX_ESPERA = 120
+export function esMinutosDeEspera(valor: unknown): valor is number {
+  return Number.isInteger(valor) && (valor as number) >= 0 && (valor as number) <= MAX_ESPERA
+}
+
 /** Two ways to race (Phase 89): n words against the clock, or x minutes for the most words. */
 export const MODOS = ['palabras', 'tiempo'] as const
 export type Modo = (typeof MODOS)[number]

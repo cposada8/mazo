@@ -57,6 +57,9 @@ model Partida {
   vidas            Int @default(3)
   /// Minutes a missed word adds in «Palabras límite» (Phase 94); 0 is none.
   castigo          Int @default(2)
+  /// Minutes «Palabras límite» waits after the first finish (Phase 95); 0 is
+  /// «sin límite».
+  espera           Int @default(0)
   /// Memory aids (Phase 24), a table rule rather than a personal comfort:
   /// may the descarte be browsed, and may the ronda's story be reread.
   verDescarte  Boolean @default(true)
