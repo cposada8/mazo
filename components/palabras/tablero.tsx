@@ -27,6 +27,15 @@ import {
   MS_CASTIGO,
 } from '@/lib/engine/palabras/opciones'
 import { cn } from '@/lib/utils'
+import {
+  type Escritura,
+  borrar,
+  completa,
+  escribir,
+  escrituraVacia,
+  mover,
+  palabraDe,
+} from './escritura'
 
 /** One tile turning over. */
 const MS_POR_FICHA = 260
@@ -92,7 +101,7 @@ export function TableroPalabras({
 }: PropsDeTablero) {
   const { largo, total } = vista
   const propio = vista.propio
-  const [letras, setLetras] = useState<string[]>([])
+  const [escritura, setEscritura] = useState<Escritura>(() => escrituraVacia(vista.largo))
   const [sacudir, setSacudir] = useState(0)
   const [aviso, setAviso] = useState<string | null>(null)
   /** The row this phone just sent, turning over. */
@@ -143,7 +152,7 @@ export function TableroPalabras({
 
   const enviar = useCallback(async () => {
     if (!puedeEscribir || !propio) return
-    if (letras.length < largo) {
+    if (!completa(escritura)) {
       setSacudir((n) => n + 1)
       setAviso('Faltan letras.')
       setTimeout(() => setAviso(null), 1400)
@@ -151,12 +160,12 @@ export function TableroPalabras({
     }
     const fila = propio.intentos.length
     const antes = propio.terminadas.length
-    const respuesta = (await onEnviar(letras.join('')).catch(() => null)) as
+    const respuesta = (await onEnviar(palabraDe(escritura)).catch(() => null)) as
       | { ok: true; mesa: { vista: VistaPalabras } }
       | { ok: false }
       | null
     if (!respuesta?.ok) return
-    setLetras([])
+    setEscritura(escrituraVacia(largo))
     const despues = respuesta.mesa.vista.propio
     const terminada =
       despues && despues.terminadas.length > antes ? despues.terminadas[antes] : null
@@ -166,16 +175,18 @@ export function TableroPalabras({
     if (terminada) {
       setTimeout(() => setCierre(null), largo * MS_POR_FICHA + 350 + MS_FIN_DE_PALABRA)
     }
-  }, [puedeEscribir, propio, letras, largo, onEnviar])
+  }, [puedeEscribir, propio, escritura, largo, onEnviar])
 
   const tecla = useCallback(
     (valor: string) => {
       if (!puedeEscribir) return
       if (valor === 'ENVIAR') return void enviar()
-      if (valor === 'BORRAR') return setLetras((l) => l.slice(0, -1))
-      setLetras((l) => (l.length < largo ? [...l, valor] : l))
+      if (valor === 'BORRAR') return setEscritura(borrar)
+      if (valor === 'IZQUIERDA') return setEscritura((e) => mover(e, e.cursor - 1))
+      if (valor === 'DERECHA') return setEscritura((e) => mover(e, e.cursor + 1))
+      setEscritura((e) => escribir(e, valor))
     },
-    [puedeEscribir, enviar, largo],
+    [puedeEscribir, enviar],
   )
 
   // A computer's keyboard too.
@@ -188,6 +199,8 @@ export function TableroPalabras({
       if (evento.metaKey || evento.ctrlKey || evento.altKey) return
       if (evento.key === 'Enter') teclaRef.current('ENVIAR')
       else if (evento.key === 'Backspace') teclaRef.current('BORRAR')
+      else if (evento.key === 'ArrowLeft') teclaRef.current('IZQUIERDA')
+      else if (evento.key === 'ArrowRight') teclaRef.current('DERECHA')
       else {
         const letra = evento.key
           .toUpperCase()
@@ -249,7 +262,9 @@ export function TableroPalabras({
           <Grilla
             largo={largo}
             intentos={intentos}
-            letras={cierre ? [] : letras}
+            escritura={cierre ? null : escritura}
+            conCursor={puedeEscribir}
+            onTocar={(i) => setEscritura((e) => mover(e, i))}
             volteando={volteando}
             sacudida={haySacudida ? sacudida : null}
             cierre={cierre}
@@ -288,14 +303,21 @@ export function TableroPalabras({
 function Grilla({
   largo,
   intentos,
-  letras,
+  escritura,
+  conCursor,
+  onTocar,
   volteando,
   sacudida,
   cierre,
 }: {
   largo: number
   intentos: readonly Intento[]
-  letras: readonly string[]
+  /** The try being written; null while an ended word is held on screen. */
+  escritura: Escritura | null
+  /** Draw where the next letter goes — only while this player can write. */
+  conCursor: boolean
+  /** A tile of the row in play was touched: the next letter goes there. */
+  onTocar: (indice: number) => void
   volteando: number | null
   /** Changes on every refusal, so the row shakes again; null before any. */
   sacudida: string | null
@@ -322,20 +344,37 @@ function Grilla({
             style={{ gridTemplateColumns: `repeat(${largo}, 1fr)` }}
           >
             {Array.from({ length: largo }, (_, i) => {
-              const letra = intento ? [...intento.palabra][i] : esActual ? letras[i] : undefined
+              const letra = intento
+                ? [...intento.palabra][i]
+                : esActual
+                  ? (escritura?.letras[i] ?? undefined)
+                  : undefined
               const color = intento?.colores[i]
               const voltea = intento && fila === volteando
+              const tocable = esActual && !intento && escritura !== null
+              const enCursor = tocable && conCursor && escritura.cursor === i
+              const Ficha = tocable ? 'button' : 'div'
               return (
-                <div
+                <Ficha
                   key={i}
+                  {...(tocable
+                    ? {
+                        type: 'button' as const,
+                        onClick: () => onTocar(i),
+                        'aria-label': `Casilla ${i + 1}${letra ? `, ${letra}` : ', vacía'}`,
+                      }
+                    : {})}
                   className={cn(
                     'flex aspect-square items-center justify-center rounded-sm border-2 font-bold uppercase select-none',
+                    tocable && 'cursor-pointer',
                     largo >= 7 ? 'text-xl' : 'text-2xl sm:text-3xl',
                     color && !voltea && FONDO[color],
                     !color && (letra ? 'border-muted-foreground/60' : 'border-border'),
                     !intento && letra && 'palabras-cae',
                     voltea && 'palabras-voltea',
                     gano && 'palabras-salta',
+                    // Last, so it wins over the empty tile's border.
+                    enCursor && 'border-foreground ring-foreground/25 ring-2',
                   )}
                   style={
                     voltea
@@ -349,7 +388,7 @@ function Grilla({
                   }
                 >
                   {letra}
-                </div>
+                </Ficha>
               )
             })}
           </div>
