@@ -7,11 +7,11 @@
  * table (`components/carrera/`).
  *
  * Told in beats: a digit lands as it is typed; a guess goes up into the
- * list and its answer comes in mark by mark — famas, then puntos; a refused
+ * list and its answer comes in mark by mark — puntos, then famas — the game's own order (Phase 109); a refused
  * guess shakes; a number got is said, then the next one opens.
  */
 
-import { CircleHelp, Delete, LogOut, X } from 'lucide-react'
+import { CircleHelp, Delete, LogOut, Pencil, X } from 'lucide-react'
 import { type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   CuentaAtras,
@@ -32,6 +32,23 @@ import {
 } from '@/components/palabras/escritura'
 import type { IntentoPF, NumeroTerminado, Respuesta, VistaPuntoYFama } from '@/lib/engine/puntoyfama'
 import { cn } from '@/lib/utils'
+import {
+  AYUDA_DEL_LAPIZ,
+  BotonDeNota,
+  type Marcas as MarcasDeCifras,
+  NotaAlLado,
+  estiloDeMarca,
+  nombreDeMarca,
+  useApuntes,
+  useNotaAbierta,
+} from './apuntes'
+
+/**
+ * A board is exactly the screen under the site's bar (42px), never taller:
+ * the guesses scroll inside it, so the pad stays in view however many
+ * there are (Phase 111).
+ */
+export const ALTO_DE_TABLERO = 'h-[calc(100dvh-42px)] min-h-0'
 
 /** Each mark of an answer coming in. */
 const MS_POR_MARCA = 140
@@ -52,6 +69,8 @@ export type PropsDeTableroPF = {
   onSalir: () => void
   /** The rules, opened over the board (Phase 106). */
   reglas?: ReactNode
+  /** Where this player's marks and note are kept — the partida's code (Phase 110). */
+  apuntes?: string
 }
 
 export function TableroPuntoYFama({
@@ -65,6 +84,7 @@ export function TableroPuntoYFama({
   onCerrar,
   onSalir,
   reglas,
+  apuntes,
 }: PropsDeTableroPF) {
   const digitos = vista.largo
   const propio = vista.propio
@@ -76,9 +96,14 @@ export function TableroPuntoYFama({
   /** A number just got, held on screen for a moment. */
   const [cierre, setCierre] = useState<NumeroTerminado | null>(null)
   const [verReglas, setVerReglas] = useState(false)
+  const nota = useNotaAbierta()
+  const [lapiz, setLapiz] = useState(false)
   const [tic, setTic] = useState(() => ({ reloj: ahora(), local: Date.now() }))
   const reloj = tic.reloj
   const lista = useRef<HTMLOListElement>(null)
+  // The number in play's own marks and note: the next number starts clean.
+  const notas = useApuntes(apuntes && propio ? `${apuntes}:${propio.terminadas.length}` : null)
+  const { marcar } = notas
 
   useEffect(() => {
     const id = setInterval(() => setTic({ reloj: ahora(), local: Date.now() }), 250)
@@ -125,6 +150,7 @@ export function TableroPuntoYFama({
   const enviar = useCallback(async () => {
     if (!puedeEscribir || !propio) return
     if (!completa(escritura)) return avisar('Faltan cifras.')
+    if (repetidas(escritura.letras).size > 0) return avisar('Sin cifras repetidas.')
     const fila = propio.intentos.length
     const antes = propio.terminadas.length
     const respuesta = (await onEnviar(palabraDe(escritura)).catch(() => null)) as
@@ -146,14 +172,16 @@ export function TableroPuntoYFama({
   const tecla = useCallback(
     (valor: string) => {
       if (!puedeEscribir) return
+      if (lapiz && valor === 'ENVIAR') return setLapiz(false)
+      if (lapiz && /^\d$/.test(valor)) return marcar(valor)
       if (valor === 'ENVIAR') return void enviar()
       if (valor === 'BORRAR') return setEscritura(borrar)
       if (valor === 'IZQUIERDA') return setEscritura((e) => mover(e, e.cursor === null ? cursorDe(e) : e.cursor - 1))
       if (valor === 'DERECHA') return setEscritura((e) => mover(e, cursorDe(e) + 1))
-      // A digit already in the guess is not typed twice: none may repeat.
-      setEscritura((e) => (e.letras.includes(valor) && e.letras[e.cursor ?? -1] !== valor ? e : escribir(e, valor)))
+      // A digit may be typed twice while writing; only sending it is refused (Phase 108).
+      setEscritura((e) => escribir(e, valor))
     },
-    [puedeEscribir, enviar],
+    [puedeEscribir, enviar, lapiz, marcar],
   )
 
   const teclaRef = useRef(tecla)
@@ -162,7 +190,7 @@ export function TableroPuntoYFama({
   }, [tecla])
   useEffect(() => {
     const alPresionar = (evento: KeyboardEvent) => {
-      if (evento.metaKey || evento.ctrlKey || evento.altKey) return
+      if (evento.metaKey || evento.ctrlKey || evento.altKey || enUnCampo(evento)) return
       if (evento.key === 'Enter') teclaRef.current('ENVIAR')
       else if (evento.key === 'Backspace') teclaRef.current('BORRAR')
       else if (evento.key === 'ArrowLeft') teclaRef.current('IZQUIERDA')
@@ -185,7 +213,7 @@ export function TableroPuntoYFama({
   const quedaPoco = conTiempo && empezo && !termine && tiempo <= 30_000
 
   return (
-    <main className="mx-auto flex w-full max-w-lg flex-1 flex-col gap-3 px-4 pt-1 pb-3">
+    <main className={cn('mx-auto flex w-full max-w-lg flex-col gap-3 px-4 pt-1 pb-3', ALTO_DE_TABLERO)}>
       <header className="flex items-center justify-between gap-3">
         <span className="-ml-1 flex items-center gap-1">
           <button type="button" onClick={onSalir} aria-label="Salir de la carrera" className="text-muted-foreground hover:text-foreground p-1">
@@ -195,6 +223,9 @@ export function TableroPuntoYFama({
             <button type="button" onClick={() => setVerReglas(true)} aria-label="Cómo se juega" className="text-muted-foreground hover:text-foreground p-1">
               <CircleHelp className="size-4" aria-hidden />
             </button>
+          )}
+          {apuntes && !termine && (
+            <BotonDeNota abierta={nota.abierta} onCambiar={nota.cambiar} conNota={notas.nota.trim() !== ''} />
           )}
         </span>
         <div className="flex flex-col items-center leading-tight">
@@ -238,16 +269,20 @@ export function TableroPuntoYFama({
           </div>
         ) : (
           <>
-            <ol ref={lista} className="flex min-h-0 flex-1 flex-col gap-1.5 overflow-y-auto py-1" aria-label="Tus intentos">
-              {intentos.length === 0 && (
-                <li className="text-muted-foreground m-auto max-w-64 text-center text-sm">
-                  Adivina el número de {digitos} cifras, sin cifras repetidas. Fama: en su lugar. Punto: está, en otro lugar.
-                </li>
-              )}
-              {intentos.map((intento, i) => (
-                <FilaDeIntento key={i} intento={intento} numero={i + 1} llegando={i === llegando} />
-              ))}
-            </ol>
+            <div className="flex min-h-0 flex-1 gap-2">
+              <ol ref={lista} className="flex min-h-0 min-w-0 flex-1 flex-col gap-1 overflow-y-auto py-1" aria-label="Tus intentos">
+                {intentos.length === 0 && (
+                  <li className="text-muted-foreground m-auto max-w-64 text-center text-sm">
+                    Adivina el número de {digitos} cifras, sin cifras repetidas.
+                    <Leyenda className="mt-3" />
+                  </li>
+                )}
+                {intentos.map((intento, i) => (
+                  <FilaDeIntento key={i} intento={intento} numero={i + 1} llegando={i === llegando} />
+                ))}
+              </ol>
+              {apuntes && nota.abierta && !cierre && <NotaAlLado nota={notas.nota} onEscribir={notas.escribirNota} angosta={digitos >= 6} />}
+            </div>
             <FilaEscrita
               digitos={digitos}
               escritura={cierre ? null : escritura}
@@ -271,53 +306,104 @@ export function TableroPuntoYFama({
         </div>
       </div>
 
-      {!termine && <TecladoNumerico usadas={escritura.letras} activo={puedeEscribir} onTecla={tecla} />}
-
-      {verReglas && reglas && (
-        <div className="bg-background fixed inset-0 z-50 overflow-y-auto">
-          <div className="mx-auto flex max-w-md flex-col gap-6 px-6 py-8">
-            <div className="flex items-center justify-between">
-              <h2 className="text-2xl font-semibold tracking-tight">Cómo se juega</h2>
-              <button type="button" onClick={() => setVerReglas(false)} aria-label="Cerrar las reglas" className="hover:bg-accent -mr-2 rounded-md p-2">
-                <X className="size-5" aria-hidden />
-              </button>
-            </div>
-            {reglas}
-            <button type="button" onClick={() => setVerReglas(false)} className="bg-primary text-primary-foreground rounded-md px-4 py-3 text-sm font-medium">
-              Volver
-            </button>
-          </div>
-        </div>
+      {!termine && (
+        <TecladoNumerico
+          activo={puedeEscribir}
+          onTecla={tecla}
+          marcas={apuntes ? notas.marcas : undefined}
+          lapiz={lapiz}
+          onLapiz={apuntes ? () => setLapiz((l) => !l) : undefined}
+        />
       )}
+
+      {verReglas && reglas && <HojaDeReglas reglas={reglas} onCerrar={() => setVerReglas(false)} />}
     </main>
   )
 }
 
-/** An answer as marks: a green dot per fama, an amber one per punto; «nada» for none. */
+/** The digits written more than once, by position — what keeps a guess from being sent. */
+export function repetidas(letras: readonly (string | null)[]): ReadonlySet<number> {
+  const posiciones = new Set<number>()
+  letras.forEach((letra, i) => {
+    if (letra !== null && letras.some((otra, j) => j !== i && otra === letra)) posiciones.add(i)
+  })
+  return posiciones
+}
+
+/** What the colours mean, for whoever is unsure (Phase 107). */
+export function Leyenda({ className }: { className?: string }) {
+  return (
+    <span className={cn('flex flex-col items-start gap-1.5 text-left text-sm', className)}>
+      <span className="flex items-center gap-2">
+        <Marcas respuesta={{ famas: 0, puntos: 1 }} />
+        <span>
+          <b>Punto</b>: la cifra está, en otro lugar.
+        </span>
+      </span>
+      <span className="flex items-center gap-2">
+        <Marcas respuesta={{ famas: 1, puntos: 0 }} />
+        <span>
+          <b>Fama</b>: la cifra está y en su lugar.
+        </span>
+      </span>
+    </span>
+  )
+}
+
+/** The ⓘ's sheet over a board: the legend first, then the whole of «Cómo se juega». */
+export function HojaDeReglas({ reglas, onCerrar }: { reglas: ReactNode; onCerrar: () => void }) {
+  return (
+    <div className="bg-background animate-in fade-in fixed inset-0 z-50 overflow-y-auto">
+      <div className="mx-auto flex max-w-md flex-col gap-6 px-6 py-8">
+        <div className="flex items-center justify-between">
+          <h2 className="text-2xl font-semibold tracking-tight">Cómo se juega</h2>
+          <button type="button" onClick={onCerrar} aria-label="Cerrar las reglas" className="hover:bg-accent -mr-2 rounded-md p-2">
+            <X className="size-5" aria-hidden />
+          </button>
+        </div>
+        <div className="bg-card rounded-lg border p-4">
+          <h3 className="text-muted-foreground mb-2 text-xs font-medium tracking-widest uppercase">Las marcas</h3>
+          <Leyenda />
+        </div>
+        {reglas}
+        <button type="button" onClick={onCerrar} className="bg-primary text-primary-foreground rounded-md px-4 py-3 text-sm font-medium">
+          Volver
+        </button>
+      </div>
+    </div>
+  )
+}
+
+/** An answer as marks: an amber dot per punto, then a green one per fama; «nada» for none. */
 export function Marcas({
   respuesta,
   llegando = false,
   chico = false,
+  apiladas = false,
 }: {
   respuesta: Respuesta
   llegando?: boolean
   chico?: boolean
+  /** In two short rows, for a long number's row beside the note (Phase 111). */
+  apiladas?: boolean
 }) {
   if (respuesta.famas === 0 && respuesta.puntos === 0) {
     return <span className={cn('text-muted-foreground', chico ? 'text-[10px]' : 'text-xs')}>nada</span>
   }
   const marcas = [
-    ...Array.from({ length: respuesta.famas }, () => 'fama' as const),
     ...Array.from({ length: respuesta.puntos }, () => 'punto' as const),
+    ...Array.from({ length: respuesta.famas }, () => 'fama' as const),
   ]
   return (
-    <span className="flex items-center gap-1" aria-label={`${respuesta.famas} famas, ${respuesta.puntos} puntos`}>
+    <span
+      className={cn(apiladas ? 'grid grid-flow-col grid-rows-2 gap-0.5' : 'flex items-center gap-1')}
+      aria-label={`${respuesta.puntos} puntos, ${respuesta.famas} famas`}>
       {marcas.map((tipo, i) => (
         <span
           key={i}
           className={cn(
             'rounded-full',
-            chico ? 'size-2' : 'size-3',
+            chico ? 'size-2' : apiladas ? 'size-2.5' : 'size-3',
             tipo === 'fama' ? 'bg-[oklch(0.6_0.12_148)]' : 'bg-[oklch(0.72_0.13_88)]',
             llegando && 'palabras-cae',
           )}
@@ -330,21 +416,23 @@ export function Marcas({
 
 export function FilaDeIntento({ intento, numero, llegando }: { intento: IntentoPF; numero: number; llegando: boolean }) {
   return (
-    <li className={cn('flex items-center gap-3 rounded-md px-2 py-1', llegando && 'animate-in fade-in slide-in-from-bottom-2')}>
-      <span className="text-muted-foreground w-5 text-right text-xs tabular-nums">{numero}</span>
-      <span className="flex gap-1">
+    <li className={cn('flex shrink-0 items-center gap-2 rounded-md px-1', llegando && 'animate-in fade-in slide-in-from-bottom-2')}>
+      <span className="text-muted-foreground w-5 shrink-0 text-right text-xs tabular-nums">{numero}</span>
+      <span className="flex shrink-0 gap-0.5">
         {[...intento.palabra].map((cifra, i) => (
-          <span key={i} className="bg-muted flex size-9 items-center justify-center rounded-md font-mono text-lg font-bold">
+          <span
+            key={i}
+            className={cn(
+              'bg-muted flex items-center justify-center rounded font-mono font-bold',
+              // Six digits are narrower, so the note still fits beside them.
+              intento.palabra.length >= 6 ? 'size-6 text-sm' : 'size-7 text-base',
+            )}
+          >
             {cifra}
           </span>
         ))}
       </span>
-      <span className="flex flex-1 items-center justify-between gap-2">
-        <Marcas respuesta={intento} llegando={llegando} />
-        <span className="text-muted-foreground text-xs tabular-nums">
-          {intento.famas}F · {intento.puntos}P
-        </span>
-      </span>
+      <Marcas respuesta={intento} llegando={llegando} apiladas={intento.palabra.length >= 5} />
     </li>
   )
 }
@@ -363,21 +451,24 @@ export function FilaEscrita({
   sacudida: string | null
   onTocar: (indice: number) => void
 }) {
+  const repetida = escritura ? repetidas(escritura.letras) : new Set<number>()
   return (
     <div key={sacudida ?? 'quieta'} className={cn('flex justify-center gap-2 py-2', sacudida && 'palabras-sacudir')}>
       {Array.from({ length: digitos }, (_, i) => {
         const cifra = escritura?.letras[i] ?? undefined
         const enCursor = conCursor && escritura?.cursor === i
+        const seRepite = repetida.has(i)
         return (
           <button
             key={i}
             type="button"
             onClick={() => onTocar(i)}
-            aria-label={`Cifra ${i + 1}${cifra ? `, ${cifra}` : ', vacía'}`}
+            aria-label={`Cifra ${i + 1}${cifra ? `, ${cifra}` : ', vacía'}${seRepite ? ', repetida' : ''}`}
             className={cn(
               'flex size-14 items-center justify-center rounded-md border-2 font-mono text-3xl font-bold',
               cifra ? 'border-muted-foreground/60 palabras-cae' : 'border-border',
               enCursor && 'border-foreground ring-foreground/25 ring-2',
+              seRepite && 'border-red-600 text-red-600 dark:border-red-400 dark:text-red-400',
             )}
           >
             {cifra}
@@ -388,46 +479,76 @@ export function FilaEscrita({
   )
 }
 
+/**
+ * The pad of 0–9. With `marcas`, each key wears its mark (Phase 110), and a
+ * pencil beside ENVIAR turns the pad from writing to marking.
+ */
 export function TecladoNumerico({
-  usadas,
   activo,
   onTecla,
+  marcas,
+  lapiz = false,
+  onLapiz,
 }: {
-  usadas: readonly (string | null)[]
   activo: boolean
   onTecla: (valor: string) => void
+  marcas?: MarcasDeCifras
+  lapiz?: boolean
+  onLapiz?: () => void
 }) {
   const tecla = 'bg-[oklch(0.45_0_0)] text-white hover:bg-[oklch(0.5_0_0)]'
   return (
     <div className={cn('flex flex-col gap-1.5 transition-opacity', !activo && 'opacity-60')}>
-      {FILAS_DEL_TECLADO.map((fila) => (
-        <div key={fila} className="flex gap-1.5">
-          {[...fila].map((cifra) => {
-            const usada = usadas.includes(cifra)
-            return (
-              <button
-                key={cifra}
-                type="button"
-                onClick={() => onTecla(cifra)}
-                aria-disabled={usada}
-                className={cn('h-13 flex-1 rounded-md font-mono text-xl font-bold transition-opacity', tecla, usada && 'opacity-30')}
-              >
-                {cifra}
-              </button>
-            )
-          })}
-        </div>
-      ))}
+      {lapiz && <p className="text-muted-foreground animate-in fade-in text-center text-xs">{AYUDA_DEL_LAPIZ}</p>}
+      <div className={cn('flex flex-col gap-1.5 rounded-lg', lapiz && 'ring-[oklch(0.52_0.15_255)] ring-2 ring-offset-4 ring-offset-background')}>
+        {FILAS_DEL_TECLADO.map((fila) => (
+          <div key={fila} className="flex gap-1.5">
+            {[...fila].map((cifra) => {
+              const marca = marcas?.[cifra]
+              return (
+                <button
+                  key={cifra}
+                  type="button"
+                  onClick={() => onTecla(cifra)}
+                  aria-label={`${cifra}${nombreDeMarca(marca)}`}
+                  className={cn('h-13 flex-1 rounded-md font-mono text-xl font-bold transition-colors', estiloDeMarca(marca) ?? tecla)}
+                >
+                  {cifra}
+                </button>
+              )
+            })}
+          </div>
+        ))}
+      </div>
       <div className="flex gap-1.5">
         <button type="button" onClick={() => onTecla('BORRAR')} aria-label="Borrar" className={cn('flex h-13 flex-1 items-center justify-center rounded-md', tecla)}>
           <Delete className="size-5" aria-hidden />
         </button>
+        {onLapiz && (
+          <button
+            type="button"
+            onClick={onLapiz}
+            aria-label={lapiz ? 'Dejar de marcar' : 'Marcar cifras'}
+            aria-pressed={lapiz}
+            className={cn(
+              'flex h-13 flex-1 items-center justify-center rounded-md',
+              lapiz ? 'bg-[oklch(0.52_0.15_255)] text-white' : tecla,
+            )}
+          >
+            <Pencil className="size-5" aria-hidden />
+          </button>
+        )}
         <button type="button" onClick={() => onTecla('ENVIAR')} className="bg-primary text-primary-foreground h-13 flex-[2] rounded-md text-sm font-bold">
-          ENVIAR
+          {lapiz ? 'LISTO' : 'ENVIAR'}
         </button>
       </div>
     </div>
   )
+}
+
+/** Whether a key press belongs to a field being written in (the note), not to the board. */
+export function enUnCampo(evento: KeyboardEvent): boolean {
+  return evento.target instanceof HTMLElement && evento.target.closest('textarea, input, [contenteditable]') !== null
 }
 
 /** A rival's answers on the number they are on — the last few, marks only. */

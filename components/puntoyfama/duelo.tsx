@@ -8,8 +8,8 @@
  * and both lists of guesses side by side.
  */
 
-import { Lock, LogOut, Trophy } from 'lucide-react'
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { CircleHelp, Lock, LogOut, Trophy } from 'lucide-react'
+import { type ReactNode, useCallback, useEffect, useRef, useState } from 'react'
 import { CuentaAtras, formatoDeTiempo } from '@/components/carrera/comun'
 import {
   type Escritura,
@@ -23,7 +23,17 @@ import {
 } from '@/components/palabras/escritura'
 import type { IntentoPF, VistaDelDuelo } from '@/lib/engine/puntoyfama'
 import { cn } from '@/lib/utils'
-import { FilaDeIntento, FilaEscrita, Marcas, TecladoNumerico } from './tablero'
+import { BotonDeNota, NotaAlLado, useApuntes, useNotaAbierta } from './apuntes'
+import {
+  ALTO_DE_TABLERO,
+  FilaDeIntento,
+  FilaEscrita,
+  HojaDeReglas,
+  Marcas,
+  TecladoNumerico,
+  enUnCampo,
+  repetidas,
+} from './tablero'
 
 export type PropsDelDuelo = {
   vista: VistaDelDuelo
@@ -34,6 +44,10 @@ export type PropsDelDuelo = {
   onPoner: (numero: string) => Promise<unknown>
   onIntentar: (numero: string) => Promise<unknown>
   onSalir: () => void
+  /** The rules, opened over the board from its ⓘ (Phase 107). */
+  reglas?: ReactNode
+  /** Where this player's marks and note are kept — the partida's code (Phase 110). */
+  apuntes?: string
 }
 
 export function TableroDuelo({
@@ -45,6 +59,8 @@ export function TableroDuelo({
   onPoner,
   onIntentar,
   onSalir,
+  reglas,
+  apuntes,
 }: PropsDelDuelo) {
   const digitos = vista.digitos
   const yo = vista.yo
@@ -54,6 +70,11 @@ export function TableroDuelo({
   const [sacudir, setSacudir] = useState(0)
   const [aviso, setAviso] = useState<string | null>(null)
   const [llegando, setLlegando] = useState<number | null>(null)
+  const [verReglas, setVerReglas] = useState(false)
+  const nota = useNotaAbierta()
+  const [lapiz, setLapiz] = useState(false)
+  const notas = useApuntes(apuntes ? `${apuntes}:duelo` : null)
+  const { marcar } = notas
   const [tic, setTic] = useState(() => ({ reloj: ahora(), local: Date.now() }))
   const lista = useRef<HTMLOListElement>(null)
 
@@ -71,7 +92,9 @@ export function TableroDuelo({
   const empezo = vista.inicio !== null && tic.reloj >= vista.inicio
   const lotengo = yo?.terminoEn !== null && yo?.terminoEn !== undefined
   const fin = vista.resultado !== null
-  const puedeEscribir = !enviando && !fin && (poniendo || (empezo && !lotengo))
+  const puedeEscribir = !enviando && !fin && !verReglas && (poniendo || (empezo && !lotengo))
+  // Marks and the note are for guessing their number, not for setting yours.
+  const conApuntes = Boolean(apuntes) && !poniendo && !fin
 
   useEffect(() => {
     lista.current?.scrollTo({ top: lista.current.scrollHeight, behavior: 'smooth' })
@@ -79,9 +102,10 @@ export function TableroDuelo({
 
   const enviar = useCallback(async () => {
     if (!puedeEscribir) return
-    if (!completa(escritura)) {
+    const falta = !completa(escritura)
+    if (falta || repetidas(escritura.letras).size > 0) {
       setSacudir((n) => n + 1)
-      setAviso('Faltan cifras.')
+      setAviso(falta ? 'Faltan cifras.' : 'Sin cifras repetidas.')
       setTimeout(() => setAviso(null), 1400)
       return
     }
@@ -100,13 +124,16 @@ export function TableroDuelo({
   const tecla = useCallback(
     (valor: string) => {
       if (!puedeEscribir) return
+      if (lapiz && conApuntes && valor === 'ENVIAR') return setLapiz(false)
+      if (lapiz && conApuntes && /^\d$/.test(valor)) return marcar(valor)
       if (valor === 'ENVIAR') return void enviar()
       if (valor === 'BORRAR') return setEscritura(borrar)
       if (valor === 'IZQUIERDA') return setEscritura((e) => mover(e, e.cursor === null ? cursorDe(e) : e.cursor - 1))
       if (valor === 'DERECHA') return setEscritura((e) => mover(e, cursorDe(e) + 1))
-      setEscritura((e) => (e.letras.includes(valor) && e.letras[e.cursor ?? -1] !== valor ? e : escribir(e, valor)))
+      // A digit may be typed twice while writing; only sending it is refused (Phase 108).
+      setEscritura((e) => escribir(e, valor))
     },
-    [puedeEscribir, enviar],
+    [puedeEscribir, enviar, lapiz, conApuntes, marcar],
   )
   const teclaRef = useRef(tecla)
   useEffect(() => {
@@ -114,7 +141,7 @@ export function TableroDuelo({
   }, [tecla])
   useEffect(() => {
     const alPresionar = (evento: KeyboardEvent) => {
-      if (evento.metaKey || evento.ctrlKey || evento.altKey) return
+      if (evento.metaKey || evento.ctrlKey || evento.altKey || enUnCampo(evento)) return
       if (evento.key === 'Enter') teclaRef.current('ENVIAR')
       else if (evento.key === 'Backspace') teclaRef.current('BORRAR')
       else if (/^\d$/.test(evento.key)) teclaRef.current(evento.key)
@@ -128,11 +155,21 @@ export function TableroDuelo({
   const tiempo = vista.inicio !== null && empezo ? (yo?.terminoEn ?? tic.reloj - vista.inicio) : 0
 
   return (
-    <main className="mx-auto flex w-full max-w-lg flex-1 flex-col gap-3 px-4 pt-1 pb-3">
+    <main className={cn('mx-auto flex w-full max-w-lg flex-col gap-3 px-4 pt-1 pb-3', ALTO_DE_TABLERO)}>
       <header className="flex items-center justify-between gap-3">
-        <button type="button" onClick={onSalir} aria-label="Salir del duelo" className="text-muted-foreground hover:text-foreground -ml-1 p-1">
-          <LogOut className="size-4" aria-hidden />
-        </button>
+        <span className="-ml-1 flex items-center gap-1">
+          <button type="button" onClick={onSalir} aria-label="Salir del duelo" className="text-muted-foreground hover:text-foreground p-1">
+            <LogOut className="size-4" aria-hidden />
+          </button>
+          {reglas && (
+            <button type="button" onClick={() => setVerReglas(true)} aria-label="Cómo se juega" className="text-muted-foreground hover:text-foreground p-1">
+              <CircleHelp className="size-4" aria-hidden />
+            </button>
+          )}
+          {conApuntes && !lotengo && (
+            <BotonDeNota abierta={nota.abierta} onCambiar={nota.cambiar} conNota={notas.nota.trim() !== ''} />
+          )}
+        </span>
         <div className="flex flex-col items-center leading-tight">
           <span className="text-muted-foreground text-xs tracking-widest uppercase">Duelo</span>
           <span className="max-w-48 truncate text-sm font-semibold">contra {nombreRival}</span>
@@ -177,11 +214,14 @@ export function TableroDuelo({
               ))}
             </span>
           </div>
-          <ol ref={lista} className="flex min-h-0 flex-1 flex-col gap-1.5 overflow-y-auto py-1" aria-label="Tus intentos">
-            {(yo?.intentos ?? []).map((intento, i) => (
-              <FilaDeIntento key={i} intento={intento} numero={i + 1} llegando={i === llegando} />
-            ))}
-          </ol>
+          <div className="flex min-h-0 flex-1 gap-2">
+            <ol ref={lista} className="flex min-h-0 min-w-0 flex-1 flex-col gap-1 overflow-y-auto py-1" aria-label="Tus intentos">
+              {(yo?.intentos ?? []).map((intento, i) => (
+                <FilaDeIntento key={i} intento={intento} numero={i + 1} llegando={i === llegando} />
+              ))}
+            </ol>
+            {conApuntes && !lotengo && nota.abierta && <NotaAlLado nota={notas.nota} onEscribir={notas.escribirNota} angosta={digitos >= 6} />}
+          </div>
           {lotengo && (
             <p className="text-center text-sm font-medium">
               ¡Lo tienes en {yo!.intentos.length} {yo!.intentos.length === 1 ? 'intento' : 'intentos'}! Esperando a que{' '}
@@ -204,12 +244,20 @@ export function TableroDuelo({
             sacudida={haySacudida ? sacudida : null}
             onTocar={(i) => setEscritura((e) => mover(e, i))}
           />
-          <TecladoNumerico usadas={escritura.letras} activo={puedeEscribir} onTecla={tecla} />
+          <TecladoNumerico
+            activo={puedeEscribir}
+            onTecla={tecla}
+            marcas={conApuntes ? notas.marcas : undefined}
+            lapiz={lapiz && conApuntes}
+            onLapiz={conApuntes ? () => setLapiz((l) => !l) : undefined}
+          />
           {poniendo && (
             <p className="text-muted-foreground text-center text-xs">ENVIAR pone tu número; ya no se puede cambiar.</p>
           )}
         </>
       )}
+
+      {verReglas && reglas && <HojaDeReglas reglas={reglas} onCerrar={() => setVerReglas(false)} />}
     </main>
   )
 }

@@ -3962,6 +3962,128 @@ both guessing games are played between people. Production needs, before
 `npm run publicar`: `prisma/sql/94-castigo.sql`, `95-espera.sql` and
 `96-encadenadas.sql` on `mazo` (Punto y Fama itself added no column).
 
+## Asked for after v2.4.0
+
+*The owner, 2026-11-16, after playing Punto y Fama on production: the
+finish table, with everyone's tries side by side, is right as it is. But
+the colours already say famas and puntos, so the «2F · 1P» beside them is
+noise; and a guess should be typed as freely as it is thought.*
+
+### Phase 107 — Las marcas bastan ✅
+A guess's answer is its marks alone: green dots for famas, amber for
+puntos, «nada» for none. The «2F · 1P» column goes — from the race, the
+duel and the bot. In its place, for whoever is unsure, a ⓘ on every board
+(the race had one; the duel gets it) opens a legend — a green dot is a
+fama, an amber one a punto — above the full «Cómo se juega».
+
+**Done when:** no board shows «F · P» beside the marks, and from the race
+and the duel the ⓘ shows what each colour means.
+
+**Done.** `FilaDeIntento` and the bot's list show the marks alone. The
+sheet the ⓘ opens is `HojaDeReglas` (`components/puntoyfama/tablero.tsx`),
+shared by the race and the duel: «Las marcas» — a green dot, «Fama: la
+cifra está y en su lugar»; an amber one, «Punto: la cifra está, en otro
+lugar» — and under it the whole «Cómo se juega». The same `Leyenda` greets
+an empty race board. In the browser: three guesses with marks only, and
+the ⓘ's sheet.
+
+### Phase 108 — Escribir como uno piensa ✅
+A digit may be typed again while a guess is being written — the pad no
+longer swallows it nor dims the digits used. What the rules forbid is
+*sending* it: ENVIAR on a guess with a digit repeated shakes and says
+«Sin cifras repetidas», and the slots holding the repeat are marked, so
+it is plain which to fix. The same on the duel's own number.
+
+**Done when:** 1123 can be typed, is refused on ENVIAR with its two 1s
+marked, and becomes sendable once one is changed — on the race and the
+duel; the server still refuses a repeat sent to it.
+
+### Phase 109 — Primero el punto, luego la fama ✅
+The game is called *Punto y Fama*, so it is told in that order: an
+answer's marks are its amber puntos first, then its green famas — on every
+board, the finish table, the bot's list and the rules' example — and the
+bot's steppers read Puntos on the left, Famas on the right. The legend and
+the rules define punto before fama. And the bot's «Le quedan 216 números
+posibles», which the owner had not seen down by «Deshacer», moves up under
+its guess, the number large and redrawn as it shrinks.
+
+**Done when:** 2 puntos and 1 fama are drawn amber, amber, green; the
+bot's steppers go Puntos, Famas; and its count sits under its guess.
+
+**Done.** `Marcas` draws puntos before famas, which every board, the
+finish table and the rules' example use; `Leyenda`, the rules' list and
+the bot's copy name punto first; the bot's `Contador`s swapped, and
+`Quedan` under the guess. In the browser: the bot's first guess answered
+2 puntos and 1 fama, drawn amber, amber, green, and «Le quedan 216
+números posibles» under its second.
+
+### Phase 110 — Apuntes: marcas en las cifras y una nota libre ✅
+So nothing has to be kept in one's head while guessing (the owner,
+2026-11-16: «yo sé que están el 1 o el 2 y están el 3 o el 4 — ¿cómo
+marco esto sin dejarlo en mi propia memoria?»). Two things, and only two
+(the owner's word: «color para los que sí están, color para los que no
+están. Fin.»; «una sola nota donde yo escribo lo que quiera»):
+
+- **Marks on the pad's digits.** A pencil ✏️ beside ENVIAR turns the pad
+  from writing to marking; each tap on a digit goes **está → no está →
+  sin marca**. «Está» is blue, «no está» grey and struck through — never
+  green or amber, which are fama and punto. A marked digit can still be
+  typed; the marks are a note, not a rule.
+- **One free note.** A 📝 on the board opens a sheet over it with a
+  single text field: write and erase anything, line by line. It touches
+  no digit. Closed, its first lines show above the guesses, and tapping
+  them opens it again.
+
+Both are private — they never leave the phone — and survive a reload.
+Both are the number's: in a race of several numbers, the marks and the
+note start clean when the next number opens (Mazo's call; «Borrar nota»
+clears it sooner). On the race and on the duel's guessing; not while
+setting your number for the other.
+
+**Done when:** on a race, 1 marked «está» and 7 «no está» show blue and
+struck, a note «1 o 2 / 3 o 4» is written, both survive a reload, both are
+gone on the next number, and typing digits into the note writes nothing
+into the guess.
+
+**Done.** `components/puntoyfama/apuntes.tsx`: `useApuntes(clave)` keeps
+the marks and the note in `localStorage` under the partida's code and the
+number in play (`TGXDK:0`, `TGXDK:1`…; the duel's `…:duelo`), lets go of
+any other when it writes, and reads a new key's own when the number
+changes. `TecladoNumerico` wears the marks and has the pencil between ⌫
+and ENVIAR, which reads «LISTO» while marking and leaves the mode; a line
+over the pad says what a tap does. The 📝 sits by the ⓘ, with a dot when
+there is a note; the note opens as a sheet with «Borrar nota» and «Listo»,
+and its first two lines show above the guesses. Key presses inside the
+note never reach the board. In the duel, only once guessing. In the
+browser: 1 «está» (blue) and 7 «no está» (struck), «1 o 2 / 3 o 4»
+written, a 5 typed in the note leaving the guess empty; all there after a
+reload; the number solved in six, and number 2 opened with no mark and no
+note.
+
+### Phase 111 — La nota al lado, y el teclado siempre a la vista ✅
+The owner, after trying Phase 110 on the phone: the note as a sheet over
+the board was awkward — reading it hid the guesses, and «atrás» to close
+it left the table. And with many guesses the pad slid off the bottom of
+the screen. So: the note sits **beside the guesses**, read at a glance
+while playing; a tap writes in it, «Listo» goes back to reading; the 📝
+only shows and hides it — nothing to close, nothing to go back from. The
+board is never taller than the screen: the guesses scroll inside it,
+newest in view, and are smaller, so they fill it slower.
+
+**Done when:** sixteen guesses leave the pad where it was, the newest in
+view; the note open beside them on 4 and on 6 digits with nothing cut;
+editing it leaves the guess untouched; and open or closed is remembered.
+
+**Done.** `ALTO_DE_TABLERO` holds both boards to the screen under the
+site's bar; the list scrolls inside, to the newest. Guess rows went from
+36px tiles to 28 (24 on six digits), and on five and six digits the marks
+stack in two short rows. `NotaAlLado` (`apuntes.tsx`) replaces the sheet
+and the preview: reading by default, «Editar» to a field with 🗑 and
+«Listo»; `useNotaAbierta` remembers whether it is shown. In the browser:
+16 guesses on 4 digits with the note open and ENVIAR still at the bottom;
+6 digits with the note open, nothing cut; a note typed beside the guesses
+with the guess's slots left empty.
+
 ---
 
 ## After

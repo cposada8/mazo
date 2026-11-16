@@ -356,6 +356,7 @@ function MesaPuntoYFama({ codigo, onSalir }: { codigo: string; onSalir: () => vo
       onCerrar={remota.cerrar}
       onSalir={mesa.vista.cerrada || mesa.vista.propio?.terminoEn != null ? () => router.push('/') : onSalir}
       reglas={<ComoSeJuegaPuntoYFama />}
+      apuntes={codigo}
     />
   )
 }
@@ -393,6 +394,8 @@ function MesaDuelo({ codigo, onSalir }: { codigo: string; onSalir: () => void })
       onPoner={remota.poner}
       onIntentar={remota.intentar}
       onSalir={remota.mesa.vista.resultado ? () => router.push('/') : onSalir}
+      reglas={<ComoSeJuegaPuntoYFama />}
+      apuntes={codigo}
     />
   )
 }
