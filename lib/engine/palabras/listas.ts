@@ -5,11 +5,27 @@
  */
 
 import { ACEPTADAS_5 } from './aceptadas-5'
+import { ACEPTADAS_6 } from './aceptadas-6'
+import { ACEPTADAS_7 } from './aceptadas-7'
+import { ACEPTADAS_8 } from './aceptadas-8'
 import { type Largo, LARGO_POR_DEFECTO, esLargo } from './opciones'
 import { RESPUESTAS_5 } from './respuestas-5'
+import { RESPUESTAS_6 } from './respuestas-6'
+import { RESPUESTAS_7 } from './respuestas-7'
+import { RESPUESTAS_8 } from './respuestas-8'
 
-const RESPUESTAS: Record<Largo, readonly string[]> = { 5: RESPUESTAS_5 }
-const ACEPTADAS: Record<Largo, readonly string[]> = { 5: ACEPTADAS_5 }
+const RESPUESTAS: Record<Largo, readonly string[]> = {
+  5: RESPUESTAS_5,
+  6: RESPUESTAS_6,
+  7: RESPUESTAS_7,
+  8: RESPUESTAS_8,
+}
+const ACEPTADAS: Record<Largo, readonly string[]> = {
+  5: ACEPTADAS_5,
+  6: ACEPTADAS_6,
+  7: ACEPTADAS_7,
+  8: ACEPTADAS_8,
+}
 
 export function respuestasDe(largo: number): readonly string[] {
   return esLargo(largo) ? RESPUESTAS[largo] : RESPUESTAS[LARGO_POR_DEFECTO]

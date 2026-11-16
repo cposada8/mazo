@@ -87,6 +87,19 @@ describe('the race (Phase 83)', () => {
     expect(sacarBolsa('x', 20)).not.toEqual(sacarBolsa('y', 20))
   })
 
+  it.each([6, 7, 8])('a race of %i-letter words draws, takes and refuses by that length', (largo) => {
+    const estado = empezarPalabras({ seed: 's', palabras: 5, largo, asientos: [0], ahora: AHORA })
+    for (const palabra of estado.bolsa) expect([...palabra]).toHaveLength(largo)
+    expect(intentar(estado, 0, 'MENTA', EN_CARRERA)).toEqual({ ok: false, code: 'LARGO' })
+    const r = intentar(estado, 0, estado.bolsa[0], EN_CARRERA)
+    expect(r.ok && r.termino?.acertada).toBe(true)
+    expect(vistaPalabras(estado, 0, EN_CARRERA).largo).toBe(largo)
+  })
+
+  it('five letters keeps drawing exactly as before lengths existed', () => {
+    expect(sacarBolsa('x', 3)).toEqual(sacarBolsa('x', 3, 5))
+  })
+
   it('nobody plays before the 3-2-1 is over', () => {
     const estado = carrera()
     expect(intentar(estado, 0, 'MENTA', AHORA + 100)).toEqual({ ok: false, code: 'NO_EMPEZO' })

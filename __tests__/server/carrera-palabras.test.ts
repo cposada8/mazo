@@ -58,6 +58,21 @@ describe('Palabras through the platform', () => {
     expect(estado.tableros.map((t) => t.asiento)).toEqual([0, 1])
   })
 
+  it('keeps the word length the host chose, and deals words of it', async () => {
+    const creada = await partidas.crearPartida({
+      secreto: 'eva',
+      alias: 'eva',
+      juego: 'palabras',
+      config: CONFIG_POR_DEFECTO,
+    })
+    const codigo = creada.codigo
+    await partidas.actualizarAjustes({ codigo, secreto: 'eva', largo: 8 })
+    await partidas.actualizarAjustes({ codigo, secreto: 'eva', largo: 12 })
+    expect((await partidas.cargarPorCodigo(codigo))!.largo).toBe(8)
+    await partidas.empezar({ codigo, secreto: 'eva', seed: 'ocho' })
+    for (const palabra of (await estadoDe(codigo)).bolsa) expect(palabra).toHaveLength(8)
+  })
+
   it('refuses a number of words the lobby does not offer', async () => {
     const { codigo } = await carreraDeDos(3)
     const r = await partidas.actualizarAjustes({ codigo, secreto: 'ana', palabras: 999 })

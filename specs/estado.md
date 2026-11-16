@@ -312,12 +312,10 @@ same words in the same order for everyone, the first to finish wins. Its
 rules are `specs/palabras-rules.md`, drafted for the owner to correct;
 `roadmap.md` has the phases:
 
-1. Phase 82 — Las palabras.
-2. Phase 83 — El motor de Palabras.
-3. Phase 84 — La puerta sabe que hay tres juegos.
-4. Phase 85 — El tablero.
-5. Phase 86 — La carrera.
-6. Phase 87 — Cómo se juega, and production.
+1. ~~Phases 82–86~~ ✅ Done as an MVP, on dev, with words of 5 to 8 letters
+   (the owner's addition). `prisma/sql/84-palabras.sql` is on `mazo-dev`
+   only. The owner still has to read the answers.
+2. Phase 87 — Cómo se juega, and production (needs the SQL on `mazo` first).
 
 **Milestone 8, el Mentiroso** (the owner, 2026-11-05), closed. Its rules are
 `specs/mentiroso-rules.md`, settled; `roadmap.md` has the phases:

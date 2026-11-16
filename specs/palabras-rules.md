@@ -36,12 +36,14 @@ wins.
 
 ## The words
 
-- **Five letters, Spanish.** The alphabet is the 27 letters of the Spanish
-  keyboard: A–Z and **Ñ**. Ñ is its own letter, never N.
+- **5, 6, 7 or 8 letters, Spanish** — the host chooses the length in the
+  lobby (the owner, 2026-11-15), five by default; every word of a race has
+  the same length. The alphabet is the 27 letters of the Spanish keyboard:
+  A–Z and **Ñ**. Ñ is its own letter, never N.
 - **Tildes are ignored** in play: ÁRBOL is typed and scored as ARBOL; Ü is
   U. The word is shown with its tildes when it is revealed.
 - **Two lists (Mazo's call)**, as the puzzle has always had:
-  - **The answers** — about **1,000** common words: nouns, adjectives, verbs
+  - **The answers** — at least **1,000** common words per length: nouns, adjectives, verbs
     in the infinitive or in common forms, nothing obscure, nothing
     offensive, no proper nouns. Only these are ever drawn.
   - **The accepted guesses** — a much longer list of real Spanish five-letter

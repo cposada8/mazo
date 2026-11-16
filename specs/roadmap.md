@@ -3272,7 +3272,7 @@ The order is el Mentiroso's: rules and words first, then the engine, then
 the door, then the board, then other people. Carioca and el Mentiroso keep
 working, untouched, at every step.*
 
-### Phase 82 — Las palabras
+### Phase 82 — Las palabras ✅
 The two lists, before any code reads them: **the answers** — about 1,000
 common five-letter Spanish words — and **the accepted guesses**, a much
 longer list of real five-letter words, every answer among them. Kept as
@@ -3286,7 +3286,7 @@ of the 27, there are no repeats in either list, every answer is an
 accepted guess, and the answers number at least 1,000; and the owner has
 read the answers.
 
-### Phase 83 — El motor de Palabras
+### Phase 83 — El motor de Palabras ✅
 The rules as a pure state machine in `lib/engine/palabras/`, beside the
 other two, importing only `comun/` (the seeded stream): the bag of n words
 drawn from a seed without repetition, a try scored green/yellow/grey with
@@ -3304,7 +3304,7 @@ tie-break, a late joiner's clock — the same seed always draws the same
 bag, and a test searches every view for an answer its player has not
 ended.
 
-### Phase 84 — La puerta sabe que hay tres juegos
+### Phase 84 — La puerta sabe que hay tres juegos ✅
 `Partida.juego` learns `'palabras'` (additive SQL under `prisma/sql/`,
 applied to `mazo-dev` and then `mazo` before the release, with the number
 of words as its own column). «Crear una partida» offers a third button;
@@ -3317,7 +3317,7 @@ other.
 played exactly as in v2.1.0, and a Palabras partida can be created, its
 number of words survives a reload, and its lobby fills by code.
 
-### Phase 85 — El tablero
+### Phase 85 — El tablero ✅
 The board on a phone, alone: the six-row grid of the current word, the
 on-screen keyboard with **Ñ** and its ENVIAR and ⌫ keys (the physical
 keyboard too, on a computer), the word count (4/10) and the clock with its
@@ -3331,7 +3331,7 @@ a seed first, through `/pruebas/palabras`.
 upright and on a computer, every rule visible as it happens, nothing off
 screen, no sideways scroll.
 
-### Phase 86 — La carrera
+### Phase 86 — La carrera ✅
 Several people, one bag, the server the referee: it holds the words,
 scores every try, and sends a phone only its own colours and the words it
 has ended. Everyone starts on the server's clock after a 3-2-1; each screen
@@ -3343,6 +3343,37 @@ already running and leaving one work as the rules say.
 code, each seeing the others' colours and never their letters, the
 answers absent from every response until each player ends them, and every
 screen showing the same ranking at the end.
+
+**Phases 82–86 done together as an MVP** (the owner, 2026-11-15: «haz un
+MVP… despliega y prueba en dev»), and with them the owner's mid-way ask:
+words of **5, 6, 7 or 8 letters**, the length a second lobby setting.
+
+- **The words.** 5 letters: 1,109 answers written by hand and checked
+  against 10,836 accepted words (`an-array-of-spanish-words`, MIT). 6, 7
+  and 8 letters: 1,064 / 1,348 / 1,474 answers, the accepted words of each
+  length ranked by use (FrequencyWords, MIT), conjugations dropped by a
+  lemma check, then read by hand; 25k / 49k / 75k accepted. Lists live in
+  `lib/engine/palabras/`, one file per length and kind. **The owner has not
+  read the answers yet** — Phase 82's last clause is still open.
+- **The engine** (`lib/engine/palabras/`): the bag from the seed (five
+  letters keeps its draw; other lengths salt it), scoring with repeated
+  letters, six tries, +2:00 a missed word, closing, ranking, late joiners,
+  and a view with rivals' colours only. `opciones.ts` holds the numbers
+  apart from the words, so the lobby and the board import it without
+  downloading any answer — checked in the production build's static files.
+- **The platform.** `Partida.palabras` and `Partida.largo`
+  (`prisma/sql/84-palabras.sql`, applied to `mazo-dev`, **not yet to
+  `mazo`**). A third door button; no bots; 1–8 seats; joining a running
+  race by code.
+- **The board** (`components/palabras/tablero.tsx`): grid, keyboard with Ñ
+  and the computer's keys, tiles turning over one by one, a shake for a
+  refusal, a jump for a solve, «Era MIXTO · +2:00» for a miss, a 3-2-1, the
+  rivals as coloured squares, and the ranking at the end. Always the
+  server's (`lib/server/palabras.ts`, `/api/partidas/[codigo]/palabras`),
+  even alone: the server alone holds the answers.
+- **Checked** in the browser at phone size, 5 and 8 letters, a second
+  player through the API: a solve, a miss with its penalty, a rival
+  finishing first, «Ganó Leo». 915 tests.
 
 ### Phase 87 — Cómo se juega, y a producción
 «Cómo se juega» for Palabras — the rules on one screen with a real row of

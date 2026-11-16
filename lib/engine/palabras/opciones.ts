@@ -6,7 +6,7 @@
  */
 
 /** Letters per word on offer (the owner, 2026-11-15: 5, 6, 7 and 8). */
-export const LARGOS = [5] as const
+export const LARGOS = [5, 6, 7, 8] as const
 export type Largo = (typeof LARGOS)[number]
 export const LARGO_POR_DEFECTO: Largo = 5
 
