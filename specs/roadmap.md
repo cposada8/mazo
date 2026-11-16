@@ -3507,7 +3507,7 @@ while it is open. The home page's «Cómo se juega» names the three games.
 The release that was this phase's second half moved to Phase 93, behind
 the owner's next ask.
 
-### Phase 92 — La tabla de la llegada
+### Phase 92 — La tabla de la llegada ✅
 *The owner, 2026-11-15:* the finish screen becomes **a table like
 Carioca's scoreboard** (Phase 49's `Marcador`): **players are the columns,
 in standing order** — whoever won, by the race's own rule (fastest time
@@ -3532,6 +3532,19 @@ bag order. Your own column is picked out, as in Carioca.
 the race's rule, every word is a row, a row opens to the four players'
 tries side by side, the table scrolls sideways on a phone without the word
 column moving, and a player still racing receives no rival letter.
+
+**Done.** `components/palabras/tabla-datos.ts` builds it from one view —
+columns in `clasificacion` order, as many rows as the furthest player got,
+a null cell where someone never ended that word, and a rival's column empty
+while the view holds no letters of theirs — and `tabla.tsx` draws it:
+puesto, name («Tú» in amber, your column tinted as in Carioca) and score
+(time, or words against the clock) over each column; «✓ 2», «✗» or «—» in
+each cell; a row opening to every player's tries in small tiles. The word
+column is sticky and carries the left gutter, so nothing scrolling under
+it shows beside it. It replaces Phase 88's tabs and the standings list. In
+the browser: four players (three through the API), 1° Leo, 2° Tú, 3° Ana
+with a miss, 4° Tomás still on word two showing «—»; CERCO opened to all
+four, the table slid right with the words fixed. 3 tests.
 
 ### Phase 93 — A producción
 The release of Phases 87–92, after `prisma/sql/89-modo.sql` and

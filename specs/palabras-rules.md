@@ -128,6 +128,9 @@ The host picks one in the lobby.
   the race closed) you may open any rival's ended words and see their tries
   in letters (the owner, 2026-11-15): you can no longer play, so it changes
   nothing. A rival's word in play stays colours only until they end it.
+- **The finish screen** is a table (the owner, 2026-11-15): players as
+  columns in standing order, words as rows; touching a word shows everyone's
+  tries on it side by side.
 
 ## Joining
 

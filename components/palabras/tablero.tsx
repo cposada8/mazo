@@ -13,14 +13,14 @@
  * player's view, which the server built.
  */
 
-import { ChevronDown, CircleHelp, Crown, Delete, Heart, LogOut, Trophy, X } from 'lucide-react'
+import { CircleHelp, Delete, Heart, LogOut, Trophy, X } from 'lucide-react'
 import { ComoSeJuegaPalabras } from './reglas'
+import { TablaDeLlegada } from './tabla'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type {
   Color,
   Intento,
   PalabraTerminada,
-  Puesto,
   VistaPalabras,
 } from '@/lib/engine/palabras'
 import {
@@ -680,15 +680,7 @@ function Llegada({
         )}
       </div>
 
-      <Clasificacion
-        puestos={vista.clasificacion}
-        nombres={nombres}
-        propio={propio.asiento}
-        total={vista.total}
-        conTiempo={conTiempo}
-      />
-
-      <PalabrasJugadas vista={vista} nombres={nombres} />
+      <TablaDeLlegada vista={vista} nombres={nombres} formatoDeTiempo={formatoDeTiempo} />
 
       {soyHost && !terminada && faltan > 0 && (
         <button
@@ -703,188 +695,3 @@ function Llegada({
   )
 }
 
-/**
- * How every word went (Phase 88): yours, and — now that you have finished —
- * each rival's, one tab per player. Touching a word opens its tries as they
- * were played. A rival still racing shows only the words they have ended.
- */
-function PalabrasJugadas({
-  vista,
-  nombres,
-}: {
-  vista: VistaPalabras
-  nombres: ReadonlyMap<number, string>
-}) {
-  const propio = vista.propio!
-  const jugadores = [
-    { asiento: propio.asiento, nombre: 'Tú', palabras: propio.terminadas },
-    ...vista.rivales
-      .filter((r) => r.palabras !== null)
-      .map((r) => ({
-        asiento: r.asiento,
-        nombre: nombres.get(r.asiento) ?? '—',
-        palabras: r.palabras!,
-      })),
-  ]
-  const [quien, setQuien] = useState(propio.asiento)
-  const [abierta, setAbierta] = useState<number | null>(null)
-  const elegido = jugadores.find((j) => j.asiento === quien) ?? jugadores[0]
-
-  return (
-    <section className="flex flex-col gap-3">
-      <h3 className="text-muted-foreground text-xs font-medium tracking-widest uppercase">
-        Las palabras
-      </h3>
-      {jugadores.length > 1 && (
-        <div className="flex gap-1.5 overflow-x-auto pb-1" role="tablist">
-          {jugadores.map((j) => (
-            <button
-              key={j.asiento}
-              type="button"
-              role="tab"
-              aria-selected={j.asiento === elegido.asiento}
-              onClick={() => {
-                setQuien(j.asiento)
-                setAbierta(null)
-              }}
-              className={cn(
-                'shrink-0 rounded-full border px-3 py-1 text-sm transition-colors',
-                j.asiento === elegido.asiento
-                  ? 'bg-primary text-primary-foreground border-primary'
-                  : 'hover:bg-accent',
-              )}
-            >
-              {j.nombre}
-            </button>
-          ))}
-        </div>
-      )}
-      {elegido.palabras.length === 0 ? (
-        <p className="text-muted-foreground text-sm">Todavía no termina ninguna palabra.</p>
-      ) : (
-        <ol className="flex flex-col gap-px overflow-hidden rounded-lg border">
-          {elegido.palabras.map((p, i) => {
-            const abiertaAqui = abierta === i
-            return (
-              <li key={i} className="bg-card">
-                <button
-                  type="button"
-                  onClick={() => setAbierta(abiertaAqui ? null : i)}
-                  aria-expanded={abiertaAqui}
-                  className="hover:bg-accent flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm"
-                >
-                  <span className="text-muted-foreground w-6 tabular-nums">{i + 1}.</span>
-                  <span
-                    className={cn(
-                      'flex-1 font-mono tracking-wider',
-                      !p.acertada && 'text-red-600 dark:text-red-400',
-                    )}
-                  >
-                    {p.palabra}
-                  </span>
-                  <span className="text-muted-foreground text-xs">
-                    {p.acertada
-                      ? `${p.intentos.length} ${p.intentos.length === 1 ? 'intento' : 'intentos'}`
-                      : 'no la adivinó'}
-                  </span>
-                  <ChevronDown
-                    className={cn(
-                      'text-muted-foreground size-4 transition-transform',
-                      abiertaAqui && 'rotate-180',
-                    )}
-                    aria-hidden
-                  />
-                </button>
-                {abiertaAqui && (
-                  <div className="animate-in fade-in flex justify-center px-4 pt-1 pb-3">
-                    <MiniGrilla intentos={p.intentos} />
-                  </div>
-                )}
-              </li>
-            )
-          })}
-        </ol>
-      )}
-    </section>
-  )
-}
-
-/** A word's tries, small: letters and colours, as they were played. */
-function MiniGrilla({ intentos }: { intentos: readonly Intento[] }) {
-  return (
-    <div className="flex flex-col gap-1">
-      {intentos.map((intento, f) => (
-        <div key={f} className="flex gap-1">
-          {[...intento.palabra].map((letra, i) => (
-            <span
-              key={i}
-              className={cn(
-                'flex size-7 items-center justify-center rounded-sm text-xs font-bold',
-                FONDO[intento.colores[i]],
-              )}
-            >
-              {letra}
-            </span>
-          ))}
-        </div>
-      ))}
-    </div>
-  )
-}
-
-function Clasificacion({
-  puestos,
-  nombres,
-  propio,
-  total,
-  conTiempo,
-}: {
-  puestos: readonly Puesto[]
-  nombres: ReadonlyMap<number, string>
-  propio: number
-  total: number
-  /** Against the clock: words solved is the score, and the time is the last solve's. */
-  conTiempo: boolean
-}) {
-  return (
-    <ol className="flex flex-col gap-px overflow-hidden rounded-lg border">
-      {puestos.map((p) => (
-        <li
-          key={p.asiento}
-          className={cn(
-            'bg-card flex items-center gap-3 px-4 py-2.5 text-sm',
-            p.asiento === propio && 'bg-accent',
-            p.retirado && 'opacity-50',
-          )}
-        >
-          <span className="text-muted-foreground w-5 tabular-nums">{p.lugar}</span>
-          <span className="flex-1 truncate">
-            {nombres.get(p.asiento) ?? '—'}
-            {p.lugar === 1 && (p.termino || conTiempo) && (
-              <Crown className="ml-1.5 inline size-3.5" aria-hidden />
-            )}
-          </span>
-          {conTiempo ? (
-            <>
-              <span className="font-semibold tabular-nums">
-                {p.acertadas} {p.acertadas === 1 ? 'palabra' : 'palabras'}
-              </span>
-              <span className="text-muted-foreground w-14 text-right font-mono text-xs tabular-nums">
-                {p.retirado ? 'salió' : p.tiempo !== null ? formatoDeTiempo(p.tiempo) : '—'}
-              </span>
-            </>
-          ) : (
-            <>
-              <span className="text-muted-foreground text-xs tabular-nums">
-                {p.acertadas}/{total}
-              </span>
-              <span className="w-16 text-right font-mono tabular-nums">
-                {p.tiempo !== null ? formatoDeTiempo(p.tiempo) : p.retirado ? 'salió' : '…'}
-              </span>
-            </>
-          )}
-        </li>
-      ))}
-    </ol>
-  )
-}
