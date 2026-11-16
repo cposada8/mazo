@@ -3939,7 +3939,7 @@ all. In the browser: 0587 answered honestly, got in five (4158, 1402,
 5316, 8725, 0587); then with the network cut, an impossible 3 famas and
 1 punto said so plainly and «Deshacer» brought the bot back to its guess.
 
-### Phase 106 — Cómo se juega, y a producción
+### Phase 106 — Cómo se juega, y a producción ✅
 «Cómo se juega» for Punto y Fama — the scoring with a real example, the
 three ways to play, and the bot — from its lobby, its board and the other
 games' rules pages; the home page naming four games. Then the release,
@@ -3947,7 +3947,12 @@ after the SQL reaches `mazo`.
 
 **Done when:** Punto y Fama is in production, and `estado.md` says so.
 
-**«Cómo se juega» done; production waits for the owner's word.**
+**Released as v2.4.0** (the owner, 2026-11-16: «esta versión está lista
+para producción»), with Phases 94–98 of Palabras and Carioca; `mazo` took
+`94-castigo.sql`, `95-espera.sql` and `96-encadenadas.sql` first.
+**Milestone 10 is closed.**
+
+**«Cómo se juega» done.**
 `components/puntoyfama/reglas.tsx`: what it is, fama and punto with 1325
 against 1234 drawn (one green mark, two amber), no try limit, the three
 ways to play and the bot. Entrances: `/como-se-juega/punto-y-fama`, the

@@ -1,6 +1,6 @@
 # Project status — pick up here
 
-Last updated after Phase 93 — **Milestone 9 closed: Palabras is complete**, v2.3.0 in production, with both modes, lives and the finish table.
+Last updated after Phase 106 — **Milestone 10 closed: Mazo has four games**, v2.4.0 in production: Punto y Fama (two races, the duel, the bot), and Palabras' Phases 94–97 and Carioca's Phase 98.
 
 Read this first, then `mission.md` for the why, `carioca-rules.md` for the game,
 `tech-stack.md` for the stack, and `roadmap.md` for what comes next. This file is
@@ -294,6 +294,11 @@ forwards dev to main so dev knows the number it builds on. Vercel deploys
 
 ## What comes next
 
+**Production got Punto y Fama in v2.4.0** (2026-11-16), with Palabras'
+penalty, wait, chained words and sum of tries, and Carioca's mid-partida
+pace: `mazo` took `94-castigo.sql`, `95-espera.sql` and
+`96-encadenadas.sql` before the release deployed.
+
 **Production got the rest of Palabras in v2.3.0** (2026-11-15): Phases
 87–92 and the word cut off by the end; `mazo` took `89-modo.sql` and
 `90-vidas.sql` before the release deployed.
@@ -331,9 +336,9 @@ rules are `specs/palabras-rules.md`, drafted for the owner to correct;
 **Next — asked for after v2.3.0** (the owner, 2026-11-16): two of Palabras'
 defaults become the host's to change, in `roadmap.md`:
 
-1. ~~Phase 94 — El castigo, a elección del host.~~ ✅ On dev; `94-castigo.sql` on `mazo-dev` only.
-2. ~~Phase 95 — El cierre, a elección del host.~~ ✅ On dev; `95-espera.sql` on `mazo-dev` only.
-3. ~~Phase 96 — Palabras encadenadas.~~ ✅ On dev; `96-encadenadas.sql` on `mazo-dev` only.
+1. ~~Phase 94 — El castigo, a elección del host.~~ ✅ In v2.4.0; `94-castigo.sql` on `mazo-dev` and `mazo`.
+2. ~~Phase 95 — El cierre, a elección del host.~~ ✅ In v2.4.0; `95-espera.sql` on `mazo-dev` and `mazo`.
+3. ~~Phase 96 — Palabras encadenadas.~~ ✅ In v2.4.0; `96-encadenadas.sql` on `mazo-dev` and `mazo`.
 4. ~~Phase 97 — La suma de intentos.~~ ✅ On dev.
 5. ~~Phase 98 — El ritmo de los bots, en plena partida.~~ ✅ On dev: the host changes it mid-partida.
 
@@ -350,8 +355,7 @@ solver. `roadmap.md` has the phases:
 5. ~~Phase 103 — La carrera de números.~~ ✅
 6. ~~Phase 104 — El duelo.~~ ✅
 7. ~~Phase 105 — El bot que adivina tu número.~~ ✅ `/punto-y-fama/bot`, offline.
-8. Phase 106 — ~~Cómo se juega~~ ✅; **production waits for the owner**, and
-   needs `94-castigo.sql`, `95-espera.sql`, `96-encadenadas.sql` on `mazo` first.
+8. ~~Phase 106 — Cómo se juega, y a producción.~~ ✅ Released as v2.4.0. **Milestone 10 is closed.**
 
 **Milestone 8, el Mentiroso** (the owner, 2026-11-05), closed. Its rules are
 `specs/mentiroso-rules.md`, settled; `roadmap.md` has the phases:
