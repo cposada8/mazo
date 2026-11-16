@@ -3888,7 +3888,7 @@ one-minute race of 3 digits — Leo two numbers, me one — stopping at 0:00
 on «Ganó Leo», the table ranking by numbers got. The finish table now
 counts in the game's own noun («2 números»).
 
-### Phase 104 — El duelo
+### Phase 104 — El duelo ✅
 Two people, one code. Each **types a secret number** for the other — out of
 sight, checked for shape, held by the server — and when both are in, both
 guess at once. The board shows your guesses against their number, and
@@ -3900,6 +3900,21 @@ guesses.
 **Done when:** two phones play a duel to the end in both orders of
 finishing, neither response ever holding the other's secret before the
 end, and both screens agree on the winner.
+
+**Done.** The duel's referee is `lib/server/puntoyfama.ts` (its numbers
+set with `poner`, guesses scored against the other's, compare-and-swap
+writes, leaving hands it over) behind the same route as the races, and
+`components/puntoyfama/duelo.tsx` is its board: «Tu número para Kari» —
+typed on the race's slots and pad, set for good on ENVIAR; «Esperando a
+Kari…» until both are in; a 3-2-1; then your guesses with their marks and,
+above them, Kari's answers to your number, marks only; «¡Lo tienes en 2
+intentos! Esperando a que Kari termine…»; and the result — «¡Ganaste! En
+menos intentos.» — with both numbers turned over and both lists of
+guesses side by side, yours tinted. In the browser against Kari through
+the API: 1234 and 5678 set, Kari's 9012 shown to me as two puntos only,
+5678 in two, Kari's 1234 in three, both responses free of the other's
+number until the end. The other order of finishing is the engine's and
+the server's tests.
 
 ### Phase 105 — El bot que adivina tu número
 A door of its own, played in the phone alone: you think of a number, the

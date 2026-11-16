@@ -328,7 +328,7 @@ export function Marcas({
   )
 }
 
-function FilaDeIntento({ intento, numero, llegando }: { intento: IntentoPF; numero: number; llegando: boolean }) {
+export function FilaDeIntento({ intento, numero, llegando }: { intento: IntentoPF; numero: number; llegando: boolean }) {
   return (
     <li className={cn('flex items-center gap-3 rounded-md px-2 py-1', llegando && 'animate-in fade-in slide-in-from-bottom-2')}>
       <span className="text-muted-foreground w-5 text-right text-xs tabular-nums">{numero}</span>
@@ -350,7 +350,7 @@ function FilaDeIntento({ intento, numero, llegando }: { intento: IntentoPF; nume
 }
 
 /** The guess being written: one slot per digit, touchable, as Palabras' row. */
-function FilaEscrita({
+export function FilaEscrita({
   digitos,
   escritura,
   conCursor,
@@ -388,7 +388,7 @@ function FilaEscrita({
   )
 }
 
-function TecladoNumerico({
+export function TecladoNumerico({
   usadas,
   activo,
   onTecla,
