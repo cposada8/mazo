@@ -3469,7 +3469,7 @@ va en la 3»; the finish screen ranks by words solved with each one's last
 solve. In the browser: a one-minute race against Leo through the API — he
 solved two, I solved one — both stopped at 0:00 on «Ganó Leo».
 
-### Phase 90 — Vidas
+### Phase 90 — Vidas ✅
 For the time mode: each player starts with **k lives** (3 by default, the
 host picks — Mazo's call: 1 to 5, or «sin vidas»). **Missing a word costs a
 life.** With none left the player's race is over: they keep the words they
@@ -3479,6 +3479,16 @@ lives left, and a rival's lives show beside their progress.
 **Done when:** a player who misses three words with three lives stops,
 keeps their count in the ranking, and the others finish their minutes; a
 race «sin vidas» never stops anyone early.
+
+**Done.** The state carries `vidas` (time races only; null is «sin
+vidas»); `vidasDe` counts what is left, and the miss that takes the last
+one ends that player's race where it stands. Everyone out of lives closes
+the race before the time. `Partida.vidas` (`prisma/sql/90-vidas.sql`, on
+`mazo-dev`; 0 is «sin vidas»). The lobby offers 1–5 and ∞ under the time
+mode; the board shows hearts under the word count, rivals read «♥2», a
+miss says «Era POMPA · −1 vida», and the finish screen says «Te quedaste
+sin vidas» while the others play on. In the browser: a one-minute race
+with two lives, two words missed, out at 0:28 with Leo still in on ♥2.
 
 ### Phase 91 — Cómo se juega, y a producción
 «Cómo se juega» for Palabras — the rules on one screen with a real row of

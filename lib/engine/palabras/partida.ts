@@ -65,6 +65,8 @@ export type EstadoPalabras = {
   readonly modo?: Modo
   /** The time mode's length, ms from `inicio`. */
   readonly msLimite?: number
+  /** The time mode's lives per player (Phase 90); null or absent: «sin vidas». */
+  readonly vidas?: number | null
 }
 
 export type ErrorDePalabras =
@@ -177,6 +179,8 @@ export function empezarPalabras(opciones: {
   modo?: Modo
   /** The time mode's minutes. */
   minutos?: number
+  /** The time mode's lives; 0 or absent is «sin vidas». */
+  vidas?: number
 }): EstadoPalabras {
   const largo = opciones.largo ?? LARGO_POR_DEFECTO
   const conTiempo = opciones.modo === 'tiempo'
@@ -191,7 +195,13 @@ export function empezarPalabras(opciones: {
     inicio: opciones.ahora + MS_CUENTA_ATRAS,
     tableros: opciones.asientos.map(tableroNuevo),
     cerradaEn: null,
-    ...(conTiempo ? { modo: 'tiempo' as const, msLimite: (opciones.minutos ?? 5) * 60_000 } : {}),
+    ...(conTiempo
+      ? {
+          modo: 'tiempo' as const,
+          msLimite: (opciones.minutos ?? 5) * 60_000,
+          vidas: opciones.vidas ? opciones.vidas : null,
+        }
+      : {}),
   }
 }
 
@@ -230,6 +240,12 @@ export function tiempoDe(tablero: Tablero, modo: Modo = 'palabras'): number | nu
   if (modo === 'tiempo') return ultimaAcertadaEn(tablero)
   if (tablero.terminoEn === null) return null
   return tablero.terminoEn + fallosDe(tablero) * MS_CASTIGO
+}
+
+/** Lives left in the time mode, or null when there are none to lose. */
+export function vidasDe(estado: EstadoPalabras, tablero: Tablero): number | null {
+  if (modoDe(estado) !== 'tiempo' || !estado.vidas) return null
+  return Math.max(0, estado.vidas - fallosDe(tablero))
 }
 
 /** When this player solved their most recent word, ms from the start. */
@@ -320,6 +336,8 @@ export function intentar(
       intentos: [],
       terminoEn: terminadas.length === estado.bolsa.length ? ahora - estado.inicio : null,
     }
+    // The last life gone (Phase 90): this player's race is over, with what they solved.
+    if (vidasDe(estado, nuevo) === 0) nuevo = { ...nuevo, terminoEn: ahora - estado.inicio }
   }
 
   return {

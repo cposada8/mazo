@@ -18,6 +18,7 @@ import {
   largoDe,
   modoDe,
   tiempoDe,
+  vidasDe,
   yaTermino,
 } from './partida'
 import type { Modo } from './opciones'
@@ -29,6 +30,8 @@ export type VistaDeRival = {
   readonly acertadas: number
   /** They can play no more by their own doing: every word ended (or, Phase 90, no lives). */
   readonly termino: boolean
+  /** Lives left in the time mode (Phase 90); null when there are none to lose. */
+  readonly vidas: number | null
   /** The colours of their tries on the word they are on. No letters. */
   readonly colores: readonly (readonly Color[])[]
   /** Their time with penalties, once they finish. */
@@ -59,7 +62,11 @@ export type VistaPalabras = {
     readonly terminoEn: number | null
     readonly tiempo: number | null
     readonly retirado: boolean
+    /** Lives left (Phase 90); null when there are none to lose. */
+    readonly vidas: number | null
   } | null
+  /** Lives each player started with; null in a race without them. */
+  readonly vidasIniciales: number | null
   readonly rivales: readonly VistaDeRival[]
   readonly cerrada: boolean
   /** The standings — final once `cerrada`, provisional before. */
@@ -87,7 +94,9 @@ export function vistaPalabras(
       terminoEn: mio.terminoEn,
       tiempo: tiempoDe(mio, modo),
       retirado: mio.retirado,
+      vidas: vidasDe(estado, mio),
     },
+    vidasIniciales: modo === 'tiempo' && estado.vidas ? estado.vidas : null,
     rivales: estado.tableros
       .filter((t) => t.asiento !== asiento)
       .map((t) => ({
@@ -95,6 +104,7 @@ export function vistaPalabras(
         terminadas: t.terminadas.length,
         acertadas: t.terminadas.filter((p) => p.acertada).length,
         termino: t.terminoEn !== null,
+        vidas: vidasDe(estado, t),
         colores: t.intentos.map((i) => i.colores),
         tiempo: tiempoDe(t, modo),
         retirado: t.retirado,

@@ -13,7 +13,7 @@
  * player's view, which the server built.
  */
 
-import { ChevronDown, Crown, Delete, LogOut, Trophy } from 'lucide-react'
+import { ChevronDown, Crown, Delete, Heart, LogOut, Trophy } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type {
   Color,
@@ -139,9 +139,10 @@ export function TableroPalabras({
     () => (cierre ? cierre.intentos : (propio?.intentos ?? [])),
     [cierre, propio?.intentos],
   )
-  const numeroDePalabra = Math.min(
-    (propio?.terminadas.length ?? 0) + (cierre ? 0 : 1),
-    total,
+  // A word in play counts; once this player is done there is no next one.
+  const numeroDePalabra = Math.max(
+    1,
+    Math.min((propio?.terminadas.length ?? 0) + (cierre || termine ? 0 : 1), total),
   )
   const resueltas = propio?.terminadas.filter((p) => p.acertada).length ?? 0
 
@@ -253,6 +254,9 @@ export function TableroPalabras({
             {numeroDePalabra}
             {!conTiempo && <span className="text-muted-foreground">/{total}</span>}
           </span>
+          {vista.vidasIniciales !== null && propio && (
+            <Vidas quedan={propio.vidas ?? 0} de={vista.vidasIniciales} />
+          )}
         </div>
         <div className="flex flex-col items-end leading-tight">
           <span
@@ -318,7 +322,9 @@ export function TableroPalabras({
                 ? ['¡Genial!', '¡Bien!', '¡Eso!', '¡Muy bien!', '¡Bien!', '¡Por poco!'][
                     cierre.intentos.length - 1
                   ]
-                : `Era ${cierre.palabra} · +2:00`}
+                : conTiempo
+                  ? `Era ${cierre.palabra}${vista.vidasIniciales !== null ? ' · −1 vida' : ''}`
+                  : `Era ${cierre.palabra} · +2:00`}
             </span>
           )}
         </div>
@@ -511,7 +517,7 @@ function Rivales({
               </span>
               <span className="text-muted-foreground text-xs tabular-nums">
                 {conTiempo
-                  ? `${rival.acertadas} ✓${llego ? ' · fuera' : ` · va en la ${rival.terminadas + 1}`}`
+                  ? `${rival.acertadas} ✓${llego ? ' · fuera' : ` · va en la ${rival.terminadas + 1}`}${rival.vidas !== null ? ` · ♥${rival.vidas}` : ''}`
                   : llego
                     ? `llegó · ${formatoDeTiempo(rival.tiempo!)}`
                     : `${Math.min(rival.terminadas + 1, vista.total)}/${vista.total}`}
@@ -539,6 +545,24 @@ function Rivales({
         )
       })}
     </ul>
+  )
+}
+
+/** Lives left as hearts (Phase 90): full for each left, outlined for each lost. */
+function Vidas({ quedan, de }: { quedan: number; de: number }) {
+  return (
+    <span className="mt-0.5 flex gap-0.5" aria-label={`${quedan} de ${de} vidas`}>
+      {Array.from({ length: de }, (_, i) => (
+        <Heart
+          key={`${i}-${i < quedan}`}
+          className={cn(
+            'size-3.5',
+            i < quedan ? 'fill-red-500 text-red-500' : 'text-muted-foreground/50 palabras-cae',
+          )}
+          aria-hidden
+        />
+      ))}
+    </span>
   )
 }
 
@@ -589,7 +613,9 @@ function Llegada({
             </h2>
           </>
         ) : (
-          <h2 className="text-2xl font-semibold">Terminaste</h2>
+          <h2 className="text-2xl font-semibold">
+            {propio.vidas === 0 ? 'Te quedaste sin vidas' : 'Terminaste'}
+          </h2>
         )}
         {conTiempo ? (
           <p className="text-muted-foreground text-sm">

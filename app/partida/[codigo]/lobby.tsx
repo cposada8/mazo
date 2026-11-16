@@ -39,6 +39,7 @@ import {
   MS_CASTIGO,
   OPCIONES_DE_MINUTOS,
   OPCIONES_DE_PALABRAS,
+  OPCIONES_DE_VIDAS,
 } from '@/lib/engine/palabras/opciones'
 import { OPCIONES_DE_BALAS } from '@/lib/engine/mentiroso'
 import {
@@ -141,6 +142,7 @@ export function Lobby({
             ...(accion.largo !== undefined ? { largo: accion.largo } : {}),
             ...(accion.modo !== undefined ? { modo: accion.modo } : {}),
             ...(accion.minutos !== undefined ? { minutos: accion.minutos } : {}),
+            ...(accion.vidas !== undefined ? { vidas: accion.vidas } : {}),
             ...(accion.verDescarte !== undefined
               ? { verDescarte: accion.verDescarte }
               : {}),
@@ -356,13 +358,14 @@ export function Lobby({
             onLargo={(largo) => ajustar({ largo })}
             onModo={(modo) => ajustar({ modo })}
             onMinutos={(minutos) => ajustar({ minutos })}
+            onVidas={(vidas) => ajustar({ vidas })}
           />
         ) : (
           <section className="text-muted-foreground flex flex-col gap-1 text-sm">
             <h2 className="text-xs font-medium tracking-widest uppercase">Lo que escogió el host</h2>
             <p>
               {partida.modo === 'tiempo'
-                ? `Tiempo límite: ${partida.minutos} min, palabras de ${partida.largo} letras`
+                ? `Tiempo límite: ${partida.minutos} min, ${partida.vidas ? `${partida.vidas} ${partida.vidas === 1 ? 'vida' : 'vidas'}` : 'sin vidas'}, palabras de ${partida.largo} letras`
                 : `${partida.palabras} palabras de ${partida.largo} letras`}
             </p>
           </section>
@@ -736,12 +739,14 @@ function AjustesPalabras({
   onLargo,
   onModo,
   onMinutos,
+  onVidas,
 }: {
   partida: NonNullable<VistaDeLobby['partida']>
   onPalabras: (palabras: number) => void
   onLargo: (largo: number) => void
   onModo: (modo: 'palabras' | 'tiempo') => void
   onMinutos: (minutos: number) => void
+  onVidas: (vidas: number) => void
 }) {
   return (
     <section className="flex flex-col gap-5">
@@ -768,7 +773,22 @@ function AjustesPalabras({
           unidad="minutos"
           onCambiar={onMinutos}
         />
-      ) : (
+      ) : null}
+      {partida.modo === 'tiempo' && (
+        <Escogencia
+          titulo="Vidas"
+          detalle={
+            partida.vidas
+              ? 'Cada palabra que no adivinas cuesta una vida. Sin vidas, se acaba tu carrera y te quedas con las que resolviste.'
+              : 'Sin vidas: puedes fallar todas las que quieras hasta que se acabe el tiempo.'
+          }
+          opciones={OPCIONES_DE_VIDAS}
+          valor={partida.vidas as (typeof OPCIONES_DE_VIDAS)[number]}
+          etiqueta={(n) => (n === 0 ? '∞' : String(n))}
+          onCambiar={onVidas}
+        />
+      )}
+      {partida.modo === 'tiempo' ? null : (
         <NumeroConAtajos
           titulo="Cuántas palabras"
           detalle="Las mismas palabras, en el mismo orden, para todos."

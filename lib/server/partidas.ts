@@ -27,6 +27,7 @@ import {
   cerrada,
   esNumeroDeMinutos,
   esNumeroDePalabras,
+  esNumeroDeVidas,
   modoValido,
   empezarPalabras,
   type EstadoPalabras,
@@ -68,6 +69,7 @@ type FilaPartida = {
   largo: number
   modo: string
   minutos: number
+  vidas: number
   verDescarte: boolean
   verHistorial: boolean
   asientos: {
@@ -101,6 +103,7 @@ function publicar(fila: FilaPartida): PartidaGuardada {
     largo: fila.largo,
     modo: modoValido(fila.modo),
     minutos: fila.minutos,
+    vidas: fila.vidas,
     verDescarte: fila.verDescarte,
     verHistorial: fila.verHistorial,
     asientos: [...fila.asientos]
@@ -508,6 +511,7 @@ export async function actualizarAjustes(opciones: {
   largo?: number
   modo?: string
   minutos?: number
+  vidas?: number
   verDescarte?: boolean
   verHistorial?: boolean
 }): Promise<ResultadoDeLobby> {
@@ -539,6 +543,7 @@ export async function actualizarAjustes(opciones: {
         : {}),
       ...(opciones.modo === 'palabras' || opciones.modo === 'tiempo' ? { modo: opciones.modo } : {}),
       ...(esNumeroDeMinutos(opciones.minutos) ? { minutos: opciones.minutos } : {}),
+      ...(esNumeroDeVidas(opciones.vidas) ? { vidas: opciones.vidas } : {}),
       ...(opciones.verDescarte !== undefined
         ? { verDescarte: opciones.verDescarte }
         : {}),
@@ -616,6 +621,7 @@ export async function empezar(opciones: {
           ahora: Date.now(),
           modo: modoValido(fila.modo),
           minutos: fila.minutos,
+          vidas: fila.vidas,
         })
       : juego === 'mentiroso'
       ? empezarMentiroso({ jugadores: fila.asientos.length, seed: opciones.seed, balas: fila.balas })

@@ -124,6 +124,24 @@ describe('Palabras through the platform', () => {
     expect((await partidas.cargarPorCodigo(codigo))!.fase).toBe('terminada')
   })
 
+  it('lives: the host picks them, a bad number is ignored, and they reach the race (Phase 90)', async () => {
+    const creada = await partidas.crearPartida({
+      secreto: 'vale',
+      alias: 'vale',
+      juego: 'palabras',
+      config: CONFIG_POR_DEFECTO,
+    })
+    const codigo = creada.codigo
+    await partidas.actualizarAjustes({ codigo, secreto: 'vale', modo: 'tiempo', vidas: 2 })
+    await partidas.actualizarAjustes({ codigo, secreto: 'vale', vidas: 9 })
+    expect((await partidas.cargarPorCodigo(codigo))!.vidas).toBe(2)
+    await partidas.empezar({ codigo, secreto: 'vale', seed: 'dos' })
+    const estado = await estadoDe(codigo)
+    expect(estado.vidas).toBe(2)
+    const r = await carrera.leerCarrera(codigo, 'vale', estado.inicio + 10)
+    expect(r.ok && r.mesa.vista).toMatchObject({ vidasIniciales: 2, propio: { vidas: 2 } })
+  })
+
   it('refuses a number of words the lobby does not offer', async () => {
     const { codigo } = await carreraDeDos(3)
     const r = await partidas.actualizarAjustes({ codigo, secreto: 'ana', palabras: 999 })
