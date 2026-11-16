@@ -4017,6 +4017,49 @@ the bot's copy name punto first; the bot's `Contador`s swapped, and
 2 puntos and 1 fama, drawn amber, amber, green, and «Le quedan 216
 números posibles» under its second.
 
+### Phase 110 — Apuntes: marcas en las cifras y una nota libre ✅
+So nothing has to be kept in one's head while guessing (the owner,
+2026-11-16: «yo sé que están el 1 o el 2 y están el 3 o el 4 — ¿cómo
+marco esto sin dejarlo en mi propia memoria?»). Two things, and only two
+(the owner's word: «color para los que sí están, color para los que no
+están. Fin.»; «una sola nota donde yo escribo lo que quiera»):
+
+- **Marks on the pad's digits.** A pencil ✏️ beside ENVIAR turns the pad
+  from writing to marking; each tap on a digit goes **está → no está →
+  sin marca**. «Está» is blue, «no está» grey and struck through — never
+  green or amber, which are fama and punto. A marked digit can still be
+  typed; the marks are a note, not a rule.
+- **One free note.** A 📝 on the board opens a sheet over it with a
+  single text field: write and erase anything, line by line. It touches
+  no digit. Closed, its first lines show above the guesses, and tapping
+  them opens it again.
+
+Both are private — they never leave the phone — and survive a reload.
+Both are the number's: in a race of several numbers, the marks and the
+note start clean when the next number opens (Mazo's call; «Borrar nota»
+clears it sooner). On the race and on the duel's guessing; not while
+setting your number for the other.
+
+**Done when:** on a race, 1 marked «está» and 7 «no está» show blue and
+struck, a note «1 o 2 / 3 o 4» is written, both survive a reload, both are
+gone on the next number, and typing digits into the note writes nothing
+into the guess.
+
+**Done.** `components/puntoyfama/apuntes.tsx`: `useApuntes(clave)` keeps
+the marks and the note in `localStorage` under the partida's code and the
+number in play (`TGXDK:0`, `TGXDK:1`…; the duel's `…:duelo`), lets go of
+any other when it writes, and reads a new key's own when the number
+changes. `TecladoNumerico` wears the marks and has the pencil between ⌫
+and ENVIAR, which reads «LISTO» while marking and leaves the mode; a line
+over the pad says what a tap does. The 📝 sits by the ⓘ, with a dot when
+there is a note; the note opens as a sheet with «Borrar nota» and «Listo»,
+and its first two lines show above the guesses. Key presses inside the
+note never reach the board. In the duel, only once guessing. In the
+browser: 1 «está» (blue) and 7 «no está» (struck), «1 o 2 / 3 o 4»
+written, a 5 typed in the note leaving the guess empty; all there after a
+reload; the number solved in six, and number 2 opened with no mark and no
+note.
+
 ---
 
 ## After

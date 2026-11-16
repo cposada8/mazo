@@ -23,7 +23,8 @@ import {
 } from '@/components/palabras/escritura'
 import type { IntentoPF, VistaDelDuelo } from '@/lib/engine/puntoyfama'
 import { cn } from '@/lib/utils'
-import { FilaDeIntento, FilaEscrita, HojaDeReglas, Marcas, TecladoNumerico, repetidas } from './tablero'
+import { BotonDeNota, HojaDeNota, VistaDeNota, useApuntes } from './apuntes'
+import { FilaDeIntento, FilaEscrita, HojaDeReglas, Marcas, TecladoNumerico, enUnCampo, repetidas } from './tablero'
 
 export type PropsDelDuelo = {
   vista: VistaDelDuelo
@@ -36,6 +37,8 @@ export type PropsDelDuelo = {
   onSalir: () => void
   /** The rules, opened over the board from its ⓘ (Phase 107). */
   reglas?: ReactNode
+  /** Where this player's marks and note are kept — the partida's code (Phase 110). */
+  apuntes?: string
 }
 
 export function TableroDuelo({
@@ -48,6 +51,7 @@ export function TableroDuelo({
   onIntentar,
   onSalir,
   reglas,
+  apuntes,
 }: PropsDelDuelo) {
   const digitos = vista.digitos
   const yo = vista.yo
@@ -58,6 +62,10 @@ export function TableroDuelo({
   const [aviso, setAviso] = useState<string | null>(null)
   const [llegando, setLlegando] = useState<number | null>(null)
   const [verReglas, setVerReglas] = useState(false)
+  const [verNota, setVerNota] = useState(false)
+  const [lapiz, setLapiz] = useState(false)
+  const notas = useApuntes(apuntes ? `${apuntes}:duelo` : null)
+  const { marcar } = notas
   const [tic, setTic] = useState(() => ({ reloj: ahora(), local: Date.now() }))
   const lista = useRef<HTMLOListElement>(null)
 
@@ -75,7 +83,9 @@ export function TableroDuelo({
   const empezo = vista.inicio !== null && tic.reloj >= vista.inicio
   const lotengo = yo?.terminoEn !== null && yo?.terminoEn !== undefined
   const fin = vista.resultado !== null
-  const puedeEscribir = !enviando && !fin && !verReglas && (poniendo || (empezo && !lotengo))
+  const puedeEscribir = !enviando && !fin && !verReglas && !verNota && (poniendo || (empezo && !lotengo))
+  // Marks and the note are for guessing their number, not for setting yours.
+  const conApuntes = Boolean(apuntes) && !poniendo && !fin
 
   useEffect(() => {
     lista.current?.scrollTo({ top: lista.current.scrollHeight, behavior: 'smooth' })
@@ -105,6 +115,8 @@ export function TableroDuelo({
   const tecla = useCallback(
     (valor: string) => {
       if (!puedeEscribir) return
+      if (lapiz && conApuntes && valor === 'ENVIAR') return setLapiz(false)
+      if (lapiz && conApuntes && /^\d$/.test(valor)) return marcar(valor)
       if (valor === 'ENVIAR') return void enviar()
       if (valor === 'BORRAR') return setEscritura(borrar)
       if (valor === 'IZQUIERDA') return setEscritura((e) => mover(e, e.cursor === null ? cursorDe(e) : e.cursor - 1))
@@ -112,7 +124,7 @@ export function TableroDuelo({
       // A digit may be typed twice while writing; only sending it is refused (Phase 108).
       setEscritura((e) => escribir(e, valor))
     },
-    [puedeEscribir, enviar],
+    [puedeEscribir, enviar, lapiz, conApuntes, marcar],
   )
   const teclaRef = useRef(tecla)
   useEffect(() => {
@@ -120,7 +132,7 @@ export function TableroDuelo({
   }, [tecla])
   useEffect(() => {
     const alPresionar = (evento: KeyboardEvent) => {
-      if (evento.metaKey || evento.ctrlKey || evento.altKey) return
+      if (evento.metaKey || evento.ctrlKey || evento.altKey || enUnCampo(evento)) return
       if (evento.key === 'Enter') teclaRef.current('ENVIAR')
       else if (evento.key === 'Backspace') teclaRef.current('BORRAR')
       else if (/^\d$/.test(evento.key)) teclaRef.current(evento.key)
@@ -145,6 +157,7 @@ export function TableroDuelo({
               <CircleHelp className="size-4" aria-hidden />
             </button>
           )}
+          {conApuntes && !lotengo && <BotonDeNota onAbrir={() => setVerNota(true)} conNota={notas.nota.trim() !== ''} />}
         </span>
         <div className="flex flex-col items-center leading-tight">
           <span className="text-muted-foreground text-xs tracking-widest uppercase">Duelo</span>
@@ -190,6 +203,7 @@ export function TableroDuelo({
               ))}
             </span>
           </div>
+          {conApuntes && !lotengo && <VistaDeNota nota={notas.nota} onAbrir={() => setVerNota(true)} />}
           <ol ref={lista} className="flex min-h-0 flex-1 flex-col gap-1.5 overflow-y-auto py-1" aria-label="Tus intentos">
             {(yo?.intentos ?? []).map((intento, i) => (
               <FilaDeIntento key={i} intento={intento} numero={i + 1} llegando={i === llegando} />
@@ -217,7 +231,13 @@ export function TableroDuelo({
             sacudida={haySacudida ? sacudida : null}
             onTocar={(i) => setEscritura((e) => mover(e, i))}
           />
-          <TecladoNumerico activo={puedeEscribir} onTecla={tecla} />
+          <TecladoNumerico
+            activo={puedeEscribir}
+            onTecla={tecla}
+            marcas={conApuntes ? notas.marcas : undefined}
+            lapiz={lapiz && conApuntes}
+            onLapiz={conApuntes ? () => setLapiz((l) => !l) : undefined}
+          />
           {poniendo && (
             <p className="text-muted-foreground text-center text-xs">ENVIAR pone tu número; ya no se puede cambiar.</p>
           )}
@@ -225,6 +245,7 @@ export function TableroDuelo({
       )}
 
       {verReglas && reglas && <HojaDeReglas reglas={reglas} onCerrar={() => setVerReglas(false)} />}
+      {verNota && <HojaDeNota nota={notas.nota} onEscribir={notas.escribirNota} onCerrar={() => setVerNota(false)} />}
     </main>
   )
 }

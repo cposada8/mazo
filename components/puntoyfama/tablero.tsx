@@ -11,7 +11,7 @@
  * guess shakes; a number got is said, then the next one opens.
  */
 
-import { CircleHelp, Delete, LogOut, X } from 'lucide-react'
+import { CircleHelp, Delete, LogOut, Pencil, X } from 'lucide-react'
 import { type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   CuentaAtras,
@@ -32,6 +32,16 @@ import {
 } from '@/components/palabras/escritura'
 import type { IntentoPF, NumeroTerminado, Respuesta, VistaPuntoYFama } from '@/lib/engine/puntoyfama'
 import { cn } from '@/lib/utils'
+import {
+  AYUDA_DEL_LAPIZ,
+  BotonDeNota,
+  HojaDeNota,
+  type Marcas as MarcasDeCifras,
+  VistaDeNota,
+  estiloDeMarca,
+  nombreDeMarca,
+  useApuntes,
+} from './apuntes'
 
 /** Each mark of an answer coming in. */
 const MS_POR_MARCA = 140
@@ -52,6 +62,8 @@ export type PropsDeTableroPF = {
   onSalir: () => void
   /** The rules, opened over the board (Phase 106). */
   reglas?: ReactNode
+  /** Where this player's marks and note are kept — the partida's code (Phase 110). */
+  apuntes?: string
 }
 
 export function TableroPuntoYFama({
@@ -65,6 +77,7 @@ export function TableroPuntoYFama({
   onCerrar,
   onSalir,
   reglas,
+  apuntes,
 }: PropsDeTableroPF) {
   const digitos = vista.largo
   const propio = vista.propio
@@ -76,9 +89,14 @@ export function TableroPuntoYFama({
   /** A number just got, held on screen for a moment. */
   const [cierre, setCierre] = useState<NumeroTerminado | null>(null)
   const [verReglas, setVerReglas] = useState(false)
+  const [verNota, setVerNota] = useState(false)
+  const [lapiz, setLapiz] = useState(false)
   const [tic, setTic] = useState(() => ({ reloj: ahora(), local: Date.now() }))
   const reloj = tic.reloj
   const lista = useRef<HTMLOListElement>(null)
+  // The number in play's own marks and note: the next number starts clean.
+  const notas = useApuntes(apuntes && propio ? `${apuntes}:${propio.terminadas.length}` : null)
+  const { marcar } = notas
 
   useEffect(() => {
     const id = setInterval(() => setTic({ reloj: ahora(), local: Date.now() }), 250)
@@ -94,7 +112,7 @@ export function TableroPuntoYFama({
   const seAcaboElTiempo = vista.fin !== null && reloj >= vista.fin
   const termine =
     (propio?.terminoEn !== null && propio?.terminoEn !== undefined) || vista.cerrada || seAcaboElTiempo
-  const ocupado = enviando || cierre !== null || verReglas
+  const ocupado = enviando || cierre !== null || verReglas || verNota
   const puedeEscribir = Boolean(propio) && empezo && !termine && !ocupado
 
   // The guesses shown: the number just got while it is held, else the one in play.
@@ -147,6 +165,8 @@ export function TableroPuntoYFama({
   const tecla = useCallback(
     (valor: string) => {
       if (!puedeEscribir) return
+      if (lapiz && valor === 'ENVIAR') return setLapiz(false)
+      if (lapiz && /^\d$/.test(valor)) return marcar(valor)
       if (valor === 'ENVIAR') return void enviar()
       if (valor === 'BORRAR') return setEscritura(borrar)
       if (valor === 'IZQUIERDA') return setEscritura((e) => mover(e, e.cursor === null ? cursorDe(e) : e.cursor - 1))
@@ -154,7 +174,7 @@ export function TableroPuntoYFama({
       // A digit may be typed twice while writing; only sending it is refused (Phase 108).
       setEscritura((e) => escribir(e, valor))
     },
-    [puedeEscribir, enviar],
+    [puedeEscribir, enviar, lapiz, marcar],
   )
 
   const teclaRef = useRef(tecla)
@@ -163,7 +183,7 @@ export function TableroPuntoYFama({
   }, [tecla])
   useEffect(() => {
     const alPresionar = (evento: KeyboardEvent) => {
-      if (evento.metaKey || evento.ctrlKey || evento.altKey) return
+      if (evento.metaKey || evento.ctrlKey || evento.altKey || enUnCampo(evento)) return
       if (evento.key === 'Enter') teclaRef.current('ENVIAR')
       else if (evento.key === 'Backspace') teclaRef.current('BORRAR')
       else if (evento.key === 'ArrowLeft') teclaRef.current('IZQUIERDA')
@@ -197,6 +217,7 @@ export function TableroPuntoYFama({
               <CircleHelp className="size-4" aria-hidden />
             </button>
           )}
+          {apuntes && !termine && <BotonDeNota onAbrir={() => setVerNota(true)} conNota={notas.nota.trim() !== ''} />}
         </span>
         <div className="flex flex-col items-center leading-tight">
           <span className="text-muted-foreground text-xs tracking-widest uppercase">Número</span>
@@ -239,6 +260,7 @@ export function TableroPuntoYFama({
           </div>
         ) : (
           <>
+            {!cierre && <VistaDeNota nota={notas.nota} onAbrir={() => setVerNota(true)} />}
             <ol ref={lista} className="flex min-h-0 flex-1 flex-col gap-1.5 overflow-y-auto py-1" aria-label="Tus intentos">
               {intentos.length === 0 && (
                 <li className="text-muted-foreground m-auto max-w-64 text-center text-sm">
@@ -273,9 +295,18 @@ export function TableroPuntoYFama({
         </div>
       </div>
 
-      {!termine && <TecladoNumerico activo={puedeEscribir} onTecla={tecla} />}
+      {!termine && (
+        <TecladoNumerico
+          activo={puedeEscribir}
+          onTecla={tecla}
+          marcas={apuntes ? notas.marcas : undefined}
+          lapiz={lapiz}
+          onLapiz={apuntes ? () => setLapiz((l) => !l) : undefined}
+        />
+      )}
 
       {verReglas && reglas && <HojaDeReglas reglas={reglas} onCerrar={() => setVerReglas(false)} />}
+      {verNota && <HojaDeNota nota={notas.nota} onEscribir={notas.escribirNota} onCerrar={() => setVerNota(false)} />}
     </main>
   )
 }
@@ -426,40 +457,76 @@ export function FilaEscrita({
   )
 }
 
+/**
+ * The pad of 0–9. With `marcas`, each key wears its mark (Phase 110), and a
+ * pencil beside ENVIAR turns the pad from writing to marking.
+ */
 export function TecladoNumerico({
   activo,
   onTecla,
+  marcas,
+  lapiz = false,
+  onLapiz,
 }: {
   activo: boolean
   onTecla: (valor: string) => void
+  marcas?: MarcasDeCifras
+  lapiz?: boolean
+  onLapiz?: () => void
 }) {
   const tecla = 'bg-[oklch(0.45_0_0)] text-white hover:bg-[oklch(0.5_0_0)]'
   return (
     <div className={cn('flex flex-col gap-1.5 transition-opacity', !activo && 'opacity-60')}>
-      {FILAS_DEL_TECLADO.map((fila) => (
-        <div key={fila} className="flex gap-1.5">
-          {[...fila].map((cifra) => (
-            <button
-              key={cifra}
-              type="button"
-              onClick={() => onTecla(cifra)}
-              className={cn('h-13 flex-1 rounded-md font-mono text-xl font-bold', tecla)}
-            >
-              {cifra}
-            </button>
-          ))}
-        </div>
-      ))}
+      {lapiz && <p className="text-muted-foreground animate-in fade-in text-center text-xs">{AYUDA_DEL_LAPIZ}</p>}
+      <div className={cn('flex flex-col gap-1.5 rounded-lg', lapiz && 'ring-[oklch(0.52_0.15_255)] ring-2 ring-offset-4 ring-offset-background')}>
+        {FILAS_DEL_TECLADO.map((fila) => (
+          <div key={fila} className="flex gap-1.5">
+            {[...fila].map((cifra) => {
+              const marca = marcas?.[cifra]
+              return (
+                <button
+                  key={cifra}
+                  type="button"
+                  onClick={() => onTecla(cifra)}
+                  aria-label={`${cifra}${nombreDeMarca(marca)}`}
+                  className={cn('h-13 flex-1 rounded-md font-mono text-xl font-bold transition-colors', estiloDeMarca(marca) ?? tecla)}
+                >
+                  {cifra}
+                </button>
+              )
+            })}
+          </div>
+        ))}
+      </div>
       <div className="flex gap-1.5">
         <button type="button" onClick={() => onTecla('BORRAR')} aria-label="Borrar" className={cn('flex h-13 flex-1 items-center justify-center rounded-md', tecla)}>
           <Delete className="size-5" aria-hidden />
         </button>
+        {onLapiz && (
+          <button
+            type="button"
+            onClick={onLapiz}
+            aria-label={lapiz ? 'Dejar de marcar' : 'Marcar cifras'}
+            aria-pressed={lapiz}
+            className={cn(
+              'flex h-13 flex-1 items-center justify-center rounded-md',
+              lapiz ? 'bg-[oklch(0.52_0.15_255)] text-white' : tecla,
+            )}
+          >
+            <Pencil className="size-5" aria-hidden />
+          </button>
+        )}
         <button type="button" onClick={() => onTecla('ENVIAR')} className="bg-primary text-primary-foreground h-13 flex-[2] rounded-md text-sm font-bold">
-          ENVIAR
+          {lapiz ? 'LISTO' : 'ENVIAR'}
         </button>
       </div>
     </div>
   )
+}
+
+/** Whether a key press belongs to a field being written in (the note), not to the board. */
+export function enUnCampo(evento: KeyboardEvent): boolean {
+  return evento.target instanceof HTMLElement && evento.target.closest('textarea, input, [contenteditable]') !== null
 }
 
 /** A rival's answers on the number they are on — the last few, marks only. */
