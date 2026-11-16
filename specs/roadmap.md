@@ -3397,13 +3397,19 @@ still work.
 On the finish screen, «Tus palabras» lists each word with its tries
 («1. SEGAR · 5»). **Touching a word opens its tries again** — the rows as
 they were played, letters and colours, small — so «in five» can be seen
-as *which* five. Only your own words: a rival's letters stay theirs, even
-after the race. (Mazo's call; showing everyone's tries once the race is
-closed is a small step later if the owner wants it.)
+as *which* five.
 
-**Done when:** after a race, each ended word opens to its rows with their
-letters and colours, a missed word included, and nothing of a rival's
-letters is in any response.
+**And the rivals' too, once you have finished** (the owner, 2026-11-15):
+from the finish screen you can open any rival's words and see their tries.
+Finished, you can no longer play, so seeing them changes nothing for you.
+Of a rival still racing, only the words they have already ended — their
+word in play stays colours only until they end it. Before you finish,
+nothing changes: rivals are colours, never letters.
+
+**Done when:** after finishing, each of your words opens to its rows with
+letters and colours, a missed word included; each rival's ended words open
+the same way, and a rival's new word appears as they end it; and a player
+still racing receives no rival letter in any response.
 
 ### Phase 89 — Modalidad con tiempo
 A second way to race, chosen in the lobby: **«Palabras límite»** — today's
