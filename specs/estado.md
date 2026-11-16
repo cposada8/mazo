@@ -343,14 +343,15 @@ game, guessing a number of n digits in puntos and famas. Its rules are
 owner's `punto-y-fama` repository, beside this one, has the game and its
 solver. `roadmap.md` has the phases:
 
-1. Phase 99 — Una carrera, dos juegos: split Palabras' race from Palabras.
-2. Phase 100 — El motor de Punto y Fama, the duel and the solver.
-3. Phase 101 — La puerta sabe que hay cuatro juegos.
-4. Phase 102 — El tablero de números.
-5. Phase 103 — La carrera de números: both race modes among people.
-6. Phase 104 — El duelo: two people, each setting the other a number.
-7. Phase 105 — El bot que adivina tu número.
-8. Phase 106 — Cómo se juega, and production.
+1. ~~Phase 99 — Una carrera, dos juegos.~~ ✅ `lib/engine/comun/carrera.ts`, the shared referee and board pieces.
+2. ~~Phase 100 — El motor de Punto y Fama.~~ ✅ The solver: 5.45 on average, 9 at worst (2 of 5,040).
+3. ~~Phase 101 — La puerta sabe que hay cuatro juegos.~~ ✅ No new column: Palabras' reused.
+4. ~~Phase 102 — El tablero de números.~~ ✅
+5. ~~Phase 103 — La carrera de números.~~ ✅
+6. ~~Phase 104 — El duelo.~~ ✅
+7. ~~Phase 105 — El bot que adivina tu número.~~ ✅ `/punto-y-fama/bot`, offline.
+8. Phase 106 — ~~Cómo se juega~~ ✅; **production waits for the owner**, and
+   needs `94-castigo.sql`, `95-espera.sql`, `96-encadenadas.sql` on `mazo` first.
 
 **Milestone 8, el Mentiroso** (the owner, 2026-11-05), closed. Its rules are
 `specs/mentiroso-rules.md`, settled; `roadmap.md` has the phases:

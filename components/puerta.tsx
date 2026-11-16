@@ -141,7 +141,7 @@ export function Puerta() {
       </Link>
       <p className="text-muted-foreground -mt-2 text-xs">
         Empiezas de host. En las cartas hay tres bots en la mesa: quítalos, o
-        invita gente con el código. Palabras se juega contra personas.
+        invita gente con el código. Palabras y Punto y Fama se juegan entre personas.
       </p>
 
       <form onSubmit={unirse} className="flex gap-2">

@@ -30,10 +30,14 @@ export default function ReglasMentiroso() {
           El Mentiroso, en una pantalla. ¿Buscas otro juego? Las reglas de{' '}
           <Link href="/como-se-juega" className="text-foreground underline underline-offset-2">
             Carioca
-          </Link>{' '}
-          y de{' '}
+          </Link>,{' '}
+          de{' '}
           <Link href="/como-se-juega/palabras" className="text-foreground underline underline-offset-2">
             Palabras
+          </Link>{' '}
+          y de{' '}
+          <Link href="/como-se-juega/punto-y-fama" className="text-foreground underline underline-offset-2">
+            Punto y Fama
           </Link>
           .
         </p>

@@ -3947,6 +3947,16 @@ after the SQL reaches `mazo`.
 
 **Done when:** Punto y Fama is in production, and `estado.md` says so.
 
+**«Cómo se juega» done; production waits for the owner's word.**
+`components/puntoyfama/reglas.tsx`: what it is, fama and punto with 1325
+against 1234 drawn (one green mark, two amber), no try limit, the three
+ways to play and the bot. Entrances: `/como-se-juega/punto-y-fama`, the
+lobby, a ⓘ on the race board, and the other three rules pages — each now
+naming the other three games. The home page names four games and says
+both guessing games are played between people. Production needs, before
+`npm run publicar`: `prisma/sql/94-castigo.sql`, `95-espera.sql` and
+`96-encadenadas.sql` on `mazo` (Punto y Fama itself added no column).
+
 ---
 
 ## After

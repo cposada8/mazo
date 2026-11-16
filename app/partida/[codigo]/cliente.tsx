@@ -23,6 +23,7 @@ import { MesaMentiroso } from '@/components/mentiroso/mesa'
 import { TableroPalabras } from '@/components/palabras/tablero'
 import { TableroPuntoYFama } from '@/components/puntoyfama/tablero'
 import { TableroDuelo } from '@/components/puntoyfama/duelo'
+import { ComoSeJuegaPuntoYFama } from '@/components/puntoyfama/reglas'
 import type { VistaPuntoYFama } from '@/lib/engine/puntoyfama'
 import { abandonarPartida, type VistaDeLobby } from '@/lib/lobby'
 import { Lobby } from './lobby'
@@ -354,6 +355,7 @@ function MesaPuntoYFama({ codigo, onSalir }: { codigo: string; onSalir: () => vo
       onEnviar={remota.enviar}
       onCerrar={remota.cerrar}
       onSalir={mesa.vista.cerrada || mesa.vista.propio?.terminoEn != null ? () => router.push('/') : onSalir}
+      reglas={<ComoSeJuegaPuntoYFama />}
     />
   )
 }

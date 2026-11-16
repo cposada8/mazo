@@ -272,6 +272,14 @@ export function Lobby({
         <h1 className="text-3xl font-semibold tracking-tight">
           La mesa <span className="text-muted-foreground">· {NOMBRE_DE_JUEGO[juego]}</span>
         </h1>
+        {juego === 'puntoyfama' && (
+          <Link
+            href="/como-se-juega/punto-y-fama"
+            className="text-muted-foreground hover:text-foreground w-fit text-sm underline underline-offset-2"
+          >
+            Cómo se juega Punto y Fama
+          </Link>
+        )}
         {juego === 'palabras' && (
           <Link
             href="/como-se-juega/palabras"

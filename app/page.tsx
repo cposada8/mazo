@@ -12,8 +12,9 @@ export default function Home() {
         <p className="text-muted-foreground text-lg text-balance">
           Para jugar entre amigos:{" "}
           <span className="text-foreground font-medium">Carioca</span>,{" "}
-          <span className="text-foreground font-medium">Mentiroso</span> y{" "}
-          <span className="text-foreground font-medium">Palabras</span>.
+          <span className="text-foreground font-medium">Mentiroso</span>,{" "}
+          <span className="text-foreground font-medium">Palabras</span> y{" "}
+          <span className="text-foreground font-medium">Punto y Fama</span>.
         </p>
         <AliasEditable />
       </header>
@@ -35,7 +36,7 @@ export default function Home() {
           <span className="flex min-w-0 flex-col gap-0.5">
             <span className="text-sm font-medium">Cómo se juega</span>
             <span className="text-muted-foreground text-xs">
-              Las reglas de Carioca, del Mentiroso y de Palabras
+              Las reglas de Carioca, del Mentiroso, de Palabras y de Punto y Fama
             </span>
           </span>
         </Link>
