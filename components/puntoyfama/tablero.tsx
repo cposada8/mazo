@@ -35,13 +35,20 @@ import { cn } from '@/lib/utils'
 import {
   AYUDA_DEL_LAPIZ,
   BotonDeNota,
-  HojaDeNota,
   type Marcas as MarcasDeCifras,
-  VistaDeNota,
+  NotaAlLado,
   estiloDeMarca,
   nombreDeMarca,
   useApuntes,
+  useNotaAbierta,
 } from './apuntes'
+
+/**
+ * A board is exactly the screen under the site's bar (42px), never taller:
+ * the guesses scroll inside it, so the pad stays in view however many
+ * there are (Phase 111).
+ */
+export const ALTO_DE_TABLERO = 'h-[calc(100dvh-42px)] min-h-0'
 
 /** Each mark of an answer coming in. */
 const MS_POR_MARCA = 140
@@ -89,7 +96,7 @@ export function TableroPuntoYFama({
   /** A number just got, held on screen for a moment. */
   const [cierre, setCierre] = useState<NumeroTerminado | null>(null)
   const [verReglas, setVerReglas] = useState(false)
-  const [verNota, setVerNota] = useState(false)
+  const nota = useNotaAbierta()
   const [lapiz, setLapiz] = useState(false)
   const [tic, setTic] = useState(() => ({ reloj: ahora(), local: Date.now() }))
   const reloj = tic.reloj
@@ -112,7 +119,7 @@ export function TableroPuntoYFama({
   const seAcaboElTiempo = vista.fin !== null && reloj >= vista.fin
   const termine =
     (propio?.terminoEn !== null && propio?.terminoEn !== undefined) || vista.cerrada || seAcaboElTiempo
-  const ocupado = enviando || cierre !== null || verReglas || verNota
+  const ocupado = enviando || cierre !== null || verReglas
   const puedeEscribir = Boolean(propio) && empezo && !termine && !ocupado
 
   // The guesses shown: the number just got while it is held, else the one in play.
@@ -206,7 +213,7 @@ export function TableroPuntoYFama({
   const quedaPoco = conTiempo && empezo && !termine && tiempo <= 30_000
 
   return (
-    <main className="mx-auto flex w-full max-w-lg flex-1 flex-col gap-3 px-4 pt-1 pb-3">
+    <main className={cn('mx-auto flex w-full max-w-lg flex-col gap-3 px-4 pt-1 pb-3', ALTO_DE_TABLERO)}>
       <header className="flex items-center justify-between gap-3">
         <span className="-ml-1 flex items-center gap-1">
           <button type="button" onClick={onSalir} aria-label="Salir de la carrera" className="text-muted-foreground hover:text-foreground p-1">
@@ -217,7 +224,9 @@ export function TableroPuntoYFama({
               <CircleHelp className="size-4" aria-hidden />
             </button>
           )}
-          {apuntes && !termine && <BotonDeNota onAbrir={() => setVerNota(true)} conNota={notas.nota.trim() !== ''} />}
+          {apuntes && !termine && (
+            <BotonDeNota abierta={nota.abierta} onCambiar={nota.cambiar} conNota={notas.nota.trim() !== ''} />
+          )}
         </span>
         <div className="flex flex-col items-center leading-tight">
           <span className="text-muted-foreground text-xs tracking-widest uppercase">Número</span>
@@ -260,18 +269,20 @@ export function TableroPuntoYFama({
           </div>
         ) : (
           <>
-            {!cierre && <VistaDeNota nota={notas.nota} onAbrir={() => setVerNota(true)} />}
-            <ol ref={lista} className="flex min-h-0 flex-1 flex-col gap-1.5 overflow-y-auto py-1" aria-label="Tus intentos">
-              {intentos.length === 0 && (
-                <li className="text-muted-foreground m-auto max-w-64 text-center text-sm">
-                  Adivina el número de {digitos} cifras, sin cifras repetidas.
-                  <Leyenda className="mt-3" />
-                </li>
-              )}
-              {intentos.map((intento, i) => (
-                <FilaDeIntento key={i} intento={intento} numero={i + 1} llegando={i === llegando} />
-              ))}
-            </ol>
+            <div className="flex min-h-0 flex-1 gap-2">
+              <ol ref={lista} className="flex min-h-0 min-w-0 flex-1 flex-col gap-1 overflow-y-auto py-1" aria-label="Tus intentos">
+                {intentos.length === 0 && (
+                  <li className="text-muted-foreground m-auto max-w-64 text-center text-sm">
+                    Adivina el número de {digitos} cifras, sin cifras repetidas.
+                    <Leyenda className="mt-3" />
+                  </li>
+                )}
+                {intentos.map((intento, i) => (
+                  <FilaDeIntento key={i} intento={intento} numero={i + 1} llegando={i === llegando} />
+                ))}
+              </ol>
+              {apuntes && nota.abierta && !cierre && <NotaAlLado nota={notas.nota} onEscribir={notas.escribirNota} angosta={digitos >= 6} />}
+            </div>
             <FilaEscrita
               digitos={digitos}
               escritura={cierre ? null : escritura}
@@ -306,7 +317,6 @@ export function TableroPuntoYFama({
       )}
 
       {verReglas && reglas && <HojaDeReglas reglas={reglas} onCerrar={() => setVerReglas(false)} />}
-      {verNota && <HojaDeNota nota={notas.nota} onEscribir={notas.escribirNota} onCerrar={() => setVerNota(false)} />}
     </main>
   )
 }
@@ -369,10 +379,13 @@ export function Marcas({
   respuesta,
   llegando = false,
   chico = false,
+  apiladas = false,
 }: {
   respuesta: Respuesta
   llegando?: boolean
   chico?: boolean
+  /** In two short rows, for a long number's row beside the note (Phase 111). */
+  apiladas?: boolean
 }) {
   if (respuesta.famas === 0 && respuesta.puntos === 0) {
     return <span className={cn('text-muted-foreground', chico ? 'text-[10px]' : 'text-xs')}>nada</span>
@@ -382,13 +395,15 @@ export function Marcas({
     ...Array.from({ length: respuesta.famas }, () => 'fama' as const),
   ]
   return (
-    <span className="flex items-center gap-1" aria-label={`${respuesta.puntos} puntos, ${respuesta.famas} famas`}>
+    <span
+      className={cn(apiladas ? 'grid grid-flow-col grid-rows-2 gap-0.5' : 'flex items-center gap-1')}
+      aria-label={`${respuesta.puntos} puntos, ${respuesta.famas} famas`}>
       {marcas.map((tipo, i) => (
         <span
           key={i}
           className={cn(
             'rounded-full',
-            chico ? 'size-2' : 'size-3',
+            chico ? 'size-2' : apiladas ? 'size-2.5' : 'size-3',
             tipo === 'fama' ? 'bg-[oklch(0.6_0.12_148)]' : 'bg-[oklch(0.72_0.13_88)]',
             llegando && 'palabras-cae',
           )}
@@ -401,16 +416,23 @@ export function Marcas({
 
 export function FilaDeIntento({ intento, numero, llegando }: { intento: IntentoPF; numero: number; llegando: boolean }) {
   return (
-    <li className={cn('flex items-center gap-3 rounded-md px-2 py-1', llegando && 'animate-in fade-in slide-in-from-bottom-2')}>
-      <span className="text-muted-foreground w-5 text-right text-xs tabular-nums">{numero}</span>
-      <span className="flex gap-1">
+    <li className={cn('flex shrink-0 items-center gap-2 rounded-md px-1', llegando && 'animate-in fade-in slide-in-from-bottom-2')}>
+      <span className="text-muted-foreground w-5 shrink-0 text-right text-xs tabular-nums">{numero}</span>
+      <span className="flex shrink-0 gap-0.5">
         {[...intento.palabra].map((cifra, i) => (
-          <span key={i} className="bg-muted flex size-9 items-center justify-center rounded-md font-mono text-lg font-bold">
+          <span
+            key={i}
+            className={cn(
+              'bg-muted flex items-center justify-center rounded font-mono font-bold',
+              // Six digits are narrower, so the note still fits beside them.
+              intento.palabra.length >= 6 ? 'size-6 text-sm' : 'size-7 text-base',
+            )}
+          >
             {cifra}
           </span>
         ))}
       </span>
-      <Marcas respuesta={intento} llegando={llegando} />
+      <Marcas respuesta={intento} llegando={llegando} apiladas={intento.palabra.length >= 5} />
     </li>
   )
 }

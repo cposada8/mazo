@@ -8,8 +8,9 @@
  * next number starts clean.
  */
 
-import { NotebookPen, Trash2, X } from 'lucide-react'
+import { NotebookPen, Pencil, Trash2 } from 'lucide-react'
 import { useCallback, useState } from 'react'
+import { cn } from '@/lib/utils'
 
 export type Marca = 'esta' | 'noesta'
 export type Marcas = Readonly<Partial<Record<string, Marca>>>
@@ -88,81 +89,123 @@ export function useApuntes(clave: string | null) {
   return { marcas: actual.apuntes.marcas, nota: actual.apuntes.nota, marcar, escribirNota }
 }
 
-/** The 📝 in a board's header. */
-export function BotonDeNota({ onAbrir, conNota }: { onAbrir: () => void; conNota: boolean }) {
+/** The 📝 in a board's header: shows and hides the note beside the guesses. */
+export function BotonDeNota({ abierta, onCambiar, conNota }: { abierta: boolean; onCambiar: () => void; conNota: boolean }) {
   return (
     <button
       type="button"
-      onClick={onAbrir}
-      aria-label={conNota ? 'Abrir tu nota' : 'Escribir una nota'}
-      className="text-muted-foreground hover:text-foreground relative p-1"
+      onClick={onCambiar}
+      aria-label={abierta ? 'Ocultar tu nota' : 'Mostrar tu nota'}
+      aria-pressed={abierta}
+      className={cn(
+        'relative rounded-md p-1',
+        abierta ? 'bg-accent text-foreground' : 'text-muted-foreground hover:text-foreground',
+      )}
     >
       <NotebookPen className="size-4" aria-hidden />
-      {conNota && <span className="bg-foreground absolute top-0.5 right-0.5 size-1.5 rounded-full" aria-hidden />}
+      {conNota && !abierta && <span className="bg-foreground absolute top-0.5 right-0.5 size-1.5 rounded-full" aria-hidden />}
     </button>
   )
 }
 
-/** The note, closed: its first lines above the guesses; a tap opens it. */
-export function VistaDeNota({ nota, onAbrir }: { nota: string; onAbrir: () => void }) {
-  if (!nota.trim()) return null
-  return (
-    <button
-      type="button"
-      onClick={onAbrir}
-      aria-label="Abrir tu nota"
-      className="bg-card text-muted-foreground flex w-full items-start gap-2 rounded-md border px-3 py-1.5 text-left text-xs"
-    >
-      <NotebookPen className="mt-0.5 size-3 shrink-0" aria-hidden />
-      <span className="line-clamp-2 whitespace-pre-line">{nota.trim()}</span>
-    </button>
+const CLAVE_ABIERTA = 'mazo:pyf:nota-abierta'
+
+/** Whether the note is shown beside the guesses — remembered across numbers and reloads (Phase 111). */
+export function useNotaAbierta() {
+  const [abierta, setAbierta] = useState(() => {
+    try {
+      return window.localStorage.getItem(CLAVE_ABIERTA) === '1'
+    } catch {
+      return false
+    }
+  })
+  const cambiar = useCallback(
+    () =>
+      setAbierta((a) => {
+        try {
+          if (a) window.localStorage.removeItem(CLAVE_ABIERTA)
+          else window.localStorage.setItem(CLAVE_ABIERTA, '1')
+        } catch {
+          // Without storage it is remembered as long as the page.
+        }
+        return !a
+      }),
+    [],
   )
+  return { abierta, cambiar }
 }
 
-/** The note, open: one free text over the board, written and erased at will. */
-export function HojaDeNota({
+/**
+ * The note beside the guesses (Phase 111): read at a glance while playing,
+ * a tap to write in it, «Listo» to go back to reading. Never over the board,
+ * so nothing has to be closed — and no «atrás» can leave the table for it.
+ */
+export function NotaAlLado({
   nota,
   onEscribir,
-  onCerrar,
+  angosta = false,
 }: {
   nota: string
   onEscribir: (nota: string) => void
-  onCerrar: () => void
+  /** Narrower beside a six-digit number's guesses. */
+  angosta?: boolean
 }) {
+  const [editando, setEditando] = useState(false)
   return (
-    <div className="bg-background animate-in fade-in fixed inset-0 z-50 flex flex-col">
-      <div className="mx-auto flex w-full max-w-md flex-1 flex-col gap-3 px-4 pt-4 pb-3">
-        <div className="flex items-center justify-between">
-          <h2 className="text-lg font-semibold">Tu nota</h2>
-          <button type="button" onClick={onCerrar} aria-label="Cerrar la nota" className="hover:bg-accent -mr-2 rounded-md p-2">
-            <X className="size-5" aria-hidden />
-          </button>
-        </div>
-        <p className="text-muted-foreground text-xs">Solo tú la ves. Se borra cuando pasas al siguiente número.</p>
-        <textarea
-          value={nota}
-          onChange={(e) => onEscribir(e.target.value)}
-          autoFocus
-          placeholder={'1 o 2\n3 o 4'}
-          aria-label="Tu nota"
-          className="border-input bg-card min-h-40 flex-1 resize-none rounded-md border p-3 font-mono text-base leading-relaxed outline-none focus:ring-2"
-        />
-        <div className="flex gap-2">
-          <button
-            type="button"
-            onClick={() => onEscribir('')}
-            disabled={nota === ''}
-            className="border-input hover:bg-accent flex items-center justify-center gap-2 rounded-md border px-4 py-3 text-sm disabled:opacity-40"
-          >
-            <Trash2 className="size-4" aria-hidden />
-            Borrar nota
-          </button>
-          <button type="button" onClick={onCerrar} className="bg-primary text-primary-foreground flex-1 rounded-md px-4 py-3 text-sm font-medium">
-            Listo
-          </button>
-        </div>
-      </div>
-    </div>
+    <aside
+      aria-label="Tu nota"
+      className={cn(
+        'bg-card animate-in fade-in slide-in-from-right-2 flex max-w-44 shrink-0 flex-col rounded-md border',
+        angosta ? 'w-[32%]' : 'w-[38%]',
+      )}
+    >
+      {editando ? (
+        <>
+          <textarea
+            value={nota}
+            onChange={(e) => onEscribir(e.target.value)}
+            autoFocus
+            placeholder={'1 o 2\n3 o 4'}
+            aria-label="Escribe tu nota"
+            className="min-h-0 flex-1 resize-none rounded-t-md bg-transparent p-2 font-mono text-sm leading-snug outline-none"
+          />
+          <div className="flex gap-1 border-t p-1">
+            <button
+              type="button"
+              onClick={() => onEscribir('')}
+              disabled={nota === ''}
+              aria-label="Borrar la nota"
+              className="hover:bg-accent text-muted-foreground rounded p-1.5 disabled:opacity-30"
+            >
+              <Trash2 className="size-4" aria-hidden />
+            </button>
+            <button
+              type="button"
+              onClick={() => setEditando(false)}
+              className="bg-primary text-primary-foreground flex-1 rounded px-2 py-1.5 text-xs font-semibold"
+            >
+              Listo
+            </button>
+          </div>
+        </>
+      ) : (
+        <button
+          type="button"
+          onClick={() => setEditando(true)}
+          aria-label="Editar tu nota"
+          className="flex min-h-0 flex-1 flex-col items-stretch gap-1 overflow-y-auto p-2 text-left"
+        >
+          {nota.trim() ? (
+            <span className="font-mono text-sm leading-snug break-words whitespace-pre-wrap">{nota}</span>
+          ) : (
+            <span className="text-muted-foreground text-xs">Toca para escribir lo que vas sabiendo.</span>
+          )}
+          <span className="text-muted-foreground mt-auto flex items-center gap-1 pt-1 text-[10px] tracking-wide uppercase">
+            <Pencil className="size-3" aria-hidden /> editar
+          </span>
+        </button>
+      )}
+    </aside>
   )
 }
 

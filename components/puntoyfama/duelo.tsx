@@ -23,8 +23,17 @@ import {
 } from '@/components/palabras/escritura'
 import type { IntentoPF, VistaDelDuelo } from '@/lib/engine/puntoyfama'
 import { cn } from '@/lib/utils'
-import { BotonDeNota, HojaDeNota, VistaDeNota, useApuntes } from './apuntes'
-import { FilaDeIntento, FilaEscrita, HojaDeReglas, Marcas, TecladoNumerico, enUnCampo, repetidas } from './tablero'
+import { BotonDeNota, NotaAlLado, useApuntes, useNotaAbierta } from './apuntes'
+import {
+  ALTO_DE_TABLERO,
+  FilaDeIntento,
+  FilaEscrita,
+  HojaDeReglas,
+  Marcas,
+  TecladoNumerico,
+  enUnCampo,
+  repetidas,
+} from './tablero'
 
 export type PropsDelDuelo = {
   vista: VistaDelDuelo
@@ -62,7 +71,7 @@ export function TableroDuelo({
   const [aviso, setAviso] = useState<string | null>(null)
   const [llegando, setLlegando] = useState<number | null>(null)
   const [verReglas, setVerReglas] = useState(false)
-  const [verNota, setVerNota] = useState(false)
+  const nota = useNotaAbierta()
   const [lapiz, setLapiz] = useState(false)
   const notas = useApuntes(apuntes ? `${apuntes}:duelo` : null)
   const { marcar } = notas
@@ -83,7 +92,7 @@ export function TableroDuelo({
   const empezo = vista.inicio !== null && tic.reloj >= vista.inicio
   const lotengo = yo?.terminoEn !== null && yo?.terminoEn !== undefined
   const fin = vista.resultado !== null
-  const puedeEscribir = !enviando && !fin && !verReglas && !verNota && (poniendo || (empezo && !lotengo))
+  const puedeEscribir = !enviando && !fin && !verReglas && (poniendo || (empezo && !lotengo))
   // Marks and the note are for guessing their number, not for setting yours.
   const conApuntes = Boolean(apuntes) && !poniendo && !fin
 
@@ -146,7 +155,7 @@ export function TableroDuelo({
   const tiempo = vista.inicio !== null && empezo ? (yo?.terminoEn ?? tic.reloj - vista.inicio) : 0
 
   return (
-    <main className="mx-auto flex w-full max-w-lg flex-1 flex-col gap-3 px-4 pt-1 pb-3">
+    <main className={cn('mx-auto flex w-full max-w-lg flex-col gap-3 px-4 pt-1 pb-3', ALTO_DE_TABLERO)}>
       <header className="flex items-center justify-between gap-3">
         <span className="-ml-1 flex items-center gap-1">
           <button type="button" onClick={onSalir} aria-label="Salir del duelo" className="text-muted-foreground hover:text-foreground p-1">
@@ -157,7 +166,9 @@ export function TableroDuelo({
               <CircleHelp className="size-4" aria-hidden />
             </button>
           )}
-          {conApuntes && !lotengo && <BotonDeNota onAbrir={() => setVerNota(true)} conNota={notas.nota.trim() !== ''} />}
+          {conApuntes && !lotengo && (
+            <BotonDeNota abierta={nota.abierta} onCambiar={nota.cambiar} conNota={notas.nota.trim() !== ''} />
+          )}
         </span>
         <div className="flex flex-col items-center leading-tight">
           <span className="text-muted-foreground text-xs tracking-widest uppercase">Duelo</span>
@@ -203,12 +214,14 @@ export function TableroDuelo({
               ))}
             </span>
           </div>
-          {conApuntes && !lotengo && <VistaDeNota nota={notas.nota} onAbrir={() => setVerNota(true)} />}
-          <ol ref={lista} className="flex min-h-0 flex-1 flex-col gap-1.5 overflow-y-auto py-1" aria-label="Tus intentos">
-            {(yo?.intentos ?? []).map((intento, i) => (
-              <FilaDeIntento key={i} intento={intento} numero={i + 1} llegando={i === llegando} />
-            ))}
-          </ol>
+          <div className="flex min-h-0 flex-1 gap-2">
+            <ol ref={lista} className="flex min-h-0 min-w-0 flex-1 flex-col gap-1 overflow-y-auto py-1" aria-label="Tus intentos">
+              {(yo?.intentos ?? []).map((intento, i) => (
+                <FilaDeIntento key={i} intento={intento} numero={i + 1} llegando={i === llegando} />
+              ))}
+            </ol>
+            {conApuntes && !lotengo && nota.abierta && <NotaAlLado nota={notas.nota} onEscribir={notas.escribirNota} angosta={digitos >= 6} />}
+          </div>
           {lotengo && (
             <p className="text-center text-sm font-medium">
               ¡Lo tienes en {yo!.intentos.length} {yo!.intentos.length === 1 ? 'intento' : 'intentos'}! Esperando a que{' '}
@@ -245,7 +258,6 @@ export function TableroDuelo({
       )}
 
       {verReglas && reglas && <HojaDeReglas reglas={reglas} onCerrar={() => setVerReglas(false)} />}
-      {verNota && <HojaDeNota nota={notas.nota} onEscribir={notas.escribirNota} onCerrar={() => setVerNota(false)} />}
     </main>
   )
 }

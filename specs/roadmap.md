@@ -4060,6 +4060,30 @@ written, a 5 typed in the note leaving the guess empty; all there after a
 reload; the number solved in six, and number 2 opened with no mark and no
 note.
 
+### Phase 111 — La nota al lado, y el teclado siempre a la vista ✅
+The owner, after trying Phase 110 on the phone: the note as a sheet over
+the board was awkward — reading it hid the guesses, and «atrás» to close
+it left the table. And with many guesses the pad slid off the bottom of
+the screen. So: the note sits **beside the guesses**, read at a glance
+while playing; a tap writes in it, «Listo» goes back to reading; the 📝
+only shows and hides it — nothing to close, nothing to go back from. The
+board is never taller than the screen: the guesses scroll inside it,
+newest in view, and are smaller, so they fill it slower.
+
+**Done when:** sixteen guesses leave the pad where it was, the newest in
+view; the note open beside them on 4 and on 6 digits with nothing cut;
+editing it leaves the guess untouched; and open or closed is remembered.
+
+**Done.** `ALTO_DE_TABLERO` holds both boards to the screen under the
+site's bar; the list scrolls inside, to the newest. Guess rows went from
+36px tiles to 28 (24 on six digits), and on five and six digits the marks
+stack in two short rows. `NotaAlLado` (`apuntes.tsx`) replaces the sheet
+and the preview: reading by default, «Editar» to a field with 🗑 and
+«Listo»; `useNotaAbierta` remembers whether it is shown. In the browser:
+16 guesses on 4 digits with the note open and ENVIAR still at the bottom;
+6 digits with the note open, nothing cut; a note typed beside the guesses
+with the guess's slots left empty.
+
 ---
 
 ## After
