@@ -3556,11 +3556,16 @@ still play sees it; a word with no tries is left out. In the browser: a
 one-minute race, four tries on FALLA when the clock ran out, the row
 showing «⏱ 2» for Leo and «⏱ 4» for me and opening to both. 2 tests.
 
-### Phase 93 — A producción
+### Phase 93 — A producción ✅
 The release of Phases 87–92, after `prisma/sql/89-modo.sql` and
 `prisma/sql/90-vidas.sql` reach `mazo`.
 
 **Done when:** they are in production, and `estado.md` says so.
+
+**Done.** At the owner's word, 2026-11-15, with the word cut off by the end
+included: `mazo` took `89-modo.sql` and `90-vidas.sql` before the release
+deployed, and the release is **v2.3.0** — a minor, for new things.
+**Milestone 9 is closed.**
 
 ---
 
