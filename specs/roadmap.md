@@ -3810,7 +3810,7 @@ take 9 changes with it; the owner's 8 was measured on other first guesses.
 The suite runs a sample (one in 17) and holds the average under 6 and the
 worst at 9. 14 tests.
 
-### Phase 101 — La puerta sabe que hay cuatro juegos
+### Phase 101 — La puerta sabe que hay cuatro juegos ✅
 `Partida.juego` learns `'puntoyfama'`; the door gets a fourth button. The
 lobby: the way to play («Números límite», «Tiempo límite», «Duelo»), the
 digits (3–6), and how many numbers or how many minutes — reusing Palabras'
@@ -3820,6 +3820,20 @@ the bot is not a partida but a door of its own (Phase 105).
 **Done when:** the other three games create, join and play as in the last
 release, and a Punto y Fama partida of each way is created, configured and
 filled by code.
+
+**Done.** `'puntoyfama'` is a game (`lib/juegos.ts`, 1–8 seats, no bots;
+`esDeAdivinar` names the two guessing games), and the door has four
+buttons, two by two. **No new columns:** Punto y Fama keeps its numbers in
+Palabras' — `palabras` counts numbers (1–50), `largo` counts digits (3–6,
+4 by default), `modo` may also be `'duelo'`, `minutos` and `espera` as
+they are — each game's ranges checked on the server by the row's game.
+The lobby's `AjustesPuntoYFama`: Números / Tiempo / Duelo, the digits,
+then how many numbers and the wait, or the minutes; a duel's start waits
+for exactly two people and says so. The server deals a race on the shared
+one or a duel (`lib/server/puntoyfama.ts`, `/api/partidas/[codigo]/puntoyfama`
+for both, the row saying which), takes latecomers into a race and not a
+duel, and leaving a duel hands it to the other. 8 server tests, the races
+and the duel among them.
 
 ### Phase 102 — El tablero de números
 The board on a phone: a pad of 0–9 (a digit already in the guess is

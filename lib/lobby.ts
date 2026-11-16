@@ -58,7 +58,7 @@ export type PartidaGuardada = {
   readonly palabras: number
   readonly largo: number
   /** Palabras' way to race and its minutes (Phase 89). */
-  readonly modo: 'palabras' | 'tiempo'
+  readonly modo: 'palabras' | 'tiempo' | 'duelo'
   readonly minutos: number
   /** Lives in the time mode (Phase 90); 0 is «sin vidas». */
   readonly vidas: number
@@ -111,7 +111,7 @@ export type Accion =
       readonly balas?: number
       readonly palabras?: number
       readonly largo?: number
-      readonly modo?: 'palabras' | 'tiempo'
+      readonly modo?: 'palabras' | 'tiempo' | 'duelo'
       readonly minutos?: number
       readonly vidas?: number
       readonly castigo?: number

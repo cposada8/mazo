@@ -28,7 +28,17 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { useIdentidad } from '@/components/identidad'
 import { BOTS, NOMBRE_DE_NIVEL, type Nivel, botPorId } from '@/lib/bots'
 import { botDeJuego, botPorDefecto, botsDeJuego } from '@/lib/bots-de-juego'
-import { ASIENTOS, type Juego, NOMBRE_DE_JUEGO, tieneBots } from '@/lib/juegos'
+import { ASIENTOS, type Juego, NOMBRE_DE_JUEGO, esDeAdivinar, tieneBots } from '@/lib/juegos'
+import {
+  DIGITOS,
+  JUGADORES_DE_DUELO,
+  MAX_NUMEROS,
+  MIN_NUMEROS,
+  MODOS_PF,
+  NOMBRE_DE_MODO_PF,
+  OPCIONES_DE_NUMEROS,
+  type ModoPF,
+} from '@/lib/engine/puntoyfama/opciones'
 import {
   LARGOS,
   MAX_MINUTOS,
@@ -189,9 +199,9 @@ export function Lobby({
   useEffect(() => {
     if (pedido.current || !identidad || !partida) return
     if (vista?.asiento !== null) return
-    // A Palabras race also takes latecomers while it runs.
-    const abierta =
-      partida.fase === 'lobby' || (partida.juego === 'palabras' && partida.fase === 'jugando')
+    // A guessing race also takes latecomers while it runs — not a duel.
+    const carrera = esDeAdivinar(partida.juego) && partida.modo !== 'duelo'
+    const abierta = partida.fase === 'lobby' || (carrera && partida.fase === 'jugando')
     if (!abierta) return
     pedido.current = true
     mutacion.mutate({ tipo: 'unirse', alias: identidad.alias })
@@ -202,7 +212,7 @@ export function Lobby({
     if (!vista || vista.asiento === null) return
     const enMarcha =
       vista.partida.fase === 'jugando' ||
-      (vista.partida.juego === 'palabras' && vista.partida.fase === 'terminada')
+      (esDeAdivinar(vista.partida.juego) && vista.partida.fase === 'terminada')
     if (enMarcha) {
       onEmpezar(vista)
     }
@@ -220,7 +230,11 @@ export function Lobby({
   const humanos = partida.asientos.filter((asiento) => !asiento.esBot)
   const juego = partida.juego
   const asientosDelJuego = ASIENTOS[juego]
-  const puedeEmpezar = partida.asientos.length >= asientosDelJuego.min
+  const esDuelo = juego === 'puntoyfama' && partida.modo === 'duelo'
+  // A duel is exactly two people (Phase 104).
+  const puedeEmpezar = esDuelo
+    ? humanos.length === JUGADORES_DE_DUELO
+    : partida.asientos.length >= asientosDelJuego.min
 
   const ajustar = (cambio: Partial<Omit<Accion & { tipo: 'ajustes' }, 'tipo'>>) =>
     mutacion.mutate({ tipo: 'ajustes', ...cambio })
@@ -364,7 +378,30 @@ export function Lobby({
         )}
       </section>
 
-      {juego === 'palabras' ? (
+      {juego === 'puntoyfama' ? (
+        soyHost ? (
+          <AjustesPuntoYFama
+            partida={partida}
+            onModo={(modo) => ajustar({ modo })}
+            onDigitos={(largo) => ajustar({ largo })}
+            onNumeros={(palabras) => ajustar({ palabras })}
+            onMinutos={(minutos) => ajustar({ minutos })}
+            onEspera={(espera) => ajustar({ espera })}
+          />
+        ) : (
+          <section className="text-muted-foreground flex flex-col gap-1 text-sm">
+            <h2 className="text-xs font-medium tracking-widest uppercase">Lo que escogió el host</h2>
+            <p>
+              {NOMBRE_DE_MODO_PF[partida.modo as ModoPF]} · números de {partida.largo} cifras
+              {partida.modo === 'tiempo'
+                ? ` · ${partida.minutos} min`
+                : partida.modo === 'duelo'
+                  ? ''
+                  : ` · ${partida.palabras} ${partida.palabras === 1 ? 'número' : 'números'}`}
+            </p>
+          </section>
+        )
+      ) : juego === 'palabras' ? (
         soyHost ? (
           <AjustesPalabras
             partida={partida}
@@ -433,9 +470,15 @@ export function Lobby({
             className="bg-primary text-primary-foreground flex items-center justify-center gap-2 rounded-md px-4 py-3.5 text-sm font-medium disabled:opacity-50"
           >
             <Play className="size-4" aria-hidden />
-            {juego === 'palabras' ? 'Empezar la carrera' : 'Repartir'}
+            {esDuelo ? 'Empezar el duelo' : esDeAdivinar(juego) ? 'Empezar la carrera' : 'Repartir'}
           </button>
-          {juego === 'palabras' ? (
+          {esDuelo ? (
+            <p className="text-muted-foreground text-xs">
+              {humanos.length === JUGADORES_DE_DUELO
+                ? 'Al empezar, cada uno escribe en secreto el número que el otro tiene que adivinar.'
+                : `El duelo es de exactamente dos personas: ${humanos.length < JUGADORES_DE_DUELO ? 'invita a alguien con el código' : 'sobra gente en la mesa'}.`}
+            </p>
+          ) : esDeAdivinar(juego) ? (
             <p className="text-muted-foreground text-xs">
               Invita con el código: se puede entrar incluso con la carrera andando,
               pero el reloj es el mismo para todos.
@@ -451,7 +494,7 @@ export function Lobby({
         <p className="text-muted-foreground flex items-center gap-2 text-sm">
           <Loader2 className="size-4 animate-spin" aria-hidden />
           Esperando a que {partida.asientos.find((a) => a.esHost)?.alias ?? 'el host'}{' '}
-          {juego === 'palabras' ? 'dé la partida…' : 'reparta…'}
+          {esDeAdivinar(juego) ? 'dé la partida…' : 'reparta…'}
         </p>
       )}
     </main>
@@ -748,6 +791,94 @@ function AjustesMentiroso({
 }
 
 /**
+ * Punto y Fama's settings (Phase 101): the way to play, the digits, then how
+ * many numbers (and how long to wait for the rest) or how many minutes. A
+ * duel has nothing more to choose: each player sets the other's number.
+ */
+function AjustesPuntoYFama({
+  partida,
+  onModo,
+  onDigitos,
+  onNumeros,
+  onMinutos,
+  onEspera,
+}: {
+  partida: NonNullable<VistaDeLobby['partida']>
+  onModo: (modo: ModoPF) => void
+  onDigitos: (digitos: number) => void
+  onNumeros: (numeros: number) => void
+  onMinutos: (minutos: number) => void
+  onEspera: (minutos: number) => void
+}) {
+  const modo = partida.modo as ModoPF
+  return (
+    <section className="flex flex-col gap-5">
+      <Escogencia
+        titulo="Modalidad"
+        detalle={
+          modo === 'duelo'
+            ? 'Dos personas: cada una le pone un número a la otra. Gana quien lo adivina en menos intentos.'
+            : modo === 'tiempo'
+              ? 'Gana quien adivina más números antes de que se acabe el tiempo.'
+              : 'Los mismos números, en el mismo orden, para todos. Gana quien los adivina todos primero.'
+        }
+        opciones={MODOS_PF}
+        valor={modo}
+        etiqueta={(m) => (m === 'palabras' ? 'Números' : m === 'tiempo' ? 'Tiempo' : 'Duelo')}
+        onCambiar={onModo}
+      />
+      <Escogencia
+        titulo="Cifras"
+        detalle="Sin cifras repetidas; el 0 puede ir primero."
+        opciones={DIGITOS}
+        valor={partida.largo as (typeof DIGITOS)[number]}
+        etiqueta={(n) => String(n)}
+        onCambiar={onDigitos}
+      />
+      {modo === 'palabras' && (
+        <>
+          <NumeroConAtajos
+            titulo="Cuántos números"
+            atajos={OPCIONES_DE_NUMEROS}
+            valor={partida.palabras}
+            min={MIN_NUMEROS}
+            max={MAX_NUMEROS}
+            unidad="números"
+            onCambiar={onNumeros}
+          />
+          <NumeroConAtajos
+            titulo="Cuánto se espera al resto"
+            detalle={
+              partida.espera
+                ? `La carrera se cierra ${partida.espera} min después de que llegue el primero.`
+                : 'Sin límite: todos pueden seguir llegando después de que alguien gane.'
+            }
+            atajos={OPCIONES_DE_ESPERA}
+            valor={partida.espera}
+            min={0}
+            max={MAX_ESPERA}
+            unidad="minutos de espera"
+            etiqueta={(n) => (n === 0 ? '∞' : `${n}`)}
+            onCambiar={onEspera}
+          />
+        </>
+      )}
+      {modo === 'tiempo' && (
+        <NumeroConAtajos
+          titulo="Minutos"
+          atajos={OPCIONES_DE_MINUTOS}
+          valor={partida.minutos}
+          min={MIN_MINUTOS}
+          max={MAX_MINUTOS}
+          unidad="minutos"
+          onCambiar={onMinutos}
+        />
+      )}
+    </section>
+  )
+}
+
+/**
  * Palabras' settings: the way to race (Phase 89), then how many words or how
  * many minutes, and how long the words are.
  */
@@ -782,7 +913,7 @@ function AjustesPalabras({
             : 'Gana quien termina primero todas las palabras.'
         }
         opciones={MODOS}
-        valor={partida.modo}
+        valor={partida.modo === 'tiempo' ? 'tiempo' : 'palabras'}
         etiqueta={(modo) => (modo === 'tiempo' ? 'Tiempo límite' : 'Palabras límite')}
         onCambiar={onModo}
       />

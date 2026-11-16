@@ -36,7 +36,17 @@ import {
   sumarJugador,
 } from '@/lib/engine/palabras'
 import { botDeJuego, botPorDefecto } from '@/lib/bots-de-juego'
-import { ASIENTOS, type Juego, juegoDe } from '@/lib/juegos'
+import { ASIENTOS, type Juego, esDeAdivinar, juegoDe } from '@/lib/juegos'
+import {
+  DIGITOS_POR_DEFECTO,
+  JUGADORES_DE_DUELO,
+  empezarDuelo,
+  empezarPuntoYFama,
+  esNumeroDeNumeros,
+  modoPFValido,
+  sonDigitos,
+} from '@/lib/engine/puntoyfama'
+import { retirarDeDuelo } from './puntoyfama'
 import { codigoAlAzar, limpiarCodigo } from '@/lib/codigo'
 import type {
   ErrorDeLobby,
@@ -106,7 +116,8 @@ function publicar(fila: FilaPartida): PartidaGuardada {
     balas: fila.balas,
     palabras: fila.palabras,
     largo: fila.largo,
-    modo: modoValido(fila.modo),
+    // The duel is Punto y Fama's own mode (Phase 101); the races share the rest.
+    modo: modoPFValido(fila.modo),
     minutos: fila.minutos,
     vidas: fila.vidas,
     castigo: fila.castigo,
@@ -150,8 +161,9 @@ export async function crearPartida(opciones: {
     segundosBot = 2,
     aliasesDeBots = [],
   } = opciones
-  // Palabras seats no bots: a race against a bot that solves it is no race.
-  const bots = juego === 'palabras' ? 0 : (opciones.bots ?? 3)
+  // The guessing games seat no bots: a race against a bot that solves it
+  // is no race (Punto y Fama's bot is a door of its own, Phase 105).
+  const bots = esDeAdivinar(juego) ? 0 : (opciones.bots ?? 3)
 
   // The gallery as it is now travels with the partida (Phase 71). El
   // Mentiroso has no comodines, so it has no faces to keep.
@@ -171,6 +183,8 @@ export async function crearPartida(opciones: {
           segundosPorTurno,
           segundosBot,
           caras,
+          // Punto y Fama keeps its digits in Palabras' «largo» (Phase 101).
+          ...(juego === 'puntoyfama' ? { largo: DIGITOS_POR_DEFECTO, palabras: 5 } : {}),
           asientos: {
             create: [
               { indice: 0, alias, secreto, esHost: true },
@@ -252,8 +266,10 @@ export async function unirse(opciones: {
   const juego = juegoDe(fila.juego)
   // A Palabras race takes latecomers while it runs (`palabras-rules.md`,
   // «Joining»): they race on the same clock and simply start behind.
+  // Punto y Fama's races too (Phase 103) — not its duel, which is two.
   const tarde =
-    juego === 'palabras' &&
+    esDeAdivinar(juego) &&
+    !(juego === 'puntoyfama' && fila.modo === 'duelo') &&
     fila.fase === 'jugando' &&
     fila.estado !== null &&
     !cerrada(JSON.parse(fila.estado) as EstadoPalabras, Date.now())
@@ -528,6 +544,17 @@ export async function actualizarAjustes(opciones: {
 }): Promise<ResultadoDeLobby> {
   const acceso = await comoHost(opciones.codigo, opciones.secreto)
   if (!acceso.ok) return acceso
+  // Punto y Fama reuses Palabras' columns (Phase 101) with its own ranges:
+  // «palabras» counts numbers (1–50), «largo» counts digits (3–6), and
+  // «modo» may also be the duel.
+  const pf = acceso.fila.juego === 'puntoyfama'
+  const cuantos = pf ? esNumeroDeNumeros(opciones.palabras) : esNumeroDePalabras(opciones.palabras)
+  const largo =
+    opciones.largo !== undefined &&
+    (pf ? sonDigitos(opciones.largo) : (LARGOS as readonly number[]).includes(opciones.largo))
+  const modo = pf
+    ? opciones.modo !== undefined && modoPFValido(opciones.modo) === opciones.modo
+    : opciones.modo === 'palabras' || opciones.modo === 'tiempo'
 
   await prisma.partida.update({
     where: { id: acceso.fila.id },
@@ -548,11 +575,9 @@ export async function actualizarAjustes(opciones: {
         ? { balas: opciones.balas }
         : {}),
       // Any whole number from 1 to 100 (Phase 87); anything else is ignored.
-      ...(esNumeroDePalabras(opciones.palabras) ? { palabras: opciones.palabras } : {}),
-      ...(opciones.largo !== undefined && (LARGOS as readonly number[]).includes(opciones.largo)
-        ? { largo: opciones.largo }
-        : {}),
-      ...(opciones.modo === 'palabras' || opciones.modo === 'tiempo' ? { modo: opciones.modo } : {}),
+      ...(cuantos ? { palabras: opciones.palabras } : {}),
+      ...(largo ? { largo: opciones.largo } : {}),
+      ...(modo ? { modo: opciones.modo } : {}),
       ...(esNumeroDeMinutos(opciones.minutos) ? { minutos: opciones.minutos } : {}),
       ...(esNumeroDeVidas(opciones.vidas) ? { vidas: opciones.vidas } : {}),
       ...(esMinutosDeCastigo(opciones.castigo) ? { castigo: opciones.castigo } : {}),
@@ -654,10 +679,32 @@ export async function empezar(opciones: {
   const { fila } = acceso
   const juego = juegoDe(fila.juego)
   if (fila.asientos.length < ASIENTOS[juego].min) return { ok: false, code: 'MESA_MUY_CHICA' }
+  const personas = fila.asientos.filter((a) => !a.esBot).map((a) => a.indice)
+  const duelo = juego === 'puntoyfama' && fila.modo === 'duelo'
+  // A duel is exactly two (`punto-y-fama-rules.md`).
+  if (duelo && personas.length !== JUGADORES_DE_DUELO) {
+    return { ok: false, code: personas.length < JUGADORES_DE_DUELO ? 'MESA_MUY_CHICA' : 'MESA_LLENA' }
+  }
 
   // Each game deals its own state; the row does not care which it holds.
-  const estado =
-    juego === 'palabras'
+  const estado = duelo
+    ? empezarDuelo({
+        seed: opciones.seed,
+        digitos: fila.largo,
+        asientos: [personas[0], personas[1]],
+      })
+    : juego === 'puntoyfama'
+      ? empezarPuntoYFama({
+          seed: opciones.seed,
+          numeros: fila.palabras,
+          digitos: fila.largo,
+          asientos: personas,
+          ahora: Date.now(),
+          modo: modoValido(fila.modo),
+          minutos: fila.minutos,
+          espera: fila.espera,
+        })
+      : juego === 'palabras'
       ? empezarPalabras({
           seed: opciones.seed,
           palabras: fila.palabras,
@@ -738,7 +785,11 @@ export async function abandonar(opciones: {
 
   // A Palabras player leaving keeps their place in the ranking with what
   // they finished; nobody waits for them (`palabras-rules.md`, «Joining»).
-  if (juegoDe(fila.juego) === 'palabras') {
+  if (juegoDe(fila.juego) === 'puntoyfama' && fila.modo === 'duelo') {
+    await retirarDeDuelo(fila.id, propio.indice)
+    return { ok: true, enLobby: false }
+  }
+  if (esDeAdivinar(juegoDe(fila.juego))) {
     await retirarDeCarrera(fila.id, propio.indice)
     return { ok: true, enLobby: false }
   }

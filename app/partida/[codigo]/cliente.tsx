@@ -88,6 +88,11 @@ export function PartidaCliente({
 
   // Palabras has one home, the server: it alone holds the answers (Phase 86).
   // Leaving a race asks nothing — your time stays in the ranking.
+  // Punto y Fama's tables arrive with Phases 102–104.
+  if (partida.juego === 'puntoyfama') {
+    return <MesaPuntoYFama codigo={codigo} onSalir={() => void salir(false, true)} />
+  }
+
   if (partida.juego === 'palabras') {
     return <CarreraDelServidor codigo={codigo} onSalir={() => void salir(false, true)} />
   }
@@ -294,5 +299,18 @@ function CarreraDelServidor({ codigo, onSalir }: { codigo: string; onSalir: () =
       onCerrar={remota.cerrar}
       onSalir={mesa.vista.cerrada || mesa.vista.propio?.terminoEn != null ? () => router.push('/') : onSalir}
     />
+  )
+}
+
+/** Punto y Fama, refereed by the server: a race or a duel (Phases 102–104). */
+function MesaPuntoYFama({ codigo, onSalir }: { codigo: string; onSalir: () => void }) {
+  void codigo
+  return (
+    <main className="mx-auto flex w-full max-w-md flex-1 flex-col items-center justify-center gap-3 px-6 py-16 text-center">
+      <p className="text-muted-foreground text-sm">La mesa de Punto y Fama está en camino.</p>
+      <button type="button" onClick={onSalir} className="border-input hover:bg-accent rounded-md border px-4 py-2 text-sm">
+        Salir
+      </button>
+    </main>
   )
 }
