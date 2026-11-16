@@ -336,6 +336,10 @@ defaults become the host's to change, in `roadmap.md`:
 3. Phase 96 — El ritmo de los bots, en plena partida: a Carioca bug — at a
    table the server referees, nobody (not even the host) can change the
    bots' thinking time once dealt.
+4. Phase 97 — Palabras encadenadas: each word starts with the one before as
+   its first try, a switch for both ways to race.
+5. Phase 98 — La suma de intentos: every player's tries added up, on the
+   board and in the finish table.
 
 **Milestone 8, el Mentiroso** (the owner, 2026-11-05), closed. Its rules are
 `specs/mentiroso-rules.md`, settled; `roadmap.md` has the phases:
