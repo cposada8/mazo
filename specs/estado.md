@@ -341,6 +341,21 @@ defaults become the host's to change, in `roadmap.md`:
 5. Phase 98 — La suma de intentos: every player's tries added up, on the
    board and in the finish table.
 
+**Then — Milestone 10, Punto y Fama** (the owner, 2026-11-16): the fourth
+game, guessing a number of n digits in puntos and famas. Its rules are
+`specs/punto-y-fama-rules.md`, drafted for the owner to correct; the
+owner's `punto-y-fama` repository, beside this one, has the game and its
+solver. `roadmap.md` has the phases:
+
+1. Phase 99 — Una carrera, dos juegos: split Palabras' race from Palabras.
+2. Phase 100 — El motor de Punto y Fama, the duel and the solver.
+3. Phase 101 — La puerta sabe que hay cuatro juegos.
+4. Phase 102 — El tablero de números.
+5. Phase 103 — La carrera de números: both race modes among people.
+6. Phase 104 — El duelo: two people, each setting the other a number.
+7. Phase 105 — El bot que adivina tu número.
+8. Phase 106 — Cómo se juega, and production.
+
 **Milestone 8, el Mentiroso** (the owner, 2026-11-05), closed. Its rules are
 `specs/mentiroso-rules.md`, settled; `roadmap.md` has the phases:
 

@@ -3676,6 +3676,120 @@ table carries every player's total.
 
 ---
 
+## Milestone 10 — Punto y Fama
+
+*The owner, 2026-11-16: the fourth game — guessing a number of n digits,
+none repeated, answered in puntos and famas — in three ways to play (a
+race of k numbers, the most numbers in x minutes, and a duel of two, each
+setting the other a number), and a bot that guesses your number. The
+owner's own `punto-y-fama` repository, beside this one, has the game and
+its solver. The rules are `specs/punto-y-fama-rules.md`, drafted from the
+brief for the owner to correct — above all the (Mazo's call) ones: 3–6
+digits, 0 allowed first, no try limit, the duel's tie-break.*
+
+*Two of its three ways to play are Palabras' races with numbers instead of
+words: the same list for everyone, the server holding it, late joiners,
+the time limit, the finish table. So the order is el Mentiroso's: first
+split what a race shares from what is Palabras' own, then the game on top.
+Palabras keeps working, untouched, at every step.*
+
+### Phase 99 — Una carrera, dos juegos
+Split Palabras' engine and board into what any guessing race shares — a
+list drawn from the seed, one board per player, the clocks (n items or x
+minutes), closing, late joiners, the ranking, lives, what a view shows of
+the rivals, the finish table — and what is Palabras' own: words, colours,
+six tries, the keyboard. No behaviour changes; imports move.
+
+**Done when:** every Palabras test passes with only its imports changed,
+the purity test covers the new shared half, and nothing in it names a word
+or a colour.
+
+### Phase 100 — El motor de Punto y Fama
+On the shared race: numbers of n digits without repeats drawn from the
+seed (0 allowed first), a guess validated and scored in puntos and famas,
+no try limit, the two race modes; and the duel as its own small state
+machine — two secrets set, two boards, each scored against the other's
+number, the winner once both have finished. Pure, and the bot (Phase 105)
+lives here too: the owner's solver, ported from `punto-y-fama`.
+
+**Done when:** tests cover scoring (1325 against 1234 is 1 fama, 2 puntos),
+the shape rules (repeats, length, a leading 0), both race modes on the
+shared core, the duel both ways and its tie-break, a view never holding a
+number its player has not got nor a duel secret before the end; and a soak
+of the solver on every number of 4 digits stays at about 5.5 tries on
+average and never above 8, as the owner's measured.
+
+### Phase 101 — La puerta sabe que hay cuatro juegos
+`Partida.juego` learns `'puntoyfama'`; the door gets a fourth button. The
+lobby: the way to play («Números límite», «Tiempo límite», «Duelo»), the
+digits (3–6), and how many numbers or how many minutes — reusing Palabras'
+settings where they are the same. A duel seats exactly two and says so;
+the bot is not a partida but a door of its own (Phase 105).
+
+**Done when:** the other three games create, join and play as in the last
+release, and a Punto y Fama partida of each way is created, configured and
+filled by code.
+
+### Phase 102 — El tablero de números
+The board on a phone: a pad of 0–9 (a digit already in the guess is
+dimmed, since none may repeat), the guess being written with the touch-a-
+slot writing Palabras has, ENVIAR and ⌫; the list of your guesses with
+their answer as marks — famas and puntos — told in beats as each guess
+lands; the clock, the number count, the rivals' answers without digits,
+the sum of tries. Played against the server from the start, as Palabras is.
+
+**Done when:** a race of three 4-digit numbers is played to the end on a
+phone upright and on a computer, a repeated digit or a short guess is
+refused with a shake, nothing off screen, no sideways scroll.
+
+### Phase 103 — La carrera de números
+Both race modes among several people, through Palabras' server path now
+shared: everyone on the same numbers, the rivals as answers without
+digits, late joiners, the race left open for the slow (no closing by
+default, as Phase 95 sets for Palabras), and the finish table with
+numbers as rows opening to everyone's guesses.
+
+**Done when:** three people race three numbers from one code, each seeing
+the others' answers and never their digits until finishing, and every
+screen ends on the same table; and a three-minute race ranks by numbers
+got.
+
+### Phase 104 — El duelo
+Two people, one code. Each **types a secret number** for the other — out of
+sight, checked for shape, held by the server — and when both are in, both
+guess at once. The board shows your guesses against their number, and
+theirs against yours as answers only. The first to get it waits, watching;
+the other plays on to the end; then the result — fewer tries wins, the
+time breaks a tie — and **both numbers turned over**, with both lists of
+guesses.
+
+**Done when:** two phones play a duel to the end in both orders of
+finishing, neither response ever holding the other's secret before the
+end, and both screens agree on the winner.
+
+### Phase 105 — El bot que adivina tu número
+A door of its own, played in the phone alone: you think of a number, the
+bot proposes guesses, and you answer each with **two steppers, puntos and
+famas** (their sum never above n). It narrows down and guesses again until
+it has them all. «Deshacer» takes the last answer back; answers that no
+number fits are said plainly, pointing at «Deshacer»; and how many numbers
+it still considers possible is shown, shrinking, so it can be seen
+thinking.
+
+**Done when:** on a 4-digit number the bot gets it in at most 8 guesses,
+an inconsistent answer is caught and undone, and it plays with no
+connection at all.
+
+### Phase 106 — Cómo se juega, y a producción
+«Cómo se juega» for Punto y Fama — the scoring with a real example, the
+three ways to play, and the bot — from its lobby, its board and the other
+games' rules pages; the home page naming four games. Then the release,
+after the SQL reaches `mazo`.
+
+**Done when:** Punto y Fama is in production, and `estado.md` says so.
+
+---
+
 ## After
 
 Not scheduled, and not to be started before Milestone 3 — online play:
