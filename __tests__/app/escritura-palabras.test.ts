@@ -53,10 +53,20 @@ describe('writing a try', () => {
     expect(borrar(e).letras).toEqual(e.letras)
   })
 
-  it('a full row keeps the cursor so a letter can be retyped', () => {
+  it('a row filled by typing ignores more letters, as the puzzle does', () => {
+    const e = teclear(escrituraVacia(5), 'FLECO')
+    expect(e.cursor).toBeNull()
+    expect(palabraDe(teclear(e, 'XYZ'))).toBe('FLECO')
+    // ⌫ takes the last letter back.
+    const b = borrar(e)
+    expect(b.letras).toEqual(['F', 'L', 'E', 'C', null])
+    expect(b.cursor).toBe(4)
+  })
+
+  it('touching a tile of a full row retypes that letter', () => {
     let e = teclear(escrituraVacia(5), 'FLECO')
     e = escribir(mover(e, 1), 'R')
     expect(palabraDe(e)).toBe('FRECO')
-    expect(e.cursor).toBe(1)
+    expect(e.cursor).toBeNull()
   })
 })

@@ -13,7 +13,7 @@
  * player's view, which the server built.
  */
 
-import { Crown, Delete, LogOut, Trophy } from 'lucide-react'
+import { ChevronDown, Crown, Delete, LogOut, Trophy } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type {
   Color,
@@ -33,6 +33,7 @@ import {
   completa,
   escribir,
   escrituraVacia,
+  cursorDe,
   mover,
   palabraDe,
 } from './escritura'
@@ -182,8 +183,8 @@ export function TableroPalabras({
       if (!puedeEscribir) return
       if (valor === 'ENVIAR') return void enviar()
       if (valor === 'BORRAR') return setEscritura(borrar)
-      if (valor === 'IZQUIERDA') return setEscritura((e) => mover(e, e.cursor - 1))
-      if (valor === 'DERECHA') return setEscritura((e) => mover(e, e.cursor + 1))
+      if (valor === 'IZQUIERDA') return setEscritura((e) => mover(e, e.cursor === null ? cursorDe(e) : e.cursor - 1))
+      if (valor === 'DERECHA') return setEscritura((e) => mover(e, cursorDe(e) + 1))
       setEscritura((e) => escribir(e, valor))
     },
     [puedeEscribir, enviar],
@@ -565,16 +566,7 @@ function Llegada({
 
       <Clasificacion puestos={vista.clasificacion} nombres={nombres} propio={propio.asiento} total={vista.total} />
 
-      <details className="text-sm">
-        <summary className="text-muted-foreground cursor-pointer">Tus palabras</summary>
-        <ol className="mt-2 grid grid-cols-2 gap-x-4 gap-y-1 font-mono">
-          {propio.terminadas.map((p, i) => (
-            <li key={i} className={cn(!p.acertada && 'text-red-600 dark:text-red-400')}>
-              {i + 1}. {p.palabra} {p.acertada ? `· ${p.intentos.length}` : '· ✗'}
-            </li>
-          ))}
-        </ol>
-      </details>
+      <PalabrasJugadas vista={vista} nombres={nombres} />
 
       {soyHost && !vista.cerrada && faltan > 0 && (
         <button
@@ -585,6 +577,135 @@ function Llegada({
           Cerrar la carrera ahora
         </button>
       )}
+    </div>
+  )
+}
+
+/**
+ * How every word went (Phase 88): yours, and — now that you have finished —
+ * each rival's, one tab per player. Touching a word opens its tries as they
+ * were played. A rival still racing shows only the words they have ended.
+ */
+function PalabrasJugadas({
+  vista,
+  nombres,
+}: {
+  vista: VistaPalabras
+  nombres: ReadonlyMap<number, string>
+}) {
+  const propio = vista.propio!
+  const jugadores = [
+    { asiento: propio.asiento, nombre: 'Tú', palabras: propio.terminadas },
+    ...vista.rivales
+      .filter((r) => r.palabras !== null)
+      .map((r) => ({
+        asiento: r.asiento,
+        nombre: nombres.get(r.asiento) ?? '—',
+        palabras: r.palabras!,
+      })),
+  ]
+  const [quien, setQuien] = useState(propio.asiento)
+  const [abierta, setAbierta] = useState<number | null>(null)
+  const elegido = jugadores.find((j) => j.asiento === quien) ?? jugadores[0]
+
+  return (
+    <section className="flex flex-col gap-3">
+      <h3 className="text-muted-foreground text-xs font-medium tracking-widest uppercase">
+        Las palabras
+      </h3>
+      {jugadores.length > 1 && (
+        <div className="flex gap-1.5 overflow-x-auto pb-1" role="tablist">
+          {jugadores.map((j) => (
+            <button
+              key={j.asiento}
+              type="button"
+              role="tab"
+              aria-selected={j.asiento === elegido.asiento}
+              onClick={() => {
+                setQuien(j.asiento)
+                setAbierta(null)
+              }}
+              className={cn(
+                'shrink-0 rounded-full border px-3 py-1 text-sm transition-colors',
+                j.asiento === elegido.asiento
+                  ? 'bg-primary text-primary-foreground border-primary'
+                  : 'hover:bg-accent',
+              )}
+            >
+              {j.nombre}
+            </button>
+          ))}
+        </div>
+      )}
+      {elegido.palabras.length === 0 ? (
+        <p className="text-muted-foreground text-sm">Todavía no termina ninguna palabra.</p>
+      ) : (
+        <ol className="flex flex-col gap-px overflow-hidden rounded-lg border">
+          {elegido.palabras.map((p, i) => {
+            const abiertaAqui = abierta === i
+            return (
+              <li key={i} className="bg-card">
+                <button
+                  type="button"
+                  onClick={() => setAbierta(abiertaAqui ? null : i)}
+                  aria-expanded={abiertaAqui}
+                  className="hover:bg-accent flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm"
+                >
+                  <span className="text-muted-foreground w-6 tabular-nums">{i + 1}.</span>
+                  <span
+                    className={cn(
+                      'flex-1 font-mono tracking-wider',
+                      !p.acertada && 'text-red-600 dark:text-red-400',
+                    )}
+                  >
+                    {p.palabra}
+                  </span>
+                  <span className="text-muted-foreground text-xs">
+                    {p.acertada
+                      ? `${p.intentos.length} ${p.intentos.length === 1 ? 'intento' : 'intentos'}`
+                      : 'no la adivinó'}
+                  </span>
+                  <ChevronDown
+                    className={cn(
+                      'text-muted-foreground size-4 transition-transform',
+                      abiertaAqui && 'rotate-180',
+                    )}
+                    aria-hidden
+                  />
+                </button>
+                {abiertaAqui && (
+                  <div className="animate-in fade-in flex justify-center px-4 pt-1 pb-3">
+                    <MiniGrilla intentos={p.intentos} />
+                  </div>
+                )}
+              </li>
+            )
+          })}
+        </ol>
+      )}
+    </section>
+  )
+}
+
+/** A word's tries, small: letters and colours, as they were played. */
+function MiniGrilla({ intentos }: { intentos: readonly Intento[] }) {
+  return (
+    <div className="flex flex-col gap-1">
+      {intentos.map((intento, f) => (
+        <div key={f} className="flex gap-1">
+          {[...intento.palabra].map((letra, i) => (
+            <span
+              key={i}
+              className={cn(
+                'flex size-7 items-center justify-center rounded-sm text-xs font-bold',
+                FONDO[intento.colores[i]],
+              )}
+            >
+              {letra}
+            </span>
+          ))}
+        </div>
+      ))}
     </div>
   )
 }

@@ -3400,7 +3400,7 @@ says «Escribe un número entero de 1 a 100.» otherwise and goes back. In
 the browser: 23 typed and kept, 150 refused, the shortcuts as before.
 Server test: 23 and 7 kept, 0, 101, 2.5 and −3 ignored, a bag of 7 dealt.
 
-### Phase 88 — Volver a ver cómo salió cada palabra
+### Phase 88 — Volver a ver cómo salió cada palabra ✅
 On the finish screen, «Tus palabras» lists each word with its tries
 («1. SEGAR · 5»). **Touching a word opens its tries again** — the rows as
 they were played, letters and colours, small — so «in five» can be seen
@@ -3417,6 +3417,17 @@ nothing changes: rivals are colours, never letters.
 letters and colours, a missed word included; each rival's ended words open
 the same way, and a rival's new word appears as they end it; and a player
 still racing receives no rival letter in any response.
+
+**Done.** `VistaDeRival.palabras` carries a rival's ended words, letters
+and all, only when `yaTermino` holds for the player looking — every word
+ended, or the race closed; otherwise null. The finish screen's «Las
+palabras» has a tab per player (Tú, then each rival) and each word opens
+to a small grid of its tries. In the browser: my three words opened, Leo's
+tab showing only AGRIO in three tries while his MENTA on the next word
+stayed out; Leo's own response, still racing, held none of my letters.
+Found on the way: a row filled by typing now ignores further letters, as
+the puzzle does (the cursor leaves the row), and only a touched tile is
+retyped — fast typing during a flip had been overwriting the last tile.
 
 ### Phase 89 — Modalidad con tiempo
 A second way to race, chosen in the lobby: **«Palabras límite»** — today's

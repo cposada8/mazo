@@ -176,6 +176,35 @@ describe('the race (Phase 83)', () => {
     expect(r.ok && r.estado.tableros[1].terminoEn).toBe(90_000)
   })
 
+  it('once you finish, the rivals\' ended words come with their letters, never the one in play (Phase 88)', () => {
+    let estado = carrera(2, [0, 1])
+    const jugar = (asiento: number, palabra: string) => {
+      const r = intentar(estado, asiento, palabra, EN_CARRERA + 1000)
+      if (!r.ok) throw new Error(r.code)
+      estado = r.estado
+    }
+    // Seat 1 solves the first word and tries the second; seat 0 is still racing.
+    jugar(1, estado.bolsa[0])
+    const tanteo = errados(estado.bolsa[1])[0]
+    jugar(1, tanteo)
+    expect(vistaPalabras(estado, 0, EN_CARRERA + 2000).rivales[0].palabras).toBeNull()
+
+    // Seat 0 finishes: now it sees seat 1's ended word, letters and all.
+    jugar(0, estado.bolsa[0])
+    jugar(0, estado.bolsa[1])
+    const vista = vistaPalabras(estado, 0, EN_CARRERA + 2000)
+    expect(vista.rivales[0].palabras).toEqual([
+      { palabra: estado.bolsa[0], acertada: true, intentos: [expect.objectContaining({ palabra: estado.bolsa[0] })] },
+    ])
+    // Seat 1's word in play stays colours only.
+    expect(JSON.stringify(vista.rivales[0].palabras)).not.toContain(tanteo)
+    expect(vista.rivales[0].colores).toHaveLength(1)
+
+    // And seat 1, still racing, sees none of seat 0's letters.
+    const suya = vistaPalabras(estado, 1, EN_CARRERA + 2000)
+    expect(suya.rivales[0].palabras).toBeNull()
+  })
+
   it('a view never holds a word its player has not ended, nor a rival letter', () => {
     let estado = carrera(5, [0, 1])
     // Seat 1 solves two words and tries the third.

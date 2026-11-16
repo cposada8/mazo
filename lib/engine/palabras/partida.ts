@@ -184,6 +184,15 @@ export function termino(tablero: Tablero): boolean {
   return tablero.terminoEn !== null
 }
 
+/**
+ * This player can play no more: they ended every word, or the race is over
+ * for everyone. What may be shown to a player who has finished — the rivals'
+ * letters (Phase 88) — hangs on this.
+ */
+export function yaTermino(estado: EstadoPalabras, tablero: Tablero, ahora: number): boolean {
+  return termino(tablero) || cerrada(estado, ahora)
+}
+
 /** A player's time: when they finished, plus two minutes per missed word. */
 export function tiempoDe(tablero: Tablero): number | null {
   if (tablero.terminoEn === null) return null

@@ -10,8 +10,11 @@
 export type Escritura = {
   /** One slot per letter of the word; null is an empty tile. */
   readonly letras: readonly (string | null)[]
-  /** The tile the next letter goes into. */
-  readonly cursor: number
+  /**
+   * The tile the next letter goes into. Null once typing has filled the row:
+   * further letters are ignored, as in the puzzle, until a tile is touched.
+   */
+  readonly cursor: number | null
 }
 
 export function escrituraVacia(largo: number): Escritura {
@@ -26,10 +29,9 @@ function siguienteVacia(letras: readonly (string | null)[], desde: number): numb
 }
 
 export function escribir(e: Escritura, letra: string): Escritura {
+  if (e.cursor === null) return e
   const letras = e.letras.map((l, i) => (i === e.cursor ? letra : l))
-  // A full row keeps the cursor where it was, so a letter can be retyped.
-  const cursor = siguienteVacia(letras, e.cursor) ?? e.cursor
-  return { letras, cursor }
+  return { letras, cursor: siguienteVacia(letras, e.cursor) }
 }
 
 /**
@@ -37,6 +39,11 @@ export function escribir(e: Escritura, letra: string): Escritura {
  * it steps left and clears that one, as typing backwards always has.
  */
 export function borrar(e: Escritura): Escritura {
+  // A full row typed to the end: ⌫ takes the last letter back.
+  if (e.cursor === null) {
+    const ultima = e.letras.length - 1
+    return { letras: e.letras.map((l, i) => (i === ultima ? null : l)), cursor: ultima }
+  }
   if (e.letras[e.cursor] !== null) {
     return { letras: e.letras.map((l, i) => (i === e.cursor ? null : l)), cursor: e.cursor }
   }
@@ -45,8 +52,14 @@ export function borrar(e: Escritura): Escritura {
   return { letras: e.letras.map((l, i) => (i === cursor ? null : l)), cursor }
 }
 
+/** Touch a tile (or an arrow key): the next letter goes there, even over one. */
 export function mover(e: Escritura, cursor: number): Escritura {
   return { ...e, cursor: Math.max(0, Math.min(e.letras.length - 1, cursor)) }
+}
+
+/** Where an arrow key starts from when the cursor is off the row. */
+export function cursorDe(e: Escritura): number {
+  return e.cursor ?? e.letras.length - 1
 }
 
 export function completa(e: Escritura): boolean {
