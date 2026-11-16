@@ -195,7 +195,10 @@ function MesaDelServidor({
       cartasOscuras={leerBaraja()}
       galeriaDeComodines={galeriaDeComodines}
       nombresDeAsientos={juego.nombresDeAsientos}
-      segundosBot={juego.reloj.segundos}
+      segundosBot={juego.segundosBot}
+      // Only the host's menu gets the buttons (Phase 98); everyone else sees
+      // the pace, read-only, and sees it change.
+      onSegundosBot={juego.soyHost ? (segundos) => void juego.cambiarRitmo(segundos) : undefined}
       onSalir={onSalir}
     />
   )

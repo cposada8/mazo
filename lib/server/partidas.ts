@@ -569,6 +569,37 @@ export async function actualizarAjustes(opciones: {
   return { ok: true, partida: await recargar(acceso.fila.id) }
 }
 
+/** The bots' thinking times the menu offers (as the lobby does). */
+export const SEGUNDOS_DE_BOT = [1, 2, 3, 5] as const
+
+/**
+ * The bots' thinking time, the host's to change at any point (Phase 98) —
+ * in the lobby, and once dealt too, which no other setting allows: pacing
+ * is not a rule (Phase 28). The server reads it when it next works out a
+ * bot's deadline, so it takes effect from the turn in play on.
+ */
+export async function cambiarRitmo(opciones: {
+  codigo: string
+  secreto: string
+  segundosBot: number
+}): Promise<ResultadoDeLobby> {
+  const fila = await prisma.partida.findUnique({
+    where: { codigo: limpiarCodigo(opciones.codigo) },
+    include: INCLUIR_ASIENTOS,
+  })
+  if (!fila) return { ok: false, code: 'NO_EXISTE' }
+  const host = fila.asientos.find((asiento) => asiento.esHost)
+  if (!host || host.secreto !== opciones.secreto) return { ok: false, code: 'NO_ERES_EL_HOST' }
+  if (fila.fase === 'terminada') return { ok: false, code: 'YA_EMPEZO' }
+  if ((SEGUNDOS_DE_BOT as readonly number[]).includes(opciones.segundosBot)) {
+    await prisma.partida.update({
+      where: { id: fila.id },
+      data: { segundosBot: opciones.segundosBot },
+    })
+  }
+  return { ok: true, partida: await recargar(fila.id) }
+}
+
 /** Rename yourself at the table. Your own seat only — found by secreto. */
 export async function renombrarAsiento(opciones: {
   codigo: string

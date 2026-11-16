@@ -335,9 +335,7 @@ defaults become the host's to change, in `roadmap.md`:
 2. ~~Phase 95 — El cierre, a elección del host.~~ ✅ On dev; `95-espera.sql` on `mazo-dev` only.
 3. ~~Phase 96 — Palabras encadenadas.~~ ✅ On dev; `96-encadenadas.sql` on `mazo-dev` only.
 4. ~~Phase 97 — La suma de intentos.~~ ✅ On dev.
-5. Phase 98 — El ritmo de los bots, en plena partida: a Carioca bug — at a
-   table the server referees, nobody (not even the host) can change the
-   bots' thinking time once dealt.
+5. ~~Phase 98 — El ritmo de los bots, en plena partida.~~ ✅ On dev: the host changes it mid-partida.
 
 **Then — Milestone 10, Punto y Fama** (the owner, 2026-11-16): the fourth
 game, guessing a number of n digits in puntos and famas. Its rules are

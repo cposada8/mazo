@@ -3693,7 +3693,7 @@ on a rival's card, and under every column of the finish table. In the
 browser: two tries for me and three for Leo on the cards, then 3 and 3 in
 the table. A test adds a chained try into a rival's six.
 
-### Phase 98 — El ritmo de los bots, en plena partida (bug de Carioca)
+### Phase 98 — El ritmo de los bots, en plena partida (bug de Carioca) ✅
 *The owner, 2026-11-16:* once a Carioca partida has started, the bots'
 thinking time should still be changeable — to speed a partida up or slow
 it down — and today **nobody can change it, the host included**: the menu
@@ -3717,6 +3717,20 @@ on its next read. El Mentiroso's table gets checked for the same gap.
 changes the bots' time from the menu mid-ronda and the next bot turn uses
 it, on every screen; the other person sees the new value and cannot change
 it; a table of bots alone still changes it as before.
+
+**Done.** A new lobby action, `ritmo`, and `cambiarRitmo` on the server:
+host only, taken in the lobby and once dealt (not once the partida is
+over), only the menu's values (1, 2, 3, 5 s). The server reads
+`segundosBot` whenever it works out a bot's deadline, so the change rules
+from the turn in play. The table's answer now says who hosts; the remote
+table hands the menu its setter only on the host's phone, shows the change
+at once and confirms it on the next read; every other seat sees the value,
+read-only, change. **Found on the way:** the shared table's menu showed the
+turn in play's clock as the bots' time — 45 s on a person's turn — and now
+shows the bots' own. El Mentiroso has no pacing control on its table, so it
+had no such gap. In the browser: a Carioca table of two people and three
+bots, the host's menu enabled, 5 s chosen, Leo's next read saying 5 and
+naming the host. 3 tests, one of them a bot's deadline following the pace.
 
 ---
 

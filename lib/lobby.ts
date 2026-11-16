@@ -121,6 +121,11 @@ export type Accion =
       readonly verHistorial?: boolean
     }
   | { readonly tipo: 'renombrar'; readonly alias: string }
+  /**
+   * The bots' thinking time, changed by the host **mid-partida** too (Phase
+   * 98): pacing, not a rule, so it is the one setting a dealt partida takes.
+   */
+  | { readonly tipo: 'ritmo'; readonly segundosBot: number }
   | { readonly tipo: 'empezar'; readonly seed: string }
   /** Leave for good (Phase 37). Only ever sent because Salir was pressed. */
   | { readonly tipo: 'abandonar' }
