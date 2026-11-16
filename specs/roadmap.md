@@ -3606,6 +3606,31 @@ until the last player finishes, leaves, or the host closes it; one with 10
 minutes closes 10 minutes after the first finish; the lobby shows the
 setting; and an old race keeps its 30 minutes.
 
+### Phase 96 — El ritmo de los bots, en plena partida (bug de Carioca)
+*The owner, 2026-11-16:* once a Carioca partida has started, the bots'
+thinking time should still be changeable — to speed a partida up or slow
+it down — and today **nobody can change it, the host included**: the menu
+says «lo decide el host» and every button is disabled.
+
+**Why, found while writing this down:** Phase 28 made pacing changeable
+mid-partida, and it is — on a table that plays in the browser (only the
+host and bots), where `Juego` hands the menu its own setter. A table the
+server referees (more than one person) is fed by `MesaDelServidor`, which
+hands the menu no setter at all, so the buttons are disabled for
+everybody; and even with one, the server only takes `ajustes` while the
+lobby is open (`comoHost` answers `YA_EMPEZO` once dealt).
+
+The fix: a host-only action that changes `segundosBot` on a dealt partida
+(the only setting it touches — the rules stay what they were dealt with),
+taking effect from the next bot turn; the remote table hands the setter to
+the host's menu only, and every other seat sees the new value, read-only,
+on its next read. El Mentiroso's table gets checked for the same gap.
+
+**Done when:** at a Carioca table with two people and bots, the host
+changes the bots' time from the menu mid-ronda and the next bot turn uses
+it, on every screen; the other person sees the new value and cannot change
+it; a table of bots alone still changes it as before.
+
 ---
 
 ## After
