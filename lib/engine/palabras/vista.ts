@@ -14,16 +14,21 @@ import {
   type Puesto,
   cerrada,
   clasificacion,
+  finDelTiempo,
   largoDe,
+  modoDe,
   tiempoDe,
   yaTermino,
 } from './partida'
+import type { Modo } from './opciones'
 
 export type VistaDeRival = {
   readonly asiento: number
   /** Words ended so far — the word they are on is this plus one. */
   readonly terminadas: number
   readonly acertadas: number
+  /** They can play no more by their own doing: every word ended (or, Phase 90, no lives). */
+  readonly termino: boolean
   /** The colours of their tries on the word they are on. No letters. */
   readonly colores: readonly (readonly Color[])[]
   /** Their time with penalties, once they finish. */
@@ -38,6 +43,10 @@ export type VistaDeRival = {
 }
 
 export type VistaPalabras = {
+  /** n words, or x minutes for the most words (Phase 89). */
+  readonly modo: Modo
+  /** Epoch ms the time-limit race stops; null for n words. */
+  readonly fin: number | null
   readonly total: number
   /** Letters per word in this race. */
   readonly largo: number
@@ -64,7 +73,10 @@ export function vistaPalabras(
 ): VistaPalabras {
   const mio = estado.tableros.find((t) => t.asiento === asiento) ?? null
   const veoLetras = mio !== null && yaTermino(estado, mio, ahora)
+  const modo = modoDe(estado)
   return {
+    modo,
+    fin: finDelTiempo(estado),
     total: estado.bolsa.length,
     largo: largoDe(estado),
     inicio: estado.inicio,
@@ -73,7 +85,7 @@ export function vistaPalabras(
       terminadas: mio.terminadas,
       intentos: mio.intentos,
       terminoEn: mio.terminoEn,
-      tiempo: tiempoDe(mio),
+      tiempo: tiempoDe(mio, modo),
       retirado: mio.retirado,
     },
     rivales: estado.tableros
@@ -82,8 +94,9 @@ export function vistaPalabras(
         asiento: t.asiento,
         terminadas: t.terminadas.length,
         acertadas: t.terminadas.filter((p) => p.acertada).length,
+        termino: t.terminoEn !== null,
         colores: t.intentos.map((i) => i.colores),
-        tiempo: tiempoDe(t),
+        tiempo: tiempoDe(t, modo),
         retirado: t.retirado,
         palabras: veoLetras ? t.terminadas : null,
       })),

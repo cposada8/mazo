@@ -18,6 +18,22 @@ export const PALABRAS_POR_DEFECTO = 10
 export const MIN_PALABRAS = 1
 export const MAX_PALABRAS = 100
 
+/** Two ways to race (Phase 89): n words against the clock, or x minutes for the most words. */
+export const MODOS = ['palabras', 'tiempo'] as const
+export type Modo = (typeof MODOS)[number]
+export function modoValido(valor: unknown): Modo {
+  return valor === 'tiempo' ? 'tiempo' : 'palabras'
+}
+
+/** The time mode's minutes: shortcuts, the default, and what may be typed. */
+export const OPCIONES_DE_MINUTOS = [3, 5, 10, 15] as const
+export const MINUTOS_POR_DEFECTO = 5
+export const MIN_MINUTOS = 1
+export const MAX_MINUTOS = 60
+export function esNumeroDeMinutos(valor: unknown): valor is number {
+  return Number.isInteger(valor) && (valor as number) >= MIN_MINUTOS && (valor as number) <= MAX_MINUTOS
+}
+
 /** A number of words the lobby accepts: a whole number from 1 to 100. */
 export function esNumeroDePalabras(valor: unknown): valor is number {
   return Number.isInteger(valor) && (valor as number) >= MIN_PALABRAS && (valor as number) <= MAX_PALABRAS

@@ -31,9 +31,13 @@ import { botDeJuego, botPorDefecto, botsDeJuego } from '@/lib/bots-de-juego'
 import { ASIENTOS, type Juego, NOMBRE_DE_JUEGO, tieneBots } from '@/lib/juegos'
 import {
   LARGOS,
+  MAX_MINUTOS,
   MAX_PALABRAS,
+  MIN_MINUTOS,
   MIN_PALABRAS,
+  MODOS,
   MS_CASTIGO,
+  OPCIONES_DE_MINUTOS,
   OPCIONES_DE_PALABRAS,
 } from '@/lib/engine/palabras/opciones'
 import { OPCIONES_DE_BALAS } from '@/lib/engine/mentiroso'
@@ -135,6 +139,8 @@ export function Lobby({
               : {}),
             ...(accion.palabras !== undefined ? { palabras: accion.palabras } : {}),
             ...(accion.largo !== undefined ? { largo: accion.largo } : {}),
+            ...(accion.modo !== undefined ? { modo: accion.modo } : {}),
+            ...(accion.minutos !== undefined ? { minutos: accion.minutos } : {}),
             ...(accion.verDescarte !== undefined
               ? { verDescarte: accion.verDescarte }
               : {}),
@@ -348,12 +354,16 @@ export function Lobby({
             partida={partida}
             onPalabras={(palabras) => ajustar({ palabras })}
             onLargo={(largo) => ajustar({ largo })}
+            onModo={(modo) => ajustar({ modo })}
+            onMinutos={(minutos) => ajustar({ minutos })}
           />
         ) : (
           <section className="text-muted-foreground flex flex-col gap-1 text-sm">
             <h2 className="text-xs font-medium tracking-widest uppercase">Lo que escogió el host</h2>
             <p>
-              {partida.palabras} palabras de {partida.largo} letras
+              {partida.modo === 'tiempo'
+                ? `Tiempo límite: ${partida.minutos} min, palabras de ${partida.largo} letras`
+                : `${partida.palabras} palabras de ${partida.largo} letras`}
             </p>
           </section>
         )
@@ -716,28 +726,60 @@ function AjustesMentiroso({
   )
 }
 
-/** Palabras' settings (Phase 84): how many words, and how long. */
+/**
+ * Palabras' settings: the way to race (Phase 89), then how many words or how
+ * many minutes, and how long the words are.
+ */
 function AjustesPalabras({
   partida,
   onPalabras,
   onLargo,
+  onModo,
+  onMinutos,
 }: {
   partida: NonNullable<VistaDeLobby['partida']>
   onPalabras: (palabras: number) => void
   onLargo: (largo: number) => void
+  onModo: (modo: 'palabras' | 'tiempo') => void
+  onMinutos: (minutos: number) => void
 }) {
   return (
     <section className="flex flex-col gap-5">
-      <NumeroConAtajos
-        titulo="Cuántas palabras"
-        detalle="Las mismas palabras, en el mismo orden, para todos."
-        atajos={OPCIONES_DE_PALABRAS}
-        valor={partida.palabras}
-        min={MIN_PALABRAS}
-        max={MAX_PALABRAS}
-        unidad="palabras"
-        onCambiar={onPalabras}
+      <Escogencia
+        titulo="Modalidad"
+        detalle={
+          partida.modo === 'tiempo'
+            ? 'Gana quien resuelve más palabras antes de que se acabe el tiempo.'
+            : 'Gana quien termina primero todas las palabras.'
+        }
+        opciones={MODOS}
+        valor={partida.modo}
+        etiqueta={(modo) => (modo === 'tiempo' ? 'Tiempo límite' : 'Palabras límite')}
+        onCambiar={onModo}
       />
+      {partida.modo === 'tiempo' ? (
+        <NumeroConAtajos
+          titulo="Minutos"
+          detalle="Las mismas palabras, en el mismo orden, para todos: cada uno llega hasta donde alcance."
+          atajos={OPCIONES_DE_MINUTOS}
+          valor={partida.minutos}
+          min={MIN_MINUTOS}
+          max={MAX_MINUTOS}
+          unidad="minutos"
+          onCambiar={onMinutos}
+        />
+      ) : (
+        <NumeroConAtajos
+          titulo="Cuántas palabras"
+          detalle="Las mismas palabras, en el mismo orden, para todos."
+          atajos={OPCIONES_DE_PALABRAS}
+          valor={partida.palabras}
+          min={MIN_PALABRAS}
+          max={MAX_PALABRAS}
+          unidad="palabras"
+          onCambiar={onPalabras}
+        />
+      )}
       {LARGOS.length > 1 && (
         <Escogencia
           titulo="Letras por palabra"

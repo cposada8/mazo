@@ -93,6 +93,37 @@ describe('Palabras through the platform', () => {
     expect((await estadoDe(codigo)).bolsa).toHaveLength(7)
   })
 
+  it('a time-limit race: the minutes the host chose, every answer dealt, and the race over when the time is', async () => {
+    const creada = await partidas.crearPartida({
+      secreto: 'tita',
+      alias: 'tita',
+      juego: 'palabras',
+      config: CONFIG_POR_DEFECTO,
+    })
+    const codigo = creada.codigo
+    await partidas.actualizarAjustes({ codigo, secreto: 'tita', modo: 'tiempo', minutos: 2 })
+    await partidas.actualizarAjustes({ codigo, secreto: 'tita', minutos: 61 })
+    await partidas.actualizarAjustes({ codigo, secreto: 'tita', modo: 'otro' })
+    const lobby = (await partidas.cargarPorCodigo(codigo))!
+    expect(lobby).toMatchObject({ modo: 'tiempo', minutos: 2 })
+
+    await partidas.unirse({ codigo, secreto: 'tomi', alias: 'tomi' })
+    await partidas.empezar({ codigo, secreto: 'tita', seed: 'reloj' })
+    const estado = await estadoDe(codigo)
+    expect(estado).toMatchObject({ modo: 'tiempo', msLimite: 120_000 })
+    expect(estado.bolsa.length).toBeGreaterThan(1000)
+
+    const r = await carrera.intentarEnCarrera(codigo, 'tomi', estado.bolsa[0], estado.inicio + 5_000)
+    expect(r.ok && r.mesa.vista).toMatchObject({ modo: 'tiempo', fin: estado.inicio + 120_000 })
+    const tarde = await carrera.intentarEnCarrera(codigo, 'tita', estado.bolsa[0], estado.inicio + 120_000)
+    expect(tarde).toEqual({ ok: false, code: 'CERRADA' })
+
+    const fin = await carrera.leerCarrera(codigo, 'tita', estado.inicio + 120_001)
+    expect(fin.ok && fin.mesa.vista.cerrada).toBe(true)
+    expect(fin.ok && fin.mesa.vista.clasificacion.map((p) => p.acertadas)).toEqual([1, 0])
+    expect((await partidas.cargarPorCodigo(codigo))!.fase).toBe('terminada')
+  })
+
   it('refuses a number of words the lobby does not offer', async () => {
     const { codigo } = await carreraDeDos(3)
     const r = await partidas.actualizarAjustes({ codigo, secreto: 'ana', palabras: 999 })

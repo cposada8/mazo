@@ -16,6 +16,7 @@ import { aceptadasDe, respuestasDe } from './listas'
 import {
   INTENTOS_POR_PALABRA,
   LARGO_POR_DEFECTO,
+  type Modo,
   MS_CASTIGO,
   MS_CUENTA_ATRAS,
   MS_HASTA_CERRAR,
@@ -36,6 +37,8 @@ export type PalabraTerminada = {
   readonly palabra: string
   readonly acertada: boolean
   readonly intentos: readonly Intento[]
+  /** Ms from the race's start to the try that ended it (Phase 89's tie-break). */
+  readonly en?: number
 }
 
 export type Tablero = {
@@ -58,6 +61,10 @@ export type EstadoPalabras = {
   readonly tableros: readonly Tablero[]
   /** Epoch ms the race was closed by the host, if it was. */
   readonly cerradaEn: number | null
+  /** How this race is won (Phase 89). Absent in races dealt before: n words. */
+  readonly modo?: Modo
+  /** The time mode's length, ms from `inicio`. */
+  readonly msLimite?: number
 }
 
 export type ErrorDePalabras =
@@ -111,6 +118,15 @@ export function sacarBolsa(seed: string, cuantas: number, largo: number = LARGO_
   return shuffle(respuestas, createRng(`palabras${sal}:${seed}`)).slice(0, n)
 }
 
+export function modoDe(estado: EstadoPalabras): Modo {
+  return estado.modo ?? 'palabras'
+}
+
+/** Epoch ms when a time-limit race stops for everyone; null for n words. */
+export function finDelTiempo(estado: EstadoPalabras): number | null {
+  return modoDe(estado) === 'tiempo' && estado.msLimite ? estado.inicio + estado.msLimite : null
+}
+
 /** How many letters this race's words have. */
 export function largoDe(estado: EstadoPalabras): number {
   return [...estado.bolsa[0]].length
@@ -157,13 +173,25 @@ export function empezarPalabras(opciones: {
   asientos: readonly number[]
   /** When the race is dealt; the first word opens a 3-2-1 later. */
   ahora: number
+  /** n words (the default), or x minutes for the most words. */
+  modo?: Modo
+  /** The time mode's minutes. */
+  minutos?: number
 }): EstadoPalabras {
+  const largo = opciones.largo ?? LARGO_POR_DEFECTO
+  const conTiempo = opciones.modo === 'tiempo'
   return {
     seed: opciones.seed,
-    bolsa: sacarBolsa(opciones.seed, opciones.palabras, opciones.largo),
+    // Against the clock the list is every answer, so nobody runs out.
+    bolsa: sacarBolsa(
+      opciones.seed,
+      conTiempo ? respuestasDe(largo).length : opciones.palabras,
+      largo,
+    ),
     inicio: opciones.ahora + MS_CUENTA_ATRAS,
     tableros: opciones.asientos.map(tableroNuevo),
     cerradaEn: null,
+    ...(conTiempo ? { modo: 'tiempo' as const, msLimite: (opciones.minutos ?? 5) * 60_000 } : {}),
   }
 }
 
@@ -193,10 +221,21 @@ export function yaTermino(estado: EstadoPalabras, tablero: Tablero, ahora: numbe
   return termino(tablero) || cerrada(estado, ahora)
 }
 
-/** A player's time: when they finished, plus two minutes per missed word. */
-export function tiempoDe(tablero: Tablero): number | null {
+/**
+ * A player's time: when they finished, plus two minutes per missed word.
+ * Against the clock there is no penalty — the minutes are the limit — and
+ * the time that counts is when they solved their last word.
+ */
+export function tiempoDe(tablero: Tablero, modo: Modo = 'palabras'): number | null {
+  if (modo === 'tiempo') return ultimaAcertadaEn(tablero)
   if (tablero.terminoEn === null) return null
   return tablero.terminoEn + fallosDe(tablero) * MS_CASTIGO
+}
+
+/** When this player solved their most recent word, ms from the start. */
+export function ultimaAcertadaEn(tablero: Tablero): number | null {
+  const acertadas = tablero.terminadas.filter((p) => p.acertada && p.en !== undefined)
+  return acertadas.length > 0 ? acertadas[acertadas.length - 1].en! : null
 }
 
 export function fallosDe(tablero: Tablero): number {
@@ -219,11 +258,15 @@ function intentosTotales(tablero: Tablero): number {
  */
 export function cerrada(estado: EstadoPalabras, ahora: number): boolean {
   if (estado.cerradaEn !== null) return true
+  const fin = finDelTiempo(estado)
+  if (fin !== null && ahora >= fin) return true
   const enCarrera = estado.tableros.filter((t) => !t.retirado)
   if (enCarrera.length > 0 && enCarrera.every(termino)) return true
   if (estado.tableros.length > 0 && estado.tableros.every((t) => t.retirado || termino(t))) {
     return true
   }
+  // The half-hour wait for stragglers is the n-words race's; time has its own end.
+  if (fin !== null) return false
   const primero = Math.min(
     ...estado.tableros.filter(termino).map((t) => estado.inicio + t.terminoEn!),
   )
@@ -269,7 +312,7 @@ export function intentar(
   let nuevo: Tablero = { ...tablero, intentos }
   let terminada: PalabraTerminada | null = null
   if (fin) {
-    terminada = { palabra: respuesta, acertada: acerto, intentos }
+    terminada = { palabra: respuesta, acertada: acerto, intentos, en: ahora - estado.inicio }
     const terminadas = [...tablero.terminadas, terminada]
     nuevo = {
       ...tablero,
@@ -294,7 +337,10 @@ export type Puesto = {
   readonly asiento: number
   readonly lugar: number
   readonly termino: boolean
-  /** Finished time with penalties, ms; null if they did not finish. */
+  /**
+   * n words: finished time with penalties, ms; null if they did not finish.
+   * Time limit: when they solved their last word; null if they solved none.
+   */
   readonly tiempo: number | null
   readonly acertadas: number
   readonly fallos: number
@@ -307,10 +353,11 @@ export type Puesto = {
  * fewer tries; then the rest by words solved, then by words ended.
  */
 export function clasificacion(estado: EstadoPalabras): Puesto[] {
+  const modo = modoDe(estado)
   const filas = estado.tableros.map((t) => ({
     asiento: t.asiento,
     termino: termino(t),
-    tiempo: tiempoDe(t),
+    tiempo: tiempoDe(t, modo),
     acertadas: acertadasDe(t),
     fallos: fallosDe(t),
     intentos: intentosTotales(t),
@@ -318,6 +365,14 @@ export function clasificacion(estado: EstadoPalabras): Puesto[] {
     retirado: t.retirado,
   }))
   filas.sort((a, b) => {
+    // Against the clock: the most words solved, then who got there first.
+    if (modo === 'tiempo') {
+      return (
+        b.acertadas - a.acertadas ||
+        (a.tiempo ?? Infinity) - (b.tiempo ?? Infinity) ||
+        a.intentos - b.intentos
+      )
+    }
     if (a.termino !== b.termino) return a.termino ? -1 : 1
     if (a.termino) return a.tiempo! - b.tiempo! || a.intentos - b.intentos
     return b.acertadas - a.acertadas || b.terminadas - a.terminadas || a.intentos - b.intentos

@@ -25,7 +25,9 @@ import { OPCIONES_DE_BALAS, empezarMentiroso } from '@/lib/engine/mentiroso'
 import {
   LARGOS,
   cerrada,
+  esNumeroDeMinutos,
   esNumeroDePalabras,
+  modoValido,
   empezarPalabras,
   type EstadoPalabras,
   sumarJugador,
@@ -64,6 +66,8 @@ type FilaPartida = {
   balas: number
   palabras: number
   largo: number
+  modo: string
+  minutos: number
   verDescarte: boolean
   verHistorial: boolean
   asientos: {
@@ -95,6 +99,8 @@ function publicar(fila: FilaPartida): PartidaGuardada {
     balas: fila.balas,
     palabras: fila.palabras,
     largo: fila.largo,
+    modo: modoValido(fila.modo),
+    minutos: fila.minutos,
     verDescarte: fila.verDescarte,
     verHistorial: fila.verHistorial,
     asientos: [...fila.asientos]
@@ -500,6 +506,8 @@ export async function actualizarAjustes(opciones: {
   balas?: number
   palabras?: number
   largo?: number
+  modo?: string
+  minutos?: number
   verDescarte?: boolean
   verHistorial?: boolean
 }): Promise<ResultadoDeLobby> {
@@ -529,6 +537,8 @@ export async function actualizarAjustes(opciones: {
       ...(opciones.largo !== undefined && (LARGOS as readonly number[]).includes(opciones.largo)
         ? { largo: opciones.largo }
         : {}),
+      ...(opciones.modo === 'palabras' || opciones.modo === 'tiempo' ? { modo: opciones.modo } : {}),
+      ...(esNumeroDeMinutos(opciones.minutos) ? { minutos: opciones.minutos } : {}),
       ...(opciones.verDescarte !== undefined
         ? { verDescarte: opciones.verDescarte }
         : {}),
@@ -604,6 +614,8 @@ export async function empezar(opciones: {
           largo: fila.largo,
           asientos: fila.asientos.filter((a) => !a.esBot).map((a) => a.indice),
           ahora: Date.now(),
+          modo: modoValido(fila.modo),
+          minutos: fila.minutos,
         })
       : juego === 'mentiroso'
       ? empezarMentiroso({ jugadores: fila.asientos.length, seed: opciones.seed, balas: fila.balas })

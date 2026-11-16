@@ -95,6 +95,8 @@ async function ejecutar(
           balas: accion.balas,
           palabras: accion.palabras,
           largo: accion.largo,
+          modo: accion.modo,
+          minutos: accion.minutos,
           verDescarte: accion.verDescarte,
           verHistorial: accion.verHistorial,
         }),

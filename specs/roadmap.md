@@ -3429,7 +3429,7 @@ Found on the way: a row filled by typing now ignores further letters, as
 the puzzle does (the cursor leaves the row), and only a touched tile is
 retyped — fast typing during a flip had been overwriting the last tile.
 
-### Phase 89 — Modalidad con tiempo
+### Phase 89 — Modalidad con tiempo ✅
 A second way to race, chosen in the lobby: **«Palabras límite»** — today's
 race, n words, the clock runs — or **«Tiempo límite»**: everyone gets **x
 minutes**, and whoever solves **the most words** in them wins. The words
@@ -3454,6 +3454,20 @@ far down the list as they can.
 **Done when:** two people race 3 minutes from one code, each solves a
 different number of words from the same list, both boards stop at the
 same second, and the ranking is by words solved.
+
+**Done.** The rules went into `palabras-rules.md` first («Two ways to
+race»). The state carries `modo` and `msLimite` (absent in races dealt
+before: n words); a time race's list is every answer of its length; every
+ended word now records `en`, when it ended, which is the tie-break.
+`cerrada` is true at `inicio + msLimite`, and the half-hour wait stays the
+n-words race's. `Partida.modo` and `Partida.minutos`
+(`prisma/sql/89-modo.sql`, on `mazo-dev`). The lobby's «Modalidad» picks
+one, then «Cuántas palabras» or «Minutos» (3/5/10/15 or 1–60 typed). The
+board counts down, turns red in the last 30 s, says how many you have
+solved, and stops itself at zero on the server's clock; rivals read «2 ✓ ·
+va en la 3»; the finish screen ranks by words solved with each one's last
+solve. In the browser: a one-minute race against Leo through the API — he
+solved two, I solved one — both stopped at 0:00 on «Ganó Leo».
 
 ### Phase 90 — Vidas
 For the time mode: each player starts with **k lives** (3 by default, the

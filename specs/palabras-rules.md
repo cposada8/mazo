@@ -89,6 +89,32 @@ current word*, and is cleared when the word changes.
   finished (Mazo's call), whichever comes first. A player who has not
   finished is ranked after everyone who did, by words solved.
 
+## Two ways to race (the owner, 2026-11-15)
+
+The host picks one in the lobby.
+
+- **Palabras límite** — everything in «The race» above: n words, and the
+  clock runs until you end the last one.
+- **Tiempo límite** — everyone gets **x minutes**, and whoever solves **the
+  most words** in them wins. The words are still the same for everyone and
+  in the same order; each player gets as far down the list as they can.
+  - **The minutes** (Mazo's call): 3, 5, 10 or 15 as shortcuts, or any
+    whole number from 1 to 60 typed.
+  - **The list** is every answer of the chosen length, drawn from the seed,
+    so nobody runs out of words.
+  - **A missed word** is revealed and the player moves on, with no time
+    added — the clock is already the limit; what a miss costs is the word
+    not solved, and a life (below).
+  - **Lives** (Phase 90): each player starts with k lives — 3 by default,
+    the host picks 1 to 5, or «sin vidas». Every missed word costs one.
+    With none left the player's race is over: they keep the words they
+    solved, and the others play on until the time is up.
+  - **The end.** When the minutes are up, every board stops at once, on
+    the server's clock, mid-word included. The host can still close it
+    early. A latecomer races on the same clock, so has less time.
+  - **The ranking** (Mazo's call): most words solved; ties go to whoever
+    solved their last word first, then to fewer tries.
+
 ## What you see of the others
 
 - **Their progress, not their letters.** For each rival: which word they
@@ -98,6 +124,10 @@ current word*, and is cleared when the word changes.
   terminó — 3:42»).
 - **No word is shown to anyone before they have ended it themselves.** A
   revealed word stays hidden from players still on it.
+- **Once you have finished** (every word ended, out of lives, the time up or
+  the race closed) you may open any rival's ended words and see their tries
+  in letters (the owner, 2026-11-15): you can no longer play, so it changes
+  nothing. A rival's word in play stays colours only until they end it.
 
 ## Joining
 

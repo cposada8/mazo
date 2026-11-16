@@ -194,7 +194,7 @@ describe('the race (Phase 83)', () => {
     jugar(0, estado.bolsa[1])
     const vista = vistaPalabras(estado, 0, EN_CARRERA + 2000)
     expect(vista.rivales[0].palabras).toEqual([
-      { palabra: estado.bolsa[0], acertada: true, intentos: [expect.objectContaining({ palabra: estado.bolsa[0] })] },
+      { palabra: estado.bolsa[0], acertada: true, en: 1000, intentos: [expect.objectContaining({ palabra: estado.bolsa[0] })] },
     ])
     // Seat 1's word in play stays colours only.
     expect(JSON.stringify(vista.rivales[0].palabras)).not.toContain(tanteo)
@@ -225,3 +225,54 @@ describe('the race (Phase 83)', () => {
     for (const palabra of estado.bolsa.slice(2)) expect(propia).not.toContain(palabra)
   })
 })
+
+describe('the time limit (Phase 89)', () => {
+  const MINUTO = 60_000
+  function contraReloj(asientos = [0, 1], minutos = 3) {
+    return empezarPalabras({ seed: 'reloj', palabras: 10, asientos, ahora: AHORA, modo: 'tiempo', minutos })
+  }
+
+  it('deals every answer, the same order for everyone, and stops everyone when the minutes are up', () => {
+    const estado = contraReloj()
+    expect(estado.bolsa).toHaveLength(respuestasDe(5).length)
+    expect(estado.bolsa).toEqual(sacarBolsa('reloj', respuestasDe(5).length))
+    expect(cerrada(estado, EN_CARRERA + 3 * MINUTO - 1)).toBe(false)
+    expect(cerrada(estado, EN_CARRERA + 3 * MINUTO)).toBe(true)
+    expect(intentar(estado, 0, estado.bolsa[0], EN_CARRERA + 3 * MINUTO)).toEqual({
+      ok: false,
+      code: 'CERRADA',
+    })
+    const vista = vistaPalabras(estado, 0, EN_CARRERA)
+    expect(vista.modo).toBe('tiempo')
+    expect(vista.fin).toBe(EN_CARRERA + 3 * MINUTO)
+  })
+
+  it('a missed word adds no time, and the ranking is by words solved, then who solved the last one first', () => {
+    let estado = contraReloj([0, 1, 2])
+    const jugar = (asiento: number, palabra: string, t: number) => {
+      const r = intentar(estado, asiento, palabra, EN_CARRERA + t)
+      if (!r.ok) throw new Error(r.code)
+      estado = r.estado
+    }
+    const [a, b] = estado.bolsa
+    // Seat 0 solves two words, the second at 50 s; seat 1 two, the second at 40 s.
+    jugar(0, a, 10_000)
+    jugar(0, b, 50_000)
+    jugar(1, a, 20_000)
+    jugar(1, b, 40_000)
+    // Seat 2 misses the first word and solves nothing.
+    for (const p of errados(a).slice(0, 6)) jugar(2, p, 5_000)
+    const puestos = clasificacion(estado)
+    expect(puestos.map((p) => p.asiento)).toEqual([1, 0, 2])
+    expect(puestos[0]).toMatchObject({ acertadas: 2, tiempo: 40_000 })
+    expect(puestos[2]).toMatchObject({ acertadas: 0, tiempo: null, fallos: 1 })
+    expect(cerrada(estado, EN_CARRERA + 60_000)).toBe(false)
+  })
+
+  it('a race dealt before the modes is still n words', () => {
+    const viejo = carrera(2)
+    expect(vistaPalabras(viejo, 0, EN_CARRERA).modo).toBe('palabras')
+    expect(vistaPalabras(viejo, 0, EN_CARRERA).fin).toBeNull()
+  })
+})
+

@@ -123,7 +123,14 @@ export function TableroPalabras({
   const haySacudida = sacudir > 0 || error !== null
 
   const empezo = reloj >= vista.inicio
-  const termine = propio?.terminoEn !== null && propio?.terminoEn !== undefined
+  const conTiempo = vista.modo === 'tiempo'
+  // Against the clock the board stops the instant the time is up, on the
+  // server's clock, without waiting for the next read to say so.
+  const seAcaboElTiempo = vista.fin !== null && reloj >= vista.fin
+  const termine =
+    (propio?.terminoEn !== null && propio?.terminoEn !== undefined) ||
+    vista.cerrada ||
+    seAcaboElTiempo
   const ocupado = enviando || volteando !== null || cierre !== null
   const puedeEscribir = Boolean(propio) && empezo && !termine && !vista.cerrada && !ocupado
 
@@ -136,6 +143,7 @@ export function TableroPalabras({
     (propio?.terminadas.length ?? 0) + (cierre ? 0 : 1),
     total,
   )
+  const resueltas = propio?.terminadas.filter((p) => p.acertada).length ?? 0
 
   // The keyboard knows, per letter, the best colour earned on this word.
   const colorDeTecla = useMemo(() => {
@@ -217,13 +225,16 @@ export function TableroPalabras({
     return () => window.removeEventListener('keydown', alPresionar)
   }, [])
 
-  const tiempoPropio = propio
-    ? propio.tiempo !== null
-      ? propio.tiempo
-      : Math.max(0, reloj - vista.inicio) +
-        propio.terminadas.filter((p) => !p.acertada).length * MS_CASTIGO
-    : 0
   const fallos = propio?.terminadas.filter((p) => !p.acertada).length ?? 0
+  // n words: the time so far with penalties. Against the clock: what is left.
+  const tiempoPropio = conTiempo
+    ? Math.max(0, (vista.fin ?? reloj) - Math.max(reloj, vista.inicio))
+    : propio
+      ? propio.terminoEn !== null
+        ? (propio.tiempo ?? 0)
+        : Math.max(0, reloj - vista.inicio) + fallos * MS_CASTIGO
+      : 0
+  const quedaPoco = conTiempo && empezo && !termine && tiempoPropio <= 30_000
 
   return (
     <main className="mx-auto flex w-full max-w-lg flex-1 flex-col gap-3 px-4 pt-1 pb-3">
@@ -240,15 +251,28 @@ export function TableroPalabras({
           <span className="text-muted-foreground text-xs tracking-widest uppercase">Palabra</span>
           <span className="text-lg font-semibold tabular-nums">
             {numeroDePalabra}
-            <span className="text-muted-foreground">/{total}</span>
+            {!conTiempo && <span className="text-muted-foreground">/{total}</span>}
           </span>
         </div>
         <div className="flex flex-col items-end leading-tight">
-          <span className="font-mono text-lg tabular-nums">{formatoDeTiempo(tiempoPropio)}</span>
-          {fallos > 0 && (
-            <span className="text-xs text-red-600 tabular-nums dark:text-red-400">
-              +{formatoDeTiempo(fallos * MS_CASTIGO)} de castigo
+          <span
+            className={cn(
+              'font-mono text-lg tabular-nums',
+              quedaPoco && 'text-red-600 dark:text-red-400',
+            )}
+          >
+            {formatoDeTiempo(tiempoPropio)}
+          </span>
+          {conTiempo ? (
+            <span className="text-muted-foreground text-xs tabular-nums">
+              {resueltas} {resueltas === 1 ? 'resuelta' : 'resueltas'}
             </span>
+          ) : (
+            fallos > 0 && (
+              <span className="text-xs text-red-600 tabular-nums dark:text-red-400">
+                +{formatoDeTiempo(fallos * MS_CASTIGO)} de castigo
+              </span>
+            )
           )}
         </div>
       </header>
@@ -258,7 +282,13 @@ export function TableroPalabras({
       <div className="relative flex flex-1 flex-col items-center justify-center">
         {!empezo && <CuentaAtras restan={vista.inicio - reloj} />}
         {termine && !cierre && volteando === null ? (
-          <Llegada vista={vista} nombres={nombres} soyHost={soyHost} onCerrar={onCerrar} />
+          <Llegada
+            vista={vista}
+            nombres={nombres}
+            soyHost={soyHost}
+            terminada={vista.cerrada || seAcaboElTiempo}
+            onCerrar={onCerrar}
+          />
         ) : (
           <Grilla
             largo={largo}
@@ -465,7 +495,8 @@ function Rivales({
   return (
     <ul className="flex gap-2 overflow-x-auto pb-1">
       {vista.rivales.map((rival) => {
-        const llego = rival.tiempo !== null
+        const conTiempo = vista.modo === 'tiempo'
+        const llego = conTiempo ? rival.termino : rival.tiempo !== null
         return (
           <li
             key={rival.asiento}
@@ -479,9 +510,11 @@ function Rivales({
                 {nombres.get(rival.asiento) ?? '—'}
               </span>
               <span className="text-muted-foreground text-xs tabular-nums">
-                {llego
-                  ? `llegó · ${formatoDeTiempo(rival.tiempo!)}`
-                  : `${Math.min(rival.terminadas + 1, vista.total)}/${vista.total}`}
+                {conTiempo
+                  ? `${rival.acertadas} ✓${llego ? ' · fuera' : ` · va en la ${rival.terminadas + 1}`}`
+                  : llego
+                    ? `llegó · ${formatoDeTiempo(rival.tiempo!)}`
+                    : `${Math.min(rival.terminadas + 1, vista.total)}/${vista.total}`}
               </span>
             </span>
             {!llego && (
@@ -526,22 +559,27 @@ function Llegada({
   vista,
   nombres,
   soyHost,
+  terminada,
   onCerrar,
 }: {
   vista: VistaPalabras
   nombres: ReadonlyMap<number, string>
   soyHost: boolean
+  /** The race is over for everyone — closed, or (against the clock) the time is up. */
+  terminada: boolean
   onCerrar: () => void
 }) {
   const propio = vista.propio!
+  const conTiempo = vista.modo === 'tiempo'
   const fallos = propio.terminadas.filter((p) => !p.acertada).length
+  const resueltas = propio.terminadas.length - fallos
   const faltan = vista.clasificacion.filter((p) => !p.termino && !p.retirado).length
   const ganador = vista.clasificacion[0]
 
   return (
     <div className="animate-in fade-in slide-in-from-bottom-2 flex w-full flex-col gap-5">
       <div className="flex flex-col items-center gap-1 text-center">
-        {vista.cerrada && ganador ? (
+        {terminada && ganador ? (
           <>
             <Trophy className="size-7" aria-hidden />
             <h2 className="text-2xl font-semibold">
@@ -553,22 +591,42 @@ function Llegada({
         ) : (
           <h2 className="text-2xl font-semibold">Terminaste</h2>
         )}
-        <p className="text-muted-foreground text-sm">
-          Tu tiempo: <span className="text-foreground font-mono">{formatoDeTiempo(propio.tiempo ?? 0)}</span>
-          {fallos > 0 && ` · ${fallos} sin adivinar (+${formatoDeTiempo(fallos * MS_CASTIGO)})`}
-        </p>
-        {!vista.cerrada && faltan > 0 && (
+        {conTiempo ? (
           <p className="text-muted-foreground text-sm">
-            {faltan === 1 ? 'Falta uno por llegar.' : `Faltan ${faltan} por llegar.`}
+            Resolviste{' '}
+            <span className="text-foreground font-semibold">
+              {resueltas} {resueltas === 1 ? 'palabra' : 'palabras'}
+            </span>
+            {fallos > 0 && ` · ${fallos} sin adivinar`}
+          </p>
+        ) : (
+          <p className="text-muted-foreground text-sm">
+            Tu tiempo: <span className="text-foreground font-mono">{formatoDeTiempo(propio.tiempo ?? 0)}</span>
+            {fallos > 0 && ` · ${fallos} sin adivinar (+${formatoDeTiempo(fallos * MS_CASTIGO)})`}
+          </p>
+        )}
+        {!terminada && faltan > 0 && (
+          <p className="text-muted-foreground text-sm">
+            {conTiempo
+              ? 'Los demás siguen hasta que se acabe el tiempo.'
+              : faltan === 1
+                ? 'Falta uno por llegar.'
+                : `Faltan ${faltan} por llegar.`}
           </p>
         )}
       </div>
 
-      <Clasificacion puestos={vista.clasificacion} nombres={nombres} propio={propio.asiento} total={vista.total} />
+      <Clasificacion
+        puestos={vista.clasificacion}
+        nombres={nombres}
+        propio={propio.asiento}
+        total={vista.total}
+        conTiempo={conTiempo}
+      />
 
       <PalabrasJugadas vista={vista} nombres={nombres} />
 
-      {soyHost && !vista.cerrada && faltan > 0 && (
+      {soyHost && !terminada && faltan > 0 && (
         <button
           type="button"
           onClick={onCerrar}
@@ -715,11 +773,14 @@ function Clasificacion({
   nombres,
   propio,
   total,
+  conTiempo,
 }: {
   puestos: readonly Puesto[]
   nombres: ReadonlyMap<number, string>
   propio: number
   total: number
+  /** Against the clock: words solved is the score, and the time is the last solve's. */
+  conTiempo: boolean
 }) {
   return (
     <ol className="flex flex-col gap-px overflow-hidden rounded-lg border">
@@ -735,14 +796,29 @@ function Clasificacion({
           <span className="text-muted-foreground w-5 tabular-nums">{p.lugar}</span>
           <span className="flex-1 truncate">
             {nombres.get(p.asiento) ?? '—'}
-            {p.lugar === 1 && p.termino && <Crown className="ml-1.5 inline size-3.5" aria-hidden />}
+            {p.lugar === 1 && (p.termino || conTiempo) && (
+              <Crown className="ml-1.5 inline size-3.5" aria-hidden />
+            )}
           </span>
-          <span className="text-muted-foreground text-xs tabular-nums">
-            {p.acertadas}/{total}
-          </span>
-          <span className="w-16 text-right font-mono tabular-nums">
-            {p.tiempo !== null ? formatoDeTiempo(p.tiempo) : p.retirado ? 'salió' : '…'}
-          </span>
+          {conTiempo ? (
+            <>
+              <span className="font-semibold tabular-nums">
+                {p.acertadas} {p.acertadas === 1 ? 'palabra' : 'palabras'}
+              </span>
+              <span className="text-muted-foreground w-14 text-right font-mono text-xs tabular-nums">
+                {p.retirado ? 'salió' : p.tiempo !== null ? formatoDeTiempo(p.tiempo) : '—'}
+              </span>
+            </>
+          ) : (
+            <>
+              <span className="text-muted-foreground text-xs tabular-nums">
+                {p.acertadas}/{total}
+              </span>
+              <span className="w-16 text-right font-mono tabular-nums">
+                {p.tiempo !== null ? formatoDeTiempo(p.tiempo) : p.retirado ? 'salió' : '…'}
+              </span>
+            </>
+          )}
         </li>
       ))}
     </ol>
