@@ -393,6 +393,7 @@ function MesaDuelo({ codigo, onSalir }: { codigo: string; onSalir: () => void })
       onPoner={remota.poner}
       onIntentar={remota.intentar}
       onSalir={remota.mesa.vista.resultado ? () => router.push('/') : onSalir}
+      reglas={<ComoSeJuegaPuntoYFama />}
     />
   )
 }

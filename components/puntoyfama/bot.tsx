@@ -100,9 +100,6 @@ export function BotQueAdivina() {
                 <span className="text-muted-foreground w-5 text-right text-xs tabular-nums">{i + 1}</span>
                 <span className="font-mono text-lg tracking-widest">{paso.intento}</span>
                 <Marcas respuesta={paso} />
-                <span className="text-muted-foreground ml-auto text-xs tabular-nums">
-                  {paso.famas}F · {paso.puntos}P
-                </span>
               </li>
             ))}
           </ol>

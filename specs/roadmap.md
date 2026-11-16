@@ -3962,6 +3962,42 @@ both guessing games are played between people. Production needs, before
 `npm run publicar`: `prisma/sql/94-castigo.sql`, `95-espera.sql` and
 `96-encadenadas.sql` on `mazo` (Punto y Fama itself added no column).
 
+## Asked for after v2.4.0
+
+*The owner, 2026-11-16, after playing Punto y Fama on production: the
+finish table, with everyone's tries side by side, is right as it is. But
+the colours already say famas and puntos, so the «2F · 1P» beside them is
+noise; and a guess should be typed as freely as it is thought.*
+
+### Phase 107 — Las marcas bastan ✅
+A guess's answer is its marks alone: green dots for famas, amber for
+puntos, «nada» for none. The «2F · 1P» column goes — from the race, the
+duel and the bot. In its place, for whoever is unsure, a ⓘ on every board
+(the race had one; the duel gets it) opens a legend — a green dot is a
+fama, an amber one a punto — above the full «Cómo se juega».
+
+**Done when:** no board shows «F · P» beside the marks, and from the race
+and the duel the ⓘ shows what each colour means.
+
+**Done.** `FilaDeIntento` and the bot's list show the marks alone. The
+sheet the ⓘ opens is `HojaDeReglas` (`components/puntoyfama/tablero.tsx`),
+shared by the race and the duel: «Las marcas» — a green dot, «Fama: la
+cifra está y en su lugar»; an amber one, «Punto: la cifra está, en otro
+lugar» — and under it the whole «Cómo se juega». The same `Leyenda` greets
+an empty race board. In the browser: three guesses with marks only, and
+the ⓘ's sheet.
+
+### Phase 108 — Escribir como uno piensa ✅
+A digit may be typed again while a guess is being written — the pad no
+longer swallows it nor dims the digits used. What the rules forbid is
+*sending* it: ENVIAR on a guess with a digit repeated shakes and says
+«Sin cifras repetidas», and the slots holding the repeat are marked, so
+it is plain which to fix. The same on the duel's own number.
+
+**Done when:** 1123 can be typed, is refused on ENVIAR with its two 1s
+marked, and becomes sendable once one is changed — on the race and the
+duel; the server still refuses a repeat sent to it.
+
 ---
 
 ## After

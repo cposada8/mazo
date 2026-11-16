@@ -125,6 +125,7 @@ export function TableroPuntoYFama({
   const enviar = useCallback(async () => {
     if (!puedeEscribir || !propio) return
     if (!completa(escritura)) return avisar('Faltan cifras.')
+    if (repetidas(escritura.letras).size > 0) return avisar('Sin cifras repetidas.')
     const fila = propio.intentos.length
     const antes = propio.terminadas.length
     const respuesta = (await onEnviar(palabraDe(escritura)).catch(() => null)) as
@@ -150,8 +151,8 @@ export function TableroPuntoYFama({
       if (valor === 'BORRAR') return setEscritura(borrar)
       if (valor === 'IZQUIERDA') return setEscritura((e) => mover(e, e.cursor === null ? cursorDe(e) : e.cursor - 1))
       if (valor === 'DERECHA') return setEscritura((e) => mover(e, cursorDe(e) + 1))
-      // A digit already in the guess is not typed twice: none may repeat.
-      setEscritura((e) => (e.letras.includes(valor) && e.letras[e.cursor ?? -1] !== valor ? e : escribir(e, valor)))
+      // A digit may be typed twice while writing; only sending it is refused (Phase 108).
+      setEscritura((e) => escribir(e, valor))
     },
     [puedeEscribir, enviar],
   )
@@ -241,7 +242,8 @@ export function TableroPuntoYFama({
             <ol ref={lista} className="flex min-h-0 flex-1 flex-col gap-1.5 overflow-y-auto py-1" aria-label="Tus intentos">
               {intentos.length === 0 && (
                 <li className="text-muted-foreground m-auto max-w-64 text-center text-sm">
-                  Adivina el número de {digitos} cifras, sin cifras repetidas. Fama: en su lugar. Punto: está, en otro lugar.
+                  Adivina el número de {digitos} cifras, sin cifras repetidas.
+                  <Leyenda className="mt-3" />
                 </li>
               )}
               {intentos.map((intento, i) => (
@@ -271,25 +273,63 @@ export function TableroPuntoYFama({
         </div>
       </div>
 
-      {!termine && <TecladoNumerico usadas={escritura.letras} activo={puedeEscribir} onTecla={tecla} />}
+      {!termine && <TecladoNumerico activo={puedeEscribir} onTecla={tecla} />}
 
-      {verReglas && reglas && (
-        <div className="bg-background fixed inset-0 z-50 overflow-y-auto">
-          <div className="mx-auto flex max-w-md flex-col gap-6 px-6 py-8">
-            <div className="flex items-center justify-between">
-              <h2 className="text-2xl font-semibold tracking-tight">Cómo se juega</h2>
-              <button type="button" onClick={() => setVerReglas(false)} aria-label="Cerrar las reglas" className="hover:bg-accent -mr-2 rounded-md p-2">
-                <X className="size-5" aria-hidden />
-              </button>
-            </div>
-            {reglas}
-            <button type="button" onClick={() => setVerReglas(false)} className="bg-primary text-primary-foreground rounded-md px-4 py-3 text-sm font-medium">
-              Volver
-            </button>
-          </div>
-        </div>
-      )}
+      {verReglas && reglas && <HojaDeReglas reglas={reglas} onCerrar={() => setVerReglas(false)} />}
     </main>
+  )
+}
+
+/** The digits written more than once, by position — what keeps a guess from being sent. */
+export function repetidas(letras: readonly (string | null)[]): ReadonlySet<number> {
+  const posiciones = new Set<number>()
+  letras.forEach((letra, i) => {
+    if (letra !== null && letras.some((otra, j) => j !== i && otra === letra)) posiciones.add(i)
+  })
+  return posiciones
+}
+
+/** What the colours mean, for whoever is unsure (Phase 107). */
+export function Leyenda({ className }: { className?: string }) {
+  return (
+    <span className={cn('flex flex-col items-start gap-1.5 text-left text-sm', className)}>
+      <span className="flex items-center gap-2">
+        <Marcas respuesta={{ famas: 1, puntos: 0 }} />
+        <span>
+          <b>Fama</b>: la cifra está y en su lugar.
+        </span>
+      </span>
+      <span className="flex items-center gap-2">
+        <Marcas respuesta={{ famas: 0, puntos: 1 }} />
+        <span>
+          <b>Punto</b>: la cifra está, en otro lugar.
+        </span>
+      </span>
+    </span>
+  )
+}
+
+/** The ⓘ's sheet over a board: the legend first, then the whole of «Cómo se juega». */
+export function HojaDeReglas({ reglas, onCerrar }: { reglas: ReactNode; onCerrar: () => void }) {
+  return (
+    <div className="bg-background animate-in fade-in fixed inset-0 z-50 overflow-y-auto">
+      <div className="mx-auto flex max-w-md flex-col gap-6 px-6 py-8">
+        <div className="flex items-center justify-between">
+          <h2 className="text-2xl font-semibold tracking-tight">Cómo se juega</h2>
+          <button type="button" onClick={onCerrar} aria-label="Cerrar las reglas" className="hover:bg-accent -mr-2 rounded-md p-2">
+            <X className="size-5" aria-hidden />
+          </button>
+        </div>
+        <div className="bg-card rounded-lg border p-4">
+          <h3 className="text-muted-foreground mb-2 text-xs font-medium tracking-widest uppercase">Las marcas</h3>
+          <Leyenda />
+        </div>
+        {reglas}
+        <button type="button" onClick={onCerrar} className="bg-primary text-primary-foreground rounded-md px-4 py-3 text-sm font-medium">
+          Volver
+        </button>
+      </div>
+    </div>
   )
 }
 
@@ -339,12 +379,7 @@ export function FilaDeIntento({ intento, numero, llegando }: { intento: IntentoP
           </span>
         ))}
       </span>
-      <span className="flex flex-1 items-center justify-between gap-2">
-        <Marcas respuesta={intento} llegando={llegando} />
-        <span className="text-muted-foreground text-xs tabular-nums">
-          {intento.famas}F · {intento.puntos}P
-        </span>
-      </span>
+      <Marcas respuesta={intento} llegando={llegando} />
     </li>
   )
 }
@@ -363,21 +398,24 @@ export function FilaEscrita({
   sacudida: string | null
   onTocar: (indice: number) => void
 }) {
+  const repetida = escritura ? repetidas(escritura.letras) : new Set<number>()
   return (
     <div key={sacudida ?? 'quieta'} className={cn('flex justify-center gap-2 py-2', sacudida && 'palabras-sacudir')}>
       {Array.from({ length: digitos }, (_, i) => {
         const cifra = escritura?.letras[i] ?? undefined
         const enCursor = conCursor && escritura?.cursor === i
+        const seRepite = repetida.has(i)
         return (
           <button
             key={i}
             type="button"
             onClick={() => onTocar(i)}
-            aria-label={`Cifra ${i + 1}${cifra ? `, ${cifra}` : ', vacía'}`}
+            aria-label={`Cifra ${i + 1}${cifra ? `, ${cifra}` : ', vacía'}${seRepite ? ', repetida' : ''}`}
             className={cn(
               'flex size-14 items-center justify-center rounded-md border-2 font-mono text-3xl font-bold',
               cifra ? 'border-muted-foreground/60 palabras-cae' : 'border-border',
               enCursor && 'border-foreground ring-foreground/25 ring-2',
+              seRepite && 'border-red-600 text-red-600 dark:border-red-400 dark:text-red-400',
             )}
           >
             {cifra}
@@ -389,11 +427,9 @@ export function FilaEscrita({
 }
 
 export function TecladoNumerico({
-  usadas,
   activo,
   onTecla,
 }: {
-  usadas: readonly (string | null)[]
   activo: boolean
   onTecla: (valor: string) => void
 }) {
@@ -402,20 +438,16 @@ export function TecladoNumerico({
     <div className={cn('flex flex-col gap-1.5 transition-opacity', !activo && 'opacity-60')}>
       {FILAS_DEL_TECLADO.map((fila) => (
         <div key={fila} className="flex gap-1.5">
-          {[...fila].map((cifra) => {
-            const usada = usadas.includes(cifra)
-            return (
-              <button
-                key={cifra}
-                type="button"
-                onClick={() => onTecla(cifra)}
-                aria-disabled={usada}
-                className={cn('h-13 flex-1 rounded-md font-mono text-xl font-bold transition-opacity', tecla, usada && 'opacity-30')}
-              >
-                {cifra}
-              </button>
-            )
-          })}
+          {[...fila].map((cifra) => (
+            <button
+              key={cifra}
+              type="button"
+              onClick={() => onTecla(cifra)}
+              className={cn('h-13 flex-1 rounded-md font-mono text-xl font-bold', tecla)}
+            >
+              {cifra}
+            </button>
+          ))}
         </div>
       ))}
       <div className="flex gap-1.5">
