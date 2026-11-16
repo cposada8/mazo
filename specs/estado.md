@@ -1,6 +1,6 @@
 # Project status — pick up here
 
-Last updated after Phase 108 — Punto y Fama's marks without the «F · P» column and digits typed freely, on dev. v2.4.0 in production: Punto y Fama (two races, the duel, the bot), and Palabras' Phases 94–97 and Carioca's Phase 98.
+Last updated after Phase 109 — Punto y Fama's marks without the «F · P» column, puntos before famas, digits typed freely, on dev. v2.4.0 in production: Punto y Fama (two races, the duel, the bot), and Palabras' Phases 94–97 and Carioca's Phase 98.
 
 Read this first, then `mission.md` for the why, `carioca-rules.md` for the game,
 `tech-stack.md` for the stack, and `roadmap.md` for what comes next. This file is
@@ -361,6 +361,7 @@ solver. `roadmap.md` has the phases:
 
 1. ~~Phase 107 — Las marcas bastan.~~ ✅ On dev: no «F · P» column; the ⓘ (now on the duel too) opens a legend of the colours.
 2. ~~Phase 108 — Escribir como uno piensa.~~ ✅ On dev: a digit may be typed twice; ENVIAR refuses it, the repeats in red.
+3. ~~Phase 109 — Primero el punto, luego la fama.~~ ✅ On dev: puntos drawn before famas everywhere; the bot's count under its guess.
 
 **Milestone 8, el Mentiroso** (the owner, 2026-11-05), closed. Its rules are
 `specs/mentiroso-rules.md`, settled; `roadmap.md` has the phases:

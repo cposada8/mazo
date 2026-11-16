@@ -20,13 +20,13 @@ export function ComoSeJuegaPuntoYFama() {
         </p>
         <ul className="list-disc space-y-1 pl-5">
           <li>
-            <b>Fama</b>: una cifra que está en el número y en su lugar.
-          </li>
-          <li>
             <b>Punto</b>: una cifra que está en el número, pero en otro lugar.
           </li>
+          <li>
+            <b>Fama</b>: una cifra que está en el número y en su lugar.
+          </li>
         </ul>
-        <Ejemplo secreto="1234" intento="1325" famas={1} puntos={2} pie="El 1 es fama; el 3 y el 2 son puntos; el 5 no está." />
+        <Ejemplo secreto="1234" intento="1325" famas={1} puntos={2} pie="El 3 y el 2 son puntos; el 1 es fama; el 5 no está." />
         <p className="text-muted-foreground">
           No hay límite de intentos: sigues hasta que todas las cifras son fama. Mientras menos intentos, mejor.
         </p>
@@ -57,7 +57,7 @@ export function ComoSeJuegaPuntoYFama() {
 
       <Seccion titulo="El bot adivina tu número">
         <p>
-          Al revés: piensas un número y el bot lo adivina. Tú le dices cuántas famas y puntos saca cada
+          Al revés: piensas un número y el bot lo adivina. Tú le dices cuántos puntos y famas saca cada
           intento; si te equivocas, «Deshacer» lo arregla. Con 4 cifras suele necesitar 5 o 6 intentos.
         </p>
       </Seccion>

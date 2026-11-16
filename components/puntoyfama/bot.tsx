@@ -62,8 +62,8 @@ export function BotQueAdivina() {
         <h1 className="text-3xl font-semibold tracking-tight">El bot adivina tu número</h1>
         <p className="text-muted-foreground text-sm">
           Piensa un número de {digitos} cifras sin repetir y anótalo en un papel. El bot propone un número y tú
-          le dices cuántas <b className="text-foreground">famas</b> (cifra en su lugar) y cuántos{' '}
-          <b className="text-foreground">puntos</b> (cifra que está, pero en otro lugar) saca.
+          le dices cuántos <b className="text-foreground">puntos</b> (cifra que está, pero en otro lugar) y cuántas{' '}
+          <b className="text-foreground">famas</b> (cifra en su lugar) saca.
         </p>
       </header>
 
@@ -127,21 +127,22 @@ export function BotQueAdivina() {
                   <span key={intento} className="animate-in zoom-in-95 fade-in font-mono text-5xl font-bold tracking-widest">
                     {intento}
                   </span>
+                  <Quedan quedan={quedan} />
                 </div>
                 <div className="grid w-full grid-cols-2 gap-3">
-                  <Contador
-                    titulo="Famas"
-                    color="bg-[oklch(0.6_0.12_148)]"
-                    valor={famas}
-                    max={digitos - puntos}
-                    onCambiar={setFamas}
-                  />
                   <Contador
                     titulo="Puntos"
                     color="bg-[oklch(0.72_0.13_88)]"
                     valor={puntos}
                     max={digitos - famas}
                     onCambiar={setPuntos}
+                  />
+                  <Contador
+                    titulo="Famas"
+                    color="bg-[oklch(0.6_0.12_148)]"
+                    valor={famas}
+                    max={digitos - puntos}
+                    onCambiar={setFamas}
                   />
                 </div>
                 <button type="button" onClick={contestar} className="bg-primary text-primary-foreground w-full rounded-md px-4 py-3.5 text-sm font-medium">
@@ -150,10 +151,6 @@ export function BotQueAdivina() {
               </div>
             )
           )}
-
-          <p className="text-muted-foreground text-center text-xs tabular-nums">
-            {loTiene ? '' : `Le quedan ${quedan.toLocaleString('es')} ${quedan === 1 ? 'número posible' : 'números posibles'}.`}
-          </p>
 
           <div className="flex gap-2">
             <button
@@ -177,6 +174,19 @@ export function BotQueAdivina() {
         </section>
       )}
     </main>
+  )
+}
+
+/** How many numbers the bot still considers, under its guess — shrinking with each answer. */
+function Quedan({ quedan }: { quedan: number }) {
+  return (
+    <span className="text-muted-foreground mt-1 text-sm">
+      Le {quedan === 1 ? 'queda' : 'quedan'}{' '}
+      <b key={quedan} className="text-foreground animate-in zoom-in-75 fade-in inline-block text-lg tabular-nums">
+        {quedan.toLocaleString('es')}
+      </b>{' '}
+      {quedan === 1 ? 'número posible' : 'números posibles'}
+    </span>
   )
 }
 

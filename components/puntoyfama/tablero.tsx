@@ -7,7 +7,7 @@
  * table (`components/carrera/`).
  *
  * Told in beats: a digit lands as it is typed; a guess goes up into the
- * list and its answer comes in mark by mark — famas, then puntos; a refused
+ * list and its answer comes in mark by mark — puntos, then famas — the game's own order (Phase 109); a refused
  * guess shakes; a number got is said, then the next one opens.
  */
 
@@ -294,15 +294,15 @@ export function Leyenda({ className }: { className?: string }) {
   return (
     <span className={cn('flex flex-col items-start gap-1.5 text-left text-sm', className)}>
       <span className="flex items-center gap-2">
-        <Marcas respuesta={{ famas: 1, puntos: 0 }} />
-        <span>
-          <b>Fama</b>: la cifra está y en su lugar.
-        </span>
-      </span>
-      <span className="flex items-center gap-2">
         <Marcas respuesta={{ famas: 0, puntos: 1 }} />
         <span>
           <b>Punto</b>: la cifra está, en otro lugar.
+        </span>
+      </span>
+      <span className="flex items-center gap-2">
+        <Marcas respuesta={{ famas: 1, puntos: 0 }} />
+        <span>
+          <b>Fama</b>: la cifra está y en su lugar.
         </span>
       </span>
     </span>
@@ -333,7 +333,7 @@ export function HojaDeReglas({ reglas, onCerrar }: { reglas: ReactNode; onCerrar
   )
 }
 
-/** An answer as marks: a green dot per fama, an amber one per punto; «nada» for none. */
+/** An answer as marks: an amber dot per punto, then a green one per fama; «nada» for none. */
 export function Marcas({
   respuesta,
   llegando = false,
@@ -347,11 +347,11 @@ export function Marcas({
     return <span className={cn('text-muted-foreground', chico ? 'text-[10px]' : 'text-xs')}>nada</span>
   }
   const marcas = [
-    ...Array.from({ length: respuesta.famas }, () => 'fama' as const),
     ...Array.from({ length: respuesta.puntos }, () => 'punto' as const),
+    ...Array.from({ length: respuesta.famas }, () => 'fama' as const),
   ]
   return (
-    <span className="flex items-center gap-1" aria-label={`${respuesta.famas} famas, ${respuesta.puntos} puntos`}>
+    <span className="flex items-center gap-1" aria-label={`${respuesta.puntos} puntos, ${respuesta.famas} famas`}>
       {marcas.map((tipo, i) => (
         <span
           key={i}

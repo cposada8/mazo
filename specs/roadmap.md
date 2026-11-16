@@ -3998,6 +3998,25 @@ it is plain which to fix. The same on the duel's own number.
 marked, and becomes sendable once one is changed — on the race and the
 duel; the server still refuses a repeat sent to it.
 
+### Phase 109 — Primero el punto, luego la fama ✅
+The game is called *Punto y Fama*, so it is told in that order: an
+answer's marks are its amber puntos first, then its green famas — on every
+board, the finish table, the bot's list and the rules' example — and the
+bot's steppers read Puntos on the left, Famas on the right. The legend and
+the rules define punto before fama. And the bot's «Le quedan 216 números
+posibles», which the owner had not seen down by «Deshacer», moves up under
+its guess, the number large and redrawn as it shrinks.
+
+**Done when:** 2 puntos and 1 fama are drawn amber, amber, green; the
+bot's steppers go Puntos, Famas; and its count sits under its guess.
+
+**Done.** `Marcas` draws puntos before famas, which every board, the
+finish table and the rules' example use; `Leyenda`, the rules' list and
+the bot's copy name punto first; the bot's `Contador`s swapped, and
+`Quedan` under the guess. In the browser: the bot's first guess answered
+2 puntos and 1 fama, drawn amber, amber, green, and «Le quedan 216
+números posibles» under its second.
+
 ---
 
 ## After
