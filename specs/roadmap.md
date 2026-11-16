@@ -3382,7 +3382,7 @@ given. Placed before the release, so the rules page and production get the
 game as the owner wants it — the release moved from 87 to 91. Each rule
 below marked (Mazo's call) is a default, written for the owner to correct.*
 
-### Phase 87 — Cualquier número de palabras
+### Phase 87 — Cualquier número de palabras ✅
 The lobby's 3/5/10/15/20 stay as shortcuts, and beside them the host can
 **type any number** — 7, 23. (Mazo's call: from **1 to 100**; a bag never
 repeats a word, and a hundred words is already a long race.) The server
@@ -3392,6 +3392,13 @@ bullets today.
 **Done when:** a bag of 23 and a bag of 7 are dealt and played, a typed 0,
 101 or «abc» is refused in the lobby and by the server, and the shortcuts
 still work.
+
+**Done.** `esNumeroDePalabras` in `opciones.ts` (whole, 1–100) is the one
+rule, used by the server; the lobby's `NumeroConAtajos` shows the five
+shortcuts and an «Otro» box that sends only a number inside the range,
+says «Escribe un número entero de 1 a 100.» otherwise and goes back. In
+the browser: 23 typed and kept, 150 refused, the shortcuts as before.
+Server test: 23 and 7 kept, 0, 101, 2.5 and −3 ignored, a bag of 7 dealt.
 
 ### Phase 88 — Volver a ver cómo salió cada palabra
 On the finish screen, «Tus palabras» lists each word with its tries

@@ -29,7 +29,13 @@ import { useIdentidad } from '@/components/identidad'
 import { BOTS, NOMBRE_DE_NIVEL, type Nivel, botPorId } from '@/lib/bots'
 import { botDeJuego, botPorDefecto, botsDeJuego } from '@/lib/bots-de-juego'
 import { ASIENTOS, type Juego, NOMBRE_DE_JUEGO, tieneBots } from '@/lib/juegos'
-import { LARGOS, MS_CASTIGO, OPCIONES_DE_PALABRAS } from '@/lib/engine/palabras/opciones'
+import {
+  LARGOS,
+  MAX_PALABRAS,
+  MIN_PALABRAS,
+  MS_CASTIGO,
+  OPCIONES_DE_PALABRAS,
+} from '@/lib/engine/palabras/opciones'
 import { OPCIONES_DE_BALAS } from '@/lib/engine/mentiroso'
 import {
   CATALOGO,
@@ -722,12 +728,14 @@ function AjustesPalabras({
 }) {
   return (
     <section className="flex flex-col gap-5">
-      <Escogencia
+      <NumeroConAtajos
         titulo="Cuántas palabras"
         detalle="Las mismas palabras, en el mismo orden, para todos."
-        opciones={OPCIONES_DE_PALABRAS}
-        valor={partida.palabras as (typeof OPCIONES_DE_PALABRAS)[number]}
-        etiqueta={(n) => String(n)}
+        atajos={OPCIONES_DE_PALABRAS}
+        valor={partida.palabras}
+        min={MIN_PALABRAS}
+        max={MAX_PALABRAS}
+        unidad="palabras"
         onCambiar={onPalabras}
       />
       {LARGOS.length > 1 && (
@@ -874,6 +882,101 @@ function Escogencia<T extends string | number>({
         ))}
       </div>
       {detalle && <p className="text-muted-foreground text-xs">{detalle}</p>}
+    </div>
+  )
+}
+
+/**
+ * A number with shortcuts (Phase 87): the usual values as buttons, and a box
+ * to type any other — 7, 23. The box shows the value when no shortcut is it,
+ * and only sends a number inside the range; anything else says so and goes
+ * back to what was there.
+ */
+function NumeroConAtajos({
+  titulo,
+  detalle,
+  atajos,
+  valor,
+  min,
+  max,
+  unidad,
+  onCambiar,
+}: {
+  titulo: string
+  detalle?: string
+  atajos: readonly number[]
+  valor: number
+  min: number
+  max: number
+  /** What the number counts, for the error and the box's label. */
+  unidad: string
+  onCambiar: (valor: number) => void
+}) {
+  const [error, setError] = useState<string | null>(null)
+  const esAtajo = atajos.includes(valor)
+
+  const confirmar = (campo: HTMLInputElement) => {
+    const texto = campo.value.trim()
+    if (texto === '' || (esAtajo && texto === '')) return
+    const n = Number(texto)
+    if (!Number.isInteger(n) || n < min || n > max) {
+      setError(`Escribe un número entero de ${min} a ${max}.`)
+      campo.value = esAtajo ? '' : String(valor)
+      return
+    }
+    setError(null)
+    if (n !== valor) onCambiar(n)
+  }
+
+  return (
+    <div className="flex flex-col gap-2">
+      <h2 className="text-muted-foreground text-xs font-medium tracking-widest uppercase">
+        {titulo}
+      </h2>
+      <div className="flex gap-2">
+        {atajos.map((opcion) => (
+          <button
+            key={opcion}
+            type="button"
+            onClick={() => {
+              setError(null)
+              onCambiar(opcion)
+            }}
+            aria-pressed={opcion === valor}
+            className={cn(
+              'border-input min-w-0 flex-1 rounded-md border py-2 text-sm tabular-nums transition-colors',
+              opcion === valor
+                ? 'bg-primary text-primary-foreground border-primary'
+                : 'hover:bg-accent',
+            )}
+          >
+            {opcion}
+          </button>
+        ))}
+        <input
+          // A new value from the server resets what the box shows.
+          key={valor}
+          type="text"
+          inputMode="numeric"
+          pattern="[0-9]*"
+          defaultValue={esAtajo ? '' : String(valor)}
+          placeholder="Otro"
+          aria-label={`Otro número de ${unidad}, de ${min} a ${max}`}
+          onBlur={(evento) => confirmar(evento.currentTarget)}
+          onKeyDown={(evento) => {
+            if (evento.key === 'Enter') evento.currentTarget.blur()
+          }}
+          className={cn(
+            'border-input bg-background w-16 shrink-0 rounded-md border py-2 text-center text-sm tabular-nums',
+            !esAtajo && 'border-primary ring-primary ring-1',
+          )}
+        />
+      </div>
+      {error ? (
+        <p className="text-xs text-red-600 dark:text-red-400">{error}</p>
+      ) : (
+        detalle && <p className="text-muted-foreground text-xs">{detalle}</p>
+      )}
     </div>
   )
 }

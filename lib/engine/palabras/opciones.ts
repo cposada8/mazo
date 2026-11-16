@@ -14,6 +14,14 @@ export const INTENTOS_POR_PALABRA = 6
 /** Words in the bag on offer, and the default (`palabras-rules.md`, «The words»). */
 export const OPCIONES_DE_PALABRAS = [3, 5, 10, 15, 20] as const
 export const PALABRAS_POR_DEFECTO = 10
+/** Any number of words may be typed instead (Phase 87): one to a hundred. */
+export const MIN_PALABRAS = 1
+export const MAX_PALABRAS = 100
+
+/** A number of words the lobby accepts: a whole number from 1 to 100. */
+export function esNumeroDePalabras(valor: unknown): valor is number {
+  return Number.isInteger(valor) && (valor as number) >= MIN_PALABRAS && (valor as number) <= MAX_PALABRAS
+}
 export const MIN_JUGADORES = 1
 export const MAX_JUGADORES = 8
 /** A missed word costs this much on the player's clock (Mazo's call). */

@@ -73,6 +73,26 @@ describe('Palabras through the platform', () => {
     for (const palabra of (await estadoDe(codigo)).bolsa) expect(palabra).toHaveLength(8)
   })
 
+  it('takes any whole number of words from 1 to 100, and nothing else (Phase 87)', async () => {
+    const creada = await partidas.crearPartida({
+      secreto: 'nico',
+      alias: 'nico',
+      juego: 'palabras',
+      config: CONFIG_POR_DEFECTO,
+    })
+    const codigo = creada.codigo
+    const palabras = async () => (await partidas.cargarPorCodigo(codigo))!.palabras
+    await partidas.actualizarAjustes({ codigo, secreto: 'nico', palabras: 23 })
+    expect(await palabras()).toBe(23)
+    for (const malo of [0, 101, 2.5, -3]) {
+      await partidas.actualizarAjustes({ codigo, secreto: 'nico', palabras: malo })
+      expect(await palabras()).toBe(23)
+    }
+    await partidas.actualizarAjustes({ codigo, secreto: 'nico', palabras: 7 })
+    await partidas.empezar({ codigo, secreto: 'nico', seed: 'siete' })
+    expect((await estadoDe(codigo)).bolsa).toHaveLength(7)
+  })
+
   it('refuses a number of words the lobby does not offer', async () => {
     const { codigo } = await carreraDeDos(3)
     const r = await partidas.actualizarAjustes({ codigo, secreto: 'ana', palabras: 999 })

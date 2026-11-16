@@ -24,8 +24,8 @@ import {
 import { OPCIONES_DE_BALAS, empezarMentiroso } from '@/lib/engine/mentiroso'
 import {
   LARGOS,
-  OPCIONES_DE_PALABRAS,
   cerrada,
+  esNumeroDePalabras,
   empezarPalabras,
   type EstadoPalabras,
   sumarJugador,
@@ -524,10 +524,8 @@ export async function actualizarAjustes(opciones: {
       (OPCIONES_DE_BALAS as readonly number[]).includes(opciones.balas)
         ? { balas: opciones.balas }
         : {}),
-      ...(opciones.palabras !== undefined &&
-      (OPCIONES_DE_PALABRAS as readonly number[]).includes(opciones.palabras)
-        ? { palabras: opciones.palabras }
-        : {}),
+      // Any whole number from 1 to 100 (Phase 87); anything else is ignored.
+      ...(esNumeroDePalabras(opciones.palabras) ? { palabras: opciones.palabras } : {}),
       ...(opciones.largo !== undefined && (LARGOS as readonly number[]).includes(opciones.largo)
         ? { largo: opciones.largo }
         : {}),
