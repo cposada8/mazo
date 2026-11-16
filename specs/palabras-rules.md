@@ -6,7 +6,9 @@ the same words in the same order; the first to get through them wins. This
 is the authority on how Mazo plays it, written before any code, the way
 `carioca-rules.md` and `mentiroso-rules.md` were.
 
-Written 2026-11-15 from the owner's brief: a race, the number of words
+Written 2026-11-15 from the owner's brief, and its (Mazo's call) defaults
+confirmed by the owner on 2026-11-16 — two of them to become lobby settings
+(roadmap Phases 94 and 95): a race, the number of words
 chosen when the partida is created, the words drawn at random from a long
 list (around a thousand), the same list and order for every player, the
 first to finish wins, others may join. Everything else is the puzzle's

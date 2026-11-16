@@ -318,7 +318,8 @@ rules are `specs/palabras-rules.md`, drafted for the owner to correct;
 
 1. ~~Phases 82–86~~ ✅ Done as an MVP, on dev, with words of 5 to 8 letters
    (the owner's addition). **In production as v2.2.0**; its SQL is on
-   `mazo-dev` and `mazo`. The owner still has to read the answers.
+   `mazo-dev` and `mazo`. The owner confirmed the answers as they are
+   (2026-11-16).
 2. ~~Phase 87 — Cualquier número de palabras.~~ ✅ On dev.
 3. ~~Phase 88 — Volver a ver cómo salió cada palabra.~~ ✅ On dev.
 4. ~~Phase 89 — Modalidad con tiempo.~~ ✅ Its SQL on `mazo-dev` and `mazo`.
@@ -326,6 +327,12 @@ rules are `specs/palabras-rules.md`, drafted for the owner to correct;
 6. ~~Phase 91 — Cómo se juega.~~ ✅ On dev.
 7. ~~Phase 92 — La tabla de la llegada.~~ ✅ On dev.
 8. ~~Phase 93 — A producción.~~ ✅ Released as v2.3.0. **Milestone 9 is closed.**
+
+**Next — asked for after v2.3.0** (the owner, 2026-11-16): two of Palabras'
+defaults become the host's to change, in `roadmap.md`:
+
+1. Phase 94 — El castigo, a elección del host: 2:00 by default, 0 to 10.
+2. Phase 95 — El cierre, a elección del host: no limit by default.
 
 **Milestone 8, el Mentiroso** (the owner, 2026-11-05), closed. Its rules are
 `specs/mentiroso-rules.md`, settled; `roadmap.md` has the phases:

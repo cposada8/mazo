@@ -3353,8 +3353,9 @@ words of **5, 6, 7 or 8 letters**, the length a second lobby setting.
   and 8 letters: 1,064 / 1,348 / 1,474 answers, the accepted words of each
   length ranked by use (FrequencyWords, MIT), conjugations dropped by a
   lemma check, then read by hand; 25k / 49k / 75k accepted. Lists live in
-  `lib/engine/palabras/`, one file per length and kind. **The owner has not
-  read the answers yet** — Phase 82's last clause is still open.
+  `lib/engine/palabras/`, one file per length and kind. **The owner
+  confirmed the answers as they are on 2026-11-16** — Phase 82's last
+  clause is closed.
 - **The engine** (`lib/engine/palabras/`): the bag from the seed (five
   letters keeps its draw; other lengths salt it), scoring with repeated
   letters, six tries, +2:00 a missed word, closing, ranking, late joiners,
@@ -3566,6 +3567,44 @@ The release of Phases 87–92, after `prisma/sql/89-modo.sql` and
 included: `mazo` took `89-modo.sql` and `90-vidas.sql` before the release
 deployed, and the release is **v2.3.0** — a minor, for new things.
 **Milestone 9 is closed.**
+
+---
+
+## Asked for after v2.3.0
+
+*The owner, 2026-11-16, reviewing the defaults left for them to correct:
+the answer lists stay as they are; +2:00 for a missed word is right, and
+so is everything else — but two of those defaults should be the host's to
+change in the lobby, like the number of words and the minutes.*
+
+### Phase 94 — El castigo, a elección del host
+In «Palabras límite», what a missed word adds to the clock becomes a lobby
+setting. **2 minutes stays the default** (the owner's word). On offer
+(Mazo's call): 0 («sin castigo»), 1, 2, 3 and 5 minutes as shortcuts, or
+any whole number from 0 to 10 typed, as Phase 87 does for words. The rules
+page and the board's «+2:00» say whatever the host chose; a race dealt
+before this phase keeps its 2 minutes.
+
+**Done when:** a race with a 5-minute penalty adds 5:00 per miss, on the
+board and in the ranking; one «sin castigo» adds nothing; a bad number is
+refused by the lobby and the server; and an old race still adds 2:00.
+
+### Phase 95 — El cierre, a elección del host
+In «Palabras límite», how long the race waits for the rest after the first
+player finishes becomes a lobby setting too, and **the default becomes no
+limit** — the race waits forever (the owner, 2026-11-16), where today it
+closes 30 minutes after the first finish. On offer (Mazo's call): ∞ («sin
+límite», the default), 5, 10, 15, 30 and 60 minutes as shortcuts, or any
+whole number from 1 to 120 typed. Whatever the setting, the host can still
+close it from the finish screen, and the race closes once everyone has
+finished or left. A race nobody touches for a day is swept as finished, as
+every partida already is (Phase 44), so «forever» never leaves a row open
+for good.
+
+**Done when:** a race «sin límite» stays open long after the first finish
+until the last player finishes, leaves, or the host closes it; one with 10
+minutes closes 10 minutes after the first finish; the lobby shows the
+setting; and an old race keeps its 30 minutes.
 
 ---
 
