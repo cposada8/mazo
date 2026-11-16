@@ -3916,7 +3916,7 @@ the API: 1234 and 5678 set, Kari's 9012 shown to me as two puntos only,
 number until the end. The other order of finishing is the engine's and
 the server's tests.
 
-### Phase 105 — El bot que adivina tu número
+### Phase 105 — El bot que adivina tu número ✅
 A door of its own, played in the phone alone: you think of a number, the
 bot proposes guesses, and you answer each with **two steppers, puntos and
 famas** (their sum never above n). It narrows down and guesses again until
@@ -3928,6 +3928,16 @@ thinking.
 **Done when:** on a 4-digit number the bot gets it in at most 8 guesses,
 an inconsistent answer is caught and undone, and it plays with no
 connection at all.
+
+**Done.** `/punto-y-fama/bot` (`components/puntoyfama/bot.tsx`), from a
+link on the door under the four games: the digits, «Ya lo pensé», then
+each guess big with two steppers — famas and puntos, never adding up past
+the digits — «Responder» («¡Esa es!» on all famas), the guesses so far
+with their marks, «Le quedan 151 números posibles» shrinking, «Deshacer»
+and «Otro número». It is the engine's bot in the phone, no request at
+all. In the browser: 0587 answered honestly, got in five (4158, 1402,
+5316, 8725, 0587); then with the network cut, an impossible 3 famas and
+1 punto said so plainly and «Deshacer» brought the bot back to its guess.
 
 ### Phase 106 — Cómo se juega, y a producción
 «Cómo se juega» for Punto y Fama — the scoring with a real example, the

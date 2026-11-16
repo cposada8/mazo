@@ -10,7 +10,8 @@
  */
 
 import { useQuery } from '@tanstack/react-query'
-import { CornerUpLeft, Loader2, LogIn, Plus } from 'lucide-react'
+import { Bot, CornerUpLeft, Loader2, LogIn, Plus } from 'lucide-react'
+import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 import { useIdentidad } from '@/components/identidad'
@@ -125,6 +126,19 @@ export function Puerta() {
           ))}
         </div>
       </div>
+      {/* Phase 105: Punto y Fama's bot is a door of its own — no partida, no code. */}
+      <Link
+        href="/punto-y-fama/bot"
+        className="border-input hover:bg-accent -mt-1 flex items-center gap-3 rounded-lg border px-4 py-3 text-left transition-colors"
+      >
+        <Bot className="size-4 shrink-0" aria-hidden />
+        <span className="flex flex-col gap-0.5">
+          <span className="text-sm font-medium">El bot adivina tu número</span>
+          <span className="text-muted-foreground text-xs">
+            Punto y Fama al revés: piensas un número y el bot lo adivina.
+          </span>
+        </span>
+      </Link>
       <p className="text-muted-foreground -mt-2 text-xs">
         Empiezas de host. En las cartas hay tres bots en la mesa: quítalos, o
         invita gente con el código. Palabras se juega contra personas.
