@@ -1,6 +1,6 @@
 # Project status — pick up here
 
-Last updated after Phase 111 — Punto y Fama's note beside the guesses and the pad always in view, with Phases 107–110, on dev. v2.4.0 in production: Punto y Fama (two races, the duel, the bot), and Palabras' Phases 94–97 and Carioca's Phase 98.
+Last updated after v2.5.0 — Punto y Fama's Phases 107–111 in production: marks without «F · P», puntos before famas, digits typed freely, apuntes (marks on the pad, a note beside the guesses). v2.4.0 in production: Punto y Fama (two races, the duel, the bot), and Palabras' Phases 94–97 and Carioca's Phase 98.
 
 Read this first, then `mission.md` for the why, `carioca-rules.md` for the game,
 `tech-stack.md` for the stack, and `roadmap.md` for what comes next. This file is
@@ -357,13 +357,13 @@ solver. `roadmap.md` has the phases:
 7. ~~Phase 105 — El bot que adivina tu número.~~ ✅ `/punto-y-fama/bot`, offline.
 8. ~~Phase 106 — Cómo se juega, y a producción.~~ ✅ Released as v2.4.0. **Milestone 10 is closed.**
 
-**Asked for after v2.4.0** (the owner, 2026-11-16, after playing it):
+**Asked for after v2.4.0** (the owner, 2026-11-16, after playing it) — **released as v2.5.0** the same day («pásalo a producción. Está muy bueno así»); no SQL:
 
-1. ~~Phase 107 — Las marcas bastan.~~ ✅ On dev: no «F · P» column; the ⓘ (now on the duel too) opens a legend of the colours.
-2. ~~Phase 108 — Escribir como uno piensa.~~ ✅ On dev: a digit may be typed twice; ENVIAR refuses it, the repeats in red.
-3. ~~Phase 109 — Primero el punto, luego la fama.~~ ✅ On dev: puntos drawn before famas everywhere; the bot's count under its guess.
-4. ~~Phase 110 — Apuntes.~~ ✅ On dev: the pencil marks digits está / no está; one free note per number, private.
-5. ~~Phase 111 — La nota al lado.~~ ✅ On dev: the note beside the guesses, no sheet; the board never taller than the screen.
+1. ~~Phase 107 — Las marcas bastan.~~ ✅ In v2.5.0: no «F · P» column; the ⓘ (now on the duel too) opens a legend of the colours.
+2. ~~Phase 108 — Escribir como uno piensa.~~ ✅ In v2.5.0: a digit may be typed twice; ENVIAR refuses it, the repeats in red.
+3. ~~Phase 109 — Primero el punto, luego la fama.~~ ✅ In v2.5.0: puntos drawn before famas everywhere; the bot's count under its guess.
+4. ~~Phase 110 — Apuntes.~~ ✅ In v2.5.0: the pencil marks digits está / no está; one free note per number, private.
+5. ~~Phase 111 — La nota al lado.~~ ✅ In v2.5.0: the note beside the guesses, no sheet; the board never taller than the screen.
 
 **Milestone 8, el Mentiroso** (the owner, 2026-11-05), closed. Its rules are
 `specs/mentiroso-rules.md`, settled; `roadmap.md` has the phases:
