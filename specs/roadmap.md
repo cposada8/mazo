@@ -3268,3 +3268,5 @@ Not scheduled, and not to be started before Milestone 3 — online play:
   forward into Phase 18, for the screen space rather than for the install.
 - Replays from seed and move list.
 - Private leaderboards among friends.
+- A Palabras bot with a level — slower, more tries — to race alone against.
+- A daily Palabras bag, the same for everyone that day.

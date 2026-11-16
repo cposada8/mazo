@@ -306,7 +306,20 @@ next schema change goes the same way — SQL under `prisma/sql/`, applied to
 `mazo-dev`, then to `mazo` before `npm run publicar`. Production's database
 credentials are in `.env.turso`; `vercel env pull` masks them.
 
-**Next — Milestone 8, el Mentiroso** (the owner, 2026-11-05). Its rules are
+**Next — Milestone 9, Palabras** (the owner, 2026-11-15): Wordle in
+Spanish, as a race — n words drawn at random from about a thousand, the
+same words in the same order for everyone, the first to finish wins. Its
+rules are `specs/palabras-rules.md`, drafted for the owner to correct;
+`roadmap.md` has the phases:
+
+1. Phase 82 — Las palabras.
+2. Phase 83 — El motor de Palabras.
+3. Phase 84 — La puerta sabe que hay tres juegos.
+4. Phase 85 — El tablero.
+5. Phase 86 — La carrera.
+6. Phase 87 — Cómo se juega, and production.
+
+**Milestone 8, el Mentiroso** (the owner, 2026-11-05), closed. Its rules are
 `specs/mentiroso-rules.md`, settled; `roadmap.md` has the phases:
 
 1. ~~Phase 75 — Dos juegos, un motor.~~ ✅ Done, on dev: `lib/engine/comun/`
