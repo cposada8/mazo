@@ -28,7 +28,8 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { useIdentidad } from '@/components/identidad'
 import { BOTS, NOMBRE_DE_NIVEL, type Nivel, botPorId } from '@/lib/bots'
 import { botDeJuego, botPorDefecto, botsDeJuego } from '@/lib/bots-de-juego'
-import { ASIENTOS, type Juego, NOMBRE_DE_JUEGO } from '@/lib/juegos'
+import { ASIENTOS, type Juego, NOMBRE_DE_JUEGO, tieneBots } from '@/lib/juegos'
+import { LARGOS, MS_CASTIGO, OPCIONES_DE_PALABRAS } from '@/lib/engine/palabras/opciones'
 import { OPCIONES_DE_BALAS } from '@/lib/engine/mentiroso'
 import {
   CATALOGO,
@@ -126,6 +127,8 @@ export function Lobby({
             ...(accion.segundosBot !== undefined
               ? { segundosBot: accion.segundosBot }
               : {}),
+            ...(accion.palabras !== undefined ? { palabras: accion.palabras } : {}),
+            ...(accion.largo !== undefined ? { largo: accion.largo } : {}),
             ...(accion.verDescarte !== undefined
               ? { verDescarte: accion.verDescarte }
               : {}),
@@ -165,14 +168,21 @@ export function Lobby({
   useEffect(() => {
     if (pedido.current || !identidad || !partida) return
     if (vista?.asiento !== null) return
-    if (partida.fase !== 'lobby') return
+    // A Palabras race also takes latecomers while it runs.
+    const abierta =
+      partida.fase === 'lobby' || (partida.juego === 'palabras' && partida.fase === 'jugando')
+    if (!abierta) return
     pedido.current = true
     mutacion.mutate({ tipo: 'unirse', alias: identidad.alias })
   }, [identidad, partida, vista, mutacion])
 
   // The deal has landed — for everyone at the table, not just whoever pressed.
   useEffect(() => {
-    if (vista && vista.partida.fase === 'jugando' && vista.asiento !== null) {
+    if (!vista || vista.asiento === null) return
+    const enMarcha =
+      vista.partida.fase === 'jugando' ||
+      (vista.partida.juego === 'palabras' && vista.partida.fase === 'terminada')
+    if (enMarcha) {
       onEmpezar(vista)
     }
   }, [vista, onEmpezar])
@@ -227,6 +237,7 @@ export function Lobby({
         <h1 className="text-3xl font-semibold tracking-tight">
           La mesa <span className="text-muted-foreground">· {NOMBRE_DE_JUEGO[juego]}</span>
         </h1>
+        {juego === 'palabras' && <ComoSeJuegaPalabras largo={partida.largo} />}
         {juego === 'mentiroso' && (
           <Link
             href="/como-se-juega/mentiroso"
@@ -313,7 +324,7 @@ export function Lobby({
           ))}
         </ul>
 
-        {soyHost && partida.asientos.length < asientosDelJuego.max && (
+        {soyHost && tieneBots(juego) && partida.asientos.length < asientosDelJuego.max && (
           <button
             type="button"
             onClick={() => mutacion.mutate({ tipo: 'bot', bot: botPorDefecto(juego).id })}
@@ -325,7 +336,22 @@ export function Lobby({
         )}
       </section>
 
-      {juego === 'mentiroso' ? (
+      {juego === 'palabras' ? (
+        soyHost ? (
+          <AjustesPalabras
+            partida={partida}
+            onPalabras={(palabras) => ajustar({ palabras })}
+            onLargo={(largo) => ajustar({ largo })}
+          />
+        ) : (
+          <section className="text-muted-foreground flex flex-col gap-1 text-sm">
+            <h2 className="text-xs font-medium tracking-widest uppercase">Lo que escogió el host</h2>
+            <p>
+              {partida.palabras} palabras de {partida.largo} letras
+            </p>
+          </section>
+        )
+      ) : juego === 'mentiroso' ? (
         soyHost ? (
           <AjustesMentiroso
             partida={partida}
@@ -370,9 +396,14 @@ export function Lobby({
             className="bg-primary text-primary-foreground flex items-center justify-center gap-2 rounded-md px-4 py-3.5 text-sm font-medium disabled:opacity-50"
           >
             <Play className="size-4" aria-hidden />
-            Repartir
+            {juego === 'palabras' ? 'Empezar la carrera' : 'Repartir'}
           </button>
-          {humanos.length > 1 && (
+          {juego === 'palabras' ? (
+            <p className="text-muted-foreground text-xs">
+              Invita con el código: se puede entrar incluso con la carrera andando,
+              pero el reloj es el mismo para todos.
+            </p>
+          ) : humanos.length > 1 && (
             <p className="text-muted-foreground text-xs">
               Con más de una persona la partida la lleva el servidor: cada quien
               ve solo su mano, y la mesa avanza aunque cierres la página.
@@ -383,7 +414,7 @@ export function Lobby({
         <p className="text-muted-foreground flex items-center gap-2 text-sm">
           <Loader2 className="size-4 animate-spin" aria-hidden />
           Esperando a que {partida.asientos.find((a) => a.esHost)?.alias ?? 'el host'}{' '}
-          reparta…
+          {juego === 'palabras' ? 'dé la partida…' : 'reparta…'}
         </p>
       )}
     </main>
@@ -676,6 +707,62 @@ function AjustesMentiroso({
         onCambiar={onSegundosBot}
       />
     </section>
+  )
+}
+
+/** Palabras' settings (Phase 84): how many words, and how long. */
+function AjustesPalabras({
+  partida,
+  onPalabras,
+  onLargo,
+}: {
+  partida: NonNullable<VistaDeLobby['partida']>
+  onPalabras: (palabras: number) => void
+  onLargo: (largo: number) => void
+}) {
+  return (
+    <section className="flex flex-col gap-5">
+      <Escogencia
+        titulo="Cuántas palabras"
+        detalle="Las mismas palabras, en el mismo orden, para todos."
+        opciones={OPCIONES_DE_PALABRAS}
+        valor={partida.palabras as (typeof OPCIONES_DE_PALABRAS)[number]}
+        etiqueta={(n) => String(n)}
+        onCambiar={onPalabras}
+      />
+      {LARGOS.length > 1 && (
+        <Escogencia
+          titulo="Letras por palabra"
+          opciones={LARGOS}
+          valor={partida.largo as (typeof LARGOS)[number]}
+          etiqueta={(n) => String(n)}
+          onCambiar={onLargo}
+        />
+      )}
+    </section>
+  )
+}
+
+/** The rules in four lines, until Palabras has its own «Cómo se juega». */
+function ComoSeJuegaPalabras({ largo }: { largo: number }) {
+  return (
+    <details className="text-muted-foreground text-sm">
+      <summary className="hover:text-foreground w-fit cursor-pointer underline underline-offset-2">
+        Cómo se juega Palabras
+      </summary>
+      <ul className="mt-2 flex list-disc flex-col gap-1 pl-5">
+        <li>Todos adivinan las mismas palabras de {largo} letras, en el mismo orden.</li>
+        <li>
+          Seis intentos por palabra. Verde: letra en su lugar. Amarillo: está, pero en otro
+          lugar. Gris: no está.
+        </li>
+        <li>
+          Si no la adivinas, se revela, pasas a la siguiente y sumas{' '}
+          {MS_CASTIGO / 60_000} minutos a tu tiempo.
+        </li>
+        <li>Gana el menor tiempo. De los demás ves el avance y los colores, nunca las letras.</li>
+      </ul>
+    </details>
   )
 }
 

@@ -93,6 +93,8 @@ async function ejecutar(
           segundosBot: accion.segundosBot,
           segundosVentana: accion.segundosVentana,
           balas: accion.balas,
+          palabras: accion.palabras,
+          largo: accion.largo,
           verDescarte: accion.verDescarte,
           verHistorial: accion.verHistorial,
         }),

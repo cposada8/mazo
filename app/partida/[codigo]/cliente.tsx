@@ -13,16 +13,18 @@
  * same deal, because the engine is deterministic.
  */
 
-import { useCallback, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { leerBaraja } from '@/app/jugar/ajustes'
 import { Juego, Tablero } from '@/app/jugar/juego'
 import { useIdentidad } from '@/components/identidad'
 import { MesaMentirosoLocal } from '@/components/mentiroso/local'
 import { MesaMentiroso } from '@/components/mentiroso/mesa'
+import { TableroPalabras } from '@/components/palabras/tablero'
 import { abandonarPartida, type VistaDeLobby } from '@/lib/lobby'
 import { Lobby } from './lobby'
 import { useMentirosoRemoto } from './useMentirosoRemoto'
+import { usePalabrasRemoto } from './usePalabrasRemoto'
 import { useMesaRemota } from './useMesaRemota'
 
 /**
@@ -37,8 +39,14 @@ import { useMesaRemota } from './useMesaRemota'
 function useSalir(codigo: string, secreto: string | undefined) {
   const router = useRouter()
   return useCallback(
-    async (repartida: boolean) => {
-      if (repartida) {
+    async (repartida: boolean, carrera = false) => {
+      if (carrera) {
+        const seguro = window.confirm(
+          'Si sales, dejas la carrera: quedas en la tabla con lo que llevas y ' +
+            'nadie te espera.\n\n¿Salir de todos modos?',
+        )
+        if (!seguro) return
+      } else if (repartida) {
         const seguro = window.confirm(
           'Si sales, dejas la partida para siempre: tu puesto queda libre, no ' +
             'te reparten más cartas y los demás siguen sin esperarte. Tu puntaje ' +
@@ -77,6 +85,12 @@ export function PartidaCliente({
   const { partida } = repartida
   const humanos = partida.asientos.filter((asiento) => !asiento.esBot)
   const soloBots = humanos.length <= 1
+
+  // Palabras has one home, the server: it alone holds the answers (Phase 86).
+  // Leaving a race asks nothing — your time stays in the ranking.
+  if (partida.juego === 'palabras') {
+    return <CarreraDelServidor codigo={codigo} onSalir={() => void salir(false, true)} />
+  }
 
   // A Mentiroso partida never reaches Carioca's tables (Phase 78): alone with
   // bots it plays here (Phase 79), with other people the server referees it
@@ -230,6 +244,52 @@ function MesaMentirosoDelServidor({
       onMentiroso={remota.onMentiroso}
       onCreer={remota.onCreer}
       onSalir={onSalir}
+    />
+  )
+}
+
+/** A Palabras race: always on the server, which holds the words (Phase 86). */
+function CarreraDelServidor({ codigo, onSalir }: { codigo: string; onSalir: () => void }) {
+  const { identidad } = useIdentidad()
+  const remota = usePalabrasRemoto({ codigo, secreto: identidad?.secreto ?? '' })
+  const router = useRouter()
+  const nombres = useMemo(
+    () => new Map((remota.mesa?.asientos ?? []).map((a) => [a.indice, a.alias] as const)),
+    [remota.mesa?.asientos],
+  )
+
+  if (!remota.mesa) {
+    return (
+      <main className="mx-auto flex w-full max-w-md flex-1 flex-col items-center justify-center gap-3 px-6 py-16 text-center">
+        <p className="text-muted-foreground text-sm">
+          {remota.perdida ? 'Ya no tienes lugar en esta carrera.' : 'Abriendo la carrera…'}
+        </p>
+        {remota.perdida && (
+          <button
+            type="button"
+            onClick={() => router.push('/')}
+            className="border-input hover:bg-accent rounded-md border px-4 py-2 text-sm"
+          >
+            Volver al inicio
+          </button>
+        )}
+      </main>
+    )
+  }
+
+  const { mesa } = remota
+  const yo = mesa.asientos.find((a) => a.indice === mesa.vista.propio?.asiento)
+  return (
+    <TableroPalabras
+      vista={mesa.vista}
+      nombres={nombres}
+      soyHost={Boolean(yo?.esHost)}
+      enviando={remota.enviando}
+      error={remota.error}
+      ahora={remota.ahora}
+      onEnviar={remota.enviar}
+      onCerrar={remota.cerrar}
+      onSalir={mesa.vista.cerrada || mesa.vista.propio?.terminoEn != null ? () => router.push('/') : onSalir}
     />
   )
 }

@@ -1,6 +1,6 @@
 # Project status — pick up here
 
-Last updated after Phase 81 — **Milestone 8 closed: Mazo has two games**, v2.0.0 — **Carioca is complete**, and Milestone 8 (el Mentiroso) has begun.
+Last updated after the Palabras MVP (Phases 82–86) — **Mazo has three games**, v2.2.0 in production. Milestone 9 (Palabras) goes on with Phases 87–91.
 
 Read this first, then `mission.md` for the why, `carioca-rules.md` for the game,
 `tech-stack.md` for the stack, and `roadmap.md` for what comes next. This file is
@@ -294,10 +294,10 @@ forwards dev to main so dev knows the number it builds on. Vercel deploys
 
 ## What comes next
 
-**On dev, not yet in production (v2.0.0):** el Mentiroso's table redrawn and
-animated (plays fly in, a call is shouted, turned, judged and carried off),
-and **the bullets** (`mentiroso-rules.md`). Releasing needs
-`prisma/sql/82-balas.sql` on `mazo` first — applied to `mazo-dev`.
+**Production got Palabras in v2.2.0** (2026-11-15), at the owner's word,
+as the MVP — before Phases 87–91: `mazo` took `prisma/sql/84-palabras.sql`
+before the release deployed. v2.1.0 before it carried el Mentiroso's
+redrawn table and its bullets (`82-balas.sql`).
 
 **Production got the gallery in v1.6.0** (2026-11-05): `mazo` took
 `prisma/sql/71-galeria.sql` and its sixteen faces in `mazo-comodines`
@@ -306,7 +306,22 @@ next schema change goes the same way — SQL under `prisma/sql/`, applied to
 `mazo-dev`, then to `mazo` before `npm run publicar`. Production's database
 credentials are in `.env.turso`; `vercel env pull` masks them.
 
-**Next — Milestone 8, el Mentiroso** (the owner, 2026-11-05). Its rules are
+**Next — Milestone 9, Palabras** (the owner, 2026-11-15): Wordle in
+Spanish, as a race — n words drawn at random from about a thousand, the
+same words in the same order for everyone, the first to finish wins. Its
+rules are `specs/palabras-rules.md`, drafted for the owner to correct;
+`roadmap.md` has the phases:
+
+1. ~~Phases 82–86~~ ✅ Done as an MVP, on dev, with words of 5 to 8 letters
+   (the owner's addition). **In production as v2.2.0**; its SQL is on
+   `mazo-dev` and `mazo`. The owner still has to read the answers.
+2. Phase 87 — Cualquier número de palabras: type how many, 1 to 100.
+3. Phase 88 — Volver a ver cómo salió cada palabra, on the finish screen.
+4. Phase 89 — Modalidad con tiempo: the most words in x minutes.
+5. Phase 90 — Vidas: k lives in the time mode, a missed word costs one.
+6. Phase 91 — Cómo se juega, and the release of Phases 87–90.
+
+**Milestone 8, el Mentiroso** (the owner, 2026-11-05), closed. Its rules are
 `specs/mentiroso-rules.md`, settled; `roadmap.md` has the phases:
 
 1. ~~Phase 75 — Dos juegos, un motor.~~ ✅ Done, on dev: `lib/engine/comun/`

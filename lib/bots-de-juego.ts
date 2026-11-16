@@ -17,6 +17,7 @@ export type BotDeJuego = {
 }
 
 export function botsDeJuego(juego: Juego): readonly BotDeJuego[] {
+  if (juego === 'palabras') return []
   return juego === 'mentiroso' ? BOTS_MENTIROSO : BOTS
 }
 

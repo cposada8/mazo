@@ -18,6 +18,7 @@ import { CONFIG_POR_DEFECTO } from '@/lib/engine'
 import { LARGO_DE_CODIGO } from '@/lib/codigo'
 import { DESCRIPCION_DE_JUEGO, JUEGOS, type Juego, NOMBRE_DE_JUEGO } from '@/lib/juegos'
 import { crearPartidaRemota, dondeEstoyRemoto } from '@/lib/lobby'
+import { cn } from '@/lib/utils'
 
 export function Puerta() {
   const router = useRouter()
@@ -97,13 +98,17 @@ export function Puerta() {
       <div className="flex flex-col gap-1.5">
         <p className="text-sm font-medium">Crear una partida de…</p>
         <div className="grid grid-cols-2 gap-2">
-          {JUEGOS.map((juego) => (
+          {JUEGOS.map((juego, i) => (
             <button
               key={juego}
               type="button"
               onClick={() => crear(juego)}
               disabled={!identidad || creando !== null}
-              className="bg-primary text-primary-foreground flex flex-col items-start gap-1 rounded-md px-4 py-3 text-left disabled:opacity-50"
+              className={cn(
+                'bg-primary text-primary-foreground flex flex-col items-start gap-1 rounded-md px-4 py-3 text-left disabled:opacity-50',
+                // An odd one out takes the whole row rather than leaving a hole.
+                JUEGOS.length % 2 === 1 && i === JUEGOS.length - 1 && 'col-span-2',
+              )}
             >
               <span className="flex items-center gap-2 text-sm font-medium">
                 {creando === juego ? (
@@ -121,8 +126,8 @@ export function Puerta() {
         </div>
       </div>
       <p className="text-muted-foreground -mt-2 text-xs">
-        Empiezas de host con tres bots en la mesa. Quítalos, o invita gente con
-        el código.
+        Empiezas de host. En las cartas hay tres bots en la mesa: quítalos, o
+        invita gente con el código. Palabras se juega contra personas.
       </p>
 
       <form onSubmit={unirse} className="flex gap-2">
