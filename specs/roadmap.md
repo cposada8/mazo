@@ -3258,6 +3258,101 @@ platform of two games. **Milestone 8 is closed.**
 
 ---
 
+## Milestone 9 — Palabras
+
+*The owner, 2026-11-15: the third game, and the first without cards —
+Wordle in Spanish, played as a race. Whoever creates the partida chooses
+how many words; that many are drawn at random from a list of about a
+thousand, and every player gets the same words in the same order. The
+first to finish wins, and others may join. Its rules are
+`specs/palabras-rules.md`, drafted from that brief in the puzzle's common
+form, for the owner to correct — above all the rules marked (Mazo's call):
+the penalty for a missed word, when the race closes, and joining late.
+The order is el Mentiroso's: rules and words first, then the engine, then
+the door, then the board, then other people. Carioca and el Mentiroso keep
+working, untouched, at every step.*
+
+### Phase 82 — Las palabras
+The two lists, before any code reads them: **the answers** — about 1,000
+common five-letter Spanish words — and **the accepted guesses**, a much
+longer list of real five-letter words, every answer among them. Kept as
+data under `lib/engine/palabras/` (or a sibling), normalised the same way
+play is: uppercase, tildes removed, Ñ kept. The answers are read by a
+person before they are committed — nothing obscure, nothing offensive, no
+proper nouns, no plurals as answers.
+
+**Done when:** a test proves every answer and every guess is five letters
+of the 27, there are no repeats in either list, every answer is an
+accepted guess, and the answers number at least 1,000; and the owner has
+read the answers.
+
+### Phase 83 — El motor de Palabras
+The rules as a pure state machine in `lib/engine/palabras/`, beside the
+other two, importing only `comun/` (the seeded stream): the bag of n words
+drawn from a seed without repetition, a try scored green/yellow/grey with
+repeated letters handled as `palabras-rules.md` says, six tries a word, a
+word ended by a solve or by the sixth miss, the next word opening, each
+player's time and penalties, and the ranking. The player's view holds
+their own tries and colours, the words they have ended, and — of each
+rival — only the colours, never a letter or an unended word.
+
+**Done when:** tests cover every rule in `palabras-rules.md` — the
+repeated-letter cases both ways (PERRO against ERROR, an answer with one
+copy against a try with two), a try outside the accepted list refused at
+no cost, a missed word revealed with its penalty, the ranking and its
+tie-break, a late joiner's clock — the same seed always draws the same
+bag, and a test searches every view for an answer its player has not
+ended.
+
+### Phase 84 — La puerta sabe que hay tres juegos
+`Partida.juego` learns `'palabras'` (additive SQL under `prisma/sql/`,
+applied to `mazo-dev` and then `mazo` before the release, with the number
+of words as its own column). «Crear una partida» offers a third button;
+the lobby shows only Palabras' setting — how many words (3, 5, 10, 15, 20)
+— and no bots; seats are 1 to 8. Carioca's and el Mentiroso's endpoints
+answer `OTRO_JUEGO` to a Palabras partida, as they already do to each
+other.
+
+**Done when:** a Carioca and a Mentiroso partida are created, joined and
+played exactly as in v2.1.0, and a Palabras partida can be created, its
+number of words survives a reload, and its lobby fills by code.
+
+### Phase 85 — El tablero
+The board on a phone, alone: the six-row grid of the current word, the
+on-screen keyboard with **Ñ** and its ENVIAR and ⌫ keys (the physical
+keyboard too, on a computer), the word count (4/10) and the clock with its
+penalties. Told in beats, in the table's animation language: letters
+landing as they are typed, a try turning over one tile at a time before
+its colours are shown, a refused try shaking, a solved row lifting, a
+missed word revealed, then the next board sliding in. Played locally from
+a seed first, through `/pruebas/palabras`.
+
+**Done when:** a whole bag of 10 words is played to the end on a phone
+upright and on a computer, every rule visible as it happens, nothing off
+screen, no sideways scroll.
+
+### Phase 86 — La carrera
+Several people, one bag, the server the referee: it holds the words,
+scores every try, and sends a phone only its own colours and the words it
+has ended. Everyone starts on the server's clock after a 3-2-1; each screen
+shows the rivals' progress as coloured squares and which word they are on,
+says aloud when someone finishes, and ends on the ranking. Joining a race
+already running and leaving one work as the rules say.
+
+**Done when:** three people on three phones race a bag of 5 words from one
+code, each seeing the others' colours and never their letters, the
+answers absent from every response until each player ends them, and every
+screen showing the same ranking at the end.
+
+### Phase 87 — Cómo se juega, y a producción
+«Cómo se juega» for Palabras — the rules on one screen with a real row of
+tiles turning over, reachable from its lobby and its board — and the home
+page naming three games. Then the release, after the SQL reaches `mazo`.
+
+**Done when:** Palabras is in production, and `estado.md` says so.
+
+---
+
 ## After
 
 Not scheduled, and not to be started before Milestone 3 — online play:
