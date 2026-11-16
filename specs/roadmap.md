@@ -3751,7 +3751,7 @@ the time limit, the finish table. So the order is el Mentiroso's: first
 split what a race shares from what is Palabras' own, then the game on top.
 Palabras keeps working, untouched, at every step.*
 
-### Phase 99 — Una carrera, dos juegos
+### Phase 99 — Una carrera, dos juegos ✅
 Split Palabras' engine and board into what any guessing race shares — a
 list drawn from the seed, one board per player, the clocks (n items or x
 minutes), closing, late joiners, the ranking, lives, what a view shows of
@@ -3761,6 +3761,22 @@ six tries, the keyboard. No behaviour changes; imports move.
 **Done when:** every Palabras test passes with only its imports changed,
 the purity test covers the new shared half, and nothing in it names a word
 or a colour.
+
+**Done.** `lib/engine/comun/carrera.ts` is the race: boards, the list, the
+clocks and both modes, closing and the wait, late joiners, penalties,
+lives, chaining, `intentarEn` and the ranking, generic over a game's try.
+A game brings a `Regla` — how a try is read, how it is scored against its
+secret, how many tries a secret allows (six, or none). `comun/vista-carrera.ts`
+is the view, with a try's public half handed in (Palabras' colours).
+Palabras is now a thin layer — its words, `puntuar`, `REGLA_PALABRAS` — and
+re-exports every name it had, so nothing importing it changed; the race's
+constants moved with the race and `opciones.ts` re-exports them for the
+client. The server split the same way: `lib/server/carrera.ts` is the
+referee (`arbitroDeCarrera`), `lib/server/palabras.ts` runs it with
+Palabras' engine under its old names. 953 tests pass with not one line of
+a test changed; the purity test took the new shared files by itself. The
+board's shared pieces are split in Phase 102, against the second board
+that needs them.
 
 ### Phase 100 — El motor de Punto y Fama
 On the shared race: numbers of n digits without repeats drawn from the

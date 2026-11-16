@@ -1,29 +1,51 @@
 /**
  * Palabras: the race as a pure state machine (Phase 83).
  *
- * The rules are `specs/palabras-rules.md`. Like the other two engines, this
- * validates and never decides, and it owns no clock: every function that
- * needs the time is handed `ahora` (epoch ms), so the server's clock is the
- * only one and the tests own every instant.
- *
- * A partida is a bag of n answers drawn from the seed, and one board per
- * player. Players never wait for each other: each solves the same words in
- * the same order at their own pace, and the state is simply every board.
+ * The rules are `specs/palabras-rules.md`. Since Phase 99 the race itself —
+ * boards, clocks, closing, lives, penalties, chaining, the ranking — is the
+ * shared one in `../comun/carrera.ts`, which Punto y Fama races on too. What
+ * is Palabras' own is here: the words, how a try is read (a real word of
+ * the right length), how it is scored (green, yellow, grey), and six tries.
+ * The names the rest of the app has always used are kept, so nothing that
+ * imports this had to change.
  */
 
+import {
+  type EstadoCarrera,
+  type Modo,
+  type Regla,
+  type TableroDe,
+  type Terminada,
+  empezarCarrera,
+  intentarEn,
+} from '../comun/carrera'
 import { createRng, shuffle } from '../comun/random'
 import { aceptadasDe, respuestasDe } from './listas'
-import {
-  INTENTOS_POR_PALABRA,
-  LARGO_POR_DEFECTO,
-  type Modo,
-  MS_CASTIGO,
-  MS_CUENTA_ATRAS,
-  MS_HASTA_CERRAR,
-} from './opciones'
+import { INTENTOS_POR_PALABRA, LARGO_POR_DEFECTO } from './opciones'
 
 export * from './listas'
 export * from './opciones'
+export {
+  type Puesto,
+  acertadasDe,
+  castigoDe,
+  cerrada,
+  cerrar,
+  clasificacion,
+  esperaDe,
+  fallosDe,
+  finDelTiempo,
+  largoDe,
+  modoDe,
+  retirarJugador,
+  sumarJugador,
+  tableroDe,
+  termino,
+  tiempoDe,
+  ultimaAcertadaEn,
+  vidasDe,
+  yaTermino,
+} from '../comun/carrera'
 
 export type Color = 'verde' | 'amarillo' | 'gris'
 
@@ -35,56 +57,9 @@ export type Intento = {
 }
 
 /** A word a player has ended — solved, or its six tries spent. */
-export type PalabraTerminada = {
-  readonly palabra: string
-  readonly acertada: boolean
-  readonly intentos: readonly Intento[]
-  /** Ms from the race's start to the try that ended it (Phase 89's tie-break). */
-  readonly en?: number
-  /**
-   * Not ended: the word a player was on when the race closed, with the tries
-   * they got in (the owner, 2026-11-15). Only ever built by the view, never
-   * stored, and only once nobody can play any more.
-   */
-  readonly sinTerminar?: boolean
-}
-
-export type Tablero = {
-  readonly asiento: number
-  /** The words already ended, in bag order. Its length is the word in play. */
-  readonly terminadas: readonly PalabraTerminada[]
-  /** The tries on the word in play. */
-  readonly intentos: readonly Intento[]
-  /** Ms from the race's start to the moment the last word ended. */
-  readonly terminoEn: number | null
-  /** Left on purpose: ranked with what they finished, waited for by nobody. */
-  readonly retirado: boolean
-}
-
-export type EstadoPalabras = {
-  readonly seed: string
-  readonly bolsa: readonly string[]
-  /** Epoch ms when the first word opens for everybody — after the 3-2-1. */
-  readonly inicio: number
-  readonly tableros: readonly Tablero[]
-  /** Epoch ms the race was closed by the host, if it was. */
-  readonly cerradaEn: number | null
-  /** How this race is won (Phase 89). Absent in races dealt before: n words. */
-  readonly modo?: Modo
-  /** The time mode's length, ms from `inicio`. */
-  readonly msLimite?: number
-  /** The time mode's lives per player (Phase 90); null or absent: «sin vidas». */
-  readonly vidas?: number | null
-  /** What a missed word adds, ms (Phase 94). Absent in older races: two minutes. */
-  readonly msCastigo?: number
-  /**
-   * How long the race waits after the first finish, ms (Phase 95): null is
-   * «sin límite». Absent in races dealt before: the old half hour.
-   */
-  readonly msEspera?: number | null
-  /** Each word opens with the one before as its first try (Phase 96). */
-  readonly encadenadas?: boolean
-}
+export type PalabraTerminada = Terminada<Intento>
+export type Tablero = TableroDe<Intento>
+export type EstadoPalabras = EstadoCarrera<Intento>
 
 export type ErrorDePalabras =
   | 'NO_JUEGAS'
@@ -137,20 +112,6 @@ export function sacarBolsa(seed: string, cuantas: number, largo: number = LARGO_
   return shuffle(respuestas, createRng(`palabras${sal}:${seed}`)).slice(0, n)
 }
 
-export function modoDe(estado: EstadoPalabras): Modo {
-  return estado.modo ?? 'palabras'
-}
-
-/** Epoch ms when a time-limit race stops for everyone; null for n words. */
-export function finDelTiempo(estado: EstadoPalabras): number | null {
-  return modoDe(estado) === 'tiempo' && estado.msLimite ? estado.inicio + estado.msLimite : null
-}
-
-/** How many letters this race's words have. */
-export function largoDe(estado: EstadoPalabras): number {
-  return [...estado.bolsa[0]].length
-}
-
 /**
  * Score a try against the answer — the puzzle's standard rule. Greens first;
  * then, left to right, a letter is yellow only while the answer still has an
@@ -178,11 +139,21 @@ export function puntuar(intento: string, respuesta: string): Color[] {
   return colores
 }
 
-// ------------------------------------------------------------------ race
-
-function tableroNuevo(asiento: number): Tablero {
-  return { asiento, terminadas: [], intentos: [], terminoEn: null, retirado: false }
+/** Palabras' rule for the shared race: a real word of the race's length, six tries. */
+export const REGLA_PALABRAS: Regla<Intento> = {
+  validar: (texto, estado) => {
+    const palabra = normalizar(texto)
+    if ([...palabra].length !== [...estado.bolsa[0]].length || !/^[A-ZÑ]+$/.test(palabra)) {
+      return { ok: false, code: 'LARGO' }
+    }
+    if (!esAceptada(palabra)) return { ok: false, code: 'NO_ES_PALABRA' }
+    return { ok: true, palabra }
+  },
+  intento: (palabra, respuesta) => ({ palabra, colores: puntuar(palabra, respuesta) }),
+  maxIntentos: INTENTOS_POR_PALABRA,
 }
+
+// ------------------------------------------------------------------ race
 
 export function empezarPalabras(opciones: {
   seed: string
@@ -207,140 +178,15 @@ export function empezarPalabras(opciones: {
 }): EstadoPalabras {
   const largo = opciones.largo ?? LARGO_POR_DEFECTO
   const conTiempo = opciones.modo === 'tiempo'
-  return {
-    seed: opciones.seed,
+  return empezarCarrera<Intento>({
+    ...opciones,
     // Against the clock the list is every answer, so nobody runs out.
     bolsa: sacarBolsa(
       opciones.seed,
       conTiempo ? respuestasDe(largo).length : opciones.palabras,
       largo,
     ),
-    inicio: opciones.ahora + MS_CUENTA_ATRAS,
-    tableros: opciones.asientos.map(tableroNuevo),
-    cerradaEn: null,
-    ...(opciones.encadenadas ? { encadenadas: true } : {}),
-    ...(conTiempo
-      ? {
-          modo: 'tiempo' as const,
-          msLimite: (opciones.minutos ?? 5) * 60_000,
-          vidas: opciones.vidas ? opciones.vidas : null,
-        }
-      : {
-          msCastigo: (opciones.castigo ?? 2) * 60_000,
-          msEspera: opciones.espera ? opciones.espera * 60_000 : null,
-        }),
-  }
-}
-
-/**
- * A player joining a race already running (Mazo's call): their clock is the
- * race's, so they simply start behind. Idempotent.
- */
-export function sumarJugador(estado: EstadoPalabras, asiento: number): EstadoPalabras {
-  if (estado.tableros.some((t) => t.asiento === asiento)) return estado
-  return { ...estado, tableros: [...estado.tableros, tableroNuevo(asiento)] }
-}
-
-export function tableroDe(estado: EstadoPalabras, asiento: number): Tablero | null {
-  return estado.tableros.find((t) => t.asiento === asiento) ?? null
-}
-
-export function termino(tablero: Tablero): boolean {
-  return tablero.terminoEn !== null
-}
-
-/**
- * This player can play no more: they ended every word, or the race is over
- * for everyone. What may be shown to a player who has finished — the rivals'
- * letters (Phase 88) — hangs on this.
- */
-export function yaTermino(estado: EstadoPalabras, tablero: Tablero, ahora: number): boolean {
-  return termino(tablero) || cerrada(estado, ahora)
-}
-
-/**
- * A player's time: when they finished, plus two minutes per missed word.
- * Against the clock there is no penalty — the minutes are the limit — and
- * the time that counts is when they solved their last word.
- */
-export function tiempoDe(
-  tablero: Tablero,
-  modo: Modo = 'palabras',
-  msCastigo: number = MS_CASTIGO,
-): number | null {
-  if (modo === 'tiempo') return ultimaAcertadaEn(tablero)
-  if (tablero.terminoEn === null) return null
-  return tablero.terminoEn + fallosDe(tablero) * msCastigo
-}
-
-/** What a missed word adds in this race, ms. */
-export function castigoDe(estado: EstadoPalabras): number {
-  return estado.msCastigo ?? MS_CASTIGO
-}
-
-/** Lives left in the time mode, or null when there are none to lose. */
-export function vidasDe(estado: EstadoPalabras, tablero: Tablero): number | null {
-  if (modoDe(estado) !== 'tiempo' || !estado.vidas) return null
-  return Math.max(0, estado.vidas - fallosDe(tablero))
-}
-
-/** When this player solved their most recent word, ms from the start. */
-export function ultimaAcertadaEn(tablero: Tablero): number | null {
-  const acertadas = tablero.terminadas.filter((p) => p.acertada && p.en !== undefined)
-  return acertadas.length > 0 ? acertadas[acertadas.length - 1].en! : null
-}
-
-export function fallosDe(tablero: Tablero): number {
-  return tablero.terminadas.filter((p) => !p.acertada).length
-}
-
-export function acertadasDe(tablero: Tablero): number {
-  return tablero.terminadas.filter((p) => p.acertada).length
-}
-
-function intentosTotales(tablero: Tablero): number {
-  return (
-    tablero.terminadas.reduce((suma, p) => suma + p.intentos.length, 0) + tablero.intentos.length
-  )
-}
-
-/**
- * Closed when every player still racing has finished, when the host closed
- * it, or half an hour after the first player finished.
- */
-export function cerrada(estado: EstadoPalabras, ahora: number): boolean {
-  if (estado.cerradaEn !== null) return true
-  const fin = finDelTiempo(estado)
-  if (fin !== null && ahora >= fin) return true
-  const enCarrera = estado.tableros.filter((t) => !t.retirado)
-  if (enCarrera.length > 0 && enCarrera.every(termino)) return true
-  if (estado.tableros.length > 0 && estado.tableros.every((t) => t.retirado || termino(t))) {
-    return true
-  }
-  // The wait for stragglers is the n-words race's; time has its own end.
-  if (fin !== null) return false
-  const espera = esperaDe(estado)
-  if (espera === null) return false
-  const primero = Math.min(
-    ...estado.tableros.filter(termino).map((t) => estado.inicio + t.terminoEn!),
-  )
-  return Number.isFinite(primero) && ahora >= primero + espera
-}
-
-/** How long this race waits after the first finish, ms; null for «sin límite». */
-export function esperaDe(estado: EstadoPalabras): number | null {
-  return estado.msEspera === undefined ? MS_HASTA_CERRAR : estado.msEspera
-}
-
-export function cerrar(estado: EstadoPalabras, ahora: number): EstadoPalabras {
-  return estado.cerradaEn !== null ? estado : { ...estado, cerradaEn: ahora }
-}
-
-export function retirarJugador(estado: EstadoPalabras, asiento: number): EstadoPalabras {
-  return {
-    ...estado,
-    tableros: estado.tableros.map((t) => (t.asiento === asiento ? { ...t, retirado: true } : t)),
-  }
+  })
 }
 
 /** One try by one player. Refused tries cost nothing. */
@@ -350,112 +196,5 @@ export function intentar(
   texto: string,
   ahora: number,
 ): ResultadoDeIntento {
-  const tablero = tableroDe(estado, asiento)
-  if (!tablero || tablero.retirado) return { ok: false, code: 'NO_JUEGAS' }
-  if (ahora < estado.inicio) return { ok: false, code: 'NO_EMPEZO' }
-  if (termino(tablero)) return { ok: false, code: 'YA_TERMINASTE' }
-  if (cerrada(estado, ahora)) return { ok: false, code: 'CERRADA' }
-
-  const palabra = normalizar(texto)
-  if ([...palabra].length !== largoDe(estado) || !/^[A-ZÑ]+$/.test(palabra)) {
-    return { ok: false, code: 'LARGO' }
-  }
-  if (!esAceptada(palabra)) return { ok: false, code: 'NO_ES_PALABRA' }
-
-  const respuesta = estado.bolsa[tablero.terminadas.length]
-  const intento: Intento = { palabra, colores: puntuar(palabra, respuesta) }
-  const intentos = [...tablero.intentos, intento]
-  const acerto = palabra === respuesta
-  const fin = acerto || intentos.length >= INTENTOS_POR_PALABRA
-
-  let nuevo: Tablero = { ...tablero, intentos }
-  let terminada: PalabraTerminada | null = null
-  if (fin) {
-    terminada = { palabra: respuesta, acertada: acerto, intentos, en: ahora - estado.inicio }
-    const terminadas = [...tablero.terminadas, terminada]
-    nuevo = {
-      ...tablero,
-      terminadas,
-      intentos: [],
-      terminoEn: terminadas.length === estado.bolsa.length ? ahora - estado.inicio : null,
-    }
-    // The last life gone (Phase 90): this player's race is over, with what they solved.
-    if (vidasDe(estado, nuevo) === 0) nuevo = { ...nuevo, terminoEn: ahora - estado.inicio }
-    // Chained (Phase 96): the next word opens with this one already played —
-    // its answer, solved or missed — scored against the new word. One of the
-    // six; never the answer, since the bag never repeats a word.
-    const siguiente = estado.bolsa[terminadas.length]
-    if (estado.encadenadas && nuevo.terminoEn === null && siguiente) {
-      nuevo = {
-        ...nuevo,
-        intentos: [{ palabra: respuesta, colores: puntuar(respuesta, siguiente), encadenado: true }],
-      }
-    }
-  }
-
-  return {
-    ok: true,
-    estado: {
-      ...estado,
-      tableros: estado.tableros.map((t) => (t.asiento === asiento ? nuevo : t)),
-    },
-    intento,
-    termino: terminada,
-  }
-}
-
-export type Puesto = {
-  readonly asiento: number
-  readonly lugar: number
-  readonly termino: boolean
-  /**
-   * n words: finished time with penalties, ms; null if they did not finish.
-   * Time limit: when they solved their last word; null if they solved none.
-   */
-  readonly tiempo: number | null
-  readonly acertadas: number
-  readonly fallos: number
-  readonly intentos: number
-  readonly retirado: boolean
-}
-
-/**
- * The ranking. Those who finished first, by time with penalties, ties to
- * fewer tries; then the rest by words solved, then by words ended.
- */
-export function clasificacion(estado: EstadoPalabras): Puesto[] {
-  const modo = modoDe(estado)
-  const filas = estado.tableros.map((t) => ({
-    asiento: t.asiento,
-    termino: termino(t),
-    tiempo: tiempoDe(t, modo, castigoDe(estado)),
-    acertadas: acertadasDe(t),
-    fallos: fallosDe(t),
-    intentos: intentosTotales(t),
-    terminadas: t.terminadas.length,
-    retirado: t.retirado,
-  }))
-  filas.sort((a, b) => {
-    // Against the clock: the most words solved, then who got there first.
-    if (modo === 'tiempo') {
-      return (
-        b.acertadas - a.acertadas ||
-        (a.tiempo ?? Infinity) - (b.tiempo ?? Infinity) ||
-        a.intentos - b.intentos
-      )
-    }
-    if (a.termino !== b.termino) return a.termino ? -1 : 1
-    if (a.termino) return a.tiempo! - b.tiempo! || a.intentos - b.intentos
-    return b.acertadas - a.acertadas || b.terminadas - a.terminadas || a.intentos - b.intentos
-  })
-  return filas.map((fila, i) => ({
-    asiento: fila.asiento,
-    lugar: i + 1,
-    termino: fila.termino,
-    tiempo: fila.tiempo,
-    acertadas: fila.acertadas,
-    fallos: fila.fallos,
-    intentos: fila.intentos,
-    retirado: fila.retirado,
-  }))
+  return intentarEn(REGLA_PALABRAS, estado, asiento, texto, ahora) as ResultadoDeIntento
 }
