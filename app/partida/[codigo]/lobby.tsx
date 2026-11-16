@@ -149,6 +149,7 @@ export function Lobby({
             ...(accion.vidas !== undefined ? { vidas: accion.vidas } : {}),
             ...(accion.castigo !== undefined ? { castigo: accion.castigo } : {}),
             ...(accion.espera !== undefined ? { espera: accion.espera } : {}),
+            ...(accion.encadenadas !== undefined ? { encadenadas: accion.encadenadas } : {}),
             ...(accion.verDescarte !== undefined
               ? { verDescarte: accion.verDescarte }
               : {}),
@@ -374,6 +375,7 @@ export function Lobby({
             onVidas={(vidas) => ajustar({ vidas })}
             onCastigo={(castigo) => ajustar({ castigo })}
             onEspera={(espera) => ajustar({ espera })}
+            onEncadenadas={(encadenadas) => ajustar({ encadenadas })}
           />
         ) : (
           <section className="text-muted-foreground flex flex-col gap-1 text-sm">
@@ -381,7 +383,8 @@ export function Lobby({
             <p>
               {partida.modo === 'tiempo'
                 ? `Tiempo límite: ${partida.minutos} min, ${partida.vidas ? `${partida.vidas} ${partida.vidas === 1 ? 'vida' : 'vidas'}` : 'sin vidas'}, palabras de ${partida.largo} letras`
-                : `${partida.palabras} palabras de ${partida.largo} letras, ${partida.castigo ? `+${partida.castigo} min por palabra fallada` : 'sin castigo'}`}
+                : `${partida.palabras} palabras de ${partida.largo} letras, ${partida.castigo ? `+${partida.castigo} min por palabra fallada` : 'sin castigo'}, ${partida.espera ? `se espera ${partida.espera} min al resto` : 'se espera a todos'}`}
+              {partida.encadenadas && ' · encadenadas'}
             </p>
           </section>
         )
@@ -757,6 +760,7 @@ function AjustesPalabras({
   onVidas,
   onCastigo,
   onEspera,
+  onEncadenadas,
 }: {
   partida: NonNullable<VistaDeLobby['partida']>
   onPalabras: (palabras: number) => void
@@ -766,6 +770,7 @@ function AjustesPalabras({
   onVidas: (vidas: number) => void
   onCastigo: (minutos: number) => void
   onEspera: (minutos: number) => void
+  onEncadenadas: (encadenadas: boolean) => void
 }) {
   return (
     <section className="flex flex-col gap-5">
@@ -853,6 +858,12 @@ function AjustesPalabras({
           onCambiar={onEspera}
         />
       )}
+      <Interruptor
+        titulo="Encadenadas"
+        detalle="Cada palabra empieza con la anterior ya jugada como primer intento: te quedan cinco."
+        activo={partida.encadenadas}
+        onCambiar={onEncadenadas}
+      />
       {LARGOS.length > 1 && (
         <Escogencia
           titulo="Letras por palabra"

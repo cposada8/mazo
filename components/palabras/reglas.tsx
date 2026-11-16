@@ -104,6 +104,16 @@ export function ComoSeJuegaPalabras() {
         </p>
       </Seccion>
 
+      <Seccion titulo="Encadenadas">
+        <p>
+          Una opción para las dos modalidades: <b>cada palabra empieza con la
+          anterior ya jugada</b> como primer intento, con sus colores. Si la
+          anterior fue COMER, la siguiente se abre con COMER en la primera
+          fila. Ese intento cuenta, así que te quedan cinco. Si no adivinaste
+          la anterior, igual se juega su respuesta.
+        </p>
+      </Seccion>
+
       <Seccion titulo="Los demás">
         <p>
           Mientras juegas ves de cada rival <b>en qué palabra va y sus

@@ -74,6 +74,7 @@ type FilaPartida = {
   vidas: number
   castigo: number
   espera: number
+  encadenadas: boolean
   verDescarte: boolean
   verHistorial: boolean
   asientos: {
@@ -110,6 +111,7 @@ function publicar(fila: FilaPartida): PartidaGuardada {
     vidas: fila.vidas,
     castigo: fila.castigo,
     espera: fila.espera,
+    encadenadas: fila.encadenadas,
     verDescarte: fila.verDescarte,
     verHistorial: fila.verHistorial,
     asientos: [...fila.asientos]
@@ -520,6 +522,7 @@ export async function actualizarAjustes(opciones: {
   vidas?: number
   castigo?: number
   espera?: number
+  encadenadas?: boolean
   verDescarte?: boolean
   verHistorial?: boolean
 }): Promise<ResultadoDeLobby> {
@@ -554,6 +557,7 @@ export async function actualizarAjustes(opciones: {
       ...(esNumeroDeVidas(opciones.vidas) ? { vidas: opciones.vidas } : {}),
       ...(esMinutosDeCastigo(opciones.castigo) ? { castigo: opciones.castigo } : {}),
       ...(esMinutosDeEspera(opciones.espera) ? { espera: opciones.espera } : {}),
+      ...(typeof opciones.encadenadas === 'boolean' ? { encadenadas: opciones.encadenadas } : {}),
       ...(opciones.verDescarte !== undefined
         ? { verDescarte: opciones.verDescarte }
         : {}),
@@ -634,6 +638,7 @@ export async function empezar(opciones: {
           vidas: fila.vidas,
           castigo: fila.castigo,
           espera: fila.espera,
+          encadenadas: fila.encadenadas,
         })
       : juego === 'mentiroso'
       ? empezarMentiroso({ jugadores: fila.asientos.length, seed: opciones.seed, balas: fila.balas })

@@ -177,6 +177,25 @@ describe('Palabras through the platform', () => {
     expect((await estadoDe(codigo)).msEspera).toBe(15 * 60_000)
   })
 
+  it('chained words: a switch the host turns on, and the server plays the chain (Phase 96)', async () => {
+    const creada = await partidas.crearPartida({
+      secreto: 'cata',
+      alias: 'cata',
+      juego: 'palabras',
+      config: CONFIG_POR_DEFECTO,
+    })
+    const codigo = creada.codigo
+    expect(creada.encadenadas).toBe(false)
+    await partidas.actualizarAjustes({ codigo, secreto: 'cata', encadenadas: true, palabras: 3 })
+    await partidas.empezar({ codigo, secreto: 'cata', seed: 'cadena' })
+    const estado = await estadoDe(codigo)
+    expect(estado.encadenadas).toBe(true)
+    const r = await carrera.intentarEnCarrera(codigo, 'cata', estado.bolsa[0], estado.inicio + 10)
+    expect(r.ok && r.mesa.vista.propio!.intentos).toEqual([
+      expect.objectContaining({ palabra: estado.bolsa[0], encadenado: true }),
+    ])
+  })
+
   it('refuses a number of words the lobby does not offer', async () => {
     const { codigo } = await carreraDeDos(3)
     const r = await partidas.actualizarAjustes({ codigo, secreto: 'ana', palabras: 999 })

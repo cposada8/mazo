@@ -3630,7 +3630,7 @@ twelve hours after the first finish a race «sin límite» is still open and
 closes when the last arrives; a 10-minute wait closes on the minute; an old
 race closes at 30.
 
-### Phase 96 — Palabras encadenadas
+### Phase 96 — Palabras encadenadas ✅
 *The owner, 2026-11-16:* an option, in **both** ways to race («Palabras
 límite» and «Tiempo límite»), where **each word starts with the one before
 already played as its first try**. The first word is COMER; you get it in
@@ -3655,6 +3655,19 @@ green, yellow and grey against the new word — a try spent, with no choice.
 first opens with the previous answer as a scored first row — after a solve
 and after a miss — the player has five tries of their own left, and with
 the switch off nothing changes.
+
+**Done.** The state carries `encadenadas`; when a word ends and another
+follows, `intentar` opens it with the ended word's answer already scored
+against the new one, marked `encadenado` — in the same request, so the
+server plays it and the board receives it. `Partida.encadenadas`
+(`prisma/sql/96-encadenadas.sql`, on `mazo-dev`). The lobby's «Encadenadas»
+switch, in both modes; «· encadenadas» in the summary; a section on the
+rules page. On the board, the next word comes in and its first row turns
+over tile by tile, the keyboard taking its colours only once it has. In
+the browser: ESPIA solved, FUSIL opening with ESPIA — S yellow, I green —
+and the keyboard following. Tests: both modes, after a solve and after a
+miss, five tries left, nothing chained after the last word or without the
+switch.
 
 ### Phase 97 — La suma de intentos
 *The owner, 2026-11-16:* the board shows **how many tries each player has

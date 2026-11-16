@@ -100,6 +100,7 @@ async function ejecutar(
           vidas: accion.vidas,
           castigo: accion.castigo,
           espera: accion.espera,
+          encadenadas: accion.encadenadas,
           verDescarte: accion.verDescarte,
           verHistorial: accion.verHistorial,
         }),

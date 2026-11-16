@@ -60,6 +60,8 @@ model Partida {
   /// Minutes «Palabras límite» waits after the first finish (Phase 95); 0 is
   /// «sin límite».
   espera           Int @default(0)
+  /// Each word opens with the one before as its first try (Phase 96).
+  encadenadas      Boolean @default(false)
   /// Memory aids (Phase 24), a table rule rather than a personal comfort:
   /// may the descarte be browsed, and may the ronda's story be reread.
   verDescarte  Boolean @default(true)

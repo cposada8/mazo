@@ -30,6 +30,8 @@ export type Color = 'verde' | 'amarillo' | 'gris'
 export type Intento = {
   readonly palabra: string
   readonly colores: readonly Color[]
+  /** Played for the player (Phase 96): the word before, opening this one. */
+  readonly encadenado?: boolean
 }
 
 /** A word a player has ended — solved, or its six tries spent. */
@@ -80,6 +82,8 @@ export type EstadoPalabras = {
    * «sin límite». Absent in races dealt before: the old half hour.
    */
   readonly msEspera?: number | null
+  /** Each word opens with the one before as its first try (Phase 96). */
+  readonly encadenadas?: boolean
 }
 
 export type ErrorDePalabras =
@@ -198,6 +202,8 @@ export function empezarPalabras(opciones: {
   castigo?: number
   /** Minutes «Palabras límite» waits after the first finish; 0 or absent: no limit. */
   espera?: number
+  /** Each word opens with the one before already played (Phase 96). */
+  encadenadas?: boolean
 }): EstadoPalabras {
   const largo = opciones.largo ?? LARGO_POR_DEFECTO
   const conTiempo = opciones.modo === 'tiempo'
@@ -212,6 +218,7 @@ export function empezarPalabras(opciones: {
     inicio: opciones.ahora + MS_CUENTA_ATRAS,
     tableros: opciones.asientos.map(tableroNuevo),
     cerradaEn: null,
+    ...(opciones.encadenadas ? { encadenadas: true } : {}),
     ...(conTiempo
       ? {
           modo: 'tiempo' as const,
@@ -374,6 +381,16 @@ export function intentar(
     }
     // The last life gone (Phase 90): this player's race is over, with what they solved.
     if (vidasDe(estado, nuevo) === 0) nuevo = { ...nuevo, terminoEn: ahora - estado.inicio }
+    // Chained (Phase 96): the next word opens with this one already played —
+    // its answer, solved or missed — scored against the new word. One of the
+    // six; never the answer, since the bag never repeats a word.
+    const siguiente = estado.bolsa[terminadas.length]
+    if (estado.encadenadas && nuevo.terminoEn === null && siguiente) {
+      nuevo = {
+        ...nuevo,
+        intentos: [{ palabra: respuesta, colores: puntuar(respuesta, siguiente), encadenado: true }],
+      }
+    }
   }
 
   return {

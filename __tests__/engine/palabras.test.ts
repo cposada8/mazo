@@ -387,3 +387,58 @@ describe('the wait after the first finish, chosen by the host (Phase 95)', () =>
     expect(cerrada(viejo, EN_CARRERA + 1000 + 30 * MINUTO)).toBe(true)
   })
 })
+
+describe('chained words (Phase 96)', () => {
+  function encadenada(modo?: 'tiempo') {
+    return empezarPalabras({
+      seed: 'cadena', palabras: 3, asientos: [0], ahora: AHORA, encadenadas: true,
+      ...(modo ? { modo, minutos: 5 } : {}),
+    })
+  }
+
+  it.each([undefined, 'tiempo' as const])('every word after the first opens with the one before (%s)', (modo) => {
+    let estado = encadenada(modo)
+    const [a, b] = estado.bolsa
+    expect(estado.tableros[0].intentos).toEqual([])
+    const r = intentar(estado, 0, a, EN_CARRERA + 1000)
+    if (!r.ok) throw new Error(r.code)
+    estado = r.estado
+    const abierta = estado.tableros[0].intentos
+    expect(abierta).toEqual([{ palabra: a, colores: puntuar(a, b), encadenado: true }])
+    // Five of the player's own left: the chained one counts.
+    for (const p of errados(b).slice(0, 4)) {
+      const x = intentar(estado, 0, p, EN_CARRERA + 2000)
+      if (!x.ok) throw new Error(x.code)
+      estado = x.estado
+    }
+    expect(estado.tableros[0].intentos).toHaveLength(5)
+    const sexto = intentar(estado, 0, errados(b)[4], EN_CARRERA + 3000)
+    expect(sexto.ok && sexto.termino).toMatchObject({ palabra: b, acertada: false })
+  })
+
+  it('after a miss, the next word still opens with the answer, not the last try', () => {
+    let estado = encadenada()
+    const [a, b] = estado.bolsa
+    for (const p of errados(a).slice(0, 6)) {
+      const r = intentar(estado, 0, p, EN_CARRERA + 1000)
+      if (!r.ok) throw new Error(r.code)
+      estado = r.estado
+    }
+    expect(estado.tableros[0].intentos[0]).toMatchObject({ palabra: a, encadenado: true })
+    expect(estado.tableros[0].intentos[0].colores).toEqual(puntuar(a, b))
+  })
+
+  it('nothing is chained after the last word, nor without the switch', () => {
+    let estado = encadenada()
+    for (const p of estado.bolsa) {
+      const r = intentar(estado, 0, p, EN_CARRERA + 1000)
+      if (!r.ok) throw new Error(r.code)
+      estado = r.estado
+    }
+    expect(estado.tableros[0].intentos).toEqual([])
+    expect(estado.tableros[0].terminoEn).not.toBeNull()
+    const suelta = carrera(2, [0])
+    const r = intentar(suelta, 0, suelta.bolsa[0], EN_CARRERA + 1000)
+    expect(r.ok && r.estado.tableros[0].intentos).toEqual([])
+  })
+})

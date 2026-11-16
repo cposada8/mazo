@@ -184,7 +184,16 @@ export function TableroPalabras({
     setVolteando(fila)
     setTimeout(() => setVolteando(null), largo * MS_POR_FICHA + 350)
     if (terminada) {
-      setTimeout(() => setCierre(null), largo * MS_POR_FICHA + 350 + MS_FIN_DE_PALABRA)
+      // Chained (Phase 96): the next word comes in with the last one already
+      // in its first row — turned over in front of you, not found there.
+      const encadena = despues?.intentos[0]?.encadenado === true
+      setTimeout(() => {
+        setCierre(null)
+        if (encadena) {
+          setVolteando(0)
+          setTimeout(() => setVolteando(null), largo * MS_POR_FICHA + 350)
+        }
+      }, largo * MS_POR_FICHA + 350 + MS_FIN_DE_PALABRA)
     }
   }, [puedeEscribir, propio, escritura, largo, onEnviar])
 
