@@ -3669,7 +3669,7 @@ and the keyboard following. Tests: both modes, after a solve and after a
 miss, five tries left, nothing chained after the last word or without the
 switch.
 
-### Phase 97 — La suma de intentos
+### Phase 97 — La suma de intentos ✅
 *The owner, 2026-11-16:* the board shows **how many tries each player has
 spent so far**, all words added up — three on the first and five on the
 second is eight — **yours and the others'**, because how many tries it took
@@ -3685,6 +3685,13 @@ is interesting in itself.
 **Done when:** after three tries on one word and five on the next, the
 board says 8, the rivals' cards show theirs as they move, and the finish
 table carries every player's total.
+
+**Done.** `VistaDeRival.intentos` carries each rival's total — a count, so
+it is sent from the first try — and the board adds up its own; the finish
+table reads `Puesto.intentos`. «2 intentos» under the clock, «3 intentos»
+on a rival's card, and under every column of the finish table. In the
+browser: two tries for me and three for Leo on the cards, then 3 and 3 in
+the table. A test adds a chained try into a rival's six.
 
 ### Phase 98 — El ritmo de los bots, en plena partida (bug de Carioca)
 *The owner, 2026-11-16:* once a Carioca partida has started, the bots'

@@ -77,6 +77,9 @@ export function TablaDeLlegada({
                           ? 'salió'
                           : `${puesto.acertadas}/${vista.total}`}
                   </span>
+                  <span className="block text-[11px] font-normal tabular-nums">
+                    {puesto.intentos} {puesto.intentos === 1 ? 'intento' : 'intentos'}
+                  </span>
                 </th>
               ))}
             </tr>

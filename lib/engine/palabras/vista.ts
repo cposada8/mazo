@@ -34,6 +34,8 @@ export type VistaDeRival = {
   readonly termino: boolean
   /** Lives left in the time mode (Phase 90); null when there are none to lose. */
   readonly vidas: number | null
+  /** Every try they have made, all words added up (Phase 97). A count, no letters. */
+  readonly intentos: number
   /** The colours of their tries on the word they are on. No letters. */
   readonly colores: readonly (readonly Color[])[]
   /** Their time with penalties, once they finish. */
@@ -130,6 +132,8 @@ export function vistaPalabras(
         acertadas: t.terminadas.filter((p) => p.acertada).length,
         termino: t.terminoEn !== null,
         vidas: vidasDe(estado, t),
+        intentos:
+          t.terminadas.reduce((suma, p) => suma + p.intentos.length, 0) + t.intentos.length,
         colores: t.intentos.map((i) => i.colores),
         tiempo: tiempoDe(t, modo, castigoDe(estado)),
         retirado: t.retirado,

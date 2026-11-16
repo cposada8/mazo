@@ -442,3 +442,25 @@ describe('chained words (Phase 96)', () => {
     expect(r.ok && r.estado.tableros[0].intentos).toEqual([])
   })
 })
+
+describe('the sum of tries (Phase 97)', () => {
+  it('adds up every try, the word in play and a chained one included, for everyone from the start', () => {
+    let estado = empezarPalabras({ seed: 'suma', palabras: 3, asientos: [0, 1], ahora: AHORA, encadenadas: true })
+    const jugar = (asiento: number, palabra: string) => {
+      const r = intentar(estado, asiento, palabra, EN_CARRERA + 1000)
+      if (!r.ok) throw new Error(r.code)
+      estado = r.estado
+    }
+    const [a, b] = estado.bolsa
+    // Three on the first word, then the chained one and two more on the second.
+    jugar(1, errados(a)[0])
+    jugar(1, errados(a)[1])
+    jugar(1, a)
+    jugar(1, errados(b)[0])
+    jugar(1, errados(b)[1])
+    const desde0 = vistaPalabras(estado, 0, EN_CARRERA + 2000)
+    expect(desde0.rivales[0].intentos).toBe(6)
+    expect(desde0.rivales[0].palabras).toBeNull()
+    expect(clasificacion(estado).find((p) => p.asiento === 1)!.intentos).toBe(6)
+  })
+})

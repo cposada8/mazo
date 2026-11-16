@@ -146,6 +146,10 @@ export function TableroPalabras({
     Math.min((propio?.terminadas.length ?? 0) + (cierre || termine ? 0 : 1), total),
   )
   const resueltas = propio?.terminadas.filter((p) => p.acertada).length ?? 0
+  // Every try so far, all words added up (Phase 97) — the chained ones too.
+  const intentosPropios =
+    (propio?.terminadas.reduce((suma, p) => suma + p.intentos.length, 0) ?? 0) +
+    (propio?.intentos.length ?? 0)
 
   // The keyboard knows, per letter, the best colour earned on this word.
   const colorDeTecla = useMemo(() => {
@@ -298,6 +302,9 @@ export function TableroPalabras({
               </span>
             )
           )}
+          <span className="text-muted-foreground text-xs tabular-nums">
+            {intentosPropios} {intentosPropios === 1 ? 'intento' : 'intentos'}
+          </span>
         </div>
       </header>
 
@@ -567,6 +574,9 @@ function Rivales({
                   : llego
                     ? `llegó · ${formatoDeTiempo(rival.tiempo!)}`
                     : `${Math.min(rival.terminadas + 1, vista.total)}/${vista.total}`}
+              </span>
+              <span className="text-muted-foreground text-xs tabular-nums">
+                {rival.intentos} {rival.intentos === 1 ? 'intento' : 'intentos'}
               </span>
             </span>
             {!llego && (
