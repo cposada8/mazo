@@ -3546,6 +3546,16 @@ the browser: four players (three through the API), 1° Leo, 2° Tú, 3° Ana
 with a miss, 4° Tomás still on word two showing «—»; CERCO opened to all
 four, the table slid right with the words fixed. 3 tests.
 
+**And the word cut off by the end** (the owner, 2026-11-15: «se me acabó
+el tiempo, llevaba como 4 intentos y no supe cuál era la palabra»). Once
+the race is closed — the time up, or the host closing it — each player's
+word in play comes back as `enCurso`, its answer and the tries they got
+in, and the table adds it as a row: «⏱ 4» in amber, «sin terminar» under
+its tries when opened. Never before the race closes, so nobody who can
+still play sees it; a word with no tries is left out. In the browser: a
+one-minute race, four tries on FALLA when the clock ran out, the row
+showing «⏱ 2» for Leo and «⏱ 4» for me and opening to both. 2 tests.
+
 ### Phase 93 — A producción
 The release of Phases 87–92, after `prisma/sql/89-modo.sql` and
 `prisma/sql/90-vidas.sql` reach `mazo`.

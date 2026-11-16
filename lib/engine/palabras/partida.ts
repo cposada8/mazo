@@ -39,6 +39,12 @@ export type PalabraTerminada = {
   readonly intentos: readonly Intento[]
   /** Ms from the race's start to the try that ended it (Phase 89's tie-break). */
   readonly en?: number
+  /**
+   * Not ended: the word a player was on when the race closed, with the tries
+   * they got in (the owner, 2026-11-15). Only ever built by the view, never
+   * stored, and only once nobody can play any more.
+   */
+  readonly sinTerminar?: boolean
 }
 
 export type Tablero = {

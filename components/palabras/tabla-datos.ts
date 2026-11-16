@@ -28,9 +28,18 @@ export function tablaDeLlegada(vista: VistaPalabras): {
   columnas: ColumnaDeLlegada[]
   filas: FilaDeLlegada[]
 } {
+  // Each player's ended words, then — once the race is closed — the one they
+  // were on, unfinished, so a word cut off by the clock is never lost.
+  const conEnCurso = (
+    terminadas: readonly PalabraTerminada[] | null,
+    enCurso: PalabraTerminada | null,
+  ) => (terminadas && enCurso ? [...terminadas, enCurso] : terminadas)
   const palabrasDe = (asiento: number): readonly PalabraTerminada[] | null => {
-    if (vista.propio?.asiento === asiento) return vista.propio.terminadas
-    return vista.rivales.find((r) => r.asiento === asiento)?.palabras ?? null
+    if (vista.propio?.asiento === asiento) {
+      return conEnCurso(vista.propio.terminadas, vista.propio.enCurso)
+    }
+    const rival = vista.rivales.find((r) => r.asiento === asiento)
+    return rival ? conEnCurso(rival.palabras, rival.enCurso) : null
   }
 
   // Standing order is the race's own (`clasificacion`): fastest, or most words.

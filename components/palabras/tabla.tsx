@@ -116,6 +116,13 @@ export function TablaDeLlegada({
                       >
                         {celda === null ? (
                           <span className="text-muted-foreground/50">—</span>
+                        ) : celda.sinTerminar ? (
+                          <span
+                            className="font-semibold text-amber-700 dark:text-amber-400"
+                            title="Sin terminar: se acabó la carrera"
+                          >
+                            ⏱ {celda.intentos.length}
+                          </span>
                         ) : celda.acertada ? (
                           <span className="font-semibold text-emerald-700 dark:text-emerald-400">
                             ✓ {celda.intentos.length}
@@ -135,7 +142,14 @@ export function TablaDeLlegada({
                           className={cn('px-2 pb-3 align-top', mia(columnas[i].asiento))}
                         >
                           {celda ? (
-                            <MiniGrilla intentos={celda.intentos} />
+                            <>
+                              <MiniGrilla intentos={celda.intentos} />
+                              {celda.sinTerminar && (
+                                <p className="pt-1 text-center text-[11px] text-amber-700 dark:text-amber-400">
+                                  sin terminar
+                                </p>
+                              )}
+                            </>
                           ) : (
                             <p className="text-muted-foreground pt-1 text-center text-[11px]">
                               No llegó
@@ -155,7 +169,10 @@ export function TablaDeLlegada({
         <p className="text-muted-foreground text-xs">Nadie terminó ninguna palabra.</p>
       ) : (
         <p className="text-muted-foreground text-xs">
-          Toca una palabra para ver los intentos de todos.
+          ✓ la adivinó · ✗ no la adivinó
+          {filas.some((f) => f.celdas.some((c) => c?.sinTerminar)) &&
+            ' · ⏱ iba en ella cuando se acabó'}
+          . Toca una palabra para ver los intentos de todos.
           {columnas.length > 2 && ' Desliza hacia la derecha para ver a los demás.'}
         </p>
       )}

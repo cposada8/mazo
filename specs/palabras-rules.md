@@ -130,7 +130,9 @@ The host picks one in the lobby.
   nothing. A rival's word in play stays colours only until they end it.
 - **The finish screen** is a table (the owner, 2026-11-15): players as
   columns in standing order, words as rows; touching a word shows everyone's
-  tries on it side by side.
+  tries on it side by side. Once the race is closed, the word each player
+  was on when it ended is in the table too, with their tries and its
+  answer, marked «sin terminar».
 
 ## Joining
 

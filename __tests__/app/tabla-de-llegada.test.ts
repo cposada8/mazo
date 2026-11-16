@@ -70,3 +70,43 @@ describe('the finish table', () => {
     expect(filas[2].celdas.map((c) => c?.acertada ?? null)).toEqual([true, null])
   })
 })
+
+describe('the word cut off by the end (the owner, 2026-11-15)', () => {
+  it('stays hidden while anyone can play, and shows with its answer once the race is closed', () => {
+    let e = empezarPalabras({ seed: 'corte', palabras: 10, asientos: [0, 1], ahora: AHORA, modo: 'tiempo', minutos: 1 })
+    const [a, b] = e.bolsa
+    e = jugar(e, 0, a, 1000)
+    // Seat 0 is four tries into the second word; seat 1 two tries into the first.
+    const mias = MALAS.filter((m) => m !== b).slice(0, 4)
+    for (const p of mias) e = jugar(e, 0, p, 2000)
+    const suyas = MALAS.filter((m) => m !== a).slice(0, 2)
+    for (const p of suyas) e = jugar(e, 1, p, 3000)
+
+    // Still running: nothing of the word in play, for anyone.
+    const antes = vistaPalabras(e, 0, T + 30_000)
+    expect(antes.propio!.enCurso).toBeNull()
+    expect(JSON.stringify(antes)).not.toContain(b)
+
+    // The minute is up: each word in play comes back, tries and answer.
+    const despues = vistaPalabras(e, 0, T + 60_000)
+    expect(despues.propio!.enCurso).toMatchObject({ palabra: b, sinTerminar: true })
+    expect(despues.propio!.enCurso!.intentos.map((i) => i.palabra)).toEqual(mias)
+    expect(despues.rivales[0].enCurso).toMatchObject({ palabra: a, sinTerminar: true })
+
+    const { columnas, filas } = tablaDeLlegada(despues)
+    expect(filas.map((f) => f.palabra)).toEqual([a, b])
+    const yo = columnas.findIndex((c) => c.asiento === 0)
+    const el = columnas.findIndex((c) => c.asiento === 1)
+    expect(filas[1].celdas[yo]).toMatchObject({ sinTerminar: true })
+    expect(filas[0].celdas[el]).toMatchObject({ sinTerminar: true })
+    expect(filas[0].celdas[yo]).toMatchObject({ acertada: true })
+  })
+
+  it('a word with no tries yet is not shown', () => {
+    let e = empezarPalabras({ seed: 'corte', palabras: 10, asientos: [0], ahora: AHORA, modo: 'tiempo', minutos: 1 })
+    e = jugar(e, 0, e.bolsa[0], 1000)
+    const vista = vistaPalabras(e, 0, T + 60_000)
+    expect(vista.propio!.enCurso).toBeNull()
+    expect(tablaDeLlegada(vista).filas).toHaveLength(1)
+  })
+})

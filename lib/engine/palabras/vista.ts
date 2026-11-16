@@ -12,6 +12,7 @@ import {
   type Intento,
   type PalabraTerminada,
   type Puesto,
+  type Tablero,
   cerrada,
   clasificacion,
   finDelTiempo,
@@ -43,6 +44,8 @@ export type VistaDeRival = {
    * longer play, so it changes nothing). Null before that.
    */
   readonly palabras: readonly PalabraTerminada[] | null
+  /** The word they were on when the race closed, with its tries and answer. */
+  readonly enCurso: PalabraTerminada | null
 }
 
 export type VistaPalabras = {
@@ -64,6 +67,12 @@ export type VistaPalabras = {
     readonly retirado: boolean
     /** Lives left (Phase 90); null when there are none to lose. */
     readonly vidas: number | null
+    /**
+     * The word you were on when the race closed — the time ran out mid-word,
+     * or the host closed it — with your tries and its answer. Null while
+     * anybody can still play, and when there were no tries on it.
+     */
+    readonly enCurso: PalabraTerminada | null
   } | null
   /** Lives each player started with; null in a race without them. */
   readonly vidasIniciales: number | null
@@ -80,6 +89,17 @@ export function vistaPalabras(
 ): VistaPalabras {
   const mio = estado.tableros.find((t) => t.asiento === asiento) ?? null
   const veoLetras = mio !== null && yaTermino(estado, mio, ahora)
+  // A word nobody ended is revealed only when nobody can play any more.
+  const cerro = cerrada(estado, ahora)
+  const enCursoDe = (t: Tablero): PalabraTerminada | null =>
+    cerro && t.terminoEn === null && t.intentos.length > 0
+      ? {
+          palabra: estado.bolsa[t.terminadas.length],
+          acertada: false,
+          intentos: t.intentos,
+          sinTerminar: true,
+        }
+      : null
   const modo = modoDe(estado)
   return {
     modo,
@@ -95,6 +115,7 @@ export function vistaPalabras(
       tiempo: tiempoDe(mio, modo),
       retirado: mio.retirado,
       vidas: vidasDe(estado, mio),
+      enCurso: enCursoDe(mio),
     },
     vidasIniciales: modo === 'tiempo' && estado.vidas ? estado.vidas : null,
     rivales: estado.tableros
@@ -109,6 +130,7 @@ export function vistaPalabras(
         tiempo: tiempoDe(t, modo),
         retirado: t.retirado,
         palabras: veoLetras ? t.terminadas : null,
+        enCurso: veoLetras ? enCursoDe(t) : null,
       })),
     cerrada: cerrada(estado, ahora),
     clasificacion: clasificacion(estado),
