@@ -3835,7 +3835,7 @@ for both, the row saying which), takes latecomers into a race and not a
 duel, and leaving a duel hands it to the other. 8 server tests, the races
 and the duel among them.
 
-### Phase 102 — El tablero de números
+### Phase 102 — El tablero de números ✅
 The board on a phone: a pad of 0–9 (a digit already in the guess is
 dimmed, since none may repeat), the guess being written with the touch-a-
 slot writing Palabras has, ENVIAR and ⌫; the list of your guesses with
@@ -3846,6 +3846,24 @@ the sum of tries. Played against the server from the start, as Palabras is.
 **Done when:** a race of three 4-digit numbers is played to the end on a
 phone upright and on a computer, a repeated digit or a short guess is
 refused with a shake, nothing off screen, no sideways scroll.
+
+**Done.** First the board's shared pieces left Palabras' board for
+`components/carrera/`: `comun.tsx` (the time as m:ss, hearts, the 3-2-1,
+the rivals' cards with the game's marks handed in, the finish screen with
+the game's noun), `tabla.tsx` and `tabla-datos.ts` (the finish table, the
+game's small drawing of a secret's tries handed in), and the remote hook
+became `useCarreraRemota` (`usePalabrasRemoto` wraps it). Palabras' board
+draws exactly as before. Then `components/puntoyfama/tablero.tsx`: the
+guesses at the number in play, each with its answer as marks — a green
+dot per fama, an amber one per punto, «nada» — coming in one by one; the
+guess written in touchable slots (Palabras' writing); a pad of 0–9 where a
+digit already in the guess is dimmed and not typed twice; ENVIAR and ⌫,
+and the computer's keys; «¡Era 7183! · 2 intentos» on a number got; the
+clock, numbers got (against the clock) and the sum of tries; the rivals'
+last answers, no digits. In the browser at phone size: three 4-digit
+numbers against Leo through the API — 1234 against 7183 answered 0 famas,
+2 puntos; a repeated 1 not typed; the finish table opening 7183 to its
+guesses.
 
 ### Phase 103 — La carrera de números
 Both race modes among several people, through Palabras' server path now

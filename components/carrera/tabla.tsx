@@ -10,25 +10,35 @@
  */
 
 import { ChevronDown } from 'lucide-react'
-import { Fragment, useState } from 'react'
-import type { Color, Intento, VistaPalabras } from '@/lib/engine/palabras'
+import { type ComponentType, Fragment, useState } from 'react'
+import type { IntentoBase } from '@/lib/engine/comun/carrera'
+import type { VistaCarrera } from '@/lib/engine/comun/vista-carrera'
 import { cn } from '@/lib/utils'
 import { tablaDeLlegada } from './tabla-datos'
 
-const VALOR: Record<Color, string> = {
-  verde: 'oklch(0.6 0.12 148)',
-  amarillo: 'oklch(0.72 0.13 88)',
-  gris: 'oklch(0.45 0 0)',
-}
+/** How one game draws a secret's tries, small (Phase 102): tiles, or numbers and marks. */
+export type MiniIntentos<I extends IntentoBase> = ComponentType<{ intentos: readonly I[] }>
 
-export function TablaDeLlegada({
+export function TablaDeLlegada<I extends IntentoBase, M>({
   vista,
   nombres,
   formatoDeTiempo,
+  Mini,
+  rotulo = 'Palabra',
+  articulo = 'la',
+  ancho,
 }: {
-  vista: VistaPalabras
+  vista: VistaCarrera<I, M>
   nombres: ReadonlyMap<number, string>
   formatoDeTiempo: (ms: number) => string
+  /** The game's small drawing of a secret's tries. */
+  Mini: MiniIntentos<I>
+  /** The word column's heading: «Palabra», «Número». */
+  rotulo?: string
+  /** «la» for a word, «lo» for a number, in the legend. */
+  articulo?: 'la' | 'lo'
+  /** Column width, rem; by default wide enough for a row of small tiles. */
+  ancho?: number
 }) {
   const { columnas, filas } = tablaDeLlegada(vista)
   const [abierta, setAbierta] = useState<number | null>(null)
@@ -36,7 +46,7 @@ export function TablaDeLlegada({
   const conTiempo = vista.modo === 'tiempo'
   const mia = (asiento: number) => asiento === yo && 'bg-amber-400/15 dark:bg-amber-300/10'
   // Wide enough for a row of small tiles under each name.
-  const anchoDeColumna = `${Math.max(5.5, vista.largo * 1.35 + 0.75)}rem`
+  const anchoDeColumna = `${ancho ?? Math.max(5.5, vista.largo * 1.35 + 0.75)}rem`
   // The word column stays put while the players scroll past it.
   const fija = 'bg-background sticky left-0 z-10'
 
@@ -49,7 +59,7 @@ export function TablaDeLlegada({
           <thead>
             <tr className="text-muted-foreground text-xs">
               <th className={cn(fija, 'py-1 pr-3 pl-4 text-left align-bottom font-medium')}>
-                Palabra
+                {rotulo}
               </th>
               {columnas.map(({ asiento, puesto }) => (
                 <th
@@ -146,7 +156,7 @@ export function TablaDeLlegada({
                         >
                           {celda ? (
                             <>
-                              <MiniGrilla intentos={celda.intentos} />
+                              <Mini intentos={celda.intentos} />
                               {celda.sinTerminar && (
                                 <p className="pt-1 text-center text-[11px] text-amber-700 dark:text-amber-400">
                                   sin terminar
@@ -172,10 +182,10 @@ export function TablaDeLlegada({
         <p className="text-muted-foreground text-xs">Nadie terminó ninguna palabra.</p>
       ) : (
         <p className="text-muted-foreground text-xs">
-          ✓ la adivinó · ✗ no la adivinó
+          ✓ {articulo} adivinó · ✗ no {articulo} adivinó
           {filas.some((f) => f.celdas.some((c) => c?.sinTerminar)) &&
-            ' · ⏱ iba en ella cuando se acabó'}
-          . Toca una palabra para ver los intentos de todos.
+            ` · ⏱ iba en ${articulo === 'la' ? 'ella' : 'él'} cuando se acabó`}
+          . Toca {articulo === 'la' ? 'una' : 'un'} {rotulo.toLowerCase()} para ver los intentos de todos.
           {columnas.length > 2 && ' Desliza hacia la derecha para ver a los demás.'}
         </p>
       )}
@@ -183,23 +193,3 @@ export function TablaDeLlegada({
   )
 }
 
-/** A word's tries, small: letters and colours, as they were played. */
-function MiniGrilla({ intentos }: { intentos: readonly Intento[] }) {
-  return (
-    <div className="animate-in fade-in flex flex-col items-center gap-0.5">
-      {intentos.map((intento, f) => (
-        <div key={f} className="flex gap-0.5">
-          {[...intento.palabra].map((letra, i) => (
-            <span
-              key={i}
-              className="flex size-5 items-center justify-center rounded-[3px] text-[10px] font-bold text-white"
-              style={{ background: VALOR[intento.colores[i]] }}
-            >
-              {letra}
-            </span>
-          ))}
-        </div>
-      ))}
-    </div>
-  )
-}

@@ -13,9 +13,16 @@
  * player's view, which the server built.
  */
 
-import { CircleHelp, Delete, Heart, LogOut, Trophy, X } from 'lucide-react'
+import { CircleHelp, Delete, LogOut, X } from 'lucide-react'
 import { ComoSeJuegaPalabras } from './reglas'
-import { TablaDeLlegada } from './tabla'
+import {
+  CuentaAtras,
+  Llegada,
+  PALABRA,
+  Rivales,
+  Vidas,
+  formatoDeTiempo,
+} from '@/components/carrera/comun'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type {
   Color,
@@ -66,14 +73,6 @@ const TECLA: Record<Color, string> = {
   verde: FONDO.verde,
   amarillo: FONDO.amarillo,
   gris: 'bg-[oklch(0.22_0_0)] text-white',
-}
-
-export function formatoDeTiempo(ms: number): string {
-  const s = Math.max(0, Math.floor(ms / 1000))
-  const h = Math.floor(s / 3600)
-  const m = Math.floor((s % 3600) / 60)
-  const resto = String(s % 60).padStart(2, '0')
-  return h > 0 ? `${h}:${String(m).padStart(2, '0')}:${resto}` : `${m}:${resto}`
 }
 
 export type PropsDeTablero = {
@@ -308,7 +307,7 @@ export function TableroPalabras({
         </div>
       </header>
 
-      <Rivales vista={vista} nombres={nombres} />
+      <Rivales vista={vista} nombres={nombres} marcas={(rival) => <MarcasDeRival colores={rival.colores} largo={largo} />} />
 
       <div className="relative flex flex-1 flex-col items-center justify-center">
         {!empezo && <CuentaAtras restan={vista.inicio - reloj} />}
@@ -319,6 +318,8 @@ export function TableroPalabras({
             soyHost={soyHost}
             terminada={vista.cerrada || seAcaboElTiempo}
             onCerrar={onCerrar}
+            Mini={MiniGrilla}
+            sustantivo={PALABRA}
           />
         ) : (
           <Grilla
@@ -542,175 +543,46 @@ function Teclado({
   )
 }
 
-/** Each rival: how far, and the colours of their tries on the word they are on. */
-function Rivales({
-  vista,
-  nombres,
-}: {
-  vista: VistaPalabras
-  nombres: ReadonlyMap<number, string>
-}) {
-  if (vista.rivales.length === 0) return null
-  return (
-    <ul className="flex gap-2 overflow-x-auto pb-1">
-      {vista.rivales.map((rival) => {
-        const conTiempo = vista.modo === 'tiempo'
-        const llego = conTiempo ? rival.termino : rival.tiempo !== null
-        return (
-          <li
-            key={rival.asiento}
-            className={cn(
-              'bg-card flex shrink-0 items-center gap-2 rounded-lg border px-2.5 py-1.5',
-              rival.retirado && 'opacity-40',
-            )}
-          >
-            <span className="flex flex-col leading-tight">
-              <span className="max-w-24 truncate text-xs font-medium">
-                {nombres.get(rival.asiento) ?? '—'}
-              </span>
-              <span className="text-muted-foreground text-xs tabular-nums">
-                {conTiempo
-                  ? `${rival.acertadas} ✓${llego ? ' · fuera' : ` · va en la ${rival.terminadas + 1}`}${rival.vidas !== null ? ` · ♥${rival.vidas}` : ''}`
-                  : llego
-                    ? `llegó · ${formatoDeTiempo(rival.tiempo!)}`
-                    : `${Math.min(rival.terminadas + 1, vista.total)}/${vista.total}`}
-              </span>
-              <span className="text-muted-foreground text-xs tabular-nums">
-                {rival.intentos} {rival.intentos === 1 ? 'intento' : 'intentos'}
-              </span>
-            </span>
-            {!llego && (
-              <span className="flex flex-col gap-px" aria-hidden>
-                {Array.from({ length: INTENTOS_POR_PALABRA }, (_, f) => (
-                  <span key={f} className="flex gap-px">
-                    {Array.from({ length: vista.largo }, (_, i) => {
-                      const color = rival.colores[f]?.[i]
-                      return (
-                        <span
-                          key={i}
-                          className={cn('size-1.5 rounded-[1px]', !color && 'bg-muted')}
-                          style={color ? { background: VALOR[color] } : undefined}
-                        />
-                      )
-                    })}
-                  </span>
-                ))}
-              </span>
-            )}
-          </li>
-        )
-      })}
-    </ul>
-  )
-}
 
-/** Lives left as hearts (Phase 90): full for each left, outlined for each lost. */
-function Vidas({ quedan, de }: { quedan: number; de: number }) {
+/** A rival's tries on the word they are on: colours only, in tiny tiles. */
+function MarcasDeRival({ colores, largo }: { colores: readonly (readonly Color[])[]; largo: number }) {
   return (
-    <span className="mt-0.5 flex gap-0.5" aria-label={`${quedan} de ${de} vidas`}>
-      {Array.from({ length: de }, (_, i) => (
-        <Heart
-          key={`${i}-${i < quedan}`}
-          className={cn(
-            'size-3.5',
-            i < quedan ? 'fill-red-500 text-red-500' : 'text-muted-foreground/50 palabras-cae',
-          )}
-          aria-hidden
-        />
+    <span className="flex flex-col gap-px" aria-hidden>
+      {Array.from({ length: INTENTOS_POR_PALABRA }, (_, f) => (
+        <span key={f} className="flex gap-px">
+          {Array.from({ length: largo }, (_, i) => {
+            const color = colores[f]?.[i]
+            return (
+              <span
+                key={i}
+                className={cn('size-1.5 rounded-[1px]', !color && 'bg-muted')}
+                style={color ? { background: VALOR[color] } : undefined}
+              />
+            )
+          })}
+        </span>
       ))}
     </span>
   )
 }
 
-function CuentaAtras({ restan }: { restan: number }) {
-  const n = Math.max(1, Math.ceil(restan / 1000))
+/** A word's tries, small: letters and colours, as they were played. */
+function MiniGrilla({ intentos }: { intentos: readonly Intento[] }) {
   return (
-    <div className="bg-background/85 absolute inset-0 z-10 flex flex-col items-center justify-center gap-2">
-      <span className="text-muted-foreground text-sm">Todos parten a la vez</span>
-      <span key={n} className="animate-in zoom-in-50 fade-in text-7xl font-bold tabular-nums">
-        {n}
-      </span>
-    </div>
-  )
-}
-
-/** Your race is over: your time, and the standings as they are. */
-function Llegada({
-  vista,
-  nombres,
-  soyHost,
-  terminada,
-  onCerrar,
-}: {
-  vista: VistaPalabras
-  nombres: ReadonlyMap<number, string>
-  soyHost: boolean
-  /** The race is over for everyone — closed, or (against the clock) the time is up. */
-  terminada: boolean
-  onCerrar: () => void
-}) {
-  const propio = vista.propio!
-  const conTiempo = vista.modo === 'tiempo'
-  const fallos = propio.terminadas.filter((p) => !p.acertada).length
-  const resueltas = propio.terminadas.length - fallos
-  const faltan = vista.clasificacion.filter((p) => !p.termino && !p.retirado).length
-  const ganador = vista.clasificacion[0]
-
-  return (
-    <div className="animate-in fade-in slide-in-from-bottom-2 flex w-full flex-col gap-5">
-      <div className="flex flex-col items-center gap-1 text-center">
-        {terminada && ganador ? (
-          <>
-            <Trophy className="size-7" aria-hidden />
-            <h2 className="text-2xl font-semibold">
-              {ganador.asiento === propio.asiento
-                ? '¡Ganaste!'
-                : `Ganó ${nombres.get(ganador.asiento) ?? '—'}`}
-            </h2>
-          </>
-        ) : (
-          <h2 className="text-2xl font-semibold">
-            {propio.vidas === 0 ? 'Te quedaste sin vidas' : 'Terminaste'}
-          </h2>
-        )}
-        {conTiempo ? (
-          <p className="text-muted-foreground text-sm">
-            Resolviste{' '}
-            <span className="text-foreground font-semibold">
-              {resueltas} {resueltas === 1 ? 'palabra' : 'palabras'}
+    <div className="animate-in fade-in flex flex-col items-center gap-0.5">
+      {intentos.map((intento, f) => (
+        <div key={f} className="flex gap-0.5">
+          {[...intento.palabra].map((letra, i) => (
+            <span
+              key={i}
+              className="flex size-5 items-center justify-center rounded-[3px] text-[10px] font-bold text-white"
+              style={{ background: VALOR[intento.colores[i]] }}
+            >
+              {letra}
             </span>
-            {fallos > 0 && ` · ${fallos} sin adivinar`}
-          </p>
-        ) : (
-          <p className="text-muted-foreground text-sm">
-            Tu tiempo: <span className="text-foreground font-mono">{formatoDeTiempo(propio.tiempo ?? 0)}</span>
-            {fallos > 0 &&
-              ` · ${fallos} sin adivinar${vista.msCastigo ? ` (+${formatoDeTiempo(fallos * vista.msCastigo)})` : ''}`}
-          </p>
-        )}
-        {!terminada && faltan > 0 && (
-          <p className="text-muted-foreground text-sm">
-            {conTiempo
-              ? 'Los demás siguen hasta que se acabe el tiempo.'
-              : faltan === 1
-                ? 'Falta uno por llegar.'
-                : `Faltan ${faltan} por llegar.`}
-          </p>
-        )}
-      </div>
-
-      <TablaDeLlegada vista={vista} nombres={nombres} formatoDeTiempo={formatoDeTiempo} />
-
-      {soyHost && !terminada && faltan > 0 && (
-        <button
-          type="button"
-          onClick={onCerrar}
-          className="border-input hover:bg-accent rounded-md border px-4 py-2.5 text-sm"
-        >
-          Cerrar la carrera ahora
-        </button>
-      )}
+          ))}
+        </div>
+      ))}
     </div>
   )
 }
-
