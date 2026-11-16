@@ -3375,10 +3375,78 @@ words of **5, 6, 7 or 8 letters**, the length a second lobby setting.
   player through the API: a solve, a miss with its penalty, a rival
   finishing first, «Ganó Leo». 915 tests.
 
-### Phase 87 — Cómo se juega, y a producción
+### Asked for after the MVP
+
+*The owner, 2026-11-15, after playing the MVP: four things, in the order
+given. Placed before the release, so the rules page and production get the
+game as the owner wants it — the release moved from 87 to 91. Each rule
+below marked (Mazo's call) is a default, written for the owner to correct.*
+
+### Phase 87 — Cualquier número de palabras
+The lobby's 3/5/10/15/20 stay as shortcuts, and beside them the host can
+**type any number** — 7, 23. (Mazo's call: from **1 to 100**; a bag never
+repeats a word, and a hundred words is already a long race.) The server
+refuses anything outside that range, as it refuses an unknown number of
+bullets today.
+
+**Done when:** a bag of 23 and a bag of 7 are dealt and played, a typed 0,
+101 or «abc» is refused in the lobby and by the server, and the shortcuts
+still work.
+
+### Phase 88 — Volver a ver cómo salió cada palabra
+On the finish screen, «Tus palabras» lists each word with its tries
+(«1. SEGAR · 5»). **Touching a word opens its tries again** — the rows as
+they were played, letters and colours, small — so «in five» can be seen
+as *which* five. Only your own words: a rival's letters stay theirs, even
+after the race. (Mazo's call; showing everyone's tries once the race is
+closed is a small step later if the owner wants it.)
+
+**Done when:** after a race, each ended word opens to its rows with their
+letters and colours, a missed word included, and nothing of a rival's
+letters is in any response.
+
+### Phase 89 — Modalidad con tiempo
+A second way to race, chosen in the lobby: **«Palabras límite»** — today's
+race, n words, the clock runs — or **«Tiempo límite»**: everyone gets **x
+minutes**, and whoever solves **the most words** in them wins. The words
+are still the same for everyone and in the same order; each player gets as
+far down the list as they can.
+
+- **The minutes** (Mazo's call): 3, 5, 10 and 15 as shortcuts, and any
+  number from 1 to 60 typed, as Phase 87 does for words.
+- **The bag** is drawn from the seed as long as the answers allow, so
+  nobody can run out of words; the server still never sends a word before
+  its player reaches and ends it.
+- **A missed word** is revealed and the player moves on. There is no
+  penalty in time — the clock is already the limit — the cost is the word
+  not solved (and, with Phase 90, a life).
+- **The ranking** (Mazo's call): most words solved; ties go to whoever
+  solved their last word first, then to fewer tries.
+- **The end**: when the minutes are up the board stops for everyone at
+  once, on the server's clock, mid-word included; the host can still close
+  it early. A latecomer races on the same clock, so has less time.
+- The rules are written into `palabras-rules.md` before any code.
+
+**Done when:** two people race 3 minutes from one code, each solves a
+different number of words from the same list, both boards stop at the
+same second, and the ranking is by words solved.
+
+### Phase 90 — Vidas
+For the time mode: each player starts with **k lives** (3 by default, the
+host picks — Mazo's call: 1 to 5, or «sin vidas»). **Missing a word costs a
+life.** With none left the player's race is over: they keep the words they
+solved, and the others play on until the time is up. The board shows the
+lives left, and a rival's lives show beside their progress.
+
+**Done when:** a player who misses three words with three lives stops,
+keeps their count in the ranking, and the others finish their minutes; a
+race «sin vidas» never stops anyone early.
+
+### Phase 91 — Cómo se juega, y a producción
 «Cómo se juega» for Palabras — the rules on one screen with a real row of
-tiles turning over, reachable from its lobby and its board — and the home
-page naming three games. Then the release, after the SQL reaches `mazo`.
+tiles turning over, both modes, reachable from its lobby and its board —
+and the home page naming three games. Then the release, after the SQL
+reaches `mazo`.
 
 **Done when:** Palabras is in production, and `estado.md` says so.
 

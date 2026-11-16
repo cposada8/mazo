@@ -315,7 +315,11 @@ rules are `specs/palabras-rules.md`, drafted for the owner to correct;
 1. ~~Phases 82–86~~ ✅ Done as an MVP, on dev, with words of 5 to 8 letters
    (the owner's addition). `prisma/sql/84-palabras.sql` is on `mazo-dev`
    only. The owner still has to read the answers.
-2. Phase 87 — Cómo se juega, and production (needs the SQL on `mazo` first).
+2. Phase 87 — Cualquier número de palabras: type how many, 1 to 100.
+3. Phase 88 — Volver a ver cómo salió cada palabra, on the finish screen.
+4. Phase 89 — Modalidad con tiempo: the most words in x minutes.
+5. Phase 90 — Vidas: k lives in the time mode, a missed word costs one.
+6. Phase 91 — Cómo se juega, and production (needs the SQL on `mazo` first).
 
 **Milestone 8, el Mentiroso** (the owner, 2026-11-05), closed. Its rules are
 `specs/mentiroso-rules.md`, settled; `roadmap.md` has the phases:
