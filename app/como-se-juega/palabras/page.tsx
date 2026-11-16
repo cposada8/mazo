@@ -29,10 +29,14 @@ export default function ReglasPalabras() {
           Palabras, en una pantalla. ¿Buscas otro juego? Las reglas de{' '}
           <Link href="/como-se-juega" className="text-foreground underline underline-offset-2">
             Carioca
-          </Link>{' '}
-          y del{' '}
+          </Link>,{' '}
+          del{' '}
           <Link href="/como-se-juega/mentiroso" className="text-foreground underline underline-offset-2">
             Mentiroso
+          </Link>{' '}
+          y de{' '}
+          <Link href="/como-se-juega/punto-y-fama" className="text-foreground underline underline-offset-2">
+            Punto y Fama
           </Link>
           .
         </p>

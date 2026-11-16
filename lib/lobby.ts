@@ -58,10 +58,16 @@ export type PartidaGuardada = {
   readonly palabras: number
   readonly largo: number
   /** Palabras' way to race and its minutes (Phase 89). */
-  readonly modo: 'palabras' | 'tiempo'
+  readonly modo: 'palabras' | 'tiempo' | 'duelo'
   readonly minutos: number
   /** Lives in the time mode (Phase 90); 0 is «sin vidas». */
   readonly vidas: number
+  /** Minutes a missed word adds in «Palabras límite» (Phase 94). */
+  readonly castigo: number
+  /** Minutes the race waits after the first finish (Phase 95); 0: no limit. */
+  readonly espera: number
+  /** Each word opens with the one before already played (Phase 96). */
+  readonly encadenadas: boolean
   /** Memory aids (Phase 24): browse the descarte, reread the ronda's story. */
   readonly verDescarte: boolean
   readonly verHistorial: boolean
@@ -105,13 +111,21 @@ export type Accion =
       readonly balas?: number
       readonly palabras?: number
       readonly largo?: number
-      readonly modo?: 'palabras' | 'tiempo'
+      readonly modo?: 'palabras' | 'tiempo' | 'duelo'
       readonly minutos?: number
       readonly vidas?: number
+      readonly castigo?: number
+      readonly espera?: number
+      readonly encadenadas?: boolean
       readonly verDescarte?: boolean
       readonly verHistorial?: boolean
     }
   | { readonly tipo: 'renombrar'; readonly alias: string }
+  /**
+   * The bots' thinking time, changed by the host **mid-partida** too (Phase
+   * 98): pacing, not a rule, so it is the one setting a dealt partida takes.
+   */
+  | { readonly tipo: 'ritmo'; readonly segundosBot: number }
   | { readonly tipo: 'empezar'; readonly seed: string }
   /** Leave for good (Phase 37). Only ever sent because Salir was pressed. */
   | { readonly tipo: 'abandonar' }

@@ -23,6 +23,7 @@ import { useCallback, useMemo, useState } from 'react'
 import { mensajeDeError } from '@/app/jugar/usePartida'
 import { useMesa } from '@/app/jugar/useMesa'
 import { type Move, type VistaDePartida, aplicarEnVista } from '@/lib/engine'
+import { actuar } from '@/lib/lobby'
 import type { Relato } from '@/lib/relato'
 
 /**
@@ -51,7 +52,7 @@ export type MesaRemota = {
   segundosPorTurno: number
   verDescarte: boolean
   verHistorial: boolean
-  asientos: readonly { indice: number; alias: string; esBot: boolean }[]
+  asientos: readonly { indice: number; alias: string; esBot: boolean; esHost?: boolean }[]
 }
 
 type Respuesta =
@@ -158,8 +159,32 @@ export function useMesaRemota(options: { codigo: string; secreto: string }) {
     jugar,
   })
 
+  /**
+   * The bots' pace, the host's to change mid-partida (Phase 98). Shown at
+   * once, then confirmed: the next read carries the server's value to every
+   * seat, so the others see it change too.
+   */
+  const soyHost = Boolean(
+    servidor?.asientos.find((asiento) => asiento.indice === servidor.vista.asiento)?.esHost,
+  )
+  const cambiarRitmo = useCallback(
+    async (segundosBot: number) => {
+      cliente.setQueryData<Respuesta>(clave, (previa) =>
+        previa?.ok ? { ...previa, mesa: { ...previa.mesa, segundosBot } } : previa,
+      )
+      const respuesta = await actuar(codigo, secreto, { tipo: 'ritmo', segundosBot })
+      if (!respuesta.ok) setAviso('No se pudo cambiar el ritmo de los bots.')
+      void cliente.invalidateQueries({ queryKey: clave })
+    },
+    [cliente, clave, codigo, secreto],
+  )
+
   return {
     ...mesa,
+    /** What the bots think, from the server — not the turn in play's clock. */
+    segundosBot: servidor?.segundosBot ?? 2,
+    soyHost,
+    cambiarRitmo,
     cargando: consulta.isPending,
     error: consulta.data && !consulta.data.ok ? consulta.data.code : null,
     verDescarte: servidor?.verDescarte ?? true,

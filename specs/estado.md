@@ -1,6 +1,6 @@
 # Project status — pick up here
 
-Last updated after Phase 93 — **Milestone 9 closed: Palabras is complete**, v2.3.0 in production, with both modes, lives and the finish table.
+Last updated after Phase 106 — **Milestone 10 closed: Mazo has four games**, v2.4.0 in production: Punto y Fama (two races, the duel, the bot), and Palabras' Phases 94–97 and Carioca's Phase 98.
 
 Read this first, then `mission.md` for the why, `carioca-rules.md` for the game,
 `tech-stack.md` for the stack, and `roadmap.md` for what comes next. This file is
@@ -294,6 +294,11 @@ forwards dev to main so dev knows the number it builds on. Vercel deploys
 
 ## What comes next
 
+**Production got Punto y Fama in v2.4.0** (2026-11-16), with Palabras'
+penalty, wait, chained words and sum of tries, and Carioca's mid-partida
+pace: `mazo` took `94-castigo.sql`, `95-espera.sql` and
+`96-encadenadas.sql` before the release deployed.
+
 **Production got the rest of Palabras in v2.3.0** (2026-11-15): Phases
 87–92 and the word cut off by the end; `mazo` took `89-modo.sql` and
 `90-vidas.sql` before the release deployed.
@@ -318,7 +323,8 @@ rules are `specs/palabras-rules.md`, drafted for the owner to correct;
 
 1. ~~Phases 82–86~~ ✅ Done as an MVP, on dev, with words of 5 to 8 letters
    (the owner's addition). **In production as v2.2.0**; its SQL is on
-   `mazo-dev` and `mazo`. The owner still has to read the answers.
+   `mazo-dev` and `mazo`. The owner confirmed the answers as they are
+   (2026-11-16).
 2. ~~Phase 87 — Cualquier número de palabras.~~ ✅ On dev.
 3. ~~Phase 88 — Volver a ver cómo salió cada palabra.~~ ✅ On dev.
 4. ~~Phase 89 — Modalidad con tiempo.~~ ✅ Its SQL on `mazo-dev` and `mazo`.
@@ -326,6 +332,30 @@ rules are `specs/palabras-rules.md`, drafted for the owner to correct;
 6. ~~Phase 91 — Cómo se juega.~~ ✅ On dev.
 7. ~~Phase 92 — La tabla de la llegada.~~ ✅ On dev.
 8. ~~Phase 93 — A producción.~~ ✅ Released as v2.3.0. **Milestone 9 is closed.**
+
+**Next — asked for after v2.3.0** (the owner, 2026-11-16): two of Palabras'
+defaults become the host's to change, in `roadmap.md`:
+
+1. ~~Phase 94 — El castigo, a elección del host.~~ ✅ In v2.4.0; `94-castigo.sql` on `mazo-dev` and `mazo`.
+2. ~~Phase 95 — El cierre, a elección del host.~~ ✅ In v2.4.0; `95-espera.sql` on `mazo-dev` and `mazo`.
+3. ~~Phase 96 — Palabras encadenadas.~~ ✅ In v2.4.0; `96-encadenadas.sql` on `mazo-dev` and `mazo`.
+4. ~~Phase 97 — La suma de intentos.~~ ✅ On dev.
+5. ~~Phase 98 — El ritmo de los bots, en plena partida.~~ ✅ On dev: the host changes it mid-partida.
+
+**Then — Milestone 10, Punto y Fama** (the owner, 2026-11-16): the fourth
+game, guessing a number of n digits in puntos and famas. Its rules are
+`specs/punto-y-fama-rules.md`, drafted for the owner to correct; the
+owner's `punto-y-fama` repository, beside this one, has the game and its
+solver. `roadmap.md` has the phases:
+
+1. ~~Phase 99 — Una carrera, dos juegos.~~ ✅ `lib/engine/comun/carrera.ts`, the shared referee and board pieces.
+2. ~~Phase 100 — El motor de Punto y Fama.~~ ✅ The solver: 5.45 on average, 9 at worst (2 of 5,040).
+3. ~~Phase 101 — La puerta sabe que hay cuatro juegos.~~ ✅ No new column: Palabras' reused.
+4. ~~Phase 102 — El tablero de números.~~ ✅
+5. ~~Phase 103 — La carrera de números.~~ ✅
+6. ~~Phase 104 — El duelo.~~ ✅
+7. ~~Phase 105 — El bot que adivina tu número.~~ ✅ `/punto-y-fama/bot`, offline.
+8. ~~Phase 106 — Cómo se juega, y a producción.~~ ✅ Released as v2.4.0. **Milestone 10 is closed.**
 
 **Milestone 8, el Mentiroso** (the owner, 2026-11-05), closed. Its rules are
 `specs/mentiroso-rules.md`, settled; `roadmap.md` has the phases:

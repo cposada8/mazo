@@ -12,6 +12,7 @@ import type { Accion, ErrorDeLobby, RespuestaDeLobby } from '@/lib/lobby'
 import {
   abandonar,
   actualizarAjustes,
+  cambiarRitmo,
   agregarBot,
   asientoDe,
   cambiarBot,
@@ -98,9 +99,16 @@ async function ejecutar(
           modo: accion.modo,
           minutos: accion.minutos,
           vidas: accion.vidas,
+          castigo: accion.castigo,
+          espera: accion.espera,
+          encadenadas: accion.encadenadas,
           verDescarte: accion.verDescarte,
           verHistorial: accion.verHistorial,
         }),
+      )
+    case 'ritmo':
+      return normalizar(
+        await cambiarRitmo({ codigo, secreto, segundosBot: accion.segundosBot }),
       )
     case 'renombrar':
       return normalizar(await renombrarAsiento({ codigo, secreto, alias: accion.alias }))

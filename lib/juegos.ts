@@ -12,10 +12,11 @@ import { MAX_PLAYERS, MIN_PLAYERS } from '@/lib/engine'
 import { MAX_JUGADORES, MIN_JUGADORES } from '@/lib/engine/mentiroso'
 // By its own path: Palabras' engine holds the answers, and the door must not.
 import * as palabras from '@/lib/engine/palabras/opciones'
+import * as puntoyfama from '@/lib/engine/puntoyfama/opciones'
 
 const ASIENTOS_PALABRAS = { min: palabras.MIN_JUGADORES, max: palabras.MAX_JUGADORES }
 
-export const JUEGOS = ['carioca', 'mentiroso', 'palabras'] as const
+export const JUEGOS = ['carioca', 'mentiroso', 'palabras', 'puntoyfama'] as const
 export type Juego = (typeof JUEGOS)[number]
 
 /** Anything that is not a known game is Carioca: every old row, every old client. */
@@ -27,6 +28,7 @@ export const NOMBRE_DE_JUEGO: Record<Juego, string> = {
   carioca: 'Carioca',
   mentiroso: 'Mentiroso',
   palabras: 'Palabras',
+  puntoyfama: 'Punto y Fama',
 }
 
 /** One line for the door, said as a player would say it. */
@@ -34,15 +36,22 @@ export const DESCRIPCION_DE_JUEGO: Record<Juego, string> = {
   carioca: 'Bajar los contratos, ronda tras ronda.',
   mentiroso: 'Botar cartas boca abajo y que no te pillen.',
   palabras: 'Adivinar las mismas palabras que los demás, antes que ellos.',
+  puntoyfama: 'Adivinar números en puntos y famas, en carrera o en duelo.',
 }
 
 export const ASIENTOS: Record<Juego, { min: number; max: number }> = {
   carioca: { min: MIN_PLAYERS, max: MAX_PLAYERS },
   mentiroso: { min: MIN_JUGADORES, max: MAX_JUGADORES },
   palabras: ASIENTOS_PALABRAS,
+  puntoyfama: { min: puntoyfama.MIN_JUGADORES, max: puntoyfama.MAX_JUGADORES },
 }
 
 /** A game with bots to seat. Palabras has none (`palabras-rules.md`). */
 export function tieneBots(juego: Juego): boolean {
-  return juego !== 'palabras'
+  return juego !== 'palabras' && juego !== 'puntoyfama'
+}
+
+/** A guessing race (Phase 99): Palabras, and Punto y Fama's two races. */
+export function esDeAdivinar(juego: Juego): boolean {
+  return juego === 'palabras' || juego === 'puntoyfama'
 }

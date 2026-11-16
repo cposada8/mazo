@@ -3353,8 +3353,9 @@ words of **5, 6, 7 or 8 letters**, the length a second lobby setting.
   and 8 letters: 1,064 / 1,348 / 1,474 answers, the accepted words of each
   length ranked by use (FrequencyWords, MIT), conjugations dropped by a
   lemma check, then read by hand; 25k / 49k / 75k accepted. Lists live in
-  `lib/engine/palabras/`, one file per length and kind. **The owner has not
-  read the answers yet** — Phase 82's last clause is still open.
+  `lib/engine/palabras/`, one file per length and kind. **The owner
+  confirmed the answers as they are on 2026-11-16** — Phase 82's last
+  clause is closed.
 - **The engine** (`lib/engine/palabras/`): the bag from the seed (five
   letters keeps its draw; other lengths salt it), scoring with repeated
   letters, six tries, +2:00 a missed word, closing, ranking, late joiners,
@@ -3566,6 +3567,400 @@ The release of Phases 87–92, after `prisma/sql/89-modo.sql` and
 included: `mazo` took `89-modo.sql` and `90-vidas.sql` before the release
 deployed, and the release is **v2.3.0** — a minor, for new things.
 **Milestone 9 is closed.**
+
+---
+
+## Asked for after v2.3.0
+
+*The owner, 2026-11-16, reviewing the defaults left for them to correct:
+the answer lists stay as they are; +2:00 for a missed word is right, and
+so is everything else — but two of those defaults should be the host's to
+change in the lobby, like the number of words and the minutes.*
+
+### Phase 94 — El castigo, a elección del host ✅
+In «Palabras límite», what a missed word adds to the clock becomes a lobby
+setting. **2 minutes stays the default** (the owner's word). On offer
+(Mazo's call): 0 («sin castigo»), 1, 2, 3 and 5 minutes as shortcuts, or
+any whole number from 0 to 10 typed, as Phase 87 does for words. The rules
+page and the board's «+2:00» say whatever the host chose; a race dealt
+before this phase keeps its 2 minutes.
+
+**Done when:** a race with a 5-minute penalty adds 5:00 per miss, on the
+board and in the ranking; one «sin castigo» adds nothing; a bad number is
+refused by the lobby and the server; and an old race still adds 2:00.
+
+**Done.** The state carries `msCastigo` (absent in older races, read as two
+minutes by `castigoDe`), and the view hands it to the board, so the clock,
+«+5:00 de castigo», the «Era BLUSA · +5:00» of a miss and the finish
+screen all say what the host chose — nothing at all «sin castigo».
+`Partida.castigo` (`prisma/sql/94-castigo.sql`, on `mazo-dev`), checked
+whole from 0 to 10. The lobby's `NumeroConAtajos` learned labels: «Sin»,
+«1 min» … «5 min» and «Otro». In the browser: a 5-minute penalty, a word
+missed, the clock jumping by 5:00.
+
+### Phase 95 — El cierre, a elección del host ✅
+In «Palabras límite», how long the race waits for the rest after the first
+player finishes becomes a lobby setting too, and **the default becomes no
+limit** — the race waits forever (the owner, 2026-11-16), where today it
+closes 30 minutes after the first finish. On offer (Mazo's call): ∞ («sin
+límite», the default), 5, 10, 15, 30 and 60 minutes as shortcuts, or any
+whole number from 1 to 120 typed. Whatever the setting, the host can still
+close it from the finish screen, and the race closes once everyone has
+finished or left. A race nobody touches for a day is swept as finished, as
+every partida already is (Phase 44), so «forever» never leaves a row open
+for good.
+
+*Considered and dropped (the owner, 2026-11-16):* choosing how many must
+arrive before the race ends («el primero», «todos menos uno», «todos»).
+The race already lets everyone keep arriving after someone wins — what
+mattered — and «todos menos uno» ranks exactly as today's «todos» does.
+
+**Done when:** a race «sin límite» stays open long after the first finish
+until the last player finishes, leaves, or the host closes it; one with 10
+minutes closes 10 minutes after the first finish; the lobby shows the
+setting; and an old race keeps its 30 minutes.
+
+**Done.** The state carries `msEspera` — null for «sin límite», the default
+now — and `esperaDe` reads a race dealt before as the old half hour, so no
+race in play changed its rule. `Partida.espera` (`prisma/sql/95-espera.sql`,
+on `mazo-dev`; 0 is «sin límite»), checked whole from 0 to 120. The lobby
+shows «Cuánto se espera al resto» with ∞, 5, 10, 15, 30, 60 and «Otro»,
+∞ picked; the rules page says the others keep playing after a win. Tests:
+twelve hours after the first finish a race «sin límite» is still open and
+closes when the last arrives; a 10-minute wait closes on the minute; an old
+race closes at 30.
+
+### Phase 96 — Palabras encadenadas ✅
+*The owner, 2026-11-16:* an option, in **both** ways to race («Palabras
+límite» and «Tiempo límite»), where **each word starts with the one before
+already played as its first try**. The first word is COMER; you get it in
+four; the next board opens with COMER already in its first row, scored
+green, yellow and grey against the new word — a try spent, with no choice.
+
+- **A lobby switch**, «Encadenadas», off by default; the host turns it on.
+- **The first word** of the race has nothing before it, and starts empty.
+- **After a missed word** (Mazo's call): the next word still starts with
+  the one before — the answer, now revealed — not with your last try.
+- **The chained try counts** like any other: it is one of the six, it
+  counts in the total of tries (Phase 97) and in the tie-breaks, and with
+  it you have five left of your own. The bag never repeats a word, so it
+  can never be the answer.
+- **The server plays it**, in the same request that ends the word before,
+  so the next board arrives with its first row already there; on the
+  board, that row turns over by itself as the new word comes in, so it is
+  seen to be played rather than found already there.
+- Shown in the rules page, and in the lobby summary for those who join.
+
+**Done when:** in each mode, with the switch on, every word after the
+first opens with the previous answer as a scored first row — after a solve
+and after a miss — the player has five tries of their own left, and with
+the switch off nothing changes.
+
+**Done.** The state carries `encadenadas`; when a word ends and another
+follows, `intentar` opens it with the ended word's answer already scored
+against the new one, marked `encadenado` — in the same request, so the
+server plays it and the board receives it. `Partida.encadenadas`
+(`prisma/sql/96-encadenadas.sql`, on `mazo-dev`). The lobby's «Encadenadas»
+switch, in both modes; «· encadenadas» in the summary; a section on the
+rules page. On the board, the next word comes in and its first row turns
+over tile by tile, the keyboard taking its colours only once it has. In
+the browser: ESPIA solved, FUSIL opening with ESPIA — S yellow, I green —
+and the keyboard following. Tests: both modes, after a solve and after a
+miss, five tries left, nothing chained after the last word or without the
+switch.
+
+### Phase 97 — La suma de intentos ✅
+*The owner, 2026-11-16:* the board shows **how many tries each player has
+spent so far**, all words added up — three on the first and five on the
+second is eight — **yours and the others'**, because how many tries it took
+is interesting in itself.
+
+- **Yours** under the clock, beside the words solved or the penalty.
+- **Each rival's** on their card at the top, live, as they play.
+- **In the finish table**, under each column's score.
+- Every try counts: the word in play's too, and a chained one (Phase 96).
+  A count gives nothing away — it has no letters — so it is shown from the
+  first try, not only once you have finished.
+
+**Done when:** after three tries on one word and five on the next, the
+board says 8, the rivals' cards show theirs as they move, and the finish
+table carries every player's total.
+
+**Done.** `VistaDeRival.intentos` carries each rival's total — a count, so
+it is sent from the first try — and the board adds up its own; the finish
+table reads `Puesto.intentos`. «2 intentos» under the clock, «3 intentos»
+on a rival's card, and under every column of the finish table. In the
+browser: two tries for me and three for Leo on the cards, then 3 and 3 in
+the table. A test adds a chained try into a rival's six.
+
+### Phase 98 — El ritmo de los bots, en plena partida (bug de Carioca) ✅
+*The owner, 2026-11-16:* once a Carioca partida has started, the bots'
+thinking time should still be changeable — to speed a partida up or slow
+it down — and today **nobody can change it, the host included**: the menu
+says «lo decide el host» and every button is disabled.
+
+**Why, found while writing this down:** Phase 28 made pacing changeable
+mid-partida, and it is — on a table that plays in the browser (only the
+host and bots), where `Juego` hands the menu its own setter. A table the
+server referees (more than one person) is fed by `MesaDelServidor`, which
+hands the menu no setter at all, so the buttons are disabled for
+everybody; and even with one, the server only takes `ajustes` while the
+lobby is open (`comoHost` answers `YA_EMPEZO` once dealt).
+
+The fix: a host-only action that changes `segundosBot` on a dealt partida
+(the only setting it touches — the rules stay what they were dealt with),
+taking effect from the next bot turn; the remote table hands the setter to
+the host's menu only, and every other seat sees the new value, read-only,
+on its next read. El Mentiroso's table gets checked for the same gap.
+
+**Done when:** at a Carioca table with two people and bots, the host
+changes the bots' time from the menu mid-ronda and the next bot turn uses
+it, on every screen; the other person sees the new value and cannot change
+it; a table of bots alone still changes it as before.
+
+**Done.** A new lobby action, `ritmo`, and `cambiarRitmo` on the server:
+host only, taken in the lobby and once dealt (not once the partida is
+over), only the menu's values (1, 2, 3, 5 s). The server reads
+`segundosBot` whenever it works out a bot's deadline, so the change rules
+from the turn in play. The table's answer now says who hosts; the remote
+table hands the menu its setter only on the host's phone, shows the change
+at once and confirms it on the next read; every other seat sees the value,
+read-only, change. **Found on the way:** the shared table's menu showed the
+turn in play's clock as the bots' time — 45 s on a person's turn — and now
+shows the bots' own. El Mentiroso has no pacing control on its table, so it
+had no such gap. In the browser: a Carioca table of two people and three
+bots, the host's menu enabled, 5 s chosen, Leo's next read saying 5 and
+naming the host. 3 tests, one of them a bot's deadline following the pace.
+
+---
+
+## Milestone 10 — Punto y Fama
+
+*The owner, 2026-11-16: the fourth game — guessing a number of n digits,
+none repeated, answered in puntos and famas — in three ways to play (a
+race of k numbers, the most numbers in x minutes, and a duel of two, each
+setting the other a number), and a bot that guesses your number. The
+owner's own `punto-y-fama` repository, beside this one, has the game and
+its solver. The rules are `specs/punto-y-fama-rules.md`, drafted from the
+brief for the owner to correct — above all the (Mazo's call) ones: 3–6
+digits, 0 allowed first, no try limit, the duel's tie-break.*
+
+*Two of its three ways to play are Palabras' races with numbers instead of
+words: the same list for everyone, the server holding it, late joiners,
+the time limit, the finish table. So the order is el Mentiroso's: first
+split what a race shares from what is Palabras' own, then the game on top.
+Palabras keeps working, untouched, at every step.*
+
+### Phase 99 — Una carrera, dos juegos ✅
+Split Palabras' engine and board into what any guessing race shares — a
+list drawn from the seed, one board per player, the clocks (n items or x
+minutes), closing, late joiners, the ranking, lives, what a view shows of
+the rivals, the finish table — and what is Palabras' own: words, colours,
+six tries, the keyboard. No behaviour changes; imports move.
+
+**Done when:** every Palabras test passes with only its imports changed,
+the purity test covers the new shared half, and nothing in it names a word
+or a colour.
+
+**Done.** `lib/engine/comun/carrera.ts` is the race: boards, the list, the
+clocks and both modes, closing and the wait, late joiners, penalties,
+lives, chaining, `intentarEn` and the ranking, generic over a game's try.
+A game brings a `Regla` — how a try is read, how it is scored against its
+secret, how many tries a secret allows (six, or none). `comun/vista-carrera.ts`
+is the view, with a try's public half handed in (Palabras' colours).
+Palabras is now a thin layer — its words, `puntuar`, `REGLA_PALABRAS` — and
+re-exports every name it had, so nothing importing it changed; the race's
+constants moved with the race and `opciones.ts` re-exports them for the
+client. The server split the same way: `lib/server/carrera.ts` is the
+referee (`arbitroDeCarrera`), `lib/server/palabras.ts` runs it with
+Palabras' engine under its old names. 953 tests pass with not one line of
+a test changed; the purity test took the new shared files by itself. The
+board's shared pieces are split in Phase 102, against the second board
+that needs them.
+
+### Phase 100 — El motor de Punto y Fama ✅
+On the shared race: numbers of n digits without repeats drawn from the
+seed (0 allowed first), a guess validated and scored in puntos and famas,
+no try limit, the two race modes; and the duel as its own small state
+machine — two secrets set, two boards, each scored against the other's
+number, the winner once both have finished. Pure, and the bot (Phase 105)
+lives here too: the owner's solver, ported from `punto-y-fama`.
+
+**Done when:** tests cover scoring (1325 against 1234 is 1 fama, 2 puntos),
+the shape rules (repeats, length, a leading 0), both race modes on the
+shared core, the duel both ways and its tie-break, a view never holding a
+number its player has not got nor a duel secret before the end; and a soak
+of the solver on every number of 4 digits stays at about 5.5 tries on
+average and never above 8, as the owner's measured.
+
+**Done.** `lib/engine/puntoyfama/`: `numeros.ts` (shape, `puntuarNumero`,
+numbers from a seed, every number), `partida.ts` (both races on the shared
+one with `REGLA_PUNTO_Y_FAMA` — digits only, none repeated, no try limit,
+so no penalty and no lives), `vista.ts` (a rival's tries as puntos and
+famas), `duelo.ts` (two secrets, a 3-2-1 once both are in, each scored
+against the other's number, fewer tries → earlier → draw, leaving loses,
+a view holding neither the other's number nor their guesses' digits
+before the end), `bot.ts` (the owner's solver as it is, ties to the lower
+digit as the owner's code breaks them, «Deshacer», contradictions) and a
+light `opciones.ts`. **The soak, measured honestly:** over all 5,040
+four-digit numbers (`scripts/soak-punto-y-fama.ts`, 28 s) the average is
+**5.45** — the owner's 5.5 — and the worst is **9**, for 2 of the 5,040;
+8 or fewer for the other 5,038. The first guess is random, so which ones
+take 9 changes with it; the owner's 8 was measured on other first guesses.
+The suite runs a sample (one in 17) and holds the average under 6 and the
+worst at 9. 14 tests.
+
+### Phase 101 — La puerta sabe que hay cuatro juegos ✅
+`Partida.juego` learns `'puntoyfama'`; the door gets a fourth button. The
+lobby: the way to play («Números límite», «Tiempo límite», «Duelo»), the
+digits (3–6), and how many numbers or how many minutes — reusing Palabras'
+settings where they are the same. A duel seats exactly two and says so;
+the bot is not a partida but a door of its own (Phase 105).
+
+**Done when:** the other three games create, join and play as in the last
+release, and a Punto y Fama partida of each way is created, configured and
+filled by code.
+
+**Done.** `'puntoyfama'` is a game (`lib/juegos.ts`, 1–8 seats, no bots;
+`esDeAdivinar` names the two guessing games), and the door has four
+buttons, two by two. **No new columns:** Punto y Fama keeps its numbers in
+Palabras' — `palabras` counts numbers (1–50), `largo` counts digits (3–6,
+4 by default), `modo` may also be `'duelo'`, `minutos` and `espera` as
+they are — each game's ranges checked on the server by the row's game.
+The lobby's `AjustesPuntoYFama`: Números / Tiempo / Duelo, the digits,
+then how many numbers and the wait, or the minutes; a duel's start waits
+for exactly two people and says so. The server deals a race on the shared
+one or a duel (`lib/server/puntoyfama.ts`, `/api/partidas/[codigo]/puntoyfama`
+for both, the row saying which), takes latecomers into a race and not a
+duel, and leaving a duel hands it to the other. 8 server tests, the races
+and the duel among them.
+
+### Phase 102 — El tablero de números ✅
+The board on a phone: a pad of 0–9 (a digit already in the guess is
+dimmed, since none may repeat), the guess being written with the touch-a-
+slot writing Palabras has, ENVIAR and ⌫; the list of your guesses with
+their answer as marks — famas and puntos — told in beats as each guess
+lands; the clock, the number count, the rivals' answers without digits,
+the sum of tries. Played against the server from the start, as Palabras is.
+
+**Done when:** a race of three 4-digit numbers is played to the end on a
+phone upright and on a computer, a repeated digit or a short guess is
+refused with a shake, nothing off screen, no sideways scroll.
+
+**Done.** First the board's shared pieces left Palabras' board for
+`components/carrera/`: `comun.tsx` (the time as m:ss, hearts, the 3-2-1,
+the rivals' cards with the game's marks handed in, the finish screen with
+the game's noun), `tabla.tsx` and `tabla-datos.ts` (the finish table, the
+game's small drawing of a secret's tries handed in), and the remote hook
+became `useCarreraRemota` (`usePalabrasRemoto` wraps it). Palabras' board
+draws exactly as before. Then `components/puntoyfama/tablero.tsx`: the
+guesses at the number in play, each with its answer as marks — a green
+dot per fama, an amber one per punto, «nada» — coming in one by one; the
+guess written in touchable slots (Palabras' writing); a pad of 0–9 where a
+digit already in the guess is dimmed and not typed twice; ENVIAR and ⌫,
+and the computer's keys; «¡Era 7183! · 2 intentos» on a number got; the
+clock, numbers got (against the clock) and the sum of tries; the rivals'
+last answers, no digits. In the browser at phone size: three 4-digit
+numbers against Leo through the API — 1234 against 7183 answered 0 famas,
+2 puntos; a repeated 1 not typed; the finish table opening 7183 to its
+guesses.
+
+### Phase 103 — La carrera de números ✅
+Both race modes among several people, through Palabras' server path now
+shared: everyone on the same numbers, the rivals as answers without
+digits, late joiners, the race left open for the slow (no closing by
+default, as Phase 95 sets for Palabras), and the finish table with
+numbers as rows opening to everyone's guesses.
+
+**Done when:** three people race three numbers from one code, each seeing
+the others' answers and never their digits until finishing, and every
+screen ends on the same table; and a three-minute race ranks by numbers
+got.
+
+**Done.** Both races run on the shared referee with Punto y Fama's engine
+(`leerCarreraPF`, `intentarEnCarreraPF`, `cerrarCarreraPF`) and the shared
+board pieces, so late joiners, the wait (∞ by default), closing and the
+finish table come as Palabras has them. Server tests: two people on the
+same numbers, a rival's answers with no digit and no number in the
+response, a latecomer seated on the running list, a repeated digit
+refused. In the browser: «Números límite» against Leo (above), and a
+one-minute race of 3 digits — Leo two numbers, me one — stopping at 0:00
+on «Ganó Leo», the table ranking by numbers got. The finish table now
+counts in the game's own noun («2 números»).
+
+### Phase 104 — El duelo ✅
+Two people, one code. Each **types a secret number** for the other — out of
+sight, checked for shape, held by the server — and when both are in, both
+guess at once. The board shows your guesses against their number, and
+theirs against yours as answers only. The first to get it waits, watching;
+the other plays on to the end; then the result — fewer tries wins, the
+time breaks a tie — and **both numbers turned over**, with both lists of
+guesses.
+
+**Done when:** two phones play a duel to the end in both orders of
+finishing, neither response ever holding the other's secret before the
+end, and both screens agree on the winner.
+
+**Done.** The duel's referee is `lib/server/puntoyfama.ts` (its numbers
+set with `poner`, guesses scored against the other's, compare-and-swap
+writes, leaving hands it over) behind the same route as the races, and
+`components/puntoyfama/duelo.tsx` is its board: «Tu número para Kari» —
+typed on the race's slots and pad, set for good on ENVIAR; «Esperando a
+Kari…» until both are in; a 3-2-1; then your guesses with their marks and,
+above them, Kari's answers to your number, marks only; «¡Lo tienes en 2
+intentos! Esperando a que Kari termine…»; and the result — «¡Ganaste! En
+menos intentos.» — with both numbers turned over and both lists of
+guesses side by side, yours tinted. In the browser against Kari through
+the API: 1234 and 5678 set, Kari's 9012 shown to me as two puntos only,
+5678 in two, Kari's 1234 in three, both responses free of the other's
+number until the end. The other order of finishing is the engine's and
+the server's tests.
+
+### Phase 105 — El bot que adivina tu número ✅
+A door of its own, played in the phone alone: you think of a number, the
+bot proposes guesses, and you answer each with **two steppers, puntos and
+famas** (their sum never above n). It narrows down and guesses again until
+it has them all. «Deshacer» takes the last answer back; answers that no
+number fits are said plainly, pointing at «Deshacer»; and how many numbers
+it still considers possible is shown, shrinking, so it can be seen
+thinking.
+
+**Done when:** on a 4-digit number the bot gets it in at most 8 guesses,
+an inconsistent answer is caught and undone, and it plays with no
+connection at all.
+
+**Done.** `/punto-y-fama/bot` (`components/puntoyfama/bot.tsx`), from a
+link on the door under the four games: the digits, «Ya lo pensé», then
+each guess big with two steppers — famas and puntos, never adding up past
+the digits — «Responder» («¡Esa es!» on all famas), the guesses so far
+with their marks, «Le quedan 151 números posibles» shrinking, «Deshacer»
+and «Otro número». It is the engine's bot in the phone, no request at
+all. In the browser: 0587 answered honestly, got in five (4158, 1402,
+5316, 8725, 0587); then with the network cut, an impossible 3 famas and
+1 punto said so plainly and «Deshacer» brought the bot back to its guess.
+
+### Phase 106 — Cómo se juega, y a producción ✅
+«Cómo se juega» for Punto y Fama — the scoring with a real example, the
+three ways to play, and the bot — from its lobby, its board and the other
+games' rules pages; the home page naming four games. Then the release,
+after the SQL reaches `mazo`.
+
+**Done when:** Punto y Fama is in production, and `estado.md` says so.
+
+**Released as v2.4.0** (the owner, 2026-11-16: «esta versión está lista
+para producción»), with Phases 94–98 of Palabras and Carioca; `mazo` took
+`94-castigo.sql`, `95-espera.sql` and `96-encadenadas.sql` first.
+**Milestone 10 is closed.**
+
+**«Cómo se juega» done.**
+`components/puntoyfama/reglas.tsx`: what it is, fama and punto with 1325
+against 1234 drawn (one green mark, two amber), no try limit, the three
+ways to play and the bot. Entrances: `/como-se-juega/punto-y-fama`, the
+lobby, a ⓘ on the race board, and the other three rules pages — each now
+naming the other three games. The home page names four games and says
+both guessing games are played between people. Production needs, before
+`npm run publicar`: `prisma/sql/94-castigo.sql`, `95-espera.sql` and
+`96-encadenadas.sql` on `mazo` (Punto y Fama itself added no column).
 
 ---
 

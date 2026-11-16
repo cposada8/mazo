@@ -152,8 +152,8 @@ describe('the race (Phase 83)', () => {
     expect(puestos[3]).toMatchObject({ termino: false, tiempo: null })
   })
 
-  it('closes when everyone racing has finished, when the host closes it, or 30 minutes after the first finish', () => {
-    let estado = carrera(1, [0, 1])
+  it('closes when everyone racing has finished, when the host closes it, or the wait after the first finish', () => {
+    let estado = empezarPalabras({ seed: 'prueba', palabras: 1, asientos: [0, 1], ahora: AHORA, espera: 30 })
     const [respuesta] = estado.bolsa
     const r = intentar(estado, 0, respuesta, EN_CARRERA + 1000)
     if (!r.ok) throw new Error(r.code)
@@ -325,5 +325,142 @@ describe('lives (Phase 90)', () => {
     expect(estado.tableros[0].terminoEn).toBeNull()
     expect(vistaPalabras(estado, 0, EN_CARRERA).propio!.vidas).toBeNull()
     expect(vistaPalabras(carrera(3), 0, EN_CARRERA).vidasIniciales).toBeNull()
+  })
+})
+
+describe('the penalty, chosen by the host (Phase 94)', () => {
+  const MINUTO = 60_000
+  function conCastigo(castigo: number | undefined) {
+    return empezarPalabras({ seed: 'castigo', palabras: 1, asientos: [0], ahora: AHORA, castigo })
+  }
+  function fallarYTerminar(estado: EstadoPalabras) {
+    for (const p of errados(estado.bolsa[0]).slice(0, 6)) {
+      const r = intentar(estado, 0, p, EN_CARRERA + 10_000)
+      if (!r.ok) throw new Error(r.code)
+      estado = r.estado
+    }
+    return estado
+  }
+
+  it('a missed word adds what the host chose, nothing at all included', () => {
+    expect(vistaPalabras(fallarYTerminar(conCastigo(5)), 0, EN_CARRERA).propio!.tiempo).toBe(10_000 + 5 * MINUTO)
+    expect(vistaPalabras(fallarYTerminar(conCastigo(0)), 0, EN_CARRERA).propio!.tiempo).toBe(10_000)
+    expect(vistaPalabras(conCastigo(5), 0, EN_CARRERA).msCastigo).toBe(5 * MINUTO)
+  })
+
+  it('a new race defaults to two minutes, and a race dealt before keeps two', () => {
+    expect(conCastigo(undefined).msCastigo).toBe(2 * MINUTO)
+    const viejo = { ...conCastigo(undefined) }
+    delete (viejo as { msCastigo?: number }).msCastigo
+    expect(vistaPalabras(fallarYTerminar(viejo), 0, EN_CARRERA).propio!.tiempo).toBe(10_000 + 2 * MINUTO)
+  })
+})
+
+describe('the wait after the first finish, chosen by the host (Phase 95)', () => {
+  const MINUTO = 60_000
+  function primeroLlega(espera: number | undefined) {
+    let estado = empezarPalabras({ seed: 'espera', palabras: 1, asientos: [0, 1], ahora: AHORA, espera })
+    const r = intentar(estado, 0, estado.bolsa[0], EN_CARRERA + 1000)
+    if (!r.ok) throw new Error(r.code)
+    estado = r.estado
+    return estado
+  }
+
+  it('by default there is no limit: everyone may keep arriving', () => {
+    const estado = primeroLlega(undefined)
+    expect(estado.msEspera).toBeNull()
+    expect(cerrada(estado, EN_CARRERA + 1000 + 12 * 60 * MINUTO)).toBe(false)
+    const r = intentar(estado, 1, estado.bolsa[0], EN_CARRERA + 1000 + 12 * 60 * MINUTO)
+    expect(r.ok && cerrada(r.estado, EN_CARRERA + 2 * MINUTO)).toBe(true)
+  })
+
+  it('with a limit it closes that long after the first finish', () => {
+    const estado = primeroLlega(10)
+    expect(cerrada(estado, EN_CARRERA + 1000 + 10 * MINUTO - 1)).toBe(false)
+    expect(cerrada(estado, EN_CARRERA + 1000 + 10 * MINUTO)).toBe(true)
+  })
+
+  it('a race dealt before keeps the old half hour', () => {
+    const viejo = { ...primeroLlega(undefined) }
+    delete (viejo as { msEspera?: number | null }).msEspera
+    expect(cerrada(viejo, EN_CARRERA + 1000 + 30 * MINUTO - 1)).toBe(false)
+    expect(cerrada(viejo, EN_CARRERA + 1000 + 30 * MINUTO)).toBe(true)
+  })
+})
+
+describe('chained words (Phase 96)', () => {
+  function encadenada(modo?: 'tiempo') {
+    return empezarPalabras({
+      seed: 'cadena', palabras: 3, asientos: [0], ahora: AHORA, encadenadas: true,
+      ...(modo ? { modo, minutos: 5 } : {}),
+    })
+  }
+
+  it.each([undefined, 'tiempo' as const])('every word after the first opens with the one before (%s)', (modo) => {
+    let estado = encadenada(modo)
+    const [a, b] = estado.bolsa
+    expect(estado.tableros[0].intentos).toEqual([])
+    const r = intentar(estado, 0, a, EN_CARRERA + 1000)
+    if (!r.ok) throw new Error(r.code)
+    estado = r.estado
+    const abierta = estado.tableros[0].intentos
+    expect(abierta).toEqual([{ palabra: a, colores: puntuar(a, b), encadenado: true }])
+    // Five of the player's own left: the chained one counts.
+    for (const p of errados(b).slice(0, 4)) {
+      const x = intentar(estado, 0, p, EN_CARRERA + 2000)
+      if (!x.ok) throw new Error(x.code)
+      estado = x.estado
+    }
+    expect(estado.tableros[0].intentos).toHaveLength(5)
+    const sexto = intentar(estado, 0, errados(b)[4], EN_CARRERA + 3000)
+    expect(sexto.ok && sexto.termino).toMatchObject({ palabra: b, acertada: false })
+  })
+
+  it('after a miss, the next word still opens with the answer, not the last try', () => {
+    let estado = encadenada()
+    const [a, b] = estado.bolsa
+    for (const p of errados(a).slice(0, 6)) {
+      const r = intentar(estado, 0, p, EN_CARRERA + 1000)
+      if (!r.ok) throw new Error(r.code)
+      estado = r.estado
+    }
+    expect(estado.tableros[0].intentos[0]).toMatchObject({ palabra: a, encadenado: true })
+    expect(estado.tableros[0].intentos[0].colores).toEqual(puntuar(a, b))
+  })
+
+  it('nothing is chained after the last word, nor without the switch', () => {
+    let estado = encadenada()
+    for (const p of estado.bolsa) {
+      const r = intentar(estado, 0, p, EN_CARRERA + 1000)
+      if (!r.ok) throw new Error(r.code)
+      estado = r.estado
+    }
+    expect(estado.tableros[0].intentos).toEqual([])
+    expect(estado.tableros[0].terminoEn).not.toBeNull()
+    const suelta = carrera(2, [0])
+    const r = intentar(suelta, 0, suelta.bolsa[0], EN_CARRERA + 1000)
+    expect(r.ok && r.estado.tableros[0].intentos).toEqual([])
+  })
+})
+
+describe('the sum of tries (Phase 97)', () => {
+  it('adds up every try, the word in play and a chained one included, for everyone from the start', () => {
+    let estado = empezarPalabras({ seed: 'suma', palabras: 3, asientos: [0, 1], ahora: AHORA, encadenadas: true })
+    const jugar = (asiento: number, palabra: string) => {
+      const r = intentar(estado, asiento, palabra, EN_CARRERA + 1000)
+      if (!r.ok) throw new Error(r.code)
+      estado = r.estado
+    }
+    const [a, b] = estado.bolsa
+    // Three on the first word, then the chained one and two more on the second.
+    jugar(1, errados(a)[0])
+    jugar(1, errados(a)[1])
+    jugar(1, a)
+    jugar(1, errados(b)[0])
+    jugar(1, errados(b)[1])
+    const desde0 = vistaPalabras(estado, 0, EN_CARRERA + 2000)
+    expect(desde0.rivales[0].intentos).toBe(6)
+    expect(desde0.rivales[0].palabras).toBeNull()
+    expect(clasificacion(estado).find((p) => p.asiento === 1)!.intentos).toBe(6)
   })
 })

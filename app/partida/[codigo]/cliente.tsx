@@ -21,10 +21,16 @@ import { useIdentidad } from '@/components/identidad'
 import { MesaMentirosoLocal } from '@/components/mentiroso/local'
 import { MesaMentiroso } from '@/components/mentiroso/mesa'
 import { TableroPalabras } from '@/components/palabras/tablero'
+import { TableroPuntoYFama } from '@/components/puntoyfama/tablero'
+import { TableroDuelo } from '@/components/puntoyfama/duelo'
+import { ComoSeJuegaPuntoYFama } from '@/components/puntoyfama/reglas'
+import type { VistaPuntoYFama } from '@/lib/engine/puntoyfama'
 import { abandonarPartida, type VistaDeLobby } from '@/lib/lobby'
 import { Lobby } from './lobby'
 import { useMentirosoRemoto } from './useMentirosoRemoto'
 import { usePalabrasRemoto } from './usePalabrasRemoto'
+import { useCarreraRemota } from './useCarreraRemota'
+import { useDueloRemoto } from './useDueloRemoto'
 import { useMesaRemota } from './useMesaRemota'
 
 /**
@@ -88,6 +94,15 @@ export function PartidaCliente({
 
   // Palabras has one home, the server: it alone holds the answers (Phase 86).
   // Leaving a race asks nothing — your time stays in the ranking.
+  // Punto y Fama's tables arrive with Phases 102–104.
+  if (partida.juego === 'puntoyfama') {
+    return partida.modo === 'duelo' ? (
+      <MesaDuelo codigo={codigo} onSalir={() => void salir(false, true)} />
+    ) : (
+      <MesaPuntoYFama codigo={codigo} onSalir={() => void salir(false, true)} />
+    )
+  }
+
   if (partida.juego === 'palabras') {
     return <CarreraDelServidor codigo={codigo} onSalir={() => void salir(false, true)} />
   }
@@ -195,7 +210,10 @@ function MesaDelServidor({
       cartasOscuras={leerBaraja()}
       galeriaDeComodines={galeriaDeComodines}
       nombresDeAsientos={juego.nombresDeAsientos}
-      segundosBot={juego.reloj.segundos}
+      segundosBot={juego.segundosBot}
+      // Only the host's menu gets the buttons (Phase 98); everyone else sees
+      // the pace, read-only, and sees it change.
+      onSegundosBot={juego.soyHost ? (segundos) => void juego.cambiarRitmo(segundos) : undefined}
       onSalir={onSalir}
     />
   )
@@ -290,6 +308,91 @@ function CarreraDelServidor({ codigo, onSalir }: { codigo: string; onSalir: () =
       onEnviar={remota.enviar}
       onCerrar={remota.cerrar}
       onSalir={mesa.vista.cerrada || mesa.vista.propio?.terminoEn != null ? () => router.push('/') : onSalir}
+    />
+  )
+}
+
+/** Punto y Fama, refereed by the server: a race or a duel (Phases 102–104). */
+function MesaPuntoYFama({ codigo, onSalir }: { codigo: string; onSalir: () => void }) {
+  const { identidad } = useIdentidad()
+  const remota = useCarreraRemota<VistaPuntoYFama>({
+    codigo,
+    secreto: identidad?.secreto ?? '',
+    juego: 'puntoyfama',
+    campo: 'numero',
+  })
+  const router = useRouter()
+  const nombres = useMemo(
+    () => new Map((remota.mesa?.asientos ?? []).map((a) => [a.indice, a.alias] as const)),
+    [remota.mesa?.asientos],
+  )
+
+  if (!remota.mesa) {
+    return (
+      <main className="mx-auto flex w-full max-w-md flex-1 flex-col items-center justify-center gap-3 px-6 py-16 text-center">
+        <p className="text-muted-foreground text-sm">
+          {remota.perdida ? 'Ya no tienes lugar en esta carrera.' : 'Abriendo la carrera…'}
+        </p>
+        {remota.perdida && (
+          <button type="button" onClick={() => router.push('/')} className="border-input hover:bg-accent rounded-md border px-4 py-2 text-sm">
+            Volver al inicio
+          </button>
+        )}
+      </main>
+    )
+  }
+
+  const { mesa } = remota
+  const yo = mesa.asientos.find((a) => a.indice === mesa.vista.propio?.asiento)
+  return (
+    <TableroPuntoYFama
+      vista={mesa.vista}
+      nombres={nombres}
+      soyHost={Boolean(yo?.esHost)}
+      enviando={remota.enviando}
+      error={remota.error}
+      ahora={remota.ahora}
+      onEnviar={remota.enviar}
+      onCerrar={remota.cerrar}
+      onSalir={mesa.vista.cerrada || mesa.vista.propio?.terminoEn != null ? () => router.push('/') : onSalir}
+      reglas={<ComoSeJuegaPuntoYFama />}
+    />
+  )
+}
+
+/** A duel of Punto y Fama (Phase 104): the server holds both numbers. */
+function MesaDuelo({ codigo, onSalir }: { codigo: string; onSalir: () => void }) {
+  const { identidad } = useIdentidad()
+  const remota = useDueloRemoto({ codigo, secreto: identidad?.secreto ?? '' })
+  const router = useRouter()
+  const nombres = useMemo(
+    () => new Map((remota.mesa?.asientos ?? []).map((a) => [a.indice, a.alias] as const)),
+    [remota.mesa?.asientos],
+  )
+  if (!remota.mesa) {
+    return (
+      <main className="mx-auto flex w-full max-w-md flex-1 flex-col items-center justify-center gap-3 px-6 py-16 text-center">
+        <p className="text-muted-foreground text-sm">
+          {remota.perdida ? 'Ya no tienes lugar en este duelo.' : 'Abriendo el duelo…'}
+        </p>
+        {remota.perdida && (
+          <button type="button" onClick={() => router.push('/')} className="border-input hover:bg-accent rounded-md border px-4 py-2 text-sm">
+            Volver al inicio
+          </button>
+        )}
+      </main>
+    )
+  }
+  return (
+    <TableroDuelo
+      vista={remota.mesa.vista}
+      nombres={nombres}
+      enviando={remota.enviando}
+      error={remota.error}
+      ahora={remota.ahora}
+      onPoner={remota.poner}
+      onIntentar={remota.intentar}
+      onSalir={remota.mesa.vista.resultado ? () => router.push('/') : onSalir}
     />
   )
 }

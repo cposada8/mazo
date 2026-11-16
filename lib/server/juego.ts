@@ -50,6 +50,8 @@ export type VistaDeMesa = {
     alias: string
     esBot: boolean
     bot: string | null
+    /** Who runs the table: the one seat that may change the bots' pace (Phase 98). */
+    esHost: boolean
   }[]
 }
 
@@ -89,6 +91,7 @@ type Fila = {
     alias: string
     esBot: boolean
     bot: string | null
+    esHost: boolean
     secreto: string | null
     retirado: boolean
     ultimaSenal: Date | null
@@ -115,7 +118,7 @@ function publicar(fila: Fila, estado: PartidaState, asiento: number): VistaDeMes
     verHistorial: fila.verHistorial,
     asientos: [...fila.asientos]
       .sort((a, b) => a.indice - b.indice)
-      .map(({ indice, alias, esBot, bot }) => ({ indice, alias, esBot, bot })),
+      .map(({ indice, alias, esBot, bot, esHost }) => ({ indice, alias, esBot, bot, esHost })),
   }
 }
 

@@ -16,7 +16,8 @@ import {
   INTENTOS_POR_PALABRA,
   MAX_MINUTOS,
   MAX_PALABRAS,
-  MS_CASTIGO,
+  CASTIGO_POR_DEFECTO,
+  MAX_CASTIGO,
 } from '@/lib/engine/palabras/opciones'
 import { cn } from '@/lib/utils'
 
@@ -79,7 +80,13 @@ export function ComoSeJuegaPalabras() {
         </p>
         <p>
           Si no adivinas una, se revela, pasas a la siguiente y{' '}
-          <b>sumas {MS_CASTIGO / 60_000} minutos</b> a tu tiempo.
+          <b>sumas el castigo a tu tiempo</b>: {CASTIGO_POR_DEFECTO} minutos,
+          o lo que elija el host (de 0 a {MAX_CASTIGO}).
+        </p>
+        <p>
+          Cuando alguien gana, <b>los demás siguen jugando</b> y van llegando a
+          sus puestos. El host puede poner un límite de espera después del
+          primero, o cerrar la carrera cuando quiera.
         </p>
       </Seccion>
 
@@ -94,6 +101,16 @@ export function ComoSeJuegaPalabras() {
           Con <b>vidas</b> (de 1 a 5, o sin vidas): cada palabra que no
           adivinas cuesta una. Sin vidas se acaba tu carrera, te quedas con las
           que resolviste, y los demás siguen hasta el final.
+        </p>
+      </Seccion>
+
+      <Seccion titulo="Encadenadas">
+        <p>
+          Una opción para las dos modalidades: <b>cada palabra empieza con la
+          anterior ya jugada</b> como primer intento, con sus colores. Si la
+          anterior fue COMER, la siguiente se abre con COMER en la primera
+          fila. Ese intento cuenta, así que te quedan cinco. Si no adivinaste
+          la anterior, igual se juega su respuesta.
         </p>
       </Seccion>
 
