@@ -47,6 +47,17 @@ const VALOR: Record<Color, string> = {
 }
 const RANGO: Record<Color, number> = { gris: 0, amarillo: 1, verde: 2 }
 
+/**
+ * The keyboard's own colours (the owner, 2026-11-15): a key not tried yet is
+ * grey, a letter tried and not in the word goes black — in both themes.
+ */
+const TECLA_SIN_USAR = 'bg-[oklch(0.68_0_0)] text-white hover:bg-[oklch(0.62_0_0)]'
+const TECLA: Record<Color, string> = {
+  verde: FONDO.verde,
+  amarillo: FONDO.amarillo,
+  gris: 'bg-[oklch(0.22_0_0)] text-white',
+}
+
 export function formatoDeTiempo(ms: number): string {
   const s = Math.max(0, Math.floor(ms / 1000))
   const h = Math.floor(s / 3600)
@@ -365,7 +376,7 @@ function Teclado({
             <button
               type="button"
               onClick={() => onTecla('ENVIAR')}
-              className="bg-muted hover:bg-accent h-13 flex-[1.6] rounded-md text-xs font-bold"
+              className={cn(TECLA_SIN_USAR, 'h-13 flex-[1.6] rounded-md text-xs font-bold')}
             >
               ENVIAR
             </button>
@@ -379,7 +390,7 @@ function Teclado({
                 onClick={() => onTecla(letra)}
                 className={cn(
                   'h-13 min-w-0 flex-1 rounded-md text-sm font-bold transition-colors',
-                  color ? FONDO[color] : 'bg-muted hover:bg-accent',
+                  color ? TECLA[color] : TECLA_SIN_USAR,
                 )}
               >
                 {letra}
@@ -391,7 +402,7 @@ function Teclado({
               type="button"
               onClick={() => onTecla('BORRAR')}
               aria-label="Borrar"
-              className="bg-muted hover:bg-accent flex h-13 flex-[1.6] items-center justify-center rounded-md"
+              className={cn(TECLA_SIN_USAR, 'flex h-13 flex-[1.6] items-center justify-center rounded-md')}
             >
               <Delete className="size-5" aria-hidden />
             </button>
