@@ -3865,7 +3865,7 @@ numbers against Leo through the API — 1234 against 7183 answered 0 famas,
 2 puntos; a repeated 1 not typed; the finish table opening 7183 to its
 guesses.
 
-### Phase 103 — La carrera de números
+### Phase 103 — La carrera de números ✅
 Both race modes among several people, through Palabras' server path now
 shared: everyone on the same numbers, the rivals as answers without
 digits, late joiners, the race left open for the slow (no closing by
@@ -3876,6 +3876,17 @@ numbers as rows opening to everyone's guesses.
 the others' answers and never their digits until finishing, and every
 screen ends on the same table; and a three-minute race ranks by numbers
 got.
+
+**Done.** Both races run on the shared referee with Punto y Fama's engine
+(`leerCarreraPF`, `intentarEnCarreraPF`, `cerrarCarreraPF`) and the shared
+board pieces, so late joiners, the wait (∞ by default), closing and the
+finish table come as Palabras has them. Server tests: two people on the
+same numbers, a rival's answers with no digit and no number in the
+response, a latecomer seated on the running list, a repeated digit
+refused. In the browser: «Números límite» against Leo (above), and a
+one-minute race of 3 digits — Leo two numbers, me one — stopping at 0:00
+on «Ganó Leo», the table ranking by numbers got. The finish table now
+counts in the game's own noun («2 números»).
 
 ### Phase 104 — El duelo
 Two people, one code. Each **types a secret number** for the other — out of

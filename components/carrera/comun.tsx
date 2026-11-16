@@ -189,6 +189,7 @@ export function Llegada<I extends IntentoBase, M>({
         Mini={Mini}
         rotulo={sustantivo.uno[0].toUpperCase() + sustantivo.uno.slice(1)}
         articulo={sustantivo.articulo}
+        plural={sustantivo.varios}
         ancho={anchoDeColumna}
       />
 

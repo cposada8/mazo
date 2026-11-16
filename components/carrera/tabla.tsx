@@ -26,6 +26,7 @@ export function TablaDeLlegada<I extends IntentoBase, M>({
   Mini,
   rotulo = 'Palabra',
   articulo = 'la',
+  plural,
   ancho,
 }: {
   vista: VistaCarrera<I, M>
@@ -37,6 +38,8 @@ export function TablaDeLlegada<I extends IntentoBase, M>({
   rotulo?: string
   /** «la» for a word, «lo» for a number, in the legend. */
   articulo?: 'la' | 'lo'
+  /** The noun's plural for a count: «palabras», «números». */
+  plural?: string
   /** Column width, rem; by default wide enough for a row of small tiles. */
   ancho?: number
 }) {
@@ -80,7 +83,7 @@ export function TablaDeLlegada<I extends IntentoBase, M>({
                   </span>
                   <span className="text-foreground block text-xs font-semibold tabular-nums">
                     {conTiempo
-                      ? `${puesto.acertadas} ${puesto.acertadas === 1 ? 'palabra' : 'palabras'}`
+                      ? `${puesto.acertadas} ${puesto.acertadas === 1 ? rotulo.toLowerCase() : (plural ?? `${rotulo.toLowerCase()}s`)}`
                       : puesto.tiempo !== null
                         ? formatoDeTiempo(puesto.tiempo)
                         : puesto.retirado
