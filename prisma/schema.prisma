@@ -49,6 +49,12 @@ model Partida {
   /// each has. The host picks both in the lobby; only Palabras reads them.
   palabras         Int @default(10)
   largo            Int @default(5)
+  /// Palabras' way to race (Phase 89): 'palabras' (n words) or 'tiempo'
+  /// (x minutes for the most words), and the minutes for the second.
+  modo             String @default("palabras")
+  minutos          Int @default(5)
+  /// Lives per player in the time mode (Phase 90); 0 is «sin vidas».
+  vidas            Int @default(3)
   /// Memory aids (Phase 24), a table rule rather than a personal comfort:
   /// may the descarte be browsed, and may the ronda's story be reread.
   verDescarte  Boolean @default(true)

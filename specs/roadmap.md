@@ -3382,7 +3382,7 @@ given. Placed before the release, so the rules page and production get the
 game as the owner wants it — the release moved from 87 to 91. Each rule
 below marked (Mazo's call) is a default, written for the owner to correct.*
 
-### Phase 87 — Cualquier número de palabras
+### Phase 87 — Cualquier número de palabras ✅
 The lobby's 3/5/10/15/20 stay as shortcuts, and beside them the host can
 **type any number** — 7, 23. (Mazo's call: from **1 to 100**; a bag never
 repeats a word, and a hundred words is already a long race.) The server
@@ -3393,7 +3393,14 @@ bullets today.
 101 or «abc» is refused in the lobby and by the server, and the shortcuts
 still work.
 
-### Phase 88 — Volver a ver cómo salió cada palabra
+**Done.** `esNumeroDePalabras` in `opciones.ts` (whole, 1–100) is the one
+rule, used by the server; the lobby's `NumeroConAtajos` shows the five
+shortcuts and an «Otro» box that sends only a number inside the range,
+says «Escribe un número entero de 1 a 100.» otherwise and goes back. In
+the browser: 23 typed and kept, 150 refused, the shortcuts as before.
+Server test: 23 and 7 kept, 0, 101, 2.5 and −3 ignored, a bag of 7 dealt.
+
+### Phase 88 — Volver a ver cómo salió cada palabra ✅
 On the finish screen, «Tus palabras» lists each word with its tries
 («1. SEGAR · 5»). **Touching a word opens its tries again** — the rows as
 they were played, letters and colours, small — so «in five» can be seen
@@ -3411,7 +3418,18 @@ letters and colours, a missed word included; each rival's ended words open
 the same way, and a rival's new word appears as they end it; and a player
 still racing receives no rival letter in any response.
 
-### Phase 89 — Modalidad con tiempo
+**Done.** `VistaDeRival.palabras` carries a rival's ended words, letters
+and all, only when `yaTermino` holds for the player looking — every word
+ended, or the race closed; otherwise null. The finish screen's «Las
+palabras» has a tab per player (Tú, then each rival) and each word opens
+to a small grid of its tries. In the browser: my three words opened, Leo's
+tab showing only AGRIO in three tries while his MENTA on the next word
+stayed out; Leo's own response, still racing, held none of my letters.
+Found on the way: a row filled by typing now ignores further letters, as
+the puzzle does (the cursor leaves the row), and only a touched tile is
+retyped — fast typing during a flip had been overwriting the last tile.
+
+### Phase 89 — Modalidad con tiempo ✅
 A second way to race, chosen in the lobby: **«Palabras límite»** — today's
 race, n words, the clock runs — or **«Tiempo límite»**: everyone gets **x
 minutes**, and whoever solves **the most words** in them wins. The words
@@ -3437,7 +3455,21 @@ far down the list as they can.
 different number of words from the same list, both boards stop at the
 same second, and the ranking is by words solved.
 
-### Phase 90 — Vidas
+**Done.** The rules went into `palabras-rules.md` first («Two ways to
+race»). The state carries `modo` and `msLimite` (absent in races dealt
+before: n words); a time race's list is every answer of its length; every
+ended word now records `en`, when it ended, which is the tie-break.
+`cerrada` is true at `inicio + msLimite`, and the half-hour wait stays the
+n-words race's. `Partida.modo` and `Partida.minutos`
+(`prisma/sql/89-modo.sql`, on `mazo-dev`). The lobby's «Modalidad» picks
+one, then «Cuántas palabras» or «Minutos» (3/5/10/15 or 1–60 typed). The
+board counts down, turns red in the last 30 s, says how many you have
+solved, and stops itself at zero on the server's clock; rivals read «2 ✓ ·
+va en la 3»; the finish screen ranks by words solved with each one's last
+solve. In the browser: a one-minute race against Leo through the API — he
+solved two, I solved one — both stopped at 0:00 on «Ganó Leo».
+
+### Phase 90 — Vidas ✅
 For the time mode: each player starts with **k lives** (3 by default, the
 host picks — Mazo's call: 1 to 5, or «sin vidas»). **Missing a word costs a
 life.** With none left the player's race is over: they keep the words they
@@ -3448,13 +3480,92 @@ lives left, and a rival's lives show beside their progress.
 keeps their count in the ranking, and the others finish their minutes; a
 race «sin vidas» never stops anyone early.
 
-### Phase 91 — Cómo se juega, y a producción
+**Done.** The state carries `vidas` (time races only; null is «sin
+vidas»); `vidasDe` counts what is left, and the miss that takes the last
+one ends that player's race where it stands. Everyone out of lives closes
+the race before the time. `Partida.vidas` (`prisma/sql/90-vidas.sql`, on
+`mazo-dev`; 0 is «sin vidas»). The lobby offers 1–5 and ∞ under the time
+mode; the board shows hearts under the word count, rivals read «♥2», a
+miss says «Era POMPA · −1 vida», and the finish screen says «Te quedaste
+sin vidas» while the others play on. In the browser: a one-minute race
+with two lives, two words missed, out at 0:28 with Leo still in on ♥2.
+
+### Phase 91 — Cómo se juega ✅
 «Cómo se juega» for Palabras — the rules on one screen with a real row of
 tiles turning over, both modes, reachable from its lobby and its board —
-and the home page naming three games. Then the release, after the SQL
-reaches `mazo`.
+and the home page naming three games.
 
-**Done when:** Palabras is in production, and `estado.md` says so.
+**Done.** `components/palabras/reglas.tsx`, `ComoSeJuegaPalabras`: what it
+is, the colours (DOLER against PODER, and ERROR against PERRO for the
+repeated letter, each row turning over tile by tile as on the board), the
+touch-to-write, «Palabras límite», «Tiempo límite» with its lives, and
+what you see of the others. Two entrances: `/como-se-juega/palabras`
+(linked from the lobby, where it replaces the four-line summary, and from
+Carioca's and el Mentiroso's rules pages, which now name all three) and a
+ⓘ on the board that opens it over the race — the keyboard writes nothing
+while it is open. The home page's «Cómo se juega» names the three games.
+The release that was this phase's second half moved to Phase 93, behind
+the owner's next ask.
+
+### Phase 92 — La tabla de la llegada ✅
+*The owner, 2026-11-15:* the finish screen becomes **a table like
+Carioca's scoreboard** (Phase 49's `Marcador`): **players are the columns,
+in standing order** — whoever won, by the race's own rule (fastest time
+in «Palabras límite», most words in «Tiempo límite»), is the first column,
+second place the second, and so on — and **the words are the rows**, in
+bag order. Your own column is picked out, as in Carioca.
+
+- **Each cell** says how that player did on that word: solved in how many
+  tries, or missed; empty for a word they never reached (a time race, a
+  player out of lives, a rival still racing).
+- **Touching a row opens it**: everyone's tries on that word, side by
+  side, letters and colours, each under their column.
+- **Many players**: the columns scroll sideways, the word column stays put,
+  so you can move right to explore them all.
+- **The same rule as Phase 88** for what is shown: only once you have
+  finished, and of a rival still racing only the words they have ended.
+  This table replaces Phase 88's tabs.
+- **Time races**: the rows are the words anyone reached, as far as the
+  furthest player got.
+
+**Done when:** after a race of four people, the columns read 1° to 4° by
+the race's rule, every word is a row, a row opens to the four players'
+tries side by side, the table scrolls sideways on a phone without the word
+column moving, and a player still racing receives no rival letter.
+
+**Done.** `components/palabras/tabla-datos.ts` builds it from one view —
+columns in `clasificacion` order, as many rows as the furthest player got,
+a null cell where someone never ended that word, and a rival's column empty
+while the view holds no letters of theirs — and `tabla.tsx` draws it:
+puesto, name («Tú» in amber, your column tinted as in Carioca) and score
+(time, or words against the clock) over each column; «✓ 2», «✗» or «—» in
+each cell; a row opening to every player's tries in small tiles. The word
+column is sticky and carries the left gutter, so nothing scrolling under
+it shows beside it. It replaces Phase 88's tabs and the standings list. In
+the browser: four players (three through the API), 1° Leo, 2° Tú, 3° Ana
+with a miss, 4° Tomás still on word two showing «—»; CERCO opened to all
+four, the table slid right with the words fixed. 3 tests.
+
+**And the word cut off by the end** (the owner, 2026-11-15: «se me acabó
+el tiempo, llevaba como 4 intentos y no supe cuál era la palabra»). Once
+the race is closed — the time up, or the host closing it — each player's
+word in play comes back as `enCurso`, its answer and the tries they got
+in, and the table adds it as a row: «⏱ 4» in amber, «sin terminar» under
+its tries when opened. Never before the race closes, so nobody who can
+still play sees it; a word with no tries is left out. In the browser: a
+one-minute race, four tries on FALLA when the clock ran out, the row
+showing «⏱ 2» for Leo and «⏱ 4» for me and opening to both. 2 tests.
+
+### Phase 93 — A producción ✅
+The release of Phases 87–92, after `prisma/sql/89-modo.sql` and
+`prisma/sql/90-vidas.sql` reach `mazo`.
+
+**Done when:** they are in production, and `estado.md` says so.
+
+**Done.** At the owner's word, 2026-11-15, with the word cut off by the end
+included: `mazo` took `89-modo.sql` and `90-vidas.sql` before the release
+deployed, and the release is **v2.3.0** — a minor, for new things.
+**Milestone 9 is closed.**
 
 ---
 

@@ -73,6 +73,75 @@ describe('Palabras through the platform', () => {
     for (const palabra of (await estadoDe(codigo)).bolsa) expect(palabra).toHaveLength(8)
   })
 
+  it('takes any whole number of words from 1 to 100, and nothing else (Phase 87)', async () => {
+    const creada = await partidas.crearPartida({
+      secreto: 'nico',
+      alias: 'nico',
+      juego: 'palabras',
+      config: CONFIG_POR_DEFECTO,
+    })
+    const codigo = creada.codigo
+    const palabras = async () => (await partidas.cargarPorCodigo(codigo))!.palabras
+    await partidas.actualizarAjustes({ codigo, secreto: 'nico', palabras: 23 })
+    expect(await palabras()).toBe(23)
+    for (const malo of [0, 101, 2.5, -3]) {
+      await partidas.actualizarAjustes({ codigo, secreto: 'nico', palabras: malo })
+      expect(await palabras()).toBe(23)
+    }
+    await partidas.actualizarAjustes({ codigo, secreto: 'nico', palabras: 7 })
+    await partidas.empezar({ codigo, secreto: 'nico', seed: 'siete' })
+    expect((await estadoDe(codigo)).bolsa).toHaveLength(7)
+  })
+
+  it('a time-limit race: the minutes the host chose, every answer dealt, and the race over when the time is', async () => {
+    const creada = await partidas.crearPartida({
+      secreto: 'tita',
+      alias: 'tita',
+      juego: 'palabras',
+      config: CONFIG_POR_DEFECTO,
+    })
+    const codigo = creada.codigo
+    await partidas.actualizarAjustes({ codigo, secreto: 'tita', modo: 'tiempo', minutos: 2 })
+    await partidas.actualizarAjustes({ codigo, secreto: 'tita', minutos: 61 })
+    await partidas.actualizarAjustes({ codigo, secreto: 'tita', modo: 'otro' })
+    const lobby = (await partidas.cargarPorCodigo(codigo))!
+    expect(lobby).toMatchObject({ modo: 'tiempo', minutos: 2 })
+
+    await partidas.unirse({ codigo, secreto: 'tomi', alias: 'tomi' })
+    await partidas.empezar({ codigo, secreto: 'tita', seed: 'reloj' })
+    const estado = await estadoDe(codigo)
+    expect(estado).toMatchObject({ modo: 'tiempo', msLimite: 120_000 })
+    expect(estado.bolsa.length).toBeGreaterThan(1000)
+
+    const r = await carrera.intentarEnCarrera(codigo, 'tomi', estado.bolsa[0], estado.inicio + 5_000)
+    expect(r.ok && r.mesa.vista).toMatchObject({ modo: 'tiempo', fin: estado.inicio + 120_000 })
+    const tarde = await carrera.intentarEnCarrera(codigo, 'tita', estado.bolsa[0], estado.inicio + 120_000)
+    expect(tarde).toEqual({ ok: false, code: 'CERRADA' })
+
+    const fin = await carrera.leerCarrera(codigo, 'tita', estado.inicio + 120_001)
+    expect(fin.ok && fin.mesa.vista.cerrada).toBe(true)
+    expect(fin.ok && fin.mesa.vista.clasificacion.map((p) => p.acertadas)).toEqual([1, 0])
+    expect((await partidas.cargarPorCodigo(codigo))!.fase).toBe('terminada')
+  })
+
+  it('lives: the host picks them, a bad number is ignored, and they reach the race (Phase 90)', async () => {
+    const creada = await partidas.crearPartida({
+      secreto: 'vale',
+      alias: 'vale',
+      juego: 'palabras',
+      config: CONFIG_POR_DEFECTO,
+    })
+    const codigo = creada.codigo
+    await partidas.actualizarAjustes({ codigo, secreto: 'vale', modo: 'tiempo', vidas: 2 })
+    await partidas.actualizarAjustes({ codigo, secreto: 'vale', vidas: 9 })
+    expect((await partidas.cargarPorCodigo(codigo))!.vidas).toBe(2)
+    await partidas.empezar({ codigo, secreto: 'vale', seed: 'dos' })
+    const estado = await estadoDe(codigo)
+    expect(estado.vidas).toBe(2)
+    const r = await carrera.leerCarrera(codigo, 'vale', estado.inicio + 10)
+    expect(r.ok && r.mesa.vista).toMatchObject({ vidasIniciales: 2, propio: { vidas: 2 } })
+  })
+
   it('refuses a number of words the lobby does not offer', async () => {
     const { codigo } = await carreraDeDos(3)
     const r = await partidas.actualizarAjustes({ codigo, secreto: 'ana', palabras: 999 })

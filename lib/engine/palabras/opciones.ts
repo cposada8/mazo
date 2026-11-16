@@ -14,6 +14,40 @@ export const INTENTOS_POR_PALABRA = 6
 /** Words in the bag on offer, and the default (`palabras-rules.md`, «The words»). */
 export const OPCIONES_DE_PALABRAS = [3, 5, 10, 15, 20] as const
 export const PALABRAS_POR_DEFECTO = 10
+/** Any number of words may be typed instead (Phase 87): one to a hundred. */
+export const MIN_PALABRAS = 1
+export const MAX_PALABRAS = 100
+
+/** Two ways to race (Phase 89): n words against the clock, or x minutes for the most words. */
+export const MODOS = ['palabras', 'tiempo'] as const
+export type Modo = (typeof MODOS)[number]
+export function modoValido(valor: unknown): Modo {
+  return valor === 'tiempo' ? 'tiempo' : 'palabras'
+}
+
+/** The time mode's minutes: shortcuts, the default, and what may be typed. */
+export const OPCIONES_DE_MINUTOS = [3, 5, 10, 15] as const
+export const MINUTOS_POR_DEFECTO = 5
+export const MIN_MINUTOS = 1
+export const MAX_MINUTOS = 60
+export function esNumeroDeMinutos(valor: unknown): valor is number {
+  return Number.isInteger(valor) && (valor as number) >= MIN_MINUTOS && (valor as number) <= MAX_MINUTOS
+}
+
+/**
+ * Lives in the time mode (Phase 90): a missed word costs one. The host picks
+ * 1 to 5, or 0 for «sin vidas».
+ */
+export const OPCIONES_DE_VIDAS = [1, 2, 3, 4, 5, 0] as const
+export const VIDAS_POR_DEFECTO = 3
+export function esNumeroDeVidas(valor: unknown): valor is number {
+  return (OPCIONES_DE_VIDAS as readonly unknown[]).includes(valor)
+}
+
+/** A number of words the lobby accepts: a whole number from 1 to 100. */
+export function esNumeroDePalabras(valor: unknown): valor is number {
+  return Number.isInteger(valor) && (valor as number) >= MIN_PALABRAS && (valor as number) <= MAX_PALABRAS
+}
 export const MIN_JUGADORES = 1
 export const MAX_JUGADORES = 8
 /** A missed word costs this much on the player's clock (Mazo's call). */

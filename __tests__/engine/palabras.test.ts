@@ -176,6 +176,35 @@ describe('the race (Phase 83)', () => {
     expect(r.ok && r.estado.tableros[1].terminoEn).toBe(90_000)
   })
 
+  it('once you finish, the rivals\' ended words come with their letters, never the one in play (Phase 88)', () => {
+    let estado = carrera(2, [0, 1])
+    const jugar = (asiento: number, palabra: string) => {
+      const r = intentar(estado, asiento, palabra, EN_CARRERA + 1000)
+      if (!r.ok) throw new Error(r.code)
+      estado = r.estado
+    }
+    // Seat 1 solves the first word and tries the second; seat 0 is still racing.
+    jugar(1, estado.bolsa[0])
+    const tanteo = errados(estado.bolsa[1])[0]
+    jugar(1, tanteo)
+    expect(vistaPalabras(estado, 0, EN_CARRERA + 2000).rivales[0].palabras).toBeNull()
+
+    // Seat 0 finishes: now it sees seat 1's ended word, letters and all.
+    jugar(0, estado.bolsa[0])
+    jugar(0, estado.bolsa[1])
+    const vista = vistaPalabras(estado, 0, EN_CARRERA + 2000)
+    expect(vista.rivales[0].palabras).toEqual([
+      { palabra: estado.bolsa[0], acertada: true, en: 1000, intentos: [expect.objectContaining({ palabra: estado.bolsa[0] })] },
+    ])
+    // Seat 1's word in play stays colours only.
+    expect(JSON.stringify(vista.rivales[0].palabras)).not.toContain(tanteo)
+    expect(vista.rivales[0].colores).toHaveLength(1)
+
+    // And seat 1, still racing, sees none of seat 0's letters.
+    const suya = vistaPalabras(estado, 1, EN_CARRERA + 2000)
+    expect(suya.rivales[0].palabras).toBeNull()
+  })
+
   it('a view never holds a word its player has not ended, nor a rival letter', () => {
     let estado = carrera(5, [0, 1])
     // Seat 1 solves two words and tries the third.
@@ -194,5 +223,107 @@ describe('the race (Phase 83)', () => {
 
     const propia = JSON.stringify(vistaPalabras(estado, 1, EN_CARRERA + 3000))
     for (const palabra of estado.bolsa.slice(2)) expect(propia).not.toContain(palabra)
+  })
+})
+
+describe('the time limit (Phase 89)', () => {
+  const MINUTO = 60_000
+  function contraReloj(asientos = [0, 1], minutos = 3) {
+    return empezarPalabras({ seed: 'reloj', palabras: 10, asientos, ahora: AHORA, modo: 'tiempo', minutos })
+  }
+
+  it('deals every answer, the same order for everyone, and stops everyone when the minutes are up', () => {
+    const estado = contraReloj()
+    expect(estado.bolsa).toHaveLength(respuestasDe(5).length)
+    expect(estado.bolsa).toEqual(sacarBolsa('reloj', respuestasDe(5).length))
+    expect(cerrada(estado, EN_CARRERA + 3 * MINUTO - 1)).toBe(false)
+    expect(cerrada(estado, EN_CARRERA + 3 * MINUTO)).toBe(true)
+    expect(intentar(estado, 0, estado.bolsa[0], EN_CARRERA + 3 * MINUTO)).toEqual({
+      ok: false,
+      code: 'CERRADA',
+    })
+    const vista = vistaPalabras(estado, 0, EN_CARRERA)
+    expect(vista.modo).toBe('tiempo')
+    expect(vista.fin).toBe(EN_CARRERA + 3 * MINUTO)
+  })
+
+  it('a missed word adds no time, and the ranking is by words solved, then who solved the last one first', () => {
+    let estado = contraReloj([0, 1, 2])
+    const jugar = (asiento: number, palabra: string, t: number) => {
+      const r = intentar(estado, asiento, palabra, EN_CARRERA + t)
+      if (!r.ok) throw new Error(r.code)
+      estado = r.estado
+    }
+    const [a, b] = estado.bolsa
+    // Seat 0 solves two words, the second at 50 s; seat 1 two, the second at 40 s.
+    jugar(0, a, 10_000)
+    jugar(0, b, 50_000)
+    jugar(1, a, 20_000)
+    jugar(1, b, 40_000)
+    // Seat 2 misses the first word and solves nothing.
+    for (const p of errados(a).slice(0, 6)) jugar(2, p, 5_000)
+    const puestos = clasificacion(estado)
+    expect(puestos.map((p) => p.asiento)).toEqual([1, 0, 2])
+    expect(puestos[0]).toMatchObject({ acertadas: 2, tiempo: 40_000 })
+    expect(puestos[2]).toMatchObject({ acertadas: 0, tiempo: null, fallos: 1 })
+    expect(cerrada(estado, EN_CARRERA + 60_000)).toBe(false)
+  })
+
+  it('a race dealt before the modes is still n words', () => {
+    const viejo = carrera(2)
+    expect(vistaPalabras(viejo, 0, EN_CARRERA).modo).toBe('palabras')
+    expect(vistaPalabras(viejo, 0, EN_CARRERA).fin).toBeNull()
+  })
+})
+
+
+describe('lives (Phase 90)', () => {
+  function conVidas(vidas: number, asientos = [0, 1]) {
+    return empezarPalabras({ seed: 'vidas', palabras: 10, asientos, ahora: AHORA, modo: 'tiempo', minutos: 5, vidas })
+  }
+  function fallar(estado: EstadoPalabras, asiento: number, t: number) {
+    const palabra = estado.bolsa[estado.tableros.find((x) => x.asiento === asiento)!.terminadas.length]
+    for (const p of errados(palabra).slice(0, 6)) {
+      const r = intentar(estado, asiento, p, EN_CARRERA + t)
+      if (!r.ok) throw new Error(r.code)
+      estado = r.estado
+    }
+    return estado
+  }
+
+  it('each missed word costs a life; with none left that player stops, keeping what they solved', () => {
+    let estado = conVidas(3)
+    const r = intentar(estado, 0, estado.bolsa[0], EN_CARRERA + 1000)
+    if (!r.ok) throw new Error(r.code)
+    estado = r.estado
+    expect(vistaPalabras(estado, 0, EN_CARRERA).propio!.vidas).toBe(3)
+    estado = fallar(estado, 0, 2000)
+    estado = fallar(estado, 0, 3000)
+    expect(vistaPalabras(estado, 0, EN_CARRERA).propio!.vidas).toBe(1)
+    expect(vistaPalabras(estado, 1, EN_CARRERA).rivales[0].vidas).toBe(1)
+    estado = fallar(estado, 0, 4000)
+    const tablero = estado.tableros[0]
+    expect(tablero.terminoEn).toBe(4000)
+    expect(intentar(estado, 0, 'MENTA', EN_CARRERA + 5000)).toEqual({ ok: false, code: 'YA_TERMINASTE' })
+    // The other plays on until the time is up.
+    expect(cerrada(estado, EN_CARRERA + 5000)).toBe(false)
+    expect(clasificacion(estado).find((p) => p.asiento === 0)).toMatchObject({ acertadas: 1, fallos: 3 })
+    // Out of lives is finished: the rivals' ended words may be seen.
+    expect(vistaPalabras(estado, 0, EN_CARRERA + 5000).rivales[0].palabras).toEqual([])
+  })
+
+  it('when everyone is out of lives the race is over before the time', () => {
+    let estado = conVidas(1)
+    estado = fallar(estado, 0, 1000)
+    estado = fallar(estado, 1, 2000)
+    expect(cerrada(estado, EN_CARRERA + 3000)).toBe(true)
+  })
+
+  it('«sin vidas» never stops anyone early, and n-words races have no lives', () => {
+    let estado = conVidas(0)
+    for (let i = 0; i < 5; i++) estado = fallar(estado, 0, 1000 + i)
+    expect(estado.tableros[0].terminoEn).toBeNull()
+    expect(vistaPalabras(estado, 0, EN_CARRERA).propio!.vidas).toBeNull()
+    expect(vistaPalabras(carrera(3), 0, EN_CARRERA).vidasIniciales).toBeNull()
   })
 })

@@ -24,8 +24,11 @@ import {
 import { OPCIONES_DE_BALAS, empezarMentiroso } from '@/lib/engine/mentiroso'
 import {
   LARGOS,
-  OPCIONES_DE_PALABRAS,
   cerrada,
+  esNumeroDeMinutos,
+  esNumeroDePalabras,
+  esNumeroDeVidas,
+  modoValido,
   empezarPalabras,
   type EstadoPalabras,
   sumarJugador,
@@ -64,6 +67,9 @@ type FilaPartida = {
   balas: number
   palabras: number
   largo: number
+  modo: string
+  minutos: number
+  vidas: number
   verDescarte: boolean
   verHistorial: boolean
   asientos: {
@@ -95,6 +101,9 @@ function publicar(fila: FilaPartida): PartidaGuardada {
     balas: fila.balas,
     palabras: fila.palabras,
     largo: fila.largo,
+    modo: modoValido(fila.modo),
+    minutos: fila.minutos,
+    vidas: fila.vidas,
     verDescarte: fila.verDescarte,
     verHistorial: fila.verHistorial,
     asientos: [...fila.asientos]
@@ -500,6 +509,9 @@ export async function actualizarAjustes(opciones: {
   balas?: number
   palabras?: number
   largo?: number
+  modo?: string
+  minutos?: number
+  vidas?: number
   verDescarte?: boolean
   verHistorial?: boolean
 }): Promise<ResultadoDeLobby> {
@@ -524,13 +536,14 @@ export async function actualizarAjustes(opciones: {
       (OPCIONES_DE_BALAS as readonly number[]).includes(opciones.balas)
         ? { balas: opciones.balas }
         : {}),
-      ...(opciones.palabras !== undefined &&
-      (OPCIONES_DE_PALABRAS as readonly number[]).includes(opciones.palabras)
-        ? { palabras: opciones.palabras }
-        : {}),
+      // Any whole number from 1 to 100 (Phase 87); anything else is ignored.
+      ...(esNumeroDePalabras(opciones.palabras) ? { palabras: opciones.palabras } : {}),
       ...(opciones.largo !== undefined && (LARGOS as readonly number[]).includes(opciones.largo)
         ? { largo: opciones.largo }
         : {}),
+      ...(opciones.modo === 'palabras' || opciones.modo === 'tiempo' ? { modo: opciones.modo } : {}),
+      ...(esNumeroDeMinutos(opciones.minutos) ? { minutos: opciones.minutos } : {}),
+      ...(esNumeroDeVidas(opciones.vidas) ? { vidas: opciones.vidas } : {}),
       ...(opciones.verDescarte !== undefined
         ? { verDescarte: opciones.verDescarte }
         : {}),
@@ -606,6 +619,9 @@ export async function empezar(opciones: {
           largo: fila.largo,
           asientos: fila.asientos.filter((a) => !a.esBot).map((a) => a.indice),
           ahora: Date.now(),
+          modo: modoValido(fila.modo),
+          minutos: fila.minutos,
+          vidas: fila.vidas,
         })
       : juego === 'mentiroso'
       ? empezarMentiroso({ jugadores: fila.asientos.length, seed: opciones.seed, balas: fila.balas })

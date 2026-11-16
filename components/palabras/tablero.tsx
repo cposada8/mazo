@@ -13,13 +13,14 @@
  * player's view, which the server built.
  */
 
-import { Crown, Delete, LogOut, Trophy } from 'lucide-react'
+import { CircleHelp, Delete, Heart, LogOut, Trophy, X } from 'lucide-react'
+import { ComoSeJuegaPalabras } from './reglas'
+import { TablaDeLlegada } from './tabla'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type {
   Color,
   Intento,
   PalabraTerminada,
-  Puesto,
   VistaPalabras,
 } from '@/lib/engine/palabras'
 import {
@@ -33,6 +34,7 @@ import {
   completa,
   escribir,
   escrituraVacia,
+  cursorDe,
   mover,
   palabraDe,
 } from './escritura'
@@ -122,8 +124,16 @@ export function TableroPalabras({
   const haySacudida = sacudir > 0 || error !== null
 
   const empezo = reloj >= vista.inicio
-  const termine = propio?.terminoEn !== null && propio?.terminoEn !== undefined
-  const ocupado = enviando || volteando !== null || cierre !== null
+  const conTiempo = vista.modo === 'tiempo'
+  // Against the clock the board stops the instant the time is up, on the
+  // server's clock, without waiting for the next read to say so.
+  const seAcaboElTiempo = vista.fin !== null && reloj >= vista.fin
+  const termine =
+    (propio?.terminoEn !== null && propio?.terminoEn !== undefined) ||
+    vista.cerrada ||
+    seAcaboElTiempo
+  const [verReglas, setVerReglas] = useState(false)
+  const ocupado = enviando || volteando !== null || cierre !== null || verReglas
   const puedeEscribir = Boolean(propio) && empezo && !termine && !vista.cerrada && !ocupado
 
   // What the grid shows: the word just ended while it is held, else the word in play.
@@ -131,10 +141,12 @@ export function TableroPalabras({
     () => (cierre ? cierre.intentos : (propio?.intentos ?? [])),
     [cierre, propio?.intentos],
   )
-  const numeroDePalabra = Math.min(
-    (propio?.terminadas.length ?? 0) + (cierre ? 0 : 1),
-    total,
+  // A word in play counts; once this player is done there is no next one.
+  const numeroDePalabra = Math.max(
+    1,
+    Math.min((propio?.terminadas.length ?? 0) + (cierre || termine ? 0 : 1), total),
   )
+  const resueltas = propio?.terminadas.filter((p) => p.acertada).length ?? 0
 
   // The keyboard knows, per letter, the best colour earned on this word.
   const colorDeTecla = useMemo(() => {
@@ -182,8 +194,8 @@ export function TableroPalabras({
       if (!puedeEscribir) return
       if (valor === 'ENVIAR') return void enviar()
       if (valor === 'BORRAR') return setEscritura(borrar)
-      if (valor === 'IZQUIERDA') return setEscritura((e) => mover(e, e.cursor - 1))
-      if (valor === 'DERECHA') return setEscritura((e) => mover(e, e.cursor + 1))
+      if (valor === 'IZQUIERDA') return setEscritura((e) => mover(e, e.cursor === null ? cursorDe(e) : e.cursor - 1))
+      if (valor === 'DERECHA') return setEscritura((e) => mover(e, cursorDe(e) + 1))
       setEscritura((e) => escribir(e, valor))
     },
     [puedeEscribir, enviar],
@@ -216,38 +228,67 @@ export function TableroPalabras({
     return () => window.removeEventListener('keydown', alPresionar)
   }, [])
 
-  const tiempoPropio = propio
-    ? propio.tiempo !== null
-      ? propio.tiempo
-      : Math.max(0, reloj - vista.inicio) +
-        propio.terminadas.filter((p) => !p.acertada).length * MS_CASTIGO
-    : 0
   const fallos = propio?.terminadas.filter((p) => !p.acertada).length ?? 0
+  // n words: the time so far with penalties. Against the clock: what is left.
+  const tiempoPropio = conTiempo
+    ? Math.max(0, (vista.fin ?? reloj) - Math.max(reloj, vista.inicio))
+    : propio
+      ? propio.terminoEn !== null
+        ? (propio.tiempo ?? 0)
+        : Math.max(0, reloj - vista.inicio) + fallos * MS_CASTIGO
+      : 0
+  const quedaPoco = conTiempo && empezo && !termine && tiempoPropio <= 30_000
 
   return (
     <main className="mx-auto flex w-full max-w-lg flex-1 flex-col gap-3 px-4 pt-1 pb-3">
       <header className="flex items-center justify-between gap-3">
-        <button
-          type="button"
-          onClick={onSalir}
-          aria-label="Salir de la carrera"
-          className="text-muted-foreground hover:text-foreground -ml-1 p-1"
-        >
-          <LogOut className="size-4" aria-hidden />
-        </button>
+        <span className="-ml-1 flex items-center gap-1">
+          <button
+            type="button"
+            onClick={onSalir}
+            aria-label="Salir de la carrera"
+            className="text-muted-foreground hover:text-foreground p-1"
+          >
+            <LogOut className="size-4" aria-hidden />
+          </button>
+          <button
+            type="button"
+            onClick={() => setVerReglas(true)}
+            aria-label="Cómo se juega"
+            className="text-muted-foreground hover:text-foreground p-1"
+          >
+            <CircleHelp className="size-4" aria-hidden />
+          </button>
+        </span>
         <div className="flex flex-col items-center leading-tight">
           <span className="text-muted-foreground text-xs tracking-widest uppercase">Palabra</span>
           <span className="text-lg font-semibold tabular-nums">
             {numeroDePalabra}
-            <span className="text-muted-foreground">/{total}</span>
+            {!conTiempo && <span className="text-muted-foreground">/{total}</span>}
           </span>
+          {vista.vidasIniciales !== null && propio && (
+            <Vidas quedan={propio.vidas ?? 0} de={vista.vidasIniciales} />
+          )}
         </div>
         <div className="flex flex-col items-end leading-tight">
-          <span className="font-mono text-lg tabular-nums">{formatoDeTiempo(tiempoPropio)}</span>
-          {fallos > 0 && (
-            <span className="text-xs text-red-600 tabular-nums dark:text-red-400">
-              +{formatoDeTiempo(fallos * MS_CASTIGO)} de castigo
+          <span
+            className={cn(
+              'font-mono text-lg tabular-nums',
+              quedaPoco && 'text-red-600 dark:text-red-400',
+            )}
+          >
+            {formatoDeTiempo(tiempoPropio)}
+          </span>
+          {conTiempo ? (
+            <span className="text-muted-foreground text-xs tabular-nums">
+              {resueltas} {resueltas === 1 ? 'resuelta' : 'resueltas'}
             </span>
+          ) : (
+            fallos > 0 && (
+              <span className="text-xs text-red-600 tabular-nums dark:text-red-400">
+                +{formatoDeTiempo(fallos * MS_CASTIGO)} de castigo
+              </span>
+            )
           )}
         </div>
       </header>
@@ -257,7 +298,13 @@ export function TableroPalabras({
       <div className="relative flex flex-1 flex-col items-center justify-center">
         {!empezo && <CuentaAtras restan={vista.inicio - reloj} />}
         {termine && !cierre && volteando === null ? (
-          <Llegada vista={vista} nombres={nombres} soyHost={soyHost} onCerrar={onCerrar} />
+          <Llegada
+            vista={vista}
+            nombres={nombres}
+            soyHost={soyHost}
+            terminada={vista.cerrada || seAcaboElTiempo}
+            onCerrar={onCerrar}
+          />
         ) : (
           <Grilla
             largo={largo}
@@ -287,11 +334,39 @@ export function TableroPalabras({
                 ? ['¡Genial!', '¡Bien!', '¡Eso!', '¡Muy bien!', '¡Bien!', '¡Por poco!'][
                     cierre.intentos.length - 1
                   ]
-                : `Era ${cierre.palabra} · +2:00`}
+                : conTiempo
+                  ? `Era ${cierre.palabra}${vista.vidasIniciales !== null ? ' · −1 vida' : ''}`
+                  : `Era ${cierre.palabra} · +2:00`}
             </span>
           )}
         </div>
       </div>
+
+      {verReglas && (
+        <div className="bg-background fixed inset-0 z-50 overflow-y-auto">
+          <div className="mx-auto flex max-w-md flex-col gap-6 px-6 py-8">
+            <div className="flex items-center justify-between">
+              <h2 className="text-2xl font-semibold tracking-tight">Cómo se juega</h2>
+              <button
+                type="button"
+                onClick={() => setVerReglas(false)}
+                aria-label="Cerrar las reglas"
+                className="hover:bg-accent -mr-2 rounded-md p-2"
+              >
+                <X className="size-5" aria-hidden />
+              </button>
+            </div>
+            <ComoSeJuegaPalabras />
+            <button
+              type="button"
+              onClick={() => setVerReglas(false)}
+              className="bg-primary text-primary-foreground rounded-md px-4 py-3 text-sm font-medium"
+            >
+              Volver a la carrera
+            </button>
+          </div>
+        </div>
+      )}
 
       {!termine && (
         <Teclado colorDeTecla={colorDeTecla} activo={puedeEscribir} onTecla={tecla} />
@@ -464,7 +539,8 @@ function Rivales({
   return (
     <ul className="flex gap-2 overflow-x-auto pb-1">
       {vista.rivales.map((rival) => {
-        const llego = rival.tiempo !== null
+        const conTiempo = vista.modo === 'tiempo'
+        const llego = conTiempo ? rival.termino : rival.tiempo !== null
         return (
           <li
             key={rival.asiento}
@@ -478,9 +554,11 @@ function Rivales({
                 {nombres.get(rival.asiento) ?? '—'}
               </span>
               <span className="text-muted-foreground text-xs tabular-nums">
-                {llego
-                  ? `llegó · ${formatoDeTiempo(rival.tiempo!)}`
-                  : `${Math.min(rival.terminadas + 1, vista.total)}/${vista.total}`}
+                {conTiempo
+                  ? `${rival.acertadas} ✓${llego ? ' · fuera' : ` · va en la ${rival.terminadas + 1}`}${rival.vidas !== null ? ` · ♥${rival.vidas}` : ''}`
+                  : llego
+                    ? `llegó · ${formatoDeTiempo(rival.tiempo!)}`
+                    : `${Math.min(rival.terminadas + 1, vista.total)}/${vista.total}`}
               </span>
             </span>
             {!llego && (
@@ -508,6 +586,24 @@ function Rivales({
   )
 }
 
+/** Lives left as hearts (Phase 90): full for each left, outlined for each lost. */
+function Vidas({ quedan, de }: { quedan: number; de: number }) {
+  return (
+    <span className="mt-0.5 flex gap-0.5" aria-label={`${quedan} de ${de} vidas`}>
+      {Array.from({ length: de }, (_, i) => (
+        <Heart
+          key={`${i}-${i < quedan}`}
+          className={cn(
+            'size-3.5',
+            i < quedan ? 'fill-red-500 text-red-500' : 'text-muted-foreground/50 palabras-cae',
+          )}
+          aria-hidden
+        />
+      ))}
+    </span>
+  )
+}
+
 function CuentaAtras({ restan }: { restan: number }) {
   const n = Math.max(1, Math.ceil(restan / 1000))
   return (
@@ -525,22 +621,27 @@ function Llegada({
   vista,
   nombres,
   soyHost,
+  terminada,
   onCerrar,
 }: {
   vista: VistaPalabras
   nombres: ReadonlyMap<number, string>
   soyHost: boolean
+  /** The race is over for everyone — closed, or (against the clock) the time is up. */
+  terminada: boolean
   onCerrar: () => void
 }) {
   const propio = vista.propio!
+  const conTiempo = vista.modo === 'tiempo'
   const fallos = propio.terminadas.filter((p) => !p.acertada).length
+  const resueltas = propio.terminadas.length - fallos
   const faltan = vista.clasificacion.filter((p) => !p.termino && !p.retirado).length
   const ganador = vista.clasificacion[0]
 
   return (
     <div className="animate-in fade-in slide-in-from-bottom-2 flex w-full flex-col gap-5">
       <div className="flex flex-col items-center gap-1 text-center">
-        {vista.cerrada && ganador ? (
+        {terminada && ganador ? (
           <>
             <Trophy className="size-7" aria-hidden />
             <h2 className="text-2xl font-semibold">
@@ -550,33 +651,38 @@ function Llegada({
             </h2>
           </>
         ) : (
-          <h2 className="text-2xl font-semibold">Terminaste</h2>
+          <h2 className="text-2xl font-semibold">
+            {propio.vidas === 0 ? 'Te quedaste sin vidas' : 'Terminaste'}
+          </h2>
         )}
-        <p className="text-muted-foreground text-sm">
-          Tu tiempo: <span className="text-foreground font-mono">{formatoDeTiempo(propio.tiempo ?? 0)}</span>
-          {fallos > 0 && ` · ${fallos} sin adivinar (+${formatoDeTiempo(fallos * MS_CASTIGO)})`}
-        </p>
-        {!vista.cerrada && faltan > 0 && (
+        {conTiempo ? (
           <p className="text-muted-foreground text-sm">
-            {faltan === 1 ? 'Falta uno por llegar.' : `Faltan ${faltan} por llegar.`}
+            Resolviste{' '}
+            <span className="text-foreground font-semibold">
+              {resueltas} {resueltas === 1 ? 'palabra' : 'palabras'}
+            </span>
+            {fallos > 0 && ` · ${fallos} sin adivinar`}
+          </p>
+        ) : (
+          <p className="text-muted-foreground text-sm">
+            Tu tiempo: <span className="text-foreground font-mono">{formatoDeTiempo(propio.tiempo ?? 0)}</span>
+            {fallos > 0 && ` · ${fallos} sin adivinar (+${formatoDeTiempo(fallos * MS_CASTIGO)})`}
+          </p>
+        )}
+        {!terminada && faltan > 0 && (
+          <p className="text-muted-foreground text-sm">
+            {conTiempo
+              ? 'Los demás siguen hasta que se acabe el tiempo.'
+              : faltan === 1
+                ? 'Falta uno por llegar.'
+                : `Faltan ${faltan} por llegar.`}
           </p>
         )}
       </div>
 
-      <Clasificacion puestos={vista.clasificacion} nombres={nombres} propio={propio.asiento} total={vista.total} />
+      <TablaDeLlegada vista={vista} nombres={nombres} formatoDeTiempo={formatoDeTiempo} />
 
-      <details className="text-sm">
-        <summary className="text-muted-foreground cursor-pointer">Tus palabras</summary>
-        <ol className="mt-2 grid grid-cols-2 gap-x-4 gap-y-1 font-mono">
-          {propio.terminadas.map((p, i) => (
-            <li key={i} className={cn(!p.acertada && 'text-red-600 dark:text-red-400')}>
-              {i + 1}. {p.palabra} {p.acertada ? `· ${p.intentos.length}` : '· ✗'}
-            </li>
-          ))}
-        </ol>
-      </details>
-
-      {soyHost && !vista.cerrada && faltan > 0 && (
+      {soyHost && !terminada && faltan > 0 && (
         <button
           type="button"
           onClick={onCerrar}
@@ -589,41 +695,3 @@ function Llegada({
   )
 }
 
-function Clasificacion({
-  puestos,
-  nombres,
-  propio,
-  total,
-}: {
-  puestos: readonly Puesto[]
-  nombres: ReadonlyMap<number, string>
-  propio: number
-  total: number
-}) {
-  return (
-    <ol className="flex flex-col gap-px overflow-hidden rounded-lg border">
-      {puestos.map((p) => (
-        <li
-          key={p.asiento}
-          className={cn(
-            'bg-card flex items-center gap-3 px-4 py-2.5 text-sm',
-            p.asiento === propio && 'bg-accent',
-            p.retirado && 'opacity-50',
-          )}
-        >
-          <span className="text-muted-foreground w-5 tabular-nums">{p.lugar}</span>
-          <span className="flex-1 truncate">
-            {nombres.get(p.asiento) ?? '—'}
-            {p.lugar === 1 && p.termino && <Crown className="ml-1.5 inline size-3.5" aria-hidden />}
-          </span>
-          <span className="text-muted-foreground text-xs tabular-nums">
-            {p.acertadas}/{total}
-          </span>
-          <span className="w-16 text-right font-mono tabular-nums">
-            {p.tiempo !== null ? formatoDeTiempo(p.tiempo) : p.retirado ? 'salió' : '…'}
-          </span>
-        </li>
-      ))}
-    </ol>
-  )
-}
