@@ -3590,46 +3590,26 @@ board and in the ranking; one «sin castigo» adds nothing; a bad number is
 refused by the lobby and the server; and an old race still adds 2:00.
 
 ### Phase 95 — El cierre, a elección del host
-In «Palabras límite», **when the race ends** becomes the host's to choose in
-the lobby — two settings, both about the players still racing.
+In «Palabras límite», how long the race waits for the rest after the first
+player finishes becomes a lobby setting too, and **the default becomes no
+limit** — the race waits forever (the owner, 2026-11-16), where today it
+closes 30 minutes after the first finish. On offer (Mazo's call): ∞ («sin
+límite», the default), 5, 10, 15, 30 and 60 minutes as shortcuts, or any
+whole number from 1 to 120 typed. Whatever the setting, the host can still
+close it from the finish screen, and the race closes once everyone has
+finished or left. A race nobody touches for a day is swept as finished, as
+every partida already is (Phase 44), so «forever» never leaves a row open
+for good.
 
-**1. Hasta cuántos llegan** (the owner, 2026-11-16). Today nobody is cut off
-when someone wins: the race runs until *everyone* has finished. It becomes
-a choice:
+*Considered and dropped (the owner, 2026-11-16):* choosing how many must
+arrive before the race ends («el primero», «todos menos uno», «todos»).
+The race already lets everyone keep arriving after someone wins — what
+mattered — and «todos menos uno» ranks exactly as today's «todos» does.
 
-- **«Todos menos uno»** — the default (the owner). Everyone keeps playing
-  until all but one have finished; that fixes every place, the last one
-  included, and the race closes. With four players, it ends when the third
-  arrives, and the fourth is fourth.
-- **«El primero»** — the race ends the moment somebody finishes: the winner
-  is known and every other board stops where it is. The rest are ranked by
-  words solved, as unfinished players are today.
-- **«Todos»** — today's behaviour: it waits for the last one.
-
-Whoever leaves stops counting: «all but one» is of the players still
-racing. With two players, «todos menos uno» and «el primero» are the same;
-with one, the race ends when they finish. Every board cut off this way
-keeps its word in play, shown at the end as «sin terminar» (as the time
-mode's already are).
-
-**2. Cuánto se espera** after the first finish, today a fixed 30 minutes.
-**The default becomes no limit** — the race waits forever (the owner,
-2026-11-16). On offer (Mazo's call): ∞ («sin límite», the default), 5, 10,
-15, 30 and 60 minutes as shortcuts, or any whole number from 1 to 120
-typed.
-
-Whichever comes first closes the race, and the host can still close it
-from the finish screen. A race nobody touches for a day is swept as
-finished, as every partida already is (Phase 44), so «forever» never leaves
-a row open for good. A race dealt before this phase keeps today's rule —
-everyone, or 30 minutes.
-
-**Done when:** with four players, «todos menos uno» closes on the third
-arrival and ranks the fourth last with its word in play shown; «el primero»
-closes on the first arrival and stops the other three boards; «todos» waits
-for the fourth; a 10-minute wait closes 10 minutes after the first finish
-whatever the other setting; the lobby shows both; and an old race keeps
-its rule.
+**Done when:** a race «sin límite» stays open long after the first finish
+until the last player finishes, leaves, or the host closes it; one with 10
+minutes closes 10 minutes after the first finish; the lobby shows the
+setting; and an old race keeps its 30 minutes.
 
 ### Phase 96 — El ritmo de los bots, en plena partida (bug de Carioca)
 *The owner, 2026-11-16:* once a Carioca partida has started, the bots'

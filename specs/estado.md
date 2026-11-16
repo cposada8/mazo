@@ -332,8 +332,7 @@ rules are `specs/palabras-rules.md`, drafted for the owner to correct;
 defaults become the host's to change, in `roadmap.md`:
 
 1. Phase 94 — El castigo, a elección del host: 2:00 by default, 0 to 10.
-2. Phase 95 — El cierre, a elección del host: «todos menos uno» by default
-   (also «el primero» and «todos»), and no time limit by default.
+2. Phase 95 — El cierre, a elección del host: no limit by default.
 3. Phase 96 — El ritmo de los bots, en plena partida: a Carioca bug — at a
    table the server referees, nobody (not even the host) can change the
    bots' thinking time once dealt.
