@@ -27,9 +27,13 @@ export default function ReglasMentiroso() {
         </Link>
         <h1 className="text-4xl font-semibold tracking-tight">Cómo se juega</h1>
         <p className="text-muted-foreground text-balance">
-          El Mentiroso, en una pantalla. ¿Buscas Carioca?{' '}
+          El Mentiroso, en una pantalla. ¿Buscas otro juego? Las reglas de{' '}
           <Link href="/como-se-juega" className="text-foreground underline underline-offset-2">
-            Sus reglas están aquí
+            Carioca
+          </Link>{' '}
+          y de{' '}
+          <Link href="/como-se-juega/palabras" className="text-foreground underline underline-offset-2">
+            Palabras
           </Link>
           .
         </p>

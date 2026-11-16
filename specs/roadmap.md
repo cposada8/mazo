@@ -3490,13 +3490,54 @@ miss says «Era POMPA · −1 vida», and the finish screen says «Te quedaste
 sin vidas» while the others play on. In the browser: a one-minute race
 with two lives, two words missed, out at 0:28 with Leo still in on ♥2.
 
-### Phase 91 — Cómo se juega, y a producción
+### Phase 91 — Cómo se juega ✅
 «Cómo se juega» for Palabras — the rules on one screen with a real row of
 tiles turning over, both modes, reachable from its lobby and its board —
-and the home page naming three games. Then the release, after the SQL
-reaches `mazo`.
+and the home page naming three games.
 
-**Done when:** Palabras is in production, and `estado.md` says so.
+**Done.** `components/palabras/reglas.tsx`, `ComoSeJuegaPalabras`: what it
+is, the colours (DOLER against PODER, and ERROR against PERRO for the
+repeated letter, each row turning over tile by tile as on the board), the
+touch-to-write, «Palabras límite», «Tiempo límite» with its lives, and
+what you see of the others. Two entrances: `/como-se-juega/palabras`
+(linked from the lobby, where it replaces the four-line summary, and from
+Carioca's and el Mentiroso's rules pages, which now name all three) and a
+ⓘ on the board that opens it over the race — the keyboard writes nothing
+while it is open. The home page's «Cómo se juega» names the three games.
+The release that was this phase's second half moved to Phase 93, behind
+the owner's next ask.
+
+### Phase 92 — La tabla de la llegada
+*The owner, 2026-11-15:* the finish screen becomes **a table like
+Carioca's scoreboard** (Phase 49's `Marcador`): **players are the columns,
+in standing order** — whoever won, by the race's own rule (fastest time
+in «Palabras límite», most words in «Tiempo límite»), is the first column,
+second place the second, and so on — and **the words are the rows**, in
+bag order. Your own column is picked out, as in Carioca.
+
+- **Each cell** says how that player did on that word: solved in how many
+  tries, or missed; empty for a word they never reached (a time race, a
+  player out of lives, a rival still racing).
+- **Touching a row opens it**: everyone's tries on that word, side by
+  side, letters and colours, each under their column.
+- **Many players**: the columns scroll sideways, the word column stays put,
+  so you can move right to explore them all.
+- **The same rule as Phase 88** for what is shown: only once you have
+  finished, and of a rival still racing only the words they have ended.
+  This table replaces Phase 88's tabs.
+- **Time races**: the rows are the words anyone reached, as far as the
+  furthest player got.
+
+**Done when:** after a race of four people, the columns read 1° to 4° by
+the race's rule, every word is a row, a row opens to the four players'
+tries side by side, the table scrolls sideways on a phone without the word
+column moving, and a player still racing receives no rival letter.
+
+### Phase 93 — A producción
+The release of Phases 87–92, after `prisma/sql/89-modo.sql` and
+`prisma/sql/90-vidas.sql` reach `mazo`.
+
+**Done when:** they are in production, and `estado.md` says so.
 
 ---
 

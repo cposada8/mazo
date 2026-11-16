@@ -36,7 +36,6 @@ import {
   MIN_MINUTOS,
   MIN_PALABRAS,
   MODOS,
-  MS_CASTIGO,
   OPCIONES_DE_MINUTOS,
   OPCIONES_DE_PALABRAS,
   OPCIONES_DE_VIDAS,
@@ -251,7 +250,14 @@ export function Lobby({
         <h1 className="text-3xl font-semibold tracking-tight">
           La mesa <span className="text-muted-foreground">· {NOMBRE_DE_JUEGO[juego]}</span>
         </h1>
-        {juego === 'palabras' && <ComoSeJuegaPalabras largo={partida.largo} />}
+        {juego === 'palabras' && (
+          <Link
+            href="/como-se-juega/palabras"
+            className="text-muted-foreground hover:text-foreground w-fit text-sm underline underline-offset-2"
+          >
+            Cómo se juega Palabras
+          </Link>
+        )}
         {juego === 'mentiroso' && (
           <Link
             href="/como-se-juega/mentiroso"
@@ -810,29 +816,6 @@ function AjustesPalabras({
         />
       )}
     </section>
-  )
-}
-
-/** The rules in four lines, until Palabras has its own «Cómo se juega». */
-function ComoSeJuegaPalabras({ largo }: { largo: number }) {
-  return (
-    <details className="text-muted-foreground text-sm">
-      <summary className="hover:text-foreground w-fit cursor-pointer underline underline-offset-2">
-        Cómo se juega Palabras
-      </summary>
-      <ul className="mt-2 flex list-disc flex-col gap-1 pl-5">
-        <li>Todos adivinan las mismas palabras de {largo} letras, en el mismo orden.</li>
-        <li>
-          Seis intentos por palabra. Verde: letra en su lugar. Amarillo: está, pero en otro
-          lugar. Gris: no está.
-        </li>
-        <li>
-          Si no la adivinas, se revela, pasas a la siguiente y sumas{' '}
-          {MS_CASTIGO / 60_000} minutos a tu tiempo.
-        </li>
-        <li>Gana el menor tiempo. De los demás ves el avance y los colores, nunca las letras.</li>
-      </ul>
-    </details>
   )
 }
 

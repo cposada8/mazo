@@ -13,7 +13,8 @@
  * player's view, which the server built.
  */
 
-import { ChevronDown, Crown, Delete, Heart, LogOut, Trophy } from 'lucide-react'
+import { ChevronDown, CircleHelp, Crown, Delete, Heart, LogOut, Trophy, X } from 'lucide-react'
+import { ComoSeJuegaPalabras } from './reglas'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type {
   Color,
@@ -131,7 +132,8 @@ export function TableroPalabras({
     (propio?.terminoEn !== null && propio?.terminoEn !== undefined) ||
     vista.cerrada ||
     seAcaboElTiempo
-  const ocupado = enviando || volteando !== null || cierre !== null
+  const [verReglas, setVerReglas] = useState(false)
+  const ocupado = enviando || volteando !== null || cierre !== null || verReglas
   const puedeEscribir = Boolean(propio) && empezo && !termine && !vista.cerrada && !ocupado
 
   // What the grid shows: the word just ended while it is held, else the word in play.
@@ -240,14 +242,24 @@ export function TableroPalabras({
   return (
     <main className="mx-auto flex w-full max-w-lg flex-1 flex-col gap-3 px-4 pt-1 pb-3">
       <header className="flex items-center justify-between gap-3">
-        <button
-          type="button"
-          onClick={onSalir}
-          aria-label="Salir de la carrera"
-          className="text-muted-foreground hover:text-foreground -ml-1 p-1"
-        >
-          <LogOut className="size-4" aria-hidden />
-        </button>
+        <span className="-ml-1 flex items-center gap-1">
+          <button
+            type="button"
+            onClick={onSalir}
+            aria-label="Salir de la carrera"
+            className="text-muted-foreground hover:text-foreground p-1"
+          >
+            <LogOut className="size-4" aria-hidden />
+          </button>
+          <button
+            type="button"
+            onClick={() => setVerReglas(true)}
+            aria-label="Cómo se juega"
+            className="text-muted-foreground hover:text-foreground p-1"
+          >
+            <CircleHelp className="size-4" aria-hidden />
+          </button>
+        </span>
         <div className="flex flex-col items-center leading-tight">
           <span className="text-muted-foreground text-xs tracking-widest uppercase">Palabra</span>
           <span className="text-lg font-semibold tabular-nums">
@@ -329,6 +341,32 @@ export function TableroPalabras({
           )}
         </div>
       </div>
+
+      {verReglas && (
+        <div className="bg-background fixed inset-0 z-50 overflow-y-auto">
+          <div className="mx-auto flex max-w-md flex-col gap-6 px-6 py-8">
+            <div className="flex items-center justify-between">
+              <h2 className="text-2xl font-semibold tracking-tight">Cómo se juega</h2>
+              <button
+                type="button"
+                onClick={() => setVerReglas(false)}
+                aria-label="Cerrar las reglas"
+                className="hover:bg-accent -mr-2 rounded-md p-2"
+              >
+                <X className="size-5" aria-hidden />
+              </button>
+            </div>
+            <ComoSeJuegaPalabras />
+            <button
+              type="button"
+              onClick={() => setVerReglas(false)}
+              className="bg-primary text-primary-foreground rounded-md px-4 py-3 text-sm font-medium"
+            >
+              Volver a la carrera
+            </button>
+          </div>
+        </div>
+      )}
 
       {!termine && (
         <Teclado colorDeTecla={colorDeTecla} activo={puedeEscribir} onTecla={tecla} />
