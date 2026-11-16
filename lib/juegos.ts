@@ -10,8 +10,12 @@
 
 import { MAX_PLAYERS, MIN_PLAYERS } from '@/lib/engine'
 import { MAX_JUGADORES, MIN_JUGADORES } from '@/lib/engine/mentiroso'
+// By its own path: Palabras' engine holds the answers, and the door must not.
+import * as palabras from '@/lib/engine/palabras/opciones'
 
-export const JUEGOS = ['carioca', 'mentiroso'] as const
+const ASIENTOS_PALABRAS = { min: palabras.MIN_JUGADORES, max: palabras.MAX_JUGADORES }
+
+export const JUEGOS = ['carioca', 'mentiroso', 'palabras'] as const
 export type Juego = (typeof JUEGOS)[number]
 
 /** Anything that is not a known game is Carioca: every old row, every old client. */
@@ -22,15 +26,23 @@ export function juegoDe(valor: unknown): Juego {
 export const NOMBRE_DE_JUEGO: Record<Juego, string> = {
   carioca: 'Carioca',
   mentiroso: 'Mentiroso',
+  palabras: 'Palabras',
 }
 
 /** One line for the door, said as a player would say it. */
 export const DESCRIPCION_DE_JUEGO: Record<Juego, string> = {
   carioca: 'Bajar los contratos, ronda tras ronda.',
   mentiroso: 'Botar cartas boca abajo y que no te pillen.',
+  palabras: 'Adivinar las mismas palabras que los demás, antes que ellos.',
 }
 
 export const ASIENTOS: Record<Juego, { min: number; max: number }> = {
   carioca: { min: MIN_PLAYERS, max: MAX_PLAYERS },
   mentiroso: { min: MIN_JUGADORES, max: MAX_JUGADORES },
+  palabras: ASIENTOS_PALABRAS,
+}
+
+/** A game with bots to seat. Palabras has none (`palabras-rules.md`). */
+export function tieneBots(juego: Juego): boolean {
+  return juego !== 'palabras'
 }

@@ -12,7 +12,6 @@
  */
 
 import {
-  MAX_PLAYERS,
   MIN_PLAYERS,
   type PartidaConfig,
   type PartidaState,
@@ -23,6 +22,14 @@ import {
   vistaDeAsiento,
 } from '@/lib/engine'
 import { OPCIONES_DE_BALAS, empezarMentiroso } from '@/lib/engine/mentiroso'
+import {
+  LARGOS,
+  OPCIONES_DE_PALABRAS,
+  cerrada,
+  empezarPalabras,
+  type EstadoPalabras,
+  sumarJugador,
+} from '@/lib/engine/palabras'
 import { botDeJuego, botPorDefecto } from '@/lib/bots-de-juego'
 import { ASIENTOS, type Juego, juegoDe } from '@/lib/juegos'
 import { codigoAlAzar, limpiarCodigo } from '@/lib/codigo'
@@ -33,6 +40,7 @@ import type {
 } from '@/lib/lobby'
 import { galeriaDeComodines } from './galeria'
 import { retirarDeMesaMentiroso } from './mentiroso'
+import { retirarDeCarrera } from './palabras'
 import { prisma } from './db'
 
 export type { ErrorDeLobby, FaseDePartida, PartidaGuardada }
@@ -54,6 +62,8 @@ type FilaPartida = {
   segundosBot: number
   segundosVentana: number
   balas: number
+  palabras: number
+  largo: number
   verDescarte: boolean
   verHistorial: boolean
   asientos: {
@@ -83,6 +93,8 @@ function publicar(fila: FilaPartida): PartidaGuardada {
     segundosBot: fila.segundosBot,
     segundosVentana: fila.segundosVentana,
     balas: fila.balas,
+    palabras: fila.palabras,
+    largo: fila.largo,
     verDescarte: fila.verDescarte,
     verHistorial: fila.verHistorial,
     asientos: [...fila.asientos]
@@ -119,9 +131,10 @@ export async function crearPartida(opciones: {
     config,
     segundosPorTurno = 45,
     segundosBot = 2,
-    bots = 3,
     aliasesDeBots = [],
   } = opciones
+  // Palabras seats no bots: a race against a bot that solves it is no race.
+  const bots = juego === 'palabras' ? 0 : (opciones.bots ?? 3)
 
   // The gallery as it is now travels with the partida (Phase 71). El
   // Mentiroso has no comodines, so it has no faces to keep.
@@ -219,10 +232,18 @@ export async function unirse(opciones: {
   const propio = fila.asientos.find((asiento) => asiento.secreto === secreto)
   if (propio) return { ok: true, indice: propio.indice }
 
-  if (fila.fase !== 'lobby') return { ok: false, code: 'YA_EMPEZO' }
-  if (fila.asientos.length >= MAX_PLAYERS) return { ok: false, code: 'MESA_LLENA' }
+  const juego = juegoDe(fila.juego)
+  // A Palabras race takes latecomers while it runs (`palabras-rules.md`,
+  // «Joining»): they race on the same clock and simply start behind.
+  const tarde =
+    juego === 'palabras' &&
+    fila.fase === 'jugando' &&
+    fila.estado !== null &&
+    !cerrada(JSON.parse(fila.estado) as EstadoPalabras, Date.now())
+  if (fila.fase !== 'lobby' && !tarde) return { ok: false, code: 'YA_EMPEZO' }
+  if (fila.asientos.length >= ASIENTOS[juego].max) return { ok: false, code: 'MESA_LLENA' }
 
-  const indice = Math.max(...fila.asientos.map((a) => a.indice)) + 1
+  const indice = Math.max(-1, ...fila.asientos.map((a) => a.indice)) + 1
   await prisma.asiento.create({
     data: {
       partidaId: fila.id,
@@ -231,6 +252,19 @@ export async function unirse(opciones: {
       secreto,
     },
   })
+  if (tarde) {
+    // The board is added to the stored state; a race with someone's try
+    // landing at the same instant is simply retried.
+    for (let intento = 0; intento < 5; intento++) {
+      const actual = await prisma.partida.findUniqueOrThrow({ where: { id: fila.id } })
+      const estado = sumarJugador(JSON.parse(actual.estado!) as EstadoPalabras, indice)
+      const escrito = await prisma.partida.updateMany({
+        where: { id: fila.id, estado: actual.estado },
+        data: { estado: JSON.stringify(estado) },
+      })
+      if (escrito.count > 0) break
+    }
+  }
   return { ok: true, indice }
 }
 
@@ -464,6 +498,8 @@ export async function actualizarAjustes(opciones: {
   segundosBot?: number
   segundosVentana?: number
   balas?: number
+  palabras?: number
+  largo?: number
   verDescarte?: boolean
   verHistorial?: boolean
 }): Promise<ResultadoDeLobby> {
@@ -487,6 +523,13 @@ export async function actualizarAjustes(opciones: {
       ...(opciones.balas !== undefined &&
       (OPCIONES_DE_BALAS as readonly number[]).includes(opciones.balas)
         ? { balas: opciones.balas }
+        : {}),
+      ...(opciones.palabras !== undefined &&
+      (OPCIONES_DE_PALABRAS as readonly number[]).includes(opciones.palabras)
+        ? { palabras: opciones.palabras }
+        : {}),
+      ...(opciones.largo !== undefined && (LARGOS as readonly number[]).includes(opciones.largo)
+        ? { largo: opciones.largo }
         : {}),
       ...(opciones.verDescarte !== undefined
         ? { verDescarte: opciones.verDescarte }
@@ -556,7 +599,15 @@ export async function empezar(opciones: {
 
   // Each game deals its own state; the row does not care which it holds.
   const estado =
-    juego === 'mentiroso'
+    juego === 'palabras'
+      ? empezarPalabras({
+          seed: opciones.seed,
+          palabras: fila.palabras,
+          largo: fila.largo,
+          asientos: fila.asientos.filter((a) => !a.esBot).map((a) => a.indice),
+          ahora: Date.now(),
+        })
+      : juego === 'mentiroso'
       ? empezarMentiroso({ jugadores: fila.asientos.length, seed: opciones.seed, balas: fila.balas })
       : startPartida({
           players: fila.asientos.length,
@@ -619,6 +670,13 @@ export async function abandonar(opciones: {
         ),
     ])
     return { ok: true, enLobby: true }
+  }
+
+  // A Palabras player leaving keeps their place in the ranking with what
+  // they finished; nobody waits for them (`palabras-rules.md`, «Joining»).
+  if (juegoDe(fila.juego) === 'palabras') {
+    await retirarDeCarrera(fila.id, propio.indice)
+    return { ok: true, enLobby: false }
   }
 
   // El Mentiroso retires a seat its own way (Phase 80, `mentiroso-rules.md`

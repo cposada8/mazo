@@ -512,3 +512,38 @@
     }
   }
 }
+
+/* Palabras (Phase 85): a try told in beats — letters land, tiles turn over
+   one by one and only then show their colour, a refusal shakes, a solve jumps. */
+@keyframes palabras-voltea {
+  0% { transform: rotateX(0); }
+  49% { transform: rotateX(90deg); background: transparent; border-color: var(--border); color: inherit; }
+  50% { transform: rotateX(90deg); background: var(--final); border-color: var(--final); color: white; }
+  100% { transform: rotateX(0); background: var(--final); border-color: var(--final); color: white; }
+}
+.palabras-voltea { animation: palabras-voltea 520ms ease-in-out both; }
+
+@keyframes palabras-sacudir {
+  10%, 90% { transform: translateX(-2px); }
+  20%, 80% { transform: translateX(4px); }
+  30%, 50%, 70% { transform: translateX(-6px); }
+  40%, 60% { transform: translateX(6px); }
+}
+.palabras-sacudir { animation: palabras-sacudir 420ms ease-in-out; }
+
+@keyframes palabras-cae {
+  0% { transform: scale(1.12); }
+  100% { transform: scale(1); }
+}
+.palabras-cae { animation: palabras-cae 110ms ease-out; }
+
+@keyframes palabras-salta {
+  0%, 100% { transform: translateY(0); }
+  40% { transform: translateY(-14px); }
+  70% { transform: translateY(2px); }
+}
+.palabras-salta { animation: palabras-salta 480ms ease-out both; }
+
+@media (prefers-reduced-motion: reduce) {
+  .palabras-voltea, .palabras-sacudir, .palabras-cae, .palabras-salta { animation-duration: 1ms; }
+}
