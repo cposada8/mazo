@@ -3611,7 +3611,50 @@ until the last player finishes, leaves, or the host closes it; one with 10
 minutes closes 10 minutes after the first finish; the lobby shows the
 setting; and an old race keeps its 30 minutes.
 
-### Phase 96 — El ritmo de los bots, en plena partida (bug de Carioca)
+### Phase 96 — Palabras encadenadas
+*The owner, 2026-11-16:* an option, in **both** ways to race («Palabras
+límite» and «Tiempo límite»), where **each word starts with the one before
+already played as its first try**. The first word is COMER; you get it in
+four; the next board opens with COMER already in its first row, scored
+green, yellow and grey against the new word — a try spent, with no choice.
+
+- **A lobby switch**, «Encadenadas», off by default; the host turns it on.
+- **The first word** of the race has nothing before it, and starts empty.
+- **After a missed word** (Mazo's call): the next word still starts with
+  the one before — the answer, now revealed — not with your last try.
+- **The chained try counts** like any other: it is one of the six, it
+  counts in the total of tries (Phase 97) and in the tie-breaks, and with
+  it you have five left of your own. The bag never repeats a word, so it
+  can never be the answer.
+- **The server plays it**, in the same request that ends the word before,
+  so the next board arrives with its first row already there; on the
+  board, that row turns over by itself as the new word comes in, so it is
+  seen to be played rather than found already there.
+- Shown in the rules page, and in the lobby summary for those who join.
+
+**Done when:** in each mode, with the switch on, every word after the
+first opens with the previous answer as a scored first row — after a solve
+and after a miss — the player has five tries of their own left, and with
+the switch off nothing changes.
+
+### Phase 97 — La suma de intentos
+*The owner, 2026-11-16:* the board shows **how many tries each player has
+spent so far**, all words added up — three on the first and five on the
+second is eight — **yours and the others'**, because how many tries it took
+is interesting in itself.
+
+- **Yours** under the clock, beside the words solved or the penalty.
+- **Each rival's** on their card at the top, live, as they play.
+- **In the finish table**, under each column's score.
+- Every try counts: the word in play's too, and a chained one (Phase 96).
+  A count gives nothing away — it has no letters — so it is shown from the
+  first try, not only once you have finished.
+
+**Done when:** after three tries on one word and five on the next, the
+board says 8, the rivals' cards show theirs as they move, and the finish
+table carries every player's total.
+
+### Phase 98 — El ritmo de los bots, en plena partida (bug de Carioca)
 *The owner, 2026-11-16:* once a Carioca partida has started, the bots'
 thinking time should still be changeable — to speed a partida up or slow
 it down — and today **nobody can change it, the host included**: the menu
@@ -3635,49 +3678,6 @@ on its next read. El Mentiroso's table gets checked for the same gap.
 changes the bots' time from the menu mid-ronda and the next bot turn uses
 it, on every screen; the other person sees the new value and cannot change
 it; a table of bots alone still changes it as before.
-
-### Phase 97 — Palabras encadenadas
-*The owner, 2026-11-16:* an option, in **both** ways to race («Palabras
-límite» and «Tiempo límite»), where **each word starts with the one before
-already played as its first try**. The first word is COMER; you get it in
-four; the next board opens with COMER already in its first row, scored
-green, yellow and grey against the new word — a try spent, with no choice.
-
-- **A lobby switch**, «Encadenadas», off by default; the host turns it on.
-- **The first word** of the race has nothing before it, and starts empty.
-- **After a missed word** (Mazo's call): the next word still starts with
-  the one before — the answer, now revealed — not with your last try.
-- **The chained try counts** like any other: it is one of the six, it
-  counts in the total of tries (Phase 98) and in the tie-breaks, and with
-  it you have five left of your own. The bag never repeats a word, so it
-  can never be the answer.
-- **The server plays it**, in the same request that ends the word before,
-  so the next board arrives with its first row already there; on the
-  board, that row turns over by itself as the new word comes in, so it is
-  seen to be played rather than found already there.
-- Shown in the rules page, and in the lobby summary for those who join.
-
-**Done when:** in each mode, with the switch on, every word after the
-first opens with the previous answer as a scored first row — after a solve
-and after a miss — the player has five tries of their own left, and with
-the switch off nothing changes.
-
-### Phase 98 — La suma de intentos
-*The owner, 2026-11-16:* the board shows **how many tries each player has
-spent so far**, all words added up — three on the first and five on the
-second is eight — **yours and the others'**, because how many tries it took
-is interesting in itself.
-
-- **Yours** under the clock, beside the words solved or the penalty.
-- **Each rival's** on their card at the top, live, as they play.
-- **In the finish table**, under each column's score.
-- Every try counts: the word in play's too, and a chained one (Phase 97).
-  A count gives nothing away — it has no letters — so it is shown from the
-  first try, not only once you have finished.
-
-**Done when:** after three tries on one word and five on the next, the
-board says 8, the rivals' cards show theirs as they move, and the finish
-table carries every player's total.
 
 ---
 

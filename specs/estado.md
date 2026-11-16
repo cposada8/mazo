@@ -333,13 +333,13 @@ defaults become the host's to change, in `roadmap.md`:
 
 1. Phase 94 — El castigo, a elección del host: 2:00 by default, 0 to 10.
 2. Phase 95 — El cierre, a elección del host: no limit by default.
-3. Phase 96 — El ritmo de los bots, en plena partida: a Carioca bug — at a
+3. Phase 96 — Palabras encadenadas: each word starts with the one before as
+   its first try, a switch for both ways to race.
+4. Phase 97 — La suma de intentos: every player's tries added up, on the
+   board and in the finish table.
+5. Phase 98 — El ritmo de los bots, en plena partida: a Carioca bug — at a
    table the server referees, nobody (not even the host) can change the
    bots' thinking time once dealt.
-4. Phase 97 — Palabras encadenadas: each word starts with the one before as
-   its first try, a switch for both ways to race.
-5. Phase 98 — La suma de intentos: every player's tries added up, on the
-   board and in the finish table.
 
 **Then — Milestone 10, Punto y Fama** (the owner, 2026-11-16): the fourth
 game, guessing a number of n digits in puntos and famas. Its rules are
