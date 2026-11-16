@@ -3577,7 +3577,7 @@ the answer lists stay as they are; +2:00 for a missed word is right, and
 so is everything else — but two of those defaults should be the host's to
 change in the lobby, like the number of words and the minutes.*
 
-### Phase 94 — El castigo, a elección del host
+### Phase 94 — El castigo, a elección del host ✅
 In «Palabras límite», what a missed word adds to the clock becomes a lobby
 setting. **2 minutes stays the default** (the owner's word). On offer
 (Mazo's call): 0 («sin castigo»), 1, 2, 3 and 5 minutes as shortcuts, or
@@ -3588,6 +3588,15 @@ before this phase keeps its 2 minutes.
 **Done when:** a race with a 5-minute penalty adds 5:00 per miss, on the
 board and in the ranking; one «sin castigo» adds nothing; a bad number is
 refused by the lobby and the server; and an old race still adds 2:00.
+
+**Done.** The state carries `msCastigo` (absent in older races, read as two
+minutes by `castigoDe`), and the view hands it to the board, so the clock,
+«+5:00 de castigo», the «Era BLUSA · +5:00» of a miss and the finish
+screen all say what the host chose — nothing at all «sin castigo».
+`Partida.castigo` (`prisma/sql/94-castigo.sql`, on `mazo-dev`), checked
+whole from 0 to 10. The lobby's `NumeroConAtajos` learned labels: «Sin»,
+«1 min» … «5 min» and «Otro». In the browser: a 5-minute penalty, a word
+missed, the clock jumping by 5:00.
 
 ### Phase 95 — El cierre, a elección del host
 In «Palabras límite», how long the race waits for the rest after the first

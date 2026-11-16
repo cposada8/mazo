@@ -142,6 +142,25 @@ describe('Palabras through the platform', () => {
     expect(r.ok && r.mesa.vista).toMatchObject({ vidasIniciales: 2, propio: { vidas: 2 } })
   })
 
+  it('the penalty: the host picks 0 to 10 minutes, 2 by default, and it reaches the race (Phase 94)', async () => {
+    const creada = await partidas.crearPartida({
+      secreto: 'pepa',
+      alias: 'pepa',
+      juego: 'palabras',
+      config: CONFIG_POR_DEFECTO,
+    })
+    const codigo = creada.codigo
+    expect(creada.castigo).toBe(2)
+    await partidas.actualizarAjustes({ codigo, secreto: 'pepa', castigo: 5 })
+    for (const malo of [11, -1, 1.5]) {
+      await partidas.actualizarAjustes({ codigo, secreto: 'pepa', castigo: malo })
+    }
+    expect((await partidas.cargarPorCodigo(codigo))!.castigo).toBe(5)
+    await partidas.actualizarAjustes({ codigo, secreto: 'pepa', castigo: 0 })
+    await partidas.empezar({ codigo, secreto: 'pepa', seed: 'sin' })
+    expect((await estadoDe(codigo)).msCastigo).toBe(0)
+  })
+
   it('refuses a number of words the lobby does not offer', async () => {
     const { codigo } = await carreraDeDos(3)
     const r = await partidas.actualizarAjustes({ codigo, secreto: 'ana', palabras: 999 })

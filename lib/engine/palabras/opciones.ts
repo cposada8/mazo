@@ -18,6 +18,18 @@ export const PALABRAS_POR_DEFECTO = 10
 export const MIN_PALABRAS = 1
 export const MAX_PALABRAS = 100
 
+/**
+ * What a missed word adds in «Palabras límite» (Phase 94): the host's to
+ * choose, in whole minutes. 2 is the default (the owner); 0 is «sin castigo».
+ */
+export const OPCIONES_DE_CASTIGO = [0, 1, 2, 3, 5] as const
+export const CASTIGO_POR_DEFECTO = 2
+export const MIN_CASTIGO = 0
+export const MAX_CASTIGO = 10
+export function esMinutosDeCastigo(valor: unknown): valor is number {
+  return Number.isInteger(valor) && (valor as number) >= MIN_CASTIGO && (valor as number) <= MAX_CASTIGO
+}
+
 /** Two ways to race (Phase 89): n words against the clock, or x minutes for the most words. */
 export const MODOS = ['palabras', 'tiempo'] as const
 export type Modo = (typeof MODOS)[number]

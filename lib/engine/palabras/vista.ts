@@ -13,6 +13,7 @@ import {
   type PalabraTerminada,
   type Puesto,
   type Tablero,
+  castigoDe,
   cerrada,
   clasificacion,
   finDelTiempo,
@@ -53,6 +54,8 @@ export type VistaPalabras = {
   readonly modo: Modo
   /** Epoch ms the time-limit race stops; null for n words. */
   readonly fin: number | null
+  /** What a missed word adds in «Palabras límite», ms (Phase 94). */
+  readonly msCastigo: number
   readonly total: number
   /** Letters per word in this race. */
   readonly largo: number
@@ -104,6 +107,7 @@ export function vistaPalabras(
   return {
     modo,
     fin: finDelTiempo(estado),
+    msCastigo: castigoDe(estado),
     total: estado.bolsa.length,
     largo: largoDe(estado),
     inicio: estado.inicio,
@@ -112,7 +116,7 @@ export function vistaPalabras(
       terminadas: mio.terminadas,
       intentos: mio.intentos,
       terminoEn: mio.terminoEn,
-      tiempo: tiempoDe(mio, modo),
+      tiempo: tiempoDe(mio, modo, castigoDe(estado)),
       retirado: mio.retirado,
       vidas: vidasDe(estado, mio),
       enCurso: enCursoDe(mio),
@@ -127,7 +131,7 @@ export function vistaPalabras(
         termino: t.terminoEn !== null,
         vidas: vidasDe(estado, t),
         colores: t.intentos.map((i) => i.colores),
-        tiempo: tiempoDe(t, modo),
+        tiempo: tiempoDe(t, modo, castigoDe(estado)),
         retirado: t.retirado,
         palabras: veoLetras ? t.terminadas : null,
         enCurso: veoLetras ? enCursoDe(t) : null,

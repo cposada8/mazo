@@ -327,3 +327,31 @@ describe('lives (Phase 90)', () => {
     expect(vistaPalabras(carrera(3), 0, EN_CARRERA).vidasIniciales).toBeNull()
   })
 })
+
+describe('the penalty, chosen by the host (Phase 94)', () => {
+  const MINUTO = 60_000
+  function conCastigo(castigo: number | undefined) {
+    return empezarPalabras({ seed: 'castigo', palabras: 1, asientos: [0], ahora: AHORA, castigo })
+  }
+  function fallarYTerminar(estado: EstadoPalabras) {
+    for (const p of errados(estado.bolsa[0]).slice(0, 6)) {
+      const r = intentar(estado, 0, p, EN_CARRERA + 10_000)
+      if (!r.ok) throw new Error(r.code)
+      estado = r.estado
+    }
+    return estado
+  }
+
+  it('a missed word adds what the host chose, nothing at all included', () => {
+    expect(vistaPalabras(fallarYTerminar(conCastigo(5)), 0, EN_CARRERA).propio!.tiempo).toBe(10_000 + 5 * MINUTO)
+    expect(vistaPalabras(fallarYTerminar(conCastigo(0)), 0, EN_CARRERA).propio!.tiempo).toBe(10_000)
+    expect(vistaPalabras(conCastigo(5), 0, EN_CARRERA).msCastigo).toBe(5 * MINUTO)
+  })
+
+  it('a new race defaults to two minutes, and a race dealt before keeps two', () => {
+    expect(conCastigo(undefined).msCastigo).toBe(2 * MINUTO)
+    const viejo = { ...conCastigo(undefined) }
+    delete (viejo as { msCastigo?: number }).msCastigo
+    expect(vistaPalabras(fallarYTerminar(viejo), 0, EN_CARRERA).propio!.tiempo).toBe(10_000 + 2 * MINUTO)
+  })
+})

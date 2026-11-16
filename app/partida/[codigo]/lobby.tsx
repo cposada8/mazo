@@ -39,6 +39,9 @@ import {
   OPCIONES_DE_MINUTOS,
   OPCIONES_DE_PALABRAS,
   OPCIONES_DE_VIDAS,
+  OPCIONES_DE_CASTIGO,
+  MIN_CASTIGO,
+  MAX_CASTIGO,
 } from '@/lib/engine/palabras/opciones'
 import { OPCIONES_DE_BALAS } from '@/lib/engine/mentiroso'
 import {
@@ -142,6 +145,7 @@ export function Lobby({
             ...(accion.modo !== undefined ? { modo: accion.modo } : {}),
             ...(accion.minutos !== undefined ? { minutos: accion.minutos } : {}),
             ...(accion.vidas !== undefined ? { vidas: accion.vidas } : {}),
+            ...(accion.castigo !== undefined ? { castigo: accion.castigo } : {}),
             ...(accion.verDescarte !== undefined
               ? { verDescarte: accion.verDescarte }
               : {}),
@@ -365,6 +369,7 @@ export function Lobby({
             onModo={(modo) => ajustar({ modo })}
             onMinutos={(minutos) => ajustar({ minutos })}
             onVidas={(vidas) => ajustar({ vidas })}
+            onCastigo={(castigo) => ajustar({ castigo })}
           />
         ) : (
           <section className="text-muted-foreground flex flex-col gap-1 text-sm">
@@ -372,7 +377,7 @@ export function Lobby({
             <p>
               {partida.modo === 'tiempo'
                 ? `Tiempo límite: ${partida.minutos} min, ${partida.vidas ? `${partida.vidas} ${partida.vidas === 1 ? 'vida' : 'vidas'}` : 'sin vidas'}, palabras de ${partida.largo} letras`
-                : `${partida.palabras} palabras de ${partida.largo} letras`}
+                : `${partida.palabras} palabras de ${partida.largo} letras, ${partida.castigo ? `+${partida.castigo} min por palabra fallada` : 'sin castigo'}`}
             </p>
           </section>
         )
@@ -746,6 +751,7 @@ function AjustesPalabras({
   onModo,
   onMinutos,
   onVidas,
+  onCastigo,
 }: {
   partida: NonNullable<VistaDeLobby['partida']>
   onPalabras: (palabras: number) => void
@@ -753,6 +759,7 @@ function AjustesPalabras({
   onModo: (modo: 'palabras' | 'tiempo') => void
   onMinutos: (minutos: number) => void
   onVidas: (vidas: number) => void
+  onCastigo: (minutos: number) => void
 }) {
   return (
     <section className="flex flex-col gap-5">
@@ -804,6 +811,23 @@ function AjustesPalabras({
           max={MAX_PALABRAS}
           unidad="palabras"
           onCambiar={onPalabras}
+        />
+      )}
+      {partida.modo !== 'tiempo' && (
+        <NumeroConAtajos
+          titulo="Castigo por palabra fallada"
+          detalle={
+            partida.castigo
+              ? `Si no adivinas una palabra, se suman ${partida.castigo} ${partida.castigo === 1 ? 'minuto' : 'minutos'} a tu tiempo.`
+              : 'Sin castigo: fallar una palabra no suma tiempo.'
+          }
+          atajos={OPCIONES_DE_CASTIGO}
+          valor={partida.castigo}
+          min={MIN_CASTIGO}
+          max={MAX_CASTIGO}
+          unidad="minutos de castigo"
+          etiqueta={(n) => (n === 0 ? 'Sin' : `${n} min`)}
+          onCambiar={onCastigo}
         />
       )}
       {LARGOS.length > 1 && (
@@ -945,6 +969,7 @@ function NumeroConAtajos({
   min,
   max,
   unidad,
+  etiqueta = (valor) => String(valor),
   onCambiar,
 }: {
   titulo: string
@@ -955,6 +980,8 @@ function NumeroConAtajos({
   max: number
   /** What the number counts, for the error and the box's label. */
   unidad: string
+  /** How a shortcut reads on its button; the number itself by default. */
+  etiqueta?: (valor: number) => string
   onCambiar: (valor: number) => void
 }) {
   const [error, setError] = useState<string | null>(null)
@@ -995,7 +1022,7 @@ function NumeroConAtajos({
                 : 'hover:bg-accent',
             )}
           >
-            {opcion}
+            {etiqueta(opcion)}
           </button>
         ))}
         <input

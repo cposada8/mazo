@@ -16,7 +16,8 @@ import {
   INTENTOS_POR_PALABRA,
   MAX_MINUTOS,
   MAX_PALABRAS,
-  MS_CASTIGO,
+  CASTIGO_POR_DEFECTO,
+  MAX_CASTIGO,
 } from '@/lib/engine/palabras/opciones'
 import { cn } from '@/lib/utils'
 
@@ -79,7 +80,8 @@ export function ComoSeJuegaPalabras() {
         </p>
         <p>
           Si no adivinas una, se revela, pasas a la siguiente y{' '}
-          <b>sumas {MS_CASTIGO / 60_000} minutos</b> a tu tiempo.
+          <b>sumas el castigo a tu tiempo</b>: {CASTIGO_POR_DEFECTO} minutos,
+          o lo que elija el host (de 0 a {MAX_CASTIGO}).
         </p>
       </Seccion>
 

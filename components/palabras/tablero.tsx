@@ -25,7 +25,6 @@ import type {
 } from '@/lib/engine/palabras'
 import {
   INTENTOS_POR_PALABRA,
-  MS_CASTIGO,
 } from '@/lib/engine/palabras/opciones'
 import { cn } from '@/lib/utils'
 import {
@@ -235,7 +234,7 @@ export function TableroPalabras({
     : propio
       ? propio.terminoEn !== null
         ? (propio.tiempo ?? 0)
-        : Math.max(0, reloj - vista.inicio) + fallos * MS_CASTIGO
+        : Math.max(0, reloj - vista.inicio) + fallos * vista.msCastigo
       : 0
   const quedaPoco = conTiempo && empezo && !termine && tiempoPropio <= 30_000
 
@@ -286,7 +285,7 @@ export function TableroPalabras({
           ) : (
             fallos > 0 && (
               <span className="text-xs text-red-600 tabular-nums dark:text-red-400">
-                +{formatoDeTiempo(fallos * MS_CASTIGO)} de castigo
+                +{formatoDeTiempo(fallos * vista.msCastigo)} de castigo
               </span>
             )
           )}
@@ -336,7 +335,7 @@ export function TableroPalabras({
                   ]
                 : conTiempo
                   ? `Era ${cierre.palabra}${vista.vidasIniciales !== null ? ' · −1 vida' : ''}`
-                  : `Era ${cierre.palabra} · +2:00`}
+                  : `Era ${cierre.palabra}${vista.msCastigo ? ` · +${formatoDeTiempo(vista.msCastigo)}` : ''}`}
             </span>
           )}
         </div>
@@ -666,7 +665,8 @@ function Llegada({
         ) : (
           <p className="text-muted-foreground text-sm">
             Tu tiempo: <span className="text-foreground font-mono">{formatoDeTiempo(propio.tiempo ?? 0)}</span>
-            {fallos > 0 && ` · ${fallos} sin adivinar (+${formatoDeTiempo(fallos * MS_CASTIGO)})`}
+            {fallos > 0 &&
+              ` · ${fallos} sin adivinar${vista.msCastigo ? ` (+${formatoDeTiempo(fallos * vista.msCastigo)})` : ''}`}
           </p>
         )}
         {!terminada && faltan > 0 && (

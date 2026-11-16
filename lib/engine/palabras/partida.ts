@@ -73,6 +73,8 @@ export type EstadoPalabras = {
   readonly msLimite?: number
   /** The time mode's lives per player (Phase 90); null or absent: «sin vidas». */
   readonly vidas?: number | null
+  /** What a missed word adds, ms (Phase 94). Absent in older races: two minutes. */
+  readonly msCastigo?: number
 }
 
 export type ErrorDePalabras =
@@ -187,6 +189,8 @@ export function empezarPalabras(opciones: {
   minutos?: number
   /** The time mode's lives; 0 or absent is «sin vidas». */
   vidas?: number
+  /** Minutes a missed word adds in «Palabras límite»; two when not said. */
+  castigo?: number
 }): EstadoPalabras {
   const largo = opciones.largo ?? LARGO_POR_DEFECTO
   const conTiempo = opciones.modo === 'tiempo'
@@ -207,7 +211,7 @@ export function empezarPalabras(opciones: {
           msLimite: (opciones.minutos ?? 5) * 60_000,
           vidas: opciones.vidas ? opciones.vidas : null,
         }
-      : {}),
+      : { msCastigo: (opciones.castigo ?? 2) * 60_000 }),
   }
 }
 
@@ -242,10 +246,19 @@ export function yaTermino(estado: EstadoPalabras, tablero: Tablero, ahora: numbe
  * Against the clock there is no penalty — the minutes are the limit — and
  * the time that counts is when they solved their last word.
  */
-export function tiempoDe(tablero: Tablero, modo: Modo = 'palabras'): number | null {
+export function tiempoDe(
+  tablero: Tablero,
+  modo: Modo = 'palabras',
+  msCastigo: number = MS_CASTIGO,
+): number | null {
   if (modo === 'tiempo') return ultimaAcertadaEn(tablero)
   if (tablero.terminoEn === null) return null
-  return tablero.terminoEn + fallosDe(tablero) * MS_CASTIGO
+  return tablero.terminoEn + fallosDe(tablero) * msCastigo
+}
+
+/** What a missed word adds in this race, ms. */
+export function castigoDe(estado: EstadoPalabras): number {
+  return estado.msCastigo ?? MS_CASTIGO
 }
 
 /** Lives left in the time mode, or null when there are none to lose. */
@@ -381,7 +394,7 @@ export function clasificacion(estado: EstadoPalabras): Puesto[] {
   const filas = estado.tableros.map((t) => ({
     asiento: t.asiento,
     termino: termino(t),
-    tiempo: tiempoDe(t, modo),
+    tiempo: tiempoDe(t, modo, castigoDe(estado)),
     acertadas: acertadasDe(t),
     fallos: fallosDe(t),
     intentos: intentosTotales(t),
