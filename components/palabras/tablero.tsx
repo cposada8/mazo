@@ -60,7 +60,7 @@ const RANGO: Record<Color, number> = { gris: 0, amarillo: 1, verde: 2 }
  * The keyboard's own colours (the owner, 2026-11-15): a key not tried yet is
  * grey, a letter tried and not in the word goes black — in both themes.
  */
-const TECLA_SIN_USAR = 'bg-[oklch(0.68_0_0)] text-white hover:bg-[oklch(0.62_0_0)]'
+const TECLA_SIN_USAR = 'bg-[oklch(0.45_0_0)] text-white hover:bg-[oklch(0.5_0_0)]'
 const TECLA: Record<Color, string> = {
   verde: FONDO.verde,
   amarillo: FONDO.amarillo,
